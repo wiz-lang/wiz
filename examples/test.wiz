@@ -1,0 +1,261 @@
+/*include "code/hardware.z80"
+include "code/bss.z80"*/
+
+include 'gameboy.wiz'
+
+bank main : prg * 4096
+
+// Main code section:
+in main, 0x0000:
+
+/*
+// Header junk for GB boot. (MUST APPEAR AS FIRST PART OF THE HOME SECTION)
+include "code/boot.z80"
+
+// Library dependencies.
+include "code/joy.z80"          // Handling the joypad controls.
+include "code/utility.z80"      // Useful utility stuff, like memory transfer stuff.
+include "code/graphics.z80"     // The rendering and tilemap handling routines.
+include "code/pucrunch.z80"     // Pucrunch decompression library.
+include "code/map.z80"          // The rendering and tilemap handling routines.
+include "code/textbox.z80"      // The textbox system.
+include "code/menu.z80"         // The menu system.
+include "code/item_menu.z80"*/
+
+let stack_top = 0x300
+
+def disable_display: do
+    repeat
+        a = [gb.lcd.stat] & STAT_MODE_MASK
+        compare a to gb.lcd.STAT_MODE_VBLANK
+    while != end
+    [gb.lcd.ctrl] = 0 via a
+    return
+end
+
+def memset: do
+    c++; b++
+    repeat
+        c--
+        if zero then
+            b--
+            return when zero
+        end
+        [hl++] = a
+    end
+end
+
+def main: do
+    interrupt = 0
+    sp = stack_top via hl
+    
+    // Check what hardware we're running.
+    // Put the status of the check into d right now, since we have to clear RAM before storing it in RAM.
+    d = 0
+    compare a to 0x11
+    // if a == 11, then we have color capabilities.
+    if == then
+        d++
+        compare b@0
+        // if b & 1 == 0, then we're a GBA.
+        if zero then
+            d++
+        end
+    end
+
+    // Clear WRAM.
+    hl = 0xC000
+    bc = 0x2000
+    repeat
+        a = b | c
+    until zero
+        [hl++] = 0
+        bc--
+    end
+
+    call disable_display
+    
+    // Save d into hardware_type, now that RAM is clear.
+    [hardware_type] = d via a
+    
+    // Load libraries.
+    // GFX_LOADLIB
+        
+    // Setup secondary ROM bank.
+    // SWITCH_ROM_BANK 1
+    [step_event_bank] = 1 via a
+    [scan_event_bank] = a
+    [draw_event_bank] = a
+    
+    // Clear MAP
+    hl = gb.ram.map
+    a = 0
+    bc = 0x800
+    call memset
+    
+    // Load tileset graphics.
+    bc = GB_VRAM_TILES_MAX // Tile count
+    de = gb.ram.tile
+    hl = tiles
+    call gfx.load_tiles
+   
+    // Init map size.
+    let WIDTH = 64
+    let LOG2_WIDTH = 6
+    let HEIGHT = 64
+    
+    [map_width_lo] = <WIDTH via a
+    [map_width_hi] = >WIDTH via a
+    [map_height_lo] = <HEIGHT via a
+    [map_height_hi] = >HEIGHT via a
+    [map_width_shift] = LOG2_WIDTH via a
+   
+    // Load map.
+    [t0] = GB_VRAM_MAP_WIDTH / 2 via a
+    [t1] = GB_VRAM_MAP_HEIGHT via a
+    bc = metatiles
+    de = gb.ram.map
+    hl = world1.map
+    call gfx.load_map
+
+    // Initialize textbox system.
+    call textbox_init
+
+    // Reset the tile buffer.
+    call map_begin_tile_buffer
+    call map_end_tile_buffer
+
+    // Copy sprites.
+    h = sprite_buffer >> 8
+    call gfx_sprite_copy
+
+    // Setup scanline interrupt.
+    [gb.scanline.trigger] = [scan_scanline] via a
+    [gb.lcd.stat] = gb.STAT_SCANLINE_ENABLE via a
+
+    // Start window at (x - 7, y) = (0, 0).
+    [gb.window.x] = 7 via a
+    [gb.window.y] = 96 via a
+
+    // We want VBLANK and STAT interrupts, the next time we have interrupts enabled.
+    [gb.interrupt.enable] = gb.interrupt.VBLANK | gb.interrupt.STAT via a
+
+    // Visual Boy advance bug: Switch bank once disable screen again
+    // before changing palettes, so it won't flash something off-screen
+    // while the display is disabled.
+    [gb.lcd.ctrl] = gb.lcd.CTRL_ON | gb.lcd.CTRL_WIN_MAP2 | gb.lcd.CTRL_TILESET2 | gb.lcd.CTRL_WIN_ON | gb.lcd.CTRL_OBJ_ON | gb.lcd.CTRL_BG_ON via a
+    call disable_display
+
+    a = [hardware_type] // Check hardware type.
+    compare a
+    if zero then
+        // Load greyscale palette.
+        call gfx_load_pal_greyscale
+    else
+        // Load BG palette.
+        b = 0 // Start palette index
+        c = 32 // Color count
+        d = GFX_PAL_BG // Dest
+        hl = background_palette // Source
+        call gfx_load_pal_color
+        
+        // Load OAM palette.
+        b = 0 // Start palette index
+        c = 32 // Color count
+        d = GFX_PAL_OAM // Dest
+        hl = sprite_palette // Source
+        call gfx_load_pal_color
+        
+        // Setup bank for the tileset load happening soon.
+        gb.color.select.vram = 0
+    end
+
+    // Now actually enable the screen
+    [gb.lcd.ctrl] = gb.lcd.CTRL_ON | gb.lcd.CTRL_WIN_MAP2 | gb.lcd.CTRL_TILESET2 | gb.lcd.CTRL_WIN_ON | gb.lcd.CTRL_OBJ_ON | gb.lcd.CTRL_BG_ON via a
+    // Enable interrupts.
+    interrupt = 1
+
+    // Prepare the map loop.
+    call map_start
+    
+    repeat
+        // The main game loop.
+        // Usually runs once per frame, but it may take longer than that.
+        // For instance, when it's busy loading compressed resources: That can take a while.
+        //CALL_EVENT_SAFE step_event_lo, step_event_hi, step_event_bank
+        call request_redraw
+    end
+end
+
+def stat: do
+// Called mid-frame, to perform HUD effects, and allow some concurrent update logic.
+// Update logic should be things that do not require large load time.
+    //CALL_EVENT_INTERRUPT scan_event_lo, scan_event_hi, scan_event_bank
+    bc = pop; de = pop; hl = pop; af = pop
+    resume
+end
+
+def draw: do
+// Called at the end of every frame, mainly to do graphical things.
+    // Call draw event.
+    //CALL_EVENT_INTERRUPT draw_event_lo, draw_event_hi, draw_event_bank
+
+    // Prepare next stat interrupt.
+    [gb.scanline.trigger] = [scan_scanline] via a
+    
+    // If we somehow hit 99 hours, don't update the timer.
+    a = [timer_hours]
+    compare a to 99
+    if < then
+        hl = timer_steps
+        c = 4
+        repeat
+            [hl] = [hl] + 1 via a
+            compare a to 60
+        until !=
+            [hl++] = 0 via a
+            c--
+        until zero end
+    end
+
+    bc = pop; de = pop; hl = pop; af = pop
+    resume
+end
+
+def request_redraw: do
+    // Request redraw.
+    // Until this flag is set, the full draw logic will not be run.
+    // (This prevents writing/executing incomplete memory buffers.)
+    hl = redraw_request
+    [hl] = 1 via a
+
+    repeat
+        sleep
+        a = [hl]
+        compare a
+    until zero end
+
+    return
+end
+
+def handle_redraw: do
+    // Should we redraw?
+    hl = redraw_request
+    a = [hl]
+    compare a
+    if not zero then
+        call map_buf_data
+    
+        // Copy sprites.
+        h = sprite_buffer >> 8
+        call gfx.sprite_copy
+        
+        // We're done drawing.
+        hl = redraw_request
+        [hl] = 0 via a
+    end
+
+    return
+end
+
+//include "code/resources.z80"

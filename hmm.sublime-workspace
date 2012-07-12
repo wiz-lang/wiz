@@ -1,0 +1,1502 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"CTRL",
+				"CTRL_MAP_TILESET"
+			],
+			[
+				"lead",
+				"leadingExpression"
+			],
+			[
+				"exp",
+				"expectation"
+			],
+			[
+				"get",
+				"getVerboseTokenName"
+			],
+			[
+				"fil",
+				"filename"
+			],
+			[
+				"nam",
+				"namespace"
+			],
+			[
+				"en",
+				"environment"
+			],
+			[
+				"GB_",
+				"GB_STAT_MODE_MASK"
+			],
+			[
+				"gb_",
+				"gb_lcd_stat"
+			],
+			[
+				"gb_l",
+				"gb_lcd_ctrl"
+			],
+			[
+				"S",
+				"SCREEN_HEIGHT"
+			],
+			[
+				"sto",
+				"storageType"
+			],
+			[
+				"stora",
+				"storageType"
+			],
+			[
+				"array",
+				"arraySize"
+			],
+			[
+				"par",
+				"parseExpression"
+			],
+			[
+				"num",
+				"numberType"
+			],
+			[
+				"std",
+				"stdio"
+			],
+			[
+				"inf",
+				"infixType"
+			],
+			[
+				"Jum",
+				"JumpType"
+			],
+			[
+				"PostF",
+				"PostfixType"
+			],
+			[
+				"Comm",
+				"CommandType"
+			],
+			[
+				"express",
+				"ExpressionType"
+			],
+			[
+				"Num",
+				"NumberFormat"
+			],
+			[
+				"c",
+				"canvas"
+			],
+			[
+				"yout",
+				"youtube-player"
+			],
+			[
+				"jump",
+				"jumptime"
+			],
+			[
+				"house_",
+				"house_house2"
+			],
+			[
+				"curr",
+				"currentText"
+			],
+			[
+				"te",
+				"textTimer"
+			],
+			[
+				"dar",
+				"darkening"
+			],
+			[
+				"fun",
+				"function"
+			],
+			[
+				"wil",
+				"wildpatch_forest"
+			],
+			[
+				"floo",
+				"floorFill"
+			],
+			[
+				"fu",
+				"function"
+			],
+			[
+				"STAR",
+				"START2"
+			],
+			[
+				"d",
+				"determined"
+			],
+			[
+				"b",
+				"broken"
+			],
+			[
+				"disable",
+				"disableClone"
+			],
+			[
+				"edit",
+				"editBox"
+			],
+			[
+				"curre",
+				"currentRoom"
+			],
+			[
+				"back",
+				"background	background-color: rgb"
+			],
+			[
+				"active",
+				"activeBox"
+			],
+			[
+				"class",
+				"className"
+			],
+			[
+				"cur",
+				"currentMode"
+			],
+			[
+				"work",
+				"workcanvas"
+			],
+			[
+				"box",
+				"boxes"
+			],
+			[
+				"dash",
+				"dashDistance"
+			],
+			[
+				"das",
+				"dashSpeed"
+			],
+			[
+				"ent",
+				"entities"
+			],
+			[
+				"click",
+				"clickTimer"
+			],
+			[
+				"offset",
+				"offsetParent"
+			],
+			[
+				"buil",
+				"builtinPosition"
+			],
+			[
+				"Definiti",
+				"DefinitionType"
+			],
+			[
+				"Regis",
+				"RegisterType"
+			],
+			[
+				"to",
+				"toString"
+			],
+			[
+				"oper",
+				"operand"
+			],
+			[
+				"check",
+				"checkConstant"
+			],
+			[
+				"ope",
+				"operators"
+			],
+			[
+				"POST",
+				"POST_DECREMENT"
+			],
+			[
+				"ev",
+				"evaluated"
+			],
+			[
+				"indir",
+				"indirectionLevel"
+			],
+			[
+				"ind",
+				"indirectionLevel"
+			],
+			[
+				"arra",
+				"arraySize"
+			],
+			[
+				"is",
+				"isConstant"
+			],
+			[
+				"evl",
+				"evaluated"
+			],
+			[
+				"next",
+				"nextToken"
+			],
+			[
+				"N",
+				"NYBBLE_SWAP"
+			],
+			[
+				"UN",
+				"UnaryOperatorType"
+			],
+			[
+				"BIT",
+				"BITWISE_NOT"
+			],
+			[
+				"O",
+				"UnaryOperatorType"
+			],
+			[
+				"TURL",
+				"TUTRLE"
+			],
+			[
+				"type",
+				"typetype"
+			],
+			[
+				"read",
+				"read_definition"
+			],
+			[
+				"jot_StringS",
+				"jot_StringSourceNew"
+			],
+			[
+				"mo",
+				"motionDelta"
+			],
+			[
+				"moti",
+				"motionBuffer"
+			],
+			[
+				"JOY_BI",
+				"JOY_BIT_B"
+			],
+			[
+				"tag",
+				"tag_id"
+			],
+			[
+				"des",
+				"decryptPassword"
+			],
+			[
+				"PW",
+				"PWALG_SIMPLE_FLAG"
+			],
+			[
+				"star",
+				"startX"
+			],
+			[
+				"tran",
+				"translations"
+			],
+			[
+				"gradi",
+				"gradient_table"
+			],
+			[
+				"grad",
+				"gradient_table"
+			],
+			[
+				"hard",
+				"hardware_type"
+			],
+			[
+				"outpu",
+				"output_image"
+			],
+			[
+				"outp",
+				"output_image"
+			],
+			[
+				"goo",
+				"goodieType"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "src/wiz/parse/parser.d",
+			"settings":
+			{
+				"buffer_size": 36931,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "examples/test.wiz",
+			"settings":
+			{
+				"buffer_size": 6634,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "examples/gameboy.wiz",
+			"settings":
+			{
+				"buffer_size": 8144,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/C/Users/Andy/Documents/My Dropbox/Public/nel/nel-d/nel-d/src/nel/ast/expression.d",
+			"settings":
+			{
+				"buffer_size": 22235,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "src/wiz/parse/token.d",
+			"settings":
+			{
+				"buffer_size": 4892,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/wiz/ast/assignment.d",
+			"settings":
+			{
+				"buffer_size": 1036,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/C/Users/Andy/AppData/Roaming/Sublime Text 2/Packages/Wiz/wiz.tmLanguage",
+			"settings":
+			{
+				"buffer_size": 10263,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "src/wiz/application.d",
+			"settings":
+			{
+				"buffer_size": 4198,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "src/wiz/def/definition.d",
+			"settings":
+			{
+				"buffer_size": 504,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "src/wiz/ast/block.d",
+			"settings":
+			{
+				"buffer_size": 2353,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "src/wiz/def/namespace.d",
+			"settings":
+			{
+				"buffer_size": 456,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "src/wiz/ast/variable.d",
+			"settings":
+			{
+				"buffer_size": 517,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "src/wiz/ast/label.d",
+			"settings":
+			{
+				"buffer_size": 499,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "src/wiz/parse/scanner.d",
+			"settings":
+			{
+				"buffer_size": 16238,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/wiz/ast/expression.d",
+			"settings":
+			{
+				"buffer_size": 436,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "src/wiz/ast/lib.d",
+			"settings":
+			{
+				"buffer_size": 822,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "build.bat",
+			"settings":
+			{
+				"buffer_size": 489,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "src/wiz/compile/report.d",
+			"settings":
+			{
+				"buffer_size": 789,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/wiz/compile/location.d",
+			"settings":
+			{
+				"buffer_size": 535,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "src/wiz/ast/number.d",
+			"settings":
+			{
+				"buffer_size": 389,
+				"line_ending": "Windows"
+			}
+		}
+	],
+	"build_system": "wiz",
+	"command_palette":
+	{
+		"height": 104.0,
+		"selected_items":
+		[
+			[
+				"Snippet: ",
+				"Snippet: require_once …"
+			]
+		],
+		"width": 392.0
+	},
+	"console":
+	{
+		"height": 139.0
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/C/Users/Andy/Documents/My Dropbox/Public/euler/euler1.py",
+		"/C/Users/Andy/Downloads/chmod.c",
+		"/C/Users/Andy/Documents/My Dropbox/Public/nel/nel-d/nel-d/src/nel/ast/variable_declaration.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/gbc_rpg/code/hardware.z80",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/def/lib.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/nel/nel-d/nel-d/src/nel/ast/block_statement.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/constant.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/nel/nel-d/nel-d/src/nel/ast/constant_declaration.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/compile/environment.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/nel/nel-d/nel-d/src/nel/ast/definition.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/gbc_rpg/code/main.z80",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/examples/test.wiz",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/  examples/test.wiz",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/compile/report.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/build.bat",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/examples/gb.wiz",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/examples/hardware.wiz",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/def/label.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/def/constant.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/label.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/nel/nel-d/nel-d/src/nel/ast/label_declaration.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/data.d",
+		"/C/Users/Andy/AppData/Roaming/Sublime Text 2/Packages/Wiz/wiz.tmLanguage",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/gbc_rpg/code/utility.z80",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/number.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/string.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/embed.d",
+		"/C/Users/Andy/AppData/Local/Temp/Rar$DI00.072/READ.ME",
+		"/C/Users/Andy/Documents/My Dropbox/Public/JAMS/JAM2/bip.js",
+		"/C/Users/Andy/Documents/My Dropbox/Public/JAMS/JAM15/game.html",
+		"/C/Users/Andy/Documents/My Dropbox/Public/nel/gouda/scroller.nel",
+		"/C/Users/Andy/AppData/Local/Temp/Rar$DI28.5631/disclaimer.txt",
+		"/C/Users/Andy/AppData/Roaming/Sublime Text 2/Packages/C++/C++.tmLanguage.cache",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/lib.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/node.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/statement.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/variable.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/storage.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/compile/location.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/def/definition.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/block.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/lib.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/application.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/assignment.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/expression.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/parse/scanner.d",
+		"/C/Users/Andy/AppData/Roaming/Sublime Text 2/Packages/Wiz/z80.tmLanguage",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/examples/test2.wiz",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/examples/test.wiz",
+		"/C/Development/C++/vigilance/vigilance/screen.cpp",
+		"/C/Development/C++/vigilance/vigilance/screen.h",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/parse/token.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/header.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/ast/lib.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/ast/pop.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/ast/attribute.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/ast/assignment.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/application.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/ast/infix.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/ast/postfix.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/ast/prefix.d",
+		"/C/Users/Andy/Dropbox/Public/gob/bog/src/bog/ast/attribute.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/ast/node.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/compile/location.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/ast/command.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/ast/comparison.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/ast/loop.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/bog/src/bog/ast/if_statement.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/ast/conditional.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/ast/data.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/ast/header.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/ast/number.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/ast/enumeration.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/parse/token.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/ast/jump.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/ast/expression.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/def/definition.d",
+		"/C/Users/Andy/Dropbox/Public/gob/hmm/src/wiz/compile/environment.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/parse/parser.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/JAMS/JAM13/fork/scroller.nel",
+		"/C/Users/Andy/Documents/My Dropbox/Public/JAMS/JAM12/scroller.nes",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/bog/src/bog/ast/data_statement.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/bog/src/bog/ast/constant_declaration.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/bank.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/bog/src/bog/ast/storage_type.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/bog/src/bog/ast/expression.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/command.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/comparison.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/relocation.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/enumeration.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/jump.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/conditional.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/loop.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/bog/src/bog/ast/symbol_table.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/compile/lib.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/compile/env.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/bog/src/bog/ast/block_statement.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/parse/lib.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/compile/scope.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/attribute.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/operator.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/hmm.sublime-project",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/bog/src/bog/ast/statement.d",
+		"/C/Users/Andy/AppData/Roaming/Sublime Text 2/Packages/D/D.tmLanguage",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/[Finished]wiz/parse/scanner.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/parse[Finished]/scanner.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/pa[Finished]rse/scanner.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/[Finished]",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/[Finished]src/wiz/compile/report.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/ast/d.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/def/d.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/compile/d.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/d.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/src/wiz/parse/d.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/hmm.sublime-workspace",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/rc/wiz/parse/lib.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/[Finished]src/wiz/def/lib.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm/",
+		"/C/Users/Andy/AppData/Roaming/Sublime Text 2/Packages/D/D.sublime-build",
+		"/C/Users/Andy/AppData/Roaming/Sublime Text 2/Packages/Default/Preferences.sublime-settings",
+		"/C/Users/Andy/Documents/My Dropbox/Public/gob/bog/src/bog/parse/scanner.d",
+		"/C/Users/Andy/Documents/My Dropbox/Public/JAMS/JAM11/sprite.nel",
+		"/C/Users/Andy/Documents/My Dropbox/Public/JAMS/JAM11/scroller.nel",
+		"/C/Users/Andy/Documents/My Dropbox/Public/JAMS/JAM11/tilemap.nel",
+		"/C/Users/Andy/Documents/My Dropbox/Public/JAMS/JAM11/trigger.nel",
+		"/C/Users/Andy/Documents/My Dropbox/Public/JAMS/JAM11/camera.nel",
+		"/C/Users/Andy/Documents/My Dropbox/Public/JAMS/JAM11/player.nel",
+		"/C/Users/Andy/Documents/My Dropbox/Public/JAMS/JAM11/hardware.nel"
+	],
+	"find":
+	{
+		"height": 34.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+			"C:\\Users\\Andy\\Documents\\My Dropbox\\Public\\gob\\hmm\\src",
+			"C:\\Users\\Andy\\Documents\\My Dropbox\\Public\\gob\\bog\\src",
+			"C:\\Users\\Andy\\Documents\\My Dropbox\\ROGUELITE BRANCH\\Classes",
+			"C:\\Users\\Andy\\Documents\\My Dropbox\\Public\\gob\\bog\\src",
+			"C:\\Users\\Andy\\Documents\\My Dropbox\\Public\\gob\\bog\\src`",
+			"C:\\Users\\Andy\\Documents\\My Dropbox\\Public\\gob\\bog\\src"
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"BANK",
+			"SWITCH_B",
+			"CTRL_OBJ_ON",
+			"status",
+			"control",
+			"true",
+			"Assignment",
+			"parseAssignment",
+			"reject\\(.* false\\);",
+			"reject",
+			"parseAssignment",
+			"expected",
+			"parseComparison",
+			"compare",
+			"parseInfix",
+			"Assignment",
+			"include",
+			"integer",
+			")\";",
+			"parseAssignment",
+			"HIBER",
+			"cart",
+			"format",
+			"scanner",
+			".format",
+			"includes",
+			"tileset",
+			"gb_",
+			"Token.String",
+			"String",
+			"parseJump",
+			"while",
+			"until",
+			"parseJump",
+			"conditional",
+			"if",
+			"until",
+			"BREAK",
+			"return new ast.Assignment(dest, src, location);",
+			"variable",
+			"repository",
+			"comment",
+			"<string>//",
+			"comment",
+			";",
+			"/",
+			"checkIdentifier",
+			"Cartridg",
+			"PREFIX",
+			"EXCLAIM",
+			"case Token.LPAREN",
+			"parseAssignment",
+			"SET",
+			"position",
+			"Copyright",
+			"byte:",
+			"Data",
+			"statement",
+			"10",
+			"postfixType",
+			"expr",
+			"expr ",
+			"Command",
+			"parseCommand",
+			"parseJumpCondition",
+			"location",
+			"offset",
+			"Number",
+			"checkIdentifier",
+			"environments",
+			"checkIdentifier",
+			"parseRepeat",
+			"lastText",
+			"parseCommand",
+			"cmp",
+			"Token.Set",
+			"Sym",
+			"uint",
+			"[^</]string",
+			"[^<]int",
+			"[^<]string",
+			"string",
+			"int",
+			"Package",
+			"Block",
+			"const",
+			"inout",
+			"const",
+			"\\",
+			"C:\\Users\\Andy\\Documents\\My Dropbox\\Public\\gob",
+			" $",
+			"%%%",
+			"for",
+			"getName",
+			"isdir",
+			"sep",
+			"included",
+			"~=",
+			"- 1]",
+			"after",
+			"BEGIN",
+			"do",
+			"LOOP",
+			"parseBit",
+			"parsePush",
+			"Keyword.NONE",
+			"Push",
+			"parseBitCheck",
+			"<trigger.obstruction",
+			">trigger.obstruction",
+			"TEXT",
+			"?",
+			"sax",
+			"basketball",
+			"bitch",
+			"ass",
+			"fuck",
+			"shit",
+			"-",
+			"'",
+			",",
+			")",
+			"(",
+			"player",
+			"bip.drawsub('player.png', player.frame * 24, 0, 24, 38, player.x - 6, player.y + player.z - 28, player.flip);",
+			"player",
+			"player.x = door.x;",
+			"TILE_SIZE"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": true,
+		"replace_history":
+		[
+			"prefixType",
+			"\\\\",
+			"",
+			"0x01",
+			"",
+			"basketball",
+			"fish",
+			"sax",
+			"",
+			"player2",
+			"lib",
+			"module",
+			"builtinPosition",
+			"Operator",
+			"index",
+			"separateConstant",
+			"Token.",
+			"ADD",
+			"#FFEEAA",
+			"#DDDDCC",
+			"#CCCCAA",
+			"#EEEECC",
+			"OP_SET",
+			"[$1]",
+			"[\\1]",
+			"import bog.",
+			"module bog.",
+			"    ",
+			"str_replace( ' ', '-',",
+			"textbox_colors",
+			".z80"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 1,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "src/wiz/parse/parser.d",
+					"settings":
+					{
+						"buffer_size": 36931,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								453,
+								453
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/D/D.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 612.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "examples/test.wiz",
+					"settings":
+					{
+						"buffer_size": 6634,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								6235,
+								6235
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Wiz/wiz.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 3471.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "examples/gameboy.wiz",
+					"settings":
+					{
+						"buffer_size": 8144,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								870,
+								870
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Wiz/wiz.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "/C/Users/Andy/Documents/My Dropbox/Public/nel/nel-d/nel-d/src/nel/ast/expression.d",
+					"settings":
+					{
+						"buffer_size": 22235,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								14076,
+								14076
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/D/D.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 8709.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "src/wiz/parse/token.d",
+					"settings":
+					{
+						"buffer_size": 4892,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3933,
+								3933
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/D/D.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 4079.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "src/wiz/ast/assignment.d",
+					"settings":
+					{
+						"buffer_size": 1036,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								767,
+								767
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/D/D.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "/C/Users/Andy/AppData/Roaming/Sublime Text 2/Packages/Wiz/wiz.tmLanguage",
+					"settings":
+					{
+						"buffer_size": 10263,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								9308,
+								9308
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/XML/XML.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "src/wiz/application.d",
+					"settings":
+					{
+						"buffer_size": 4198,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								4141,
+								4141
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/D/D.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1597.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "src/wiz/def/definition.d",
+					"settings":
+					{
+						"buffer_size": 504,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								63,
+								63
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/D/D.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "src/wiz/ast/block.d",
+					"settings":
+					{
+						"buffer_size": 2353,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1770,
+								1770
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/D/D.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "src/wiz/def/namespace.d",
+					"settings":
+					{
+						"buffer_size": 456,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								456,
+								456
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/D/D.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 11,
+					"file": "src/wiz/ast/variable.d",
+					"settings":
+					{
+						"buffer_size": 517,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/D/D.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 12,
+					"file": "src/wiz/ast/label.d",
+					"settings":
+					{
+						"buffer_size": 499,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								397,
+								397
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/D/D.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 13,
+					"file": "src/wiz/parse/scanner.d",
+					"settings":
+					{
+						"buffer_size": 16238,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								6995,
+								6995
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/D/D.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 2655.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 14,
+					"file": "src/wiz/ast/expression.d",
+					"settings":
+					{
+						"buffer_size": 436,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								434,
+								434
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/D/D.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 15,
+					"file": "src/wiz/ast/lib.d",
+					"settings":
+					{
+						"buffer_size": 822,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								215,
+								215
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/D/D.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 16,
+					"file": "build.bat",
+					"settings":
+					{
+						"buffer_size": 489,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								489,
+								489
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Batch File/Batch File.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 17,
+					"file": "src/wiz/compile/report.d",
+					"settings":
+					{
+						"buffer_size": 789,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								525,
+								525
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/D/D.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 18,
+					"file": "src/wiz/compile/location.d",
+					"settings":
+					{
+						"buffer_size": 535,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								523,
+								523
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/D/D.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 19,
+					"file": "src/wiz/ast/number.d",
+					"settings":
+					{
+						"buffer_size": 389,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								389,
+								389
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/D/D.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 0.0
+	},
+	"input":
+	{
+		"height": 33.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 381.0
+	},
+	"replace":
+	{
+		"height": 62.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 234.0,
+	"status_bar_visible": true
+}

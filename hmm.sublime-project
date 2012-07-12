@@ -1,0 +1,21 @@
+{
+	"build_systems":
+	[
+		{
+			"cmd":
+			[
+				"build.bat"
+			],
+			"file_regex": "^(?:\\[.*?\\])?(.*?)\\(([0-9]+)\\)",
+			"name": "wiz",
+			"selector": "source.d",
+			"working_dir": "$project_path"
+		}
+	],
+	"folders":
+	[
+		{
+			"path": "/C/Users/Andy/Documents/My Dropbox/Public/gob/hmm"
+		}
+	]
+}
