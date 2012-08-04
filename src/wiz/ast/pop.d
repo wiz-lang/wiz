@@ -5,9 +5,10 @@ import wiz.ast.lib;
 
 class Pop : Expression
 {
-    public:
-        this(compile.Location location)
-        {
-            super(ExpressionType.POP, location);
-        }
+    this(compile.Location location)
+    {
+        super(location);
+    }
+    
+    mixin compile.LeafAcceptor;
 }

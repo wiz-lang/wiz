@@ -8,77 +8,60 @@ import wiz.ast.lib;
 
 class Block : Statement
 {
-    private:
-        string name;
-        Statement[] statements;
+    private string _name;
+    private Statement[] _statements;
+    //private compile.Environment environment;
+
+    this(Statement[] statements, compile.Location location)
+    {
+        super(location);
+        _statements = statements;
+    }
+    
+    this(string name, Statement[] statements, compile.Location location)
+    {
+        this(statements, location);
+        _name = name;
+    }
+
+    mixin compile.BranchAcceptor!(_statements);
+    mixin helper.Accessor!(_name, _statements);
+
+    /*
+    void aggregate()
+    {
+        compile.Environment parent = compile.environment;
         
-        compile.Environment environment;
-    public:
-        this(Statement[] statements, compile.Location location)
+        // Package?
+        if(name.length > 0 && parent !is null)
         {
-            super(StatementType.BLOCK, location);
-            this.statements = statements;
-        }
-        
-        this(string name, Statement[] statements, compile.Location location)
-        {
-            this(statements, location);
-            this.name = name;
-        }
-        
-        void aggregate()
-        {
-            compile.Environment parent = compile.getActiveEnv();
-            
-            // Package?
-            if(name.length > 0 && parent !is null)
-            {
-                // If there was already a package defined by that name declared
-                // in this scope (and not a parent), then reuse that table.
-                def.Namespace ns = cast(def.Namespace) parent.tryGet(name, false);                
-                // Reuse existing table.
-                if(ns !is null)
-                {
-                    environment = ns.environment;
-                }
-                // No previous table existed. Update scope.
-                // Add this table to the parent scope.
-                else
-                {
-                    environment = new compile.Environment(parent);
-                    parent.put(new def.Namespace(name, environment, location));
-                }
-            }
-            else
+            // If there was already a package defined by that name declared
+            // in this scope (and not a parent), then reuse that table.
+            auto b = parent.tryGet!Block(name, false);
+
+            // No previous table existed. Update scope.
+            if(b is null)
             {
                 environment = new compile.Environment(parent);
+                // Add this table to the parent scope.
+                parent.put(name, this);                    
             }
+            // Reuse existing table.
+            else
+            {
+                environment = b.environment;
+            }
+        }
+        else
+        {
+            environment = new compile.Environment(parent);
+        }
 
-            compile.enterEnv(environment);
-            foreach(statement; statements)
-            {
-                statement.aggregate();
-            }
-            compile.exitEnv();
-        }
-        
-        void validate()
+        compile.enterEnv(environment);
+        foreach(statement; statements)
         {
-            compile.enterEnv(environment);
-            foreach(statement; statements)
-            {
-                statement.validate();
-            }
-            compile.exitEnv();
+            //statement.aggregate();
         }
-        
-        void generate()
-        {
-            compile.enterEnv(environment);
-            foreach(statement; statements)
-            {
-                statement.generate();
-            }
-            compile.exitEnv();
-        }
+        compile.exitEnv();
+    }*/
 }

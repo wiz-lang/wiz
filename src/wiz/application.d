@@ -4,6 +4,7 @@ static import std.file;
 static import std.path;
 static import std.stdio;
 static import std.string;
+static import std.array;
 import wiz = wiz.lib;
 
 private enum ArgumentState
@@ -12,7 +13,7 @@ private enum ArgumentState
     OUTPUT
 }
 
-void main(string[] arguments)
+int run(string[] arguments)
 {
     string[] args = arguments[1 .. arguments.length];
     
@@ -42,7 +43,7 @@ void main(string[] arguments)
                     std.stdio.writeln("      (defaults to $input_filename + '.nes').");
                     std.stdio.writeln("    -h, --help");
                     std.stdio.writeln("      this helpful mesage");
-                    return;
+                    return 1;
                 default:
                     wiz.notice(std.string.format("unknown command line option '%s'. ignoring...", arg));
                     break;
@@ -82,7 +83,7 @@ void main(string[] arguments)
     if(!input)
     {
         wiz.notice("no input file given. type `" ~ wiz.PROGRAM_NAME ~ " --help` to see program usage.");
-        return;
+        return 1;
     }
     // Assume a default file of <<input_filename>>.gb
     if(!output)
@@ -95,55 +96,55 @@ void main(string[] arguments)
         if(std.file.isDir(input))
         {
             wiz.log("error: input '" ~ input ~ "' is a directory.");
-            return;
+            return 1;
         }
     }
     else
     {
         wiz.log("error: input file '" ~ input ~ "' does not exist.");
-        return;
+        return 1;
     }
     
     if(std.file.exists(output) && std.file.isDir(output))
     {
         wiz.log("error: output '" ~ output ~ "' is a directory.");
-        return;
+        return 1;
     }
 
     auto scanner = new wiz.parse.Scanner(std.stdio.File(input, "rb"), input);
     auto parser = new wiz.parse.Parser(scanner);
+    auto program = new wiz.compile.Program();
 
-    wiz.log(">> Parsing...");
+    wiz.log(">> Building...");
     auto block = parser.parse();
-    wiz.compile.verify();
-
-    wiz.log(">> Aggregating...");
-    block.aggregate();
-    wiz.compile.verify();
-    /*
-    wiz.log(">> Validating...");
-    program.resetPosition();
-    block.validate();
-    wiz.compile.verify();
-    
-    wiz.log(">> Generating...");
-    program.resetPosition();
-    block.generate();
-    wiz.compile.verify();
-
+    wiz.compile.build(program, block);
+  
     try
     {
-        std.stdio.File file = std.stdio.File(output, "wb");
+/*      std.stdio.File file = std.stdio.File(output, "wb");
         wiz.log(">> Saving ROM...");
         program.save(file);
-        file.close();
+        file.close();*/
     }
     catch(Exception e)
     {
         wiz.log("error: output '" ~ output ~ "' could not be written.");
         wiz.compile.abort();
-    }*/
+    }
 
     wiz.log(">> Wrote to '" ~ output ~ "'.");
     wiz.notice("Done.");
+    return 0;
+}
+
+int main(string[] arguments)
+{
+    try
+    {
+        return run(arguments);
+    }
+    catch(wiz.compile.CompileExit exit)
+    {
+        return 1;
+    }
 }

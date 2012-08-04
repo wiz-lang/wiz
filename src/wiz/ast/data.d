@@ -5,39 +5,29 @@ import wiz.ast.lib;
 
 class Data : Statement
 {
-    private
-        Storage storage;
-        DataItem[] items;
-    public:
-        this(Storage storage, DataItem[] items, compile.Location location)
-        {
-            super(StatementType.DATA, location);
-            this.storage = storage;
-            this.items = items;
-        }
+    private Storage _storage;
+    private DataItem[] _items;
 
-        void aggregate()
-        {
-        }
+    this(Storage storage, DataItem[] items, compile.Location location)
+    {
+        super(location);
+        _storage = storage;
+        _items = items;
+    }
 
-        void validate()
-        {
-        }
-
-        void generate()
-        {
-        }
+    mixin compile.BranchAcceptor!(_storage, _items);
 }
 
 class DataItem : Node
 {
-    private:
-        Expression value;
-        
-    public:
-        this(Expression value, compile.Location location)
-        {
-            super(location);
-            this.value = value;
-        }
+    private Expression _value;
+
+    this(Expression value, compile.Location location)
+    {
+        super(location);
+        _value = value;
+    }
+
+    mixin compile.BranchAcceptor!(_value);
+    mixin helper.Accessor!(_value);
 }

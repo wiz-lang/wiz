@@ -3,9 +3,12 @@ include "code/bss.z80"*/
 
 include 'gameboy.wiz'
 
-bank main : prg * 4096
+bank main : rom * 4096
+bank ram : ram * 4096
 
-// Main code section:
+in ram, 0x4000:
+    var array : byte * 16
+
 in main, 0x0000:
 
 /*

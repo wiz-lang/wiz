@@ -4,14 +4,15 @@ import wiz.lib;
 import wiz.ast.lib;
 
 class String : Expression
-{
-    private:
-        string value;
+{    
+    string _value;
 
-    public:
-        this(string value, compile.Location location)
-        {
-            super(ExpressionType.STRING, location);
-            this.value = value;
-        }
+    this(string value, compile.Location location)
+    {
+        super(location);
+        _value = value;
+    }
+
+    mixin compile.LeafAcceptor;
+    mixin helper.Accessor!(_value);
 }

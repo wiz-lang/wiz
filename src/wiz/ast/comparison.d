@@ -5,32 +5,21 @@ import wiz.ast.lib;
 
 class Comparison : Statement
 {
-    private:
-        Expression left, right;
+    private Expression _left, _right;
+
+    this(Expression left, Expression right, compile.Location location)
+    {
+        super(location);
+        _left = left;
+        _right = right;
+    }
+
+    this(Expression left, compile.Location location)
+    {
+        super(location);
+        _left = left;
+    }
         
-    public:
-        this(Expression left, Expression right, compile.Location location)
-        {
-            super(StatementType.COMPARISON, location);
-            this.left = left;
-            this.right = right;
-        }
-
-        this(Expression left, compile.Location location)
-        {
-            super(StatementType.COMPARISON, location);
-            this.left = left;
-        }
-
-        void aggregate()
-        {
-        }
-
-        void validate()
-        {
-        }
-
-        void generate()
-        {
-        }
+    mixin compile.BranchAcceptor!(_left, _right);
+    mixin helper.Accessor!(_left, _right);
 }

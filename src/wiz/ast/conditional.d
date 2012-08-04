@@ -5,33 +5,17 @@ import wiz.ast.lib;
 
 class Conditional : Statement
 {
-    private:
-        JumpCondition trigger;
-        Statement action;
-        Statement alternative;
-        
-    public:
-        this(JumpCondition trigger, Statement action, compile.Location location)
-        {
-            super(StatementType.CONDITIONAL, location);
-            this.trigger = trigger;
-            this.action = action;
-        }
+    private JumpCondition _trigger;
+    private Statement _action;
+    public Statement alternative;
 
-        void aggregate()
-        {
-        }
+    this(JumpCondition trigger, Statement action, compile.Location location)
+    {
+        super(location);
+        _trigger = trigger;
+        _action = action;
+    }
 
-        void validate()
-        {
-        }
-
-        void generate()
-        {
-        }
-
-        void setAlternative(Statement alternative)
-        {
-            this.alternative = alternative;
-        }
+    mixin compile.BranchAcceptor!(_trigger, _action, alternative);
+    mixin helper.Accessor!(_trigger, _action);
 }

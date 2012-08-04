@@ -9,7 +9,8 @@
 			"file_regex": "^(?:\\[.*?\\])?(.*?)\\(([0-9]+)\\)",
 			"name": "wiz",
 			"selector": "source.d",
-			"working_dir": "$project_path"
+			"working_dir": "$project_path",
+			"encoding": "cp1252"
 		}
 	],
 	"folders":

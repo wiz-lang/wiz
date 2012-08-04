@@ -35,7 +35,7 @@ private enum State
 class Scanner
 {
     private char terminator;
-    private uint position;
+    private size_t position;
     private uint commentLine;
     private char[] buffer;
     private string text;

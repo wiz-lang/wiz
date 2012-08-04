@@ -5,14 +5,16 @@ import wiz.ast.lib;
 
 class Number : Expression
 {
-    private:
-        parse.Token numberType;
-        uint value;
-    public:
-        this(parse.Token numberType, uint value, compile.Location location)
-        {
-            super(ExpressionType.NUMBER, location);
-            this.numberType = numberType;
-            this.value = value;
-        }
+    parse.Token _numberType;
+    uint _value;
+
+    this(parse.Token numberType, uint value, compile.Location location)
+    {
+        super(location);
+        _numberType = numberType;
+        _value = value;
+    }
+
+    mixin compile.LeafAcceptor;
+    mixin helper.Accessor!(_numberType, _value);
 }

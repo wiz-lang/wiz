@@ -5,27 +5,16 @@ import wiz.ast.lib;
 
 class Command : Statement
 {
-    private:
-        parse.Keyword command;
-        Expression argument;
+    private parse.Keyword _command;
+    private Expression _argument;
 
-    public:
-        this(parse.Keyword command, ast.Expression argument, compile.Location location)
-        {
-            super(StatementType.COMMAND, location);
-            this.command = command;
-            this.argument = argument;
-        }
+    this(parse.Keyword command, ast.Expression argument, compile.Location location)
+    {
+        super(location);
+        _command = command;
+        _argument = argument;
+    }
 
-        void aggregate()
-        {
-        }
-
-        void validate()
-        {
-        }
-
-        void generate()
-        {
-        }
+    mixin compile.BranchAcceptor!(_argument);
+    mixin helper.Accessor!(_command, _argument);
 }

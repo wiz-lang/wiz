@@ -5,30 +5,18 @@ import wiz.ast.lib;
 
 class Relocation : Statement
 {
-    private:
-        string name;
-        Expression dest;
+    private string _name;
+    private string _mangledName;
+    private Expression _dest;
 
-    public:
-        this(string name, Expression dest, compile.Location location)
-        {
-            super(StatementType.RELOCATION, location);
-            this.name = name;
-            this.dest = dest;
-        }
+    this(string name, Expression dest, compile.Location location)
+    {
+        super(location);
+        _name = name;
+        _mangledName = "bank " ~ name;
+        _dest = dest;
+    }
 
-        void aggregate()
-        {
-
-        }
-        
-        void validate()
-        {
-
-        }
-        
-        void generate()
-        {
-
-        }
+    mixin compile.BranchAcceptor!(_dest);
+    mixin helper.Accessor!(_name, _mangledName, _dest);
 }

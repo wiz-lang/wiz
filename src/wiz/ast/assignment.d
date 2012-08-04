@@ -5,42 +5,31 @@ import wiz.ast.lib;
 
 class Assignment : Statement
 {
-    private:
-        Expression dest, intermediary, src;
-        parse.Token postfix;
+    private Expression _dest, _intermediary, _src;
+    private parse.Token _postfix;
 
-    public:
-        this(Expression dest, Expression src, compile.Location location)
-        {
-            super(StatementType.ASSIGNMENT, location);
-            this.dest = dest;
-            this.src = src;
-        }
+    this(Expression dest, Expression src, compile.Location location)
+    {
+        super(location);
+        _dest = dest;
+        _src = src;
+    }
 
-        this(Expression dest, Expression intermediary, Expression src, compile.Location location)
-        {
-            super(StatementType.ASSIGNMENT, location);
-            this.dest = dest;
-            this.intermediary = intermediary;
-            this.src = src;
-        }
+    this(Expression dest, Expression intermediary, Expression src, compile.Location location)
+    {
+        super(location);
+        _dest = dest;
+        _intermediary = intermediary;
+        _src = src;
+    }
 
-        this(Expression dest, parse.Token postfix, compile.Location location)
-        {
-            super(StatementType.ASSIGNMENT, location);
-            this.dest = dest;
-            this.postfix = postfix;
-        }
+    this(Expression dest, parse.Token postfix, compile.Location location)
+    {
+        super(location);
+        _dest = dest;
+        _postfix = postfix;
+    }
 
-        void aggregate()
-        {
-        }
-
-        void validate()
-        {
-        }
-
-        void generate()
-        {
-        }
+    mixin compile.BranchAcceptor!(_dest, _intermediary, _src);
+    mixin helper.Accessor!(_dest, _intermediary, _src, _postfix);
 }

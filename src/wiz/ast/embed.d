@@ -5,28 +5,14 @@ import wiz.ast.lib;
 
 class Embed : Statement
 {
-    private:
-        string filename;
+    private string _filename;
 
-    public:
-        this(string filename, compile.Location location)
-        {
-            super(StatementType.EMBED, location);
-            this.filename = filename;
-        }
-            
-        void aggregate()
-        {
+    this(string filename, compile.Location location)
+    {
+        super(location);
+        _filename = filename;
+    }
 
-        }
-        
-        void validate()
-        {
-
-        }
-        
-        void generate()
-        {
-
-        }
+    mixin compile.LeafAcceptor;
+    mixin helper.Accessor!(_filename);
 }

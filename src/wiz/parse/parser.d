@@ -12,16 +12,13 @@ import wiz.parse.lib;
 
 class Parser
 {
-    
-private:
-    Scanner scanner;
-    Scanner[] includes;
-    bool[string] included;
-    Token token;
-    string text;
-    Keyword keyword;
+    private Scanner scanner;
+    private Scanner[] includes;
+    private bool[string] included;
+    private Token token;
+    private string text;
+    private Keyword keyword;
 
-public:
     this(Scanner scanner)
     {
         this.scanner = scanner;
@@ -111,7 +108,9 @@ public:
     ast.Block parse()
     {
         nextToken();
-        return parseProgram();
+        auto program = parseProgram();
+        compile.verify();
+        return program;
     }
     
     ast.Block parseProgram()
@@ -241,15 +240,15 @@ public:
                     case Keyword.DO, Keyword.PACKAGE:
                         return parseBlock();
                     case Keyword.BANK:
-                        return parseBank();
+                        return parseBankDecl();
                     case Keyword.DEF:
-                        return parseLabel();
+                        return parseLabelDecl();
                     case Keyword.LET:
-                        return parseConstant();
+                        return parseConstDecl();
                     case Keyword.ENUM:
-                        return parseEnumeration();
+                        return parseEnumDecl();
                     case Keyword.VAR:
-                        return parseVariable();
+                        return parseVarDecl();
                     case Keyword.BYTE, Keyword.WORD:
                         return parseData();
                     case Keyword.GOTO, Keyword.CALL,
@@ -433,7 +432,7 @@ public:
         }
     }
     
-    ast.Bank parseBank()
+    ast.BankDecl parseBankDecl()
     {
         // bank = 'bank' IDENTIFIER (',' IDENTIFIER)* ':' IDENTIFIER '*' expression
         compile.Location location = scanner.getLocation();
@@ -465,7 +464,7 @@ public:
             }
             else
             {
-                reject("identifier after ',' in bank declaration");
+                reject("identifier after ',' in bank Defaration");
                 break;
             }
         }
@@ -480,10 +479,10 @@ public:
         consume(Token.MUL); // *
         size = parseExpression(); // term
         
-        return new ast.Bank(names, type, size, location);
+        return new ast.BankDecl(names, type, size, location);
     }
     
-    ast.Label parseLabel()
+    ast.LabelDecl parseLabelDecl()
     {
         // label = 'def' IDENTIFIER ':'
         compile.Location location = scanner.getLocation();
@@ -498,7 +497,7 @@ public:
         nextToken(); // IDENTIFIER
         consume(Token.COLON);
         
-        return new ast.Label(name, location);
+        return new ast.LabelDecl(name, location);
     }
 
     ast.Storage parseStorage()
@@ -534,7 +533,7 @@ public:
         }
     }
     
-    ast.Constant parseConstant()
+    ast.ConstDecl parseConstDecl()
     {
         // constant = 'let' IDENTIFIER '=' expression
         compile.Location location = scanner.getLocation();
@@ -551,10 +550,10 @@ public:
         nextToken(); // IDENTIFIER
         consume(Token.SET); // =
         value = parseExpression(); // expression
-        return new ast.Constant(name, value, location);
+        return new ast.ConstDecl(name, value, location);
     }
     
-    ast.Enumeration parseEnumeration()
+    ast.EnumDecl parseEnumDecl()
     {
         // enumeration = 'enum' ':' enum_item (',' enum_item)*
         //      where enum_item = IDENTIFIER ('=' expression)?
@@ -563,7 +562,7 @@ public:
         string name;
         ast.Expression value;
         uint offset;
-        ast.Constant[] constants;
+        ast.ConstDecl[] constants;
         
         nextToken(); // IDENTIFIER (keyword 'enum')
         consume(Token.COLON); // :
@@ -585,7 +584,7 @@ public:
             value = new ast.Number(Token.INTEGER, 0, constantLocation);
         }
 
-        constants ~= new ast.Constant(name, value, offset, constantLocation);
+        constants ~= new ast.ConstDecl(name, value, offset, constantLocation);
         offset++;
         
         // (',' name ('=' expr)?)*
@@ -608,20 +607,20 @@ public:
                     offset = 0; // If we explicitly set a value, then we reset the enum expression offset.
                 }
                 
-                constants ~= new ast.Constant(name, value, offset, constantLocation);
+                constants ~= new ast.ConstDecl(name, value, offset, constantLocation);
                 offset++;
             }
             else
             {
-                reject("identifier after ',' in enum declaration");
+                reject("identifier after ',' in enum Defaration");
                 break;
             }
         }
         
-        return new ast.Enumeration(constants, enumLocation);
+        return new ast.EnumDecl(constants, enumLocation);
     }
     
-    ast.Variable parseVariable()
+    ast.VarDecl parseVarDecl()
     {
         // variable = 'var' IDENTIFIER (',' IDENTIFIER)*
         //      ':' ('byte' | 'word') '*' expression
@@ -651,14 +650,14 @@ public:
             }
             else
             {
-                reject("identifier after ',' in variable declaration");
+                reject("identifier after ',' in variable Defaration");
                 break;
             }
         }
         
         consume(Token.COLON); // :
         ast.Storage storage = parseStorage();
-        return new ast.Variable(names, storage, location);
+        return new ast.VarDecl(names, storage, location);
     }
     
     ast.Data parseData()
@@ -816,7 +815,7 @@ public:
             // If this is an 'elseif', join to previous 'if'/'elseif'.
             if(previous !is null)
             {
-                previous.setAlternative(statement);
+                previous.alternative = statement;
             }
             else if(first is null)
             {
@@ -829,7 +828,7 @@ public:
         {
             compile.Location location = scanner.getLocation();
             nextToken(); // IDENTIFIER (keyword 'else')
-            statement.setAlternative(new ast.Block(parseConditionalCompound(), location)); // statement*
+            statement.alternative = new ast.Block(parseConditionalCompound(), location); // statement*
         }
         switch(keyword)
         {
@@ -1006,6 +1005,7 @@ public:
         {
             case Token.LT:
             case Token.GT:
+            case Token.SWAP:
                 return true;
             default:
                 return false;
@@ -1019,7 +1019,6 @@ public:
         {
             case Token.INC:
             case Token.DEC:
-            case Token.SWAP:
                 return true;
             default:
                 return false;

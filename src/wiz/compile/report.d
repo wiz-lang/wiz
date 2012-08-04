@@ -9,11 +9,40 @@ import wiz.lib;
 
 public uint maximumErrors = 64;
 private uint errors;
+private bool previousContinued;
 
-void error(string message, compile.Location location, bool fatal = false)
+class CompileExit : Exception
 {
-    log(std.conv.to!string(location) ~ ": " ~ (fatal ? "fatal" : "error") ~ ": " ~ message);
-    errors++;
+    this()
+    {
+        super("CompileExit");
+    }
+}
+
+string severity(bool fatal, bool previousContinued)
+{
+    if(fatal)
+    {
+        return "fatal";
+    }
+    else if(previousContinued)
+    {
+        return "note";
+    }
+    else
+    {
+        return "error";
+    }
+}
+
+void error(string message, compile.Location location, bool fatal = false, bool continued = false)
+{
+    log(std.conv.to!string(location) ~ ": " ~ severity(fatal, previousContinued) ~ ": " ~ message);
+    if(!continued)
+    {
+        errors++;
+    }
+    previousContinued = continued;
     if(fatal || errors >= maximumErrors)
     {
         abort();
@@ -41,5 +70,5 @@ void log(string message)
 void abort()
 {
     notice(std.string.format("failed with %d error(s).", errors));
-    std.c.stdlib.exit(1);
+    throw new CompileExit();
 }

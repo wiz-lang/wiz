@@ -5,18 +5,19 @@ import wiz.ast.lib;
 
 class Attribute : Expression
 {
-    private:
-        string[] pieces;
-        
-    public:
-        this(string[] pieces, compile.Location location)
-        {
-            super(ExpressionType.ATTRIBUTE, location);
-            this.pieces = pieces;
-        }
-        
-        string getFullName()
-        {
-            return std.string.join(pieces, ".");
-        }
+    private string[] _pieces;
+
+    this(string[] pieces, compile.Location location)
+    {
+        super(location);
+        _pieces = pieces;
+    }
+    
+    @property string fullName()
+    {
+        return std.string.join(pieces, ".");
+    }
+
+    mixin compile.LeafAcceptor;
+    mixin helper.Accessor!(_pieces);
 }

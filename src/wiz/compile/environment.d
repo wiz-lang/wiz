@@ -1,116 +1,61 @@
 module wiz.compile.environment;
 
 import wiz.lib;
+import wiz.compile.lib;
 
 static import std.array;
 
 class Environment
 {
-    private:
-        Environment parent;
-        def.Definition[string] dictionary;
+    private Environment parent;
+    private sym.Definition[string] dictionary;
 
-    public:
-        this(Environment parent = null)
+    this(Environment parent = null)
+    {
+        this.parent = parent;
+    }
+    
+    void printKeys()
+    {
+        foreach(key, value; dictionary)
         {
-            this.parent = parent;
+            std.stdio.writeln(key ~ ": " ~ value.toString());
         }
-        
-        void printKeys()
+    }
+    
+    void put(string name, sym.Definition def)
+    {
+        auto match = get!(sym.Definition)(name, true);
+        if(match)
         {
-            foreach(key, value; dictionary)
-            {
-                std.stdio.writeln(key ~ ": " ~ value.toString());
-            }
+            error("redefinition of symbol '" ~ name ~ "'", def.decl.location, false, true);
+            error("(previously defined here)", match.decl.location);
         }
-        
-        void put(def.Definition d)
+        else
         {
-            // Perform search without inheritance to only whine if the symbol was already declared in this scope.
-            // This way functions can have locals that use the same name as somewhere in the parent, without problems.
-            // (get always looks at current scope and works up, there is no ambiguity)
-            def.Definition match = tryGet(d.name, false);
-        
-            if(match)
-            {
-                error("redefinition of symbol '" ~ d.name ~ "' (previously defined at " ~ match.location.toString() ~ ")", d.location);
-            }
-            else
-            {
-                dictionary[d.name] = d;
-            }
+            dictionary[name] = def;
         }
-        
-        def.Definition tryGet(string name, bool useInheritance = true)
+    }
+
+    T get(T)(string name, bool shallow = false)
+    {
+        sym.Definition match = dictionary.get(name, null);
+        if(match is null)
         {
-            def.Definition* match = name in dictionary;
-            if(match is null)
+            if(shallow || parent is null)
             {
-                if(useInheritance && parent !is null)
-                {
-                    return parent.tryGet(name, useInheritance);
-                }
                 return null;
             }
             else
             {
-                return *match;
+                return parent.get!(T)(name, shallow);
             }
         }
-}
-
-private Environment activeEnv;
-private Environment builtinEnv;
-private Environment[] environments;
-
-void enterEnv(Environment env)
-{
-    environments ~= env;
-    activeEnv = env;
-}
-
-void exitEnv()
-{
-    std.array.popBack(environments);
-    if(environments.length > 0)
-    {
-        activeEnv = std.array.back(environments);
+        else
+        {
+            return cast(T) match;
+        }
     }
-    else
-    {
-        activeEnv = null;
-    }
-}
-
-Environment getActiveEnv()
-{
-    return activeEnv;
-}
-
-Environment getBuiltinEnv()
-{
-    if(builtinEnv is null)
-    {
-        builtinEnv = new Environment();
-        compile.Location builtinLocation = compile.Location("<builtin>");
-        /*
-        builtinEnv.put(new RegisterDefinition("a", RegisterType.A, builtinLocation));
-        builtinEnv.put(new RegisterDefinition("x", RegisterType.X, builtinLocation));
-        builtinEnv.put(new RegisterDefinition("y", RegisterType.Y, builtinLocation));
-        builtinEnv.put(new RegisterDefinition("s", RegisterType.S, builtinLocation));
-        builtinEnv.put(new RegisterDefinition("p", RegisterType.P, builtinLocation));
-
-        PackageDefinition pkg = new PackageDefinition("builtin", new Environment(builtinEnv), builtinLocation);
-        builtinEnv.put(pkg);
-
-        auto env = pkg.getTable();
-        env.put(new RegisterDefinition("a", RegisterType.A, builtinLocation));
-        env.put(new RegisterDefinition("x", RegisterType.X, builtinLocation));
-        env.put(new RegisterDefinition("y", RegisterType.Y, builtinLocation));
-        env.put(new RegisterDefinition("s", RegisterType.S, builtinLocation));
-        env.put(new RegisterDefinition("p", RegisterType.P, builtinLocation));*/
-    }
-    return builtinEnv;
 }
 
 

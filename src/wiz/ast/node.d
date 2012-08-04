@@ -4,17 +4,13 @@ import wiz.lib;
 
 class Node
 {
-    private:
-        compile.Location _location;
-        
-    public:
-        this(compile.Location location)
-        {
-            this._location = location;
-        }
-        
-        @property compile.Location location()
-        {
-            return _location;
-        }
+    private compile.Location _location;
+
+    this(compile.Location location)
+    {
+        _location = location;
+    }
+
+    mixin compile.AbstractAcceptor;
+    mixin helper.Accessor!(_location);
 }

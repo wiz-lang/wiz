@@ -5,25 +5,14 @@ import wiz.ast.lib;
 
 class Loop : Statement
 {
-    private:
-        Block block;
+    private Block _block;
 
-    public:
-        this(Block block, compile.Location location)
-        {
-            super(StatementType.LOOP, location);
-            this.block = block;
-        }
+    this(Block block, compile.Location location)
+    {
+        super(location);
+        _block = block;
+    }
 
-        void aggregate()
-        {
-        }
-
-        void validate()
-        {
-        }
-
-        void generate()
-        {
-        }
+    mixin compile.BranchAcceptor!(_block);
+    mixin helper.Accessor!(_block);
 }

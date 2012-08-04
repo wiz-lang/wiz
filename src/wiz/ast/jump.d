@@ -5,54 +5,44 @@ import wiz.ast.lib;
 
 class Jump : Statement
 {
-    private:
-        parse.Keyword type;
-        Expression destination;
-        JumpCondition condition;
-        
-    public:
-        this(parse.Keyword type, compile.Location location)
-        {
-            super(StatementType.JUMP, location);
-            this.type = type;
-        }
+    private parse.Keyword _type;
+    private Expression _destination;
+    private JumpCondition _condition;
 
-        this(parse.Keyword type, JumpCondition condition, compile.Location location)
-        {
-            this(type, location);
-            this.condition = condition;
-        }
+    this(parse.Keyword type, compile.Location location)
+    {
+        super(location);
+        _type = type;
+    }
 
-        this(parse.Keyword type, Expression destination, JumpCondition condition, compile.Location location)
-        {
-            this(type, condition, location);
-            this.destination = destination;
-        }
+    this(parse.Keyword type, JumpCondition condition, compile.Location location)
+    {
+        this(type, location);
+        _condition = condition;
+    }
 
-        void aggregate()
-        {
-        }
+    this(parse.Keyword type, Expression destination, JumpCondition condition, compile.Location location)
+    {
+        this(type, condition, location);
+        _destination = destination;
+    }
 
-        void validate()
-        {
-        }
-
-        void generate()
-        {
-        }
+    mixin compile.BranchAcceptor!(_destination, _condition);
+    mixin helper.Accessor!(_type, _destination, _condition);
 }
 
 class JumpCondition : Node
 {
-    private:
-        bool negated;
-        string flag;
+    private bool _negated;
+    private string _flag;
 
-    public:
-        this(bool negated, string flag, compile.Location location)
-        {
-            super(location);
-            this.negated = negated;
-            this.flag = flag;
-        }
+    this(bool negated, string flag, compile.Location location)
+    {
+        super(location);
+        _negated = negated;
+        _flag = flag;
+    }
+
+    mixin compile.LeafAcceptor;
+    mixin helper.Accessor!(_negated, _flag);
 }
