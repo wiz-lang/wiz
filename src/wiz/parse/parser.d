@@ -29,7 +29,7 @@ class Parser
         token = scanner.next();
         text = scanner.getLastText();
         keyword = Keyword.NONE;
-        if(token == Token.IDENTIFIER)
+        if(token == Token.Identifier)
         {
             keyword = findKeyword(text);
         }
@@ -72,7 +72,7 @@ class Parser
     
     bool checkIdentifier(bool allowKeywords = false)
     {
-        if(token == Token.IDENTIFIER && (!allowKeywords && keyword == Keyword.NONE || allowKeywords))
+        if(token == Token.Identifier && (!allowKeywords && keyword == Keyword.NONE || allowKeywords))
         {
             return true; 
         }
@@ -230,7 +230,7 @@ class Parser
         //      | assignment
         switch(token)
         {
-            case Token.IDENTIFIER:
+            case Token.Identifier:
                 switch(keyword)
                 {
                     case Keyword.EMBED:
@@ -274,18 +274,18 @@ class Parser
                         break;
                 }
                 break;
-            case Token.INTEGER, Token.HEXADECIMAL, Token.BINARY, Token.STRING, Token.LPAREN:
+            case Token.Integer, Token.Hexadecimal, Token.Binary, Token.String, Token.LParen:
                 reject("statement", false);
                 skipAssignment(true);
                 break;
-            case Token.SET:
+            case Token.Set:
                 reject("statement", false);
                 skipAssignment(false);
                 break;
-            case Token.LBRACKET:
+            case Token.LBracket:
                 parseAssignment();
                 break;
-            case Token.SEMI:
+            case Token.Semi:
                 // semi-colon, skip.
                 nextToken();
                 break;
@@ -302,14 +302,14 @@ class Parser
         nextToken(); // IDENTIFIER (keyword 'include')
         
         string filename = null;
-        if(token == Token.STRING)
+        if(token == Token.String)
         {
             // Don't call nextToken() here, we'll be doing that when the scanner's popped off later.
             filename = text;
         }
         else
         {
-            consume(Token.STRING);
+            consume(Token.String);
             return;
         }
         
@@ -363,7 +363,7 @@ class Parser
         compile.Location location = scanner.getLocation();
         nextToken(); // IDENTIFIER (keyword 'embed')
         
-        if(token == Token.STRING)
+        if(token == Token.String)
         {
             string filename = text;
             nextToken(); // STRING
@@ -374,7 +374,7 @@ class Parser
         }
         else
         {
-            consume(Token.STRING);
+            consume(Token.String);
             return null;
         }
     }
@@ -393,12 +393,12 @@ class Parser
         }
         nextToken(); // IDENTIFIER
         // (, expr)?
-        if(token == Token.COMMA)
+        if(token == Token.Comma)
         {
             nextToken(); // ,
             dest = parseExpression(); // expression
         }
-        consume(Token.COLON); // :
+        consume(Token.Colon); // :
         
         return new ast.Relocation(name, dest, location);
     }
@@ -450,10 +450,10 @@ class Parser
         nextToken(); // IDENTIFIER
         
         // Check if we should match (',' id)*
-        while(token == Token.COMMA)
+        while(token == Token.Comma)
         {
             nextToken(); // ,
-            if(token == Token.IDENTIFIER)
+            if(token == Token.Identifier)
             {
                 if(checkIdentifier())
                 {
@@ -469,14 +469,14 @@ class Parser
             }
         }
         
-        consume(Token.COLON); // :
+        consume(Token.Colon); // :
         
         if(checkIdentifier())
         {
             type = text;
         }
         nextToken(); // IDENTIFIER (bank type)
-        consume(Token.MUL); // *
+        consume(Token.Mul); // *
         size = parseExpression(); // term
         
         return new ast.BankDecl(names, type, size, location);
@@ -495,7 +495,7 @@ class Parser
             name = text;
         }
         nextToken(); // IDENTIFIER
-        consume(Token.COLON);
+        consume(Token.Colon);
         
         return new ast.LabelDecl(name, location);
     }
@@ -519,7 +519,7 @@ class Parser
             nextToken(); // IDENTIFIER (keyword 'byte'/'word')
             // ('*' array_size)?
             ast.Expression arraySize;
-            if(token == Token.MUL)
+            if(token == Token.Mul)
             {
                 nextToken(); // *
                 arraySize = parseExpression(); // expression
@@ -548,7 +548,7 @@ class Parser
             name = text;
         }
         nextToken(); // IDENTIFIER
-        consume(Token.SET); // =
+        consume(Token.Set); // =
         value = parseExpression(); // expression
         return new ast.ConstDecl(name, value, location);
     }
@@ -565,7 +565,7 @@ class Parser
         ast.ConstDecl[] constants;
         
         nextToken(); // IDENTIFIER (keyword 'enum')
-        consume(Token.COLON); // :
+        consume(Token.Colon); // :
         
         if(checkIdentifier())
         {
@@ -574,24 +574,24 @@ class Parser
         constantLocation = scanner.getLocation();
         nextToken(); // IDENTIFIER
         // ('=' expr)?
-        if(token == Token.SET)
+        if(token == Token.Set)
         {
-            consume(Token.SET); // =
+            consume(Token.Set); // =
             value = parseExpression();
         }
         else
         {
-            value = new ast.Number(Token.INTEGER, 0, constantLocation);
+            value = new ast.Number(Token.Integer, 0, constantLocation);
         }
 
         constants ~= new ast.ConstDecl(name, value, offset, constantLocation);
         offset++;
         
         // (',' name ('=' expr)?)*
-        while(token == Token.COMMA)
+        while(token == Token.Comma)
         {
             nextToken(); // ,
-            if(token == Token.IDENTIFIER)
+            if(token == Token.Identifier)
             {
                 if(checkIdentifier())
                 {
@@ -600,9 +600,9 @@ class Parser
                 constantLocation = scanner.getLocation();
                 nextToken(); // IDENTIFIER
                 // ('=' expr)?
-                if(token == Token.SET)
+                if(token == Token.Set)
                 {
-                    consume(Token.SET); // =
+                    consume(Token.Set); // =
                     value = parseExpression();
                     offset = 0; // If we explicitly set a value, then we reset the enum expression offset.
                 }
@@ -636,10 +636,10 @@ class Parser
         nextToken(); // IDENTIFIER
         
         // Check if we should match (',' id)*
-        while(token == Token.COMMA)
+        while(token == Token.Comma)
         {
             nextToken(); // ,
-            if(token == Token.IDENTIFIER)
+            if(token == Token.Identifier)
             {
                 if(checkIdentifier())
                 {
@@ -655,7 +655,7 @@ class Parser
             }
         }
         
-        consume(Token.COLON); // :
+        consume(Token.Colon); // :
         ast.Storage storage = parseStorage();
         return new ast.VarDecl(names, storage, location);
     }
@@ -666,7 +666,7 @@ class Parser
         //      where data_item = expression | STRING
         compile.Location location = scanner.getLocation();
         ast.Storage storage = parseStorage();
-        consume(Token.COLON); // :
+        consume(Token.Colon); // :
         
         ast.DataItem[] items;
 
@@ -676,7 +676,7 @@ class Parser
             ast.Expression expr = parseExpression(); // expression
             items ~= new ast.DataItem(expr, expr.location);
             // (',' item)*
-            if(token == Token.COMMA)
+            if(token == Token.Comma)
             {
                 nextToken(); // ,
                 continue;
@@ -709,7 +709,7 @@ class Parser
             case Keyword.GOTO, Keyword.CALL:
                 ast.Expression destination = parseExpression();
                 ast.JumpCondition condition = null;
-                if(token == Token.IDENTIFIER && keyword == Keyword.WHEN)
+                if(token == Token.Identifier && keyword == Keyword.WHEN)
                 {
                     nextToken(); // IDENTIFIER (keyword 'when')
                     condition = parseJumpCondition("'when'");
@@ -718,7 +718,7 @@ class Parser
                 break;
             case Keyword.RETURN, Keyword.RESUME, Keyword.BREAK, Keyword.CONTINUE:
                 ast.JumpCondition condition = null;
-                if(token == Token.IDENTIFIER && keyword == Keyword.WHEN)
+                if(token == Token.Identifier && keyword == Keyword.WHEN)
                 {
                     nextToken(); // IDENTIFIER (keyword 'when')
                     condition = parseJumpCondition("'when'");
@@ -750,26 +750,26 @@ class Parser
         string flag = null;
         switch(token)
         {
-            case Token.IDENTIFIER:
+            case Token.Identifier:
                 checkIdentifier();
                 flag = text;
                 nextToken(); // condition
                 break;
-            case Token.NE:
+            case Token.NotEqual:
                 negated = !negated;
                 flag = "zero";
                 nextToken(); // !=
                 break;
-            case Token.EQ:
+            case Token.Equal:
                 flag = "zero";
                 nextToken(); // ==
                 break;
-            case Token.LT:
+            case Token.Less:
                 negated = !negated;
                 flag = "carry";
                 nextToken(); // <
                 break;
-            case Token.GE:
+            case Token.GreaterEqual:
                 flag = "carry";
                 nextToken(); // >=
                 break;
@@ -899,16 +899,16 @@ class Parser
             parseExpression(); // expr
         }
         // If the expression is followed by an assignment, then gobble the assignment.
-        if(token == Token.SET)
+        if(token == Token.Set)
         {
             nextToken(); // =
             // If the thing after the = is an expression, then gobble that too.
             switch(token)
             {
-                case Token.INTEGER, Token.HEXADECIMAL, Token.BINARY, Token.STRING, Token.LPAREN:
+                case Token.Integer, Token.Hexadecimal, Token.Binary, Token.String, Token.LParen:
                     parseExpression();
                     break;
-                case Token.IDENTIFIER:
+                case Token.Identifier:
                     if(keyword == Keyword.NONE || keyword == Keyword.POP)
                     {
                         parseExpression();
@@ -927,11 +927,11 @@ class Parser
         string leadText = text;
         ast.Expression dest = parseAssignableTerm(); // term
         Token op = token;
-        if(token == Token.SET)
+        if(token == Token.Set)
         {
             nextToken(); // =
             ast.Expression src = parseExpression(); // expression
-            if(token == Token.IDENTIFIER && keyword == Keyword.VIA)
+            if(token == Token.Identifier && keyword == Keyword.VIA)
             {
                 nextToken(); // IDENTIFIER (keyword 'via')
                 ast.Expression intermediary = parseTerm(); // term
@@ -949,7 +949,7 @@ class Parser
         }
         else
         {
-            if(token == Token.IDENTIFIER || token == Token.INTEGER || token == Token.HEXADECIMAL || token == Token.BINARY)
+            if(token == Token.Identifier || token == Token.Integer || token == Token.Hexadecimal || token == Token.Binary)
             {
                 reject(lead, leadText, "statement", false);
             }
@@ -973,25 +973,25 @@ class Parser
         // infix_token = ...
         switch(token)
         {
-            case Token.AT:
-            case Token.ADD:
-            case Token.SUB:
-            case Token.MUL:
-            case Token.DIV:
-            case Token.MOD:
-            case Token.ADDC:
-            case Token.SUBC:
-            case Token.SHL:
-            case Token.SHR:
-            case Token.ASHL:
-            case Token.ASHR:
-            case Token.ROL:
-            case Token.ROR:
-            case Token.ROLC:
-            case Token.RORC:
-            case Token.OR:
-            case Token.AND:
-            case Token.XOR:
+            case Token.At:
+            case Token.Add:
+            case Token.Sub:
+            case Token.Mul:
+            case Token.Div:
+            case Token.Mod:
+            case Token.AddC:
+            case Token.SubC:
+            case Token.ShiftL:
+            case Token.ShiftR:
+            case Token.ArithShiftL:
+            case Token.ArithShiftR:
+            case Token.RotateL:
+            case Token.RotateR:
+            case Token.RotateLC:
+            case Token.RotateRC:
+            case Token.Or:
+            case Token.And:
+            case Token.Xor:
                 return true;
             default:
                 return false;
@@ -1003,9 +1003,9 @@ class Parser
         // prefix_token = ...
         switch(token)
         {
-            case Token.LT:
-            case Token.GT:
-            case Token.SWAP:
+            case Token.Less:
+            case Token.Greater:
+            case Token.Swap:
                 return true;
             default:
                 return false;
@@ -1017,8 +1017,8 @@ class Parser
         // postfix_token = ...
         switch(token)
         {
-            case Token.INC:
-            case Token.DEC:
+            case Token.Inc:
+            case Token.Dec:
                 return true;
             default:
                 return false;
@@ -1124,10 +1124,10 @@ class Parser
         // assignable_term = term ('@' term)?
         compile.Location location = scanner.getLocation();
         ast.Expression expr = parseTerm();
-        if(token == Token.AT)
+        if(token == Token.At)
         {
             nextToken(); // '@'
-            return new ast.Infix(Token.AT, expr, parseTerm(), location);
+            return new ast.Infix(Token.At, expr, parseTerm(), location);
         }
         else
         {
@@ -1146,27 +1146,27 @@ class Parser
         compile.Location location = scanner.getLocation();
         switch(token)
         {
-            case Token.INTEGER:
+            case Token.Integer:
                 return parseNumber(10);
-            case Token.HEXADECIMAL:
+            case Token.Hexadecimal:
                 return parseNumber(16);
-            case Token.BINARY:
+            case Token.Binary:
                 return parseNumber(2);
-            case Token.STRING:
+            case Token.String:
                 ast.Expression expr = new ast.String(text, location);
                 nextToken(); // STRING
                 return expr;
-            case Token.LPAREN:
+            case Token.LParen:
                 nextToken(); // (
                 ast.Expression expr = parseExpression(); // expression 
-                consume(Token.RPAREN); // )
-                return new ast.Prefix(Token.LPAREN, expr, location);
-            case Token.LBRACKET:
+                consume(Token.RParen); // )
+                return new ast.Prefix(Token.LParen, expr, location);
+            case Token.LBracket:
                 nextToken(); // [
                 ast.Expression expr = parseExpression(); // expression
-                consume(Token.RBRACKET); // ]
-                return new ast.Prefix(Token.LBRACKET, expr, location);
-            case Token.IDENTIFIER:
+                consume(Token.RBracket); // ]
+                return new ast.Prefix(Token.LBracket, expr, location);
+            case Token.Identifier:
                 if(keyword == Keyword.POP)
                 {
                     nextToken(); // IDENTIFIER
@@ -1181,10 +1181,10 @@ class Parser
                 nextToken(); // IDENTIFIER
                 
                 // Check if we should match ('.' IDENTIFIER)*
-                while(token == Token.DOT)
+                while(token == Token.Dot)
                 {
                     nextToken(); // .
-                    if(token == Token.IDENTIFIER)
+                    if(token == Token.Identifier)
                     {
                         if(checkIdentifier())
                         {

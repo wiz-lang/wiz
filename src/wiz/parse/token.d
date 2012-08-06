@@ -2,61 +2,61 @@ module wiz.parse.token;
 
 enum Token
 {
-    EMPTY,
+    Empty,
     EOF,
-    INVALID_CHAR,
+    InvalidChar,
     // Identifier. Keywords are also identifiers, but have reserved meaning determined later.
-    IDENTIFIER,
+    Identifier,
     // Numeric constants.
-    INTEGER,
-    HEXADECIMAL,
-    BINARY,
+    Integer,
+    Hexadecimal,
+    Binary,
     // String literal.
-    STRING,
+    String,
     // Punctuation
-    COLON,
-    COMMA,
-    DOT,
-    LPAREN,
-    RPAREN,
-    LBRACKET,
-    RBRACKET,
-    LBRACE,
-    RBRACE,
-    SEMI,
-    EXCLAIM,
-    HASH,
+    Colon,
+    Comma,
+    Dot,
+    LParen,
+    RParen,
+    LBracket,
+    RBracket,
+    LBrace,
+    RBrace,
+    Semi,
+    Exclaim,
+    Hash,
     // Operator symbols.
-    ADD,
-    ADDC,
-    INC,
-    SUB,
-    SUBC,
-    DEC,
-    MUL,
-    DIV,
-    MOD,
-    AT,
-    SET,
-    LT,
-    GT,
-    LE,
-    GE,
-    NE,
-    EQ,
-    SWAP,
-    SHL,
-    SHR,
-    NOT,
-    AND,
-    XOR,
-    OR,
-    ASHL,
-    ASHR,
-    ROL,
-    ROR,
-    ROLC,
-    RORC,
+    Add,
+    AddC,
+    Inc,
+    Sub,
+    SubC,
+    Dec,
+    Mul,
+    Div,
+    Mod,
+    At,
+    Set,
+    Less,
+    Greater,
+    LessEqual,
+    GreaterEqual,
+    NotEqual,
+    Equal,
+    Swap,
+    ShiftL,
+    ShiftR,
+    Not,
+    And,
+    Xor,
+    Or,
+    ArithShiftL,
+    ArithShiftR,
+    RotateL,
+    RotateR,
+    RotateLC,
+    RotateRC,
 }
 
 private string[] tokenNames = [
@@ -164,40 +164,6 @@ enum Keyword
     ABORT,
 };
 
-enum Operator
-{
-    ADD,
-    ADDC,
-    INC,
-    SUB,
-    SUBC,
-    DEC,
-    MUL,
-    DIV,
-    MOD,
-    AT,
-    SET,
-    LT,
-    GT,
-    LE,
-    GE,
-    NE,
-    EQ,
-    SWAP,
-    SHL,
-    SHR,
-    NOT,
-    AND,
-    XOR,
-    OR,
-    ASHL,
-    ASHR,
-    ROL,
-    ROR,
-    ROLC,
-    RORC,
-};
-
 private Keyword[string] keywords;
 private string[Keyword] keywordNames;
 
@@ -261,7 +227,7 @@ string getSimpleTokenName(Token token)
 
 string getVerboseTokenName(Token token, string text)
 {
-    if(token == Token.STRING)
+    if(token == Token.String)
     {
         text = "\"" ~ text ~ "\"";
     }
@@ -271,22 +237,16 @@ string getVerboseTokenName(Token token, string text)
     }
     switch(token)
     {
-        case Token.IDENTIFIER:
+        case Token.Identifier:
             Keyword keyword = findKeyword(text);
-            if(keyword != Keyword.NONE)
-            {
-                return "keyword '" ~ text ~ "'";
-            }
-            else
+            if(keyword == Keyword.NONE)
             {
                 return "identifier '" ~ text ~ "'";
             }
-
-        case Token.INTEGER:
-        case Token.HEXADECIMAL:
-        case Token.BINARY:
+            return "keyword '" ~ text ~ "'";
+        case Token.Integer, Token.Hexadecimal, Token.Binary:
             return "number '" ~ text ~ "'";
-        case Token.STRING:
+        case Token.String:
             return "string " ~ text ~ "";
         default:
             return getSimpleTokenName(token);

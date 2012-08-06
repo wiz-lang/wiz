@@ -5,6 +5,8 @@ import wiz.sym.lib;
 
 class LabelDef : Definition
 {
+    uint address;
+    
     this(ast.Node decl)
     {
         super(decl);

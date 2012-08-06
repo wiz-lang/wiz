@@ -4,3 +4,4 @@ public import wiz.sym.bankdef;
 public import wiz.sym.constdef;
 public import wiz.sym.labeldef;
 public import wiz.sym.definition;
+public import wiz.sym.packagedef;

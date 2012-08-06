@@ -1,5 +1,6 @@
 module wiz.lib;
 public import ast = wiz.ast.lib;
+public import cpu = wiz.cpu.lib;
 public import sym = wiz.sym.lib;
 public import parse = wiz.parse.lib;
 public import compile = wiz.compile.lib;

@@ -24,4 +24,5 @@ public import wiz.ast.assignment;
 public import wiz.ast.comparison;
 public import wiz.ast.expression;
 public import wiz.ast.relocation;
+public import wiz.ast.builtindecl;
 public import wiz.ast.conditional;

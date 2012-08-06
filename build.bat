@@ -3,7 +3,7 @@
 :: A poor alternative to directory globbing.
 setlocal ENABLEDELAYEDEXPANSION
 set files=
-for %%j in (src\wiz src\wiz\ast src\wiz\sym src\wiz\parse src\wiz\compile) do (
+for %%j in (src\wiz src\wiz\ast src\wiz\cpu src\wiz\sym src\wiz\parse src\wiz\compile) do (
     set directory=%%j%
     for /f %%i in ('dir /b !directory!\*.d') do set "files=!files!!directory!\%%i "
 )

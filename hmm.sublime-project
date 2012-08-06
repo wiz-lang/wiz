@@ -10,7 +10,7 @@
 			"name": "wiz",
 			"selector": "source.d",
 			"working_dir": "$project_path",
-			"encoding": "cp1252"
+			"encoding": "cp850"//"cp1252"
 		}
 	],
 	"folders":

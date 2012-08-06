@@ -16,5 +16,5 @@ class Postfix : Expression
     }
 
     mixin compile.BranchAcceptor!(_operand);
-    mixin helper.Accessor!(_operand);
+    mixin helper.Accessor!(_postfixType, _operand);
 }

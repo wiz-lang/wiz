@@ -32,8 +32,8 @@ class Bank
                 {
                     error(
                         std.string.format(
-                            "%s caused '%s : %s * %d' to overflow by %s byte(s)",
-                            description, name, physical ? "rom" : "ram", capacity, position + size - capacity
+                            "%s needs %s byte(s), which exceeds the remaining space in '%s : %s * %d' by %s byte(s)",
+                            description, size, name, physical ? "rom" : "ram", capacity, position + size - capacity
                         ), location, true
                     );
                 }

@@ -19,7 +19,7 @@ include "code/boot.z80"
 include "code/joy.z80"          // Handling the joypad controls.
 include "code/utility.z80"      // Useful utility stuff, like memory transfer stuff.
 include "code/graphics.z80"     // The rendering and tilemap handling routines.
-include "code/pucrunch.z80"     // Pucrunch decompression library.
+include "code/pucrunch.z8Oka0"     // Pucrunch decompression library.
 include "code/map.z80"          // The rendering and tilemap handling routines.
 include "code/textbox.z80"      // The textbox system.
 include "code/menu.z80"         // The menu system.

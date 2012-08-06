@@ -8,28 +8,28 @@ import wiz.parse.lib;
 
 private enum State
 {
-    START,
-    STRING,
-    STRING_ESCAPE,
-    LEADING_ZERO,
-    INT_DIGITS,
-    HEX_DIGITS,
-    BIN_DIGITS,
-    IDENTIFIER,
-    SLASH,
-    SLASH_SLASH_COMMENT,
-    SLASH_STAR_COMMENT,
-    SLASH_STAR_COMMENT_STAR,
-    EXCLAIM,
-    PLUS,
-    MINUS,
-    EQUALS,
-    LT,
-    LT_LT,
-    LT_LT_LT,
-    GT,
-    GT_GT,
-    GT_GT_GT,
+    Start,
+    String,
+    StringEscape,
+    LeadingZero,
+    IntDigits,
+    HexDigits,
+    BinDigits,
+    Identifier,
+    Slash,
+    SlashSlashComment,
+    SlashStarComment,
+    SlashStarCommentStar,
+    Exclaim,
+    Plus,
+    Minus,
+    Equals,
+    Less,
+    LessLess,
+    LessLessLess,
+    Greater,
+    GreaterGreater,
+    GreaterGreaterGreater,
 }
 
 class Scanner
@@ -64,7 +64,7 @@ class Scanner
      
     private void flushText()
     {
-        state = State.START;
+        state = State.Start;
         lastText = text;
         text = "";
     }
@@ -83,57 +83,57 @@ class Scanner
                 char c = buffer[position];
                 switch(state)
                 {
-                    case State.START:
+                    case State.Start:
                         switch(c)
                         {
                             case '0':
-                                state = State.LEADING_ZERO;
+                                state = State.LeadingZero;
                                 text ~= c;
                                 break;
                             case '1': .. case '9':
-                                state = State.INT_DIGITS;
+                                state = State.IntDigits;
                                 text ~= c;
                                 break;
                             case '_':
                             case 'a': .. case 'z':
                             case 'A': .. case 'Z':
-                                state = State.IDENTIFIER;
+                                state = State.Identifier;
                                 text ~= c;
                                 break;
                             case '\'', '\"':
                                 terminator = c;
-                                state = State.STRING;
+                                state = State.String;
                                 break;
                             case ' ', '\t', '\r', '\n': break;
-                            case ':': position++; return Token.COLON;
-                            case ',': position++; return Token.COMMA;
-                            case '.': position++; return Token.DOT;
-                            case '(': position++; return Token.LPAREN;
-                            case ')': position++; return Token.RPAREN;
-                            case '[': position++; return Token.LBRACKET;
-                            case ']': position++; return Token.RBRACKET;
-                            case '{': position++; return Token.LBRACE;
-                            case '}': position++; return Token.RBRACE;
-                            case ';': position++; return Token.SEMI;
-                            case '#': position++; return Token.HASH;
-                            case '|': position++; return Token.OR;
-                            case '*': position++; return Token.MUL;
-                            case '%': position++; return Token.MOD;
-                            case '@': position++; return Token.AT;
-                            case '~': position++; return Token.NOT;
-                            case '&': position++; return Token.AND;
-                            case '^': position++; return Token.XOR;
-                            case '!': state = State.EXCLAIM; break;
-                            case '+': state = State.PLUS; break;
-                            case '-': state = State.MINUS; break;
-                            case '/': state = State.SLASH; break;
-                            case '=': state = State.EQUALS; break;
-                            case '<': state = State.LT; break;
-                            case '>': state = State.GT; break;
+                            case ':': position++; return Token.Colon;
+                            case ',': position++; return Token.Comma;
+                            case '.': position++; return Token.Dot;
+                            case '(': position++; return Token.LParen;
+                            case ')': position++; return Token.RParen;
+                            case '[': position++; return Token.LBracket;
+                            case ']': position++; return Token.RBracket;
+                            case '{': position++; return Token.LBrace;
+                            case '}': position++; return Token.RBrace;
+                            case ';': position++; return Token.Semi;
+                            case '#': position++; return Token.Hash;
+                            case '|': position++; return Token.Or;
+                            case '*': position++; return Token.Mul;
+                            case '%': position++; return Token.Mod;
+                            case '@': position++; return Token.At;
+                            case '~': position++; return Token.Not;
+                            case '&': position++; return Token.And;
+                            case '^': position++; return Token.Xor;
+                            case '!': state = State.Exclaim; break;
+                            case '+': state = State.Plus; break;
+                            case '-': state = State.Minus; break;
+                            case '/': state = State.Slash; break;
+                            case '=': state = State.Equals; break;
+                            case '<': state = State.Less; break;
+                            case '>': state = State.Greater; break;
                             default: error(std.string.format("unrecognized character %s found.", c));
                         }
                         break;
-                    case State.IDENTIFIER:
+                    case State.Identifier:
                         switch(c)
                         {
                             case '0': .. case '9':
@@ -144,28 +144,28 @@ class Scanner
                                 break;
                             default:
                                 flushText();
-                                return Token.IDENTIFIER;
+                                return Token.Identifier;
                         }
                         break;
-                    case State.STRING:
+                    case State.String:
                         if(c == terminator)
                         {
                             position++;
                             flushText();
-                            return Token.STRING;
+                            return Token.String;
                         }
                         else switch(c)
                         {
                             case '\\':
-                                state = State.STRING_ESCAPE;
+                                state = State.StringEscape;
                                 break;
                             default:
                                 text ~= c;
                                 break;
                         }
                         break;
-                    case State.STRING_ESCAPE:
-                        state = State.STRING;
+                    case State.StringEscape:
+                        state = State.String;
                         switch(c)
                         {
                             case '\"', '\'', '\\':
@@ -183,21 +183,21 @@ class Scanner
                                 break;
                         }
                         break;
-                    case State.LEADING_ZERO:
+                    case State.LeadingZero:
                         switch(c)
                         {
                             case '0': .. case '9':
-                                state = State.INT_DIGITS;
+                                state = State.IntDigits;
                                 text ~= c;
                                 break;
-                            case 'x': state = State.HEX_DIGITS; text ~= c; break;
-                            case 'b': state = State.BIN_DIGITS; text ~= c; break;
+                            case 'x': state = State.HexDigits; text ~= c; break;
+                            case 'b': state = State.BinDigits; text ~= c; break;
                             default:
                                 flushText();
-                                return Token.INTEGER;
+                                return Token.Integer;
                         }                            
                         break;
-                    case State.INT_DIGITS:
+                    case State.IntDigits:
                         switch(c)
                         {
                             case '0': .. case '9':
@@ -205,10 +205,10 @@ class Scanner
                                 break;
                             default:
                                 flushText();
-                                return Token.INTEGER;
+                                return Token.Integer;
                         }
                         break;
-                    case State.HEX_DIGITS:
+                    case State.HexDigits:
                         switch(c)
                         {
                             case '0': .. case '9':
@@ -218,10 +218,10 @@ class Scanner
                                 break;
                             default:
                                 flushText();
-                                return Token.HEXADECIMAL;
+                                return Token.Hexadecimal;
                         }
                         break;
-                    case State.BIN_DIGITS:
+                    case State.BinDigits:
                         switch(c)
                         {
                             case '0': .. case '1':
@@ -229,124 +229,124 @@ class Scanner
                                 break;
                             default:
                                 flushText();
-                                return Token.BINARY;
+                                return Token.Binary;
                         }
                         break;
-                    case State.EXCLAIM:
-                        state = State.START;
+                    case State.Exclaim:
+                        state = State.Start;
                         switch(c)
                         {
-                            case '=': position++; return Token.NE;
-                            default: return Token.EXCLAIM;
+                            case '=': position++; return Token.NotEqual;
+                            default: return Token.Exclaim;
                         }
                         break;
-                    case State.PLUS:
-                        state = State.START;
+                    case State.Plus:
+                        state = State.Start;
                         switch(c)
                         {
-                            case '#': position++; return Token.ADDC;
-                            case '+': position++; return Token.INC;
-                            default: return Token.ADD;
+                            case '#': position++; return Token.AddC;
+                            case '+': position++; return Token.Inc;
+                            default: return Token.Add;
                         }
                         break;
-                    case State.MINUS:
-                        state = State.START;
+                    case State.Minus:
+                        state = State.Start;
                         switch(c)
                         {
-                            case '#': position++; return Token.SUBC;
-                            case '-': position++; return Token.DEC;
-                            default: return Token.SUB;
+                            case '#': position++; return Token.SubC;
+                            case '-': position++; return Token.Dec;
+                            default: return Token.Sub;
                         }
                         break;
-                    case State.SLASH:
-                        state = State.START;
+                    case State.Slash:
+                        state = State.Start;
                         switch(c)
                         {
                             case '/':
-                                state = State.SLASH_SLASH_COMMENT;
+                                state = State.SlashSlashComment;
                                 break;
                             case '*':
-                                state = State.SLASH_STAR_COMMENT;
+                                state = State.SlashStarComment;
                                 commentLine = location.line;
                                 break;
                             default:
-                                return Token.DIV;
+                                return Token.Div;
                         }
                         break;
-                    case State.SLASH_SLASH_COMMENT: break;
-                    case State.SLASH_STAR_COMMENT:
+                    case State.SlashSlashComment: break;
+                    case State.SlashStarComment:
                         switch(c)
                         {
-                            case '*': state = State.SLASH_STAR_COMMENT_STAR;
+                            case '*': state = State.SlashStarCommentStar;
                             default: break;
                         }
                         break;
-                    case State.SLASH_STAR_COMMENT_STAR:
+                    case State.SlashStarCommentStar:
                         switch(c)
                         {
-                            case '/': state = State.START; break;
-                            default: state = State.SLASH_STAR_COMMENT; break;
+                            case '/': state = State.Start; break;
+                            default: state = State.SlashStarComment; break;
                         }
                         break;
-                    case State.EQUALS:
-                        state = State.START;
+                    case State.Equals:
+                        state = State.Start;
                         switch(c)
                         {
-                            case '=': position++; return Token.EQ;
-                            default: return Token.SET;
+                            case '=': position++; return Token.Equal;
+                            default: return Token.Set;
                         }
                         break;
-                    case State.LT:
-                        state = State.START;
+                    case State.Less:
+                        state = State.Start;
                         switch(c)
                         {
-                            case '<': state = State.LT_LT; break;
-                            case '>': position++; return Token.SWAP;
-                            case '=': position++; return Token.LE;
-                            default: return Token.LT;
+                            case '<': state = State.LessLess; break;
+                            case '>': position++; return Token.Swap;
+                            case '=': position++; return Token.LessEqual;
+                            default: return Token.Less;
                         }
                         break;
-                    case State.LT_LT:
-                        state = State.START;
+                    case State.LessLess:
+                        state = State.Start;
                         switch(c)
                         {
-                            case '<': state = State.LT_LT_LT; break;
-                            case '-': position++; return Token.ASHL;
-                            default: return Token.SHL;
+                            case '<': state = State.LessLessLess; break;
+                            case '-': position++; return Token.ArithShiftL;
+                            default: return Token.ShiftL;
                         }
                         break;
-                    case State.LT_LT_LT:
-                        state = State.START;
+                    case State.LessLessLess:
+                        state = State.Start;
                         switch(c)
                         {
-                            case '#': position++; return Token.ROLC;
-                            default: return Token.ROL;
+                            case '#': position++; return Token.RotateLC;
+                            default: return Token.RotateL;
                         }
                         break;
-                    case State.GT:
-                        state = State.START;
+                    case State.Greater:
+                        state = State.Start;
                         switch(c)
                         {
-                            case '>': state = State.GT_GT; break;
-                            case '=': position++; return Token.GE;
-                            default: return Token.GT;
+                            case '>': state = State.GreaterGreater; break;
+                            case '=': position++; return Token.GreaterEqual;
+                            default: return Token.Greater;
                         }
                         break;
-                    case State.GT_GT:
-                        state = State.START;
+                    case State.GreaterGreater:
+                        state = State.Start;
                         switch(c)
                         {
-                            case '>': state = State.GT_GT_GT; break;
-                            case '-': position++; return Token.ASHR;
-                            default: return Token.SHR;
+                            case '>': state = State.GreaterGreaterGreater; break;
+                            case '-': position++; return Token.ArithShiftR;
+                            default: return Token.ShiftR;
                         }
                         break;
-                    case State.GT_GT_GT:
-                        state = State.START;
+                    case State.GreaterGreaterGreater:
+                        state = State.Start;
                         switch(c)
                         {
-                            case '#': position++; return Token.RORC;
-                            default: return Token.ROR;
+                            case '#': position++; return Token.RotateRC;
+                            default: return Token.RotateR;
                         }
                         break;
                     default:
@@ -361,15 +361,15 @@ class Scanner
                 // Special handling in states for end-of-line.
                 switch(state)
                 {
-                    case State.SLASH_SLASH_COMMENT:
-                        state = State.START;
+                    case State.SlashSlashComment:
+                        state = State.Start;
                         break;
-                    case State.STRING:
-                        state = State.START;
+                    case State.String:
+                        state = State.Start;
                         error(std.string.format("expected closing quote %s, but got end-of-line", terminator));
                         break;
-                    case State.STRING_ESCAPE:
-                        state = State.START;
+                    case State.StringEscape:
+                        state = State.Start;
                         error("expected string escape sequence, but got end-of-line");
                         break;
                     default:
@@ -383,28 +383,28 @@ class Scanner
                 // End-of-file.
                 switch(state)
                 {
-                    case State.IDENTIFIER:
+                    case State.Identifier:
                         flushText();
-                        return Token.IDENTIFIER;
-                    case State.LEADING_ZERO:
-                    case State.INT_DIGITS:
+                        return Token.Identifier;
+                    case State.LeadingZero:
+                    case State.IntDigits:
                         flushText();
-                        return Token.INTEGER;
-                    case State.HEX_DIGITS:
+                        return Token.Integer;
+                    case State.HexDigits:
                         flushText();
-                        return Token.HEXADECIMAL;
-                    case State.BIN_DIGITS:
+                        return Token.Hexadecimal;
+                    case State.BinDigits:
                         flushText();
-                        return Token.BINARY;
-                    case State.STRING:
-                        state = State.START;
+                        return Token.Binary;
+                    case State.String:
+                        state = State.Start;
                         error(std.string.format("expected closing quote %s, but got end-of-file", terminator));
                         break;
-                    case State.STRING_ESCAPE:
-                        state = State.START;
+                    case State.StringEscape:
+                        state = State.Start;
                         error("expected string escape sequence, but got end-of-file");
                         break;
-                    case State.SLASH_STAR_COMMENT:
+                    case State.SlashStarComment:
                         error(std.string.format("expected */ to close /* comment starting on line %d, but got end-of-file", commentLine));
                         break;
                     default:

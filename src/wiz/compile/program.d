@@ -11,29 +11,30 @@ class Program
     private Bank[] banks;
     private Environment[ast.Node] nodeEnvironments;
     private Environment[] environmentStack;
+
+    cpu.Platform platform;
         
-    this()
+    this(cpu.Platform platform)
     {
-        bank = null;
+        this.platform = platform;
+        this.bank = null;
         _environment = new Environment();
 
-        /*
-        Location location = Location("<builtin>");
-        b.put(new RegisterDefinition("a", RegisterType.A, location));
-        b.put(new RegisterDefinition("x", RegisterType.X, location));
-        b.put(new RegisterDefinition("y", RegisterType.Y, location));
-        b.put(new RegisterDefinition("s", RegisterType.S, location));
-        b.put(new RegisterDefinition("p", RegisterType.P, location));
+        auto builtins = platform.builtins();
+        auto env = _environment;
+        auto pkg = new sym.PackageDef(new ast.BuiltinDecl(), new Environment(env));
+        
+        foreach(name, builtin; builtins)
+        {
+            env.put(name, builtin);
+        }
+        env.put("builtin", pkg);
 
-        PackageDefinition pkg = new PackageDefinition("builtin", new Environment(b), location);
-        b.put(pkg);
-
-        auto env = pkg.getTable();
-        env.put(new RegisterDefinition("a", RegisterType.A, location));
-        env.put(new RegisterDefinition("x", RegisterType.X, location));
-        env.put(new RegisterDefinition("y", RegisterType.Y, location));
-        env.put(new RegisterDefinition("s", RegisterType.S, location));
-        env.put(new RegisterDefinition("p", RegisterType.P, location));*/
+        env = pkg.environment;
+        foreach(name, builtin; builtins)
+        {
+            env.put(name, builtin);
+        }
     }
 
     mixin helper.Accessor!(_environment);
