@@ -494,4 +494,104 @@ class GameboyPlatform : Platform
     {
         return [];
     }
+
+    ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
+    {
+        auto left = buildArgument(program, stmt.left);
+        auto right = stmt.right ? buildArgument(program, stmt.right) : null;
+        switch(left.type)
+        {
+            case ArgumentType.A:
+                if(right is null)
+                {
+                    // 'or a'
+                    return [0xB7];
+                }
+                else
+                {
+                    // 'cp a, expr'
+                    switch(right.type)
+                    {
+                        case ArgumentType.Immediate:
+                            uint value;
+                            if(!compile.foldConstExpr(program, right.immediate, value))
+                            {
+                                // For now, sub a placeholder expression.
+                                // At a later pass, we will ensure that the address is resolvable.
+                                value = 0xFACE;
+                            }
+                            return [0xFE, value & 0xFF];
+                        case ArgumentType.B: return [0xB8];
+                        case ArgumentType.C: return [0xB9];
+                        case ArgumentType.D: return [0xBA];
+                        case ArgumentType.E: return [0xBB];
+                        case ArgumentType.H: return [0xBC];
+                        case ArgumentType.L: return [0xBD];
+                        case ArgumentType.Indirection:
+                            if(left.base.base.type == ArgumentType.HL)
+                            {
+                                return [0xBE];
+                            }
+                            else
+                            {
+                                error("indirected operand on left-hand side of '@' is not supported (only 'hl' is valid)", stmt.right.location);
+                                return [];
+                            }
+                        case ArgumentType.A: return [0xBF];
+                        default:
+                            error("unsupported operand in 'to' clause of 'compare a to ...'", stmt.right.location);
+                            return [];
+                    }
+                }
+            case ArgumentType.BitIndex:
+                if(right is null)
+                {
+                    uint index;
+                    if(!compile.foldConstExpr(program, left.immediate, index))
+                    {
+                        return [];
+                    }
+                    else
+                    {
+                        if(index > 7)
+                        {
+                            error("right-hand side of '@' must be in the range 0..7.", left.immediate.location);
+                        }
+                        ubyte r;
+                        switch(left.base.type)
+                        {
+                            case ArgumentType.B: r = 0x0; break;
+                            case ArgumentType.C: r = 0x1; break;
+                            case ArgumentType.D: r = 0x2; break;
+                            case ArgumentType.E: r = 0x3; break;
+                            case ArgumentType.H: r = 0x4; break;
+                            case ArgumentType.L: r = 0x5; break;
+                            case ArgumentType.Indirection:
+                                if(left.base.base.type == ArgumentType.HL)
+                                {
+                                    r = 0x6;
+                                }
+                                else
+                                {
+                                    error("indirected operand on left-hand side of '@' is not supported (only 'hl' is valid)", stmt.right.location);
+                                    return [];
+                                }
+                                break;
+                            case ArgumentType.A: r = 0x7; break;
+                            default:
+                                return [];
+                        }
+                        // 'bit r, i'
+                        return [0xCB, (0x40 + (0x08 * index) + r) & 0xFF];
+                    }
+                }
+                else
+                {
+                    error("'to' clause is unsupported for 'compare ... @ ...'", stmt.right.location);
+                    return [];
+                }
+            default:
+                return [];
+        }
+    }
 }

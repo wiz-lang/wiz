@@ -330,6 +330,14 @@ auto createAssignmentHandler(Program program)
     };
 }
 
+auto createComparisonHandler(Program program)
+{
+    return(ast.Comparison stmt)
+    {
+        auto code = program.platform.generateComparison(program, stmt);
+    };
+}
+
 void aggregate(Program program, ast.Node root)
 {
     root.traverse(
@@ -411,6 +419,7 @@ void aggregate(Program program, ast.Node root)
         createCommandHandler(program),
         createJumpHandler(program),
         createAssignmentHandler(program),
+        createComparisonHandler(program),
 
         (ast.LabelDecl decl)
         {
