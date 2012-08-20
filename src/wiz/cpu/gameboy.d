@@ -576,7 +576,17 @@ class GameboyPlatform : Platform
     ubyte[] generateCalculation(compile.Program program, ast.Assignment stmt, Argument dest, ast.Expression src)
     {
         ubyte[] code = generateLoad(program, stmt, dest, src);
-        // TODO
+        // TODO: This code will be gigantic.
+        // a:
+        //      + (add), - (sub), +# (adc), -# (sbc),
+        //      & (and), | (or), ^ (xor),
+        //      <<< (sla), <<- (sla), >>> (srl) >>- (sra)
+        //      <<< (rla), <<<# (rlca), >>> (rra), >>># (rrca).
+        // r / [hl]:
+        //      <<< (sla), <<- (sla), >>> (srl) >>- (sra)
+        //      <<< (rl), <<<# (rlc), >>> (rr), >>># (rrc).
+        // carry:
+        //      ^ (ccf)
         return code;
     }
 
@@ -705,6 +715,9 @@ class GameboyPlatform : Platform
                 error("assignment '=' to 'zero' flag is not invalid.", stmt.location);
                 return [];
             case ArgumentType.Carry:
+                // 'carry = 1' -> 'scf'
+                // 'carry = carry ^ 1' -> 'ccf'
+                // 'carry = 0' -> 'scf; ccf'
                 error("assignment '=' to 'carry' flag is not invalid.", stmt.location);
                 return [];
             case ArgumentType.None:
