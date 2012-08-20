@@ -350,7 +350,9 @@ class GameboyPlatform : Platform
                             error("'goto hl' does not support 'when' clause", stmt.condition.location);
                             return [];
                         }
-                    default: return [];
+                    default:
+                        error("unsupported argument to 'goto'", stmt.condition.location);
+                        return [];
                 }
             case parse.Keyword.Call:
                 auto argument = buildArgument(program, stmt.destination);
@@ -422,7 +424,9 @@ class GameboyPlatform : Platform
                                 return [];
                             }
                         }
-                    default: return [];
+                    default:
+                        error("unsupported argument to 'call'", stmt.condition.location);
+                        return [];
                 }
             case parse.Keyword.Return:
                 if(stmt.condition is null)
