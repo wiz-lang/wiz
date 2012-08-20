@@ -295,7 +295,6 @@ class GameboyPlatform : Platform
                             auto cond = stmt.condition;
                             if(cond.attr is null)
                             {
-                                ubyte opcode;
                                 final switch(cond.branch)
                                 {
                                     case parse.Branch.Equal:
@@ -371,7 +370,6 @@ class GameboyPlatform : Platform
                             auto cond = stmt.condition;
                             if(cond.attr is null)
                             {
-                                ubyte opcode;
                                 final switch(cond.branch)
                                 {
                                     case parse.Branch.Equal:
