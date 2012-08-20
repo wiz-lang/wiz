@@ -114,7 +114,8 @@ private
             }
             error(
                 "operator " ~ parse.getPostfixName(postfix.type)
-                ~ " on indirected operand is not supported (only 'hl' is valid)",
+                ~ " on indirected operand is not supported (only '[hl"
+                ~ parse.getPostfixName(postfix.type) ~ "]' is valid)",
                 postfix.location
             );
             return null;
@@ -490,6 +491,71 @@ class GameboyPlatform : Platform
 
     ubyte[] generateAssignment(compile.Program program, ast.Assignment stmt)
     {
+        if(stmt.dest && stmt.src is null)
+        {
+            auto dest = buildArgument(program, stmt.dest);
+            final switch(stmt.postfix)
+            {
+                case parse.Postfix.Inc:
+                    // 'inc dest'
+                    switch(dest.type)
+                    {
+                        case ArgumentType.B: return [0x04];
+                        case ArgumentType.C: return [0x0C];
+                        case ArgumentType.D: return [0x14];
+                        case ArgumentType.E: return [0x1C];
+                        case ArgumentType.H: return [0x24];
+                        case ArgumentType.L: return [0x2C];
+                        case ArgumentType.Indirection:
+                            if(dest.base.base.type == ArgumentType.HL)
+                            {
+                                return [0x34];
+                            }
+                            else
+                            {
+                                error("'++' on indirected operand is not supported (only '[hl]++' is valid)", stmt.dest.location);
+                                return [];
+                            }
+                        case ArgumentType.A: return [0x3C];
+                        case ArgumentType.BC: return [0x03];
+                        case ArgumentType.DE: return [0x13];
+                        case ArgumentType.HL: return [0x23];
+                        case ArgumentType.SP: return [0x33];
+                        default:
+                            error("unsupported operand of '++'", stmt.dest.location);
+                            return [];
+                    }
+                case parse.Postfix.Dec:
+                    // 'dec dest'
+                    switch(dest.type)
+                    {
+                        case ArgumentType.B: return [0x05];
+                        case ArgumentType.C: return [0x0D];
+                        case ArgumentType.D: return [0x15];
+                        case ArgumentType.E: return [0x1D];
+                        case ArgumentType.H: return [0x25];
+                        case ArgumentType.L: return [0x2D];
+                        case ArgumentType.Indirection:
+                            if(dest.base.base.type == ArgumentType.HL)
+                            {
+                                return [0x35];
+                            }
+                            else
+                            {
+                                error("'--' on indirected operand is not supported (only '[hl]--' is valid)", stmt.dest.location);
+                                return [];
+                            }
+                        case ArgumentType.A: return [0x3D];
+                        case ArgumentType.BC: return [0x0B];
+                        case ArgumentType.DE: return [0x1B];
+                        case ArgumentType.HL: return [0x2B];
+                        case ArgumentType.SP: return [0x3B];
+                        default:
+                            error("unsupported operand of '--'", stmt.dest.location);
+                            return [];
+                    }
+            }
+        }
         return [];
     }
 
@@ -532,7 +598,7 @@ class GameboyPlatform : Platform
                             }
                             else
                             {
-                                error("indirected operand on left-hand side of '@' is not supported (only 'hl' is valid)", stmt.right.location);
+                                error("indirected operand in 'to' is not supported (only 'compare a to [hl]' is valid)", stmt.right.location);
                                 return [];
                             }
                         case ArgumentType.A: return [0xBF];
@@ -571,7 +637,7 @@ class GameboyPlatform : Platform
                                 }
                                 else
                                 {
-                                    error("indirected operand on left-hand side of '@' is not supported (only 'hl' is valid)", stmt.right.location);
+                                    error("indirected operand on left-hand side of '@' is not supported (only '[hl] @ ...' is valid)", stmt.right.location);
                                     return [];
                                 }
                                 break;

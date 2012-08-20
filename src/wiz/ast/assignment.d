@@ -6,7 +6,7 @@ import wiz.ast.lib;
 class Assignment : Statement
 {
     private Expression _dest, _intermediary, _src;
-    private parse.Token _postfix;
+    private parse.Postfix _postfix;
 
     this(Expression dest, Expression src, compile.Location location)
     {
@@ -23,7 +23,7 @@ class Assignment : Statement
         _src = src;
     }
 
-    this(Expression dest, parse.Token postfix, compile.Location location)
+    this(Expression dest, parse.Postfix postfix, compile.Location location)
     {
         super(location);
         _dest = dest;

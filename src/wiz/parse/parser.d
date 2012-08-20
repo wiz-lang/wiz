@@ -926,7 +926,7 @@ class Parser
         else if(isPostfixToken())
         {
             nextToken(); // postfix_token
-            return new ast.Assignment(dest, op, location);
+            return new ast.Assignment(dest, cast(Postfix) op, location);
         }
         else
         {
