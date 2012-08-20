@@ -116,7 +116,7 @@ class Parser
     auto parseProgram()
     {
         // program = (include | statement)* EOF
-        compile.Location location = scanner.getLocation();
+        auto location = scanner.getLocation();
         ast.Statement[] statements;
         while(true)
         {
@@ -131,7 +131,7 @@ class Parser
                     // Remove include guard.
                     included.remove(scanner.getLocation().file);
                     // Pop previous scanner off stack.
-                    Scanner old = scanner;
+                    auto old = scanner;
                     scanner = std.array.back(includes);
                     std.array.popBack(includes);
                     // Ready a new token for the scanner.
@@ -147,7 +147,7 @@ class Parser
                 parseInclude();
             }
             
-            ast.Statement statement = parseStatement();
+            auto statement = parseStatement();
             if(statement !is null)
             {
                 statements ~= statement;
@@ -176,7 +176,7 @@ class Parser
                 reject("'end'");
             }
             
-            ast.Statement statement = parseStatement();
+            auto statement = parseStatement();
             if(statement !is null)
             {
                 statements ~= statement;
@@ -194,7 +194,7 @@ class Parser
             {
                 reject("'end'");
             }
-            if(keyword == Keyword.End || keyword == Keyword.Else|| keyword == Keyword.ElseIf)
+            if(keyword == Keyword.End || keyword == Keyword.Else || keyword == Keyword.ElseIf)
             {
                 return statements;
             }
@@ -202,7 +202,7 @@ class Parser
             {
                 reject("'end'");
             }
-            ast.Statement statement = parseStatement();
+            auto statement = parseStatement();
             if(statement !is null)
             {
                 statements ~= statement;
