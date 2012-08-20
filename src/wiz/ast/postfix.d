@@ -5,16 +5,16 @@ import wiz.ast.lib;
 
 class Postfix : Expression
 {
-    private parse.Token _postfixType;
+    private parse.Token _type;
     private Expression _operand;
 
-    this(parse.Token postfixType, Expression operand, compile.Location location)
+    this(parse.Token type, Expression operand, compile.Location location)
     {
         super(location);
-        _postfixType = postfixType;
+        _type = type;
         _operand = operand;
     }
 
     mixin compile.BranchAcceptor!(_operand);
-    mixin helper.Accessor!(_postfixType, _operand);
+    mixin helper.Accessor!(_type, _operand);
 }

@@ -5,16 +5,16 @@ import wiz.ast.lib;
 
 class Prefix : Expression
 {
-    private parse.Token _prefixType;
+    private parse.Token _type;
     private Expression _operand;
 
-    this(parse.Token prefixType, Expression operand, compile.Location location)
+    this(parse.Token type, Expression operand, compile.Location location)
     {
         super(location);
-        _prefixType = prefixType;
+        _type = type;
         _operand = operand;
     }
 
     mixin compile.BranchAcceptor!(_operand);
-    mixin helper.Accessor!(_prefixType, _operand);
+    mixin helper.Accessor!(_type, _operand);
 }

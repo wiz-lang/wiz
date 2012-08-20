@@ -34,15 +34,23 @@ class Jump : Statement
 class JumpCondition : Node
 {
     private bool _negated;
-    private string _flag;
+    private Attribute _attr;
+    private parse.Token _operator;
 
-    this(bool negated, string flag, compile.Location location)
+    this(bool negated, Attribute attr, compile.Location location)
     {
         super(location);
         _negated = negated;
-        _flag = flag;
+        _attr = attr;
     }
 
-    mixin compile.LeafAcceptor;
-    mixin helper.Accessor!(_negated, _flag);
+    this(bool negated, parse.Token operator, compile.Location location)
+    {
+        super(location);
+        _negated = negated;
+        _operator = operator;
+    }
+
+    mixin compile.BranchAcceptor!(_attr);
+    mixin helper.Accessor!(_negated, _attr, _operator);
 }

@@ -29,7 +29,7 @@ sym.Definition resolveAttribute(Program program, ast.Attribute attribute)
             sym.PackageDef pkg = cast(sym.PackageDef) prev;
             if(pkg is null)
             {
-                string fullyQualifiedName = std.string.join(attribute.pieces, ".");
+                string fullyQualifiedName = attribute.fullName();
                 string previousName = std.string.join(partialQualifiers[0 .. partialQualifiers.length - 1], ".");
                 error("attempt to get symbol '" ~ fullyQualifiedName ~ "', but '" ~ previousName ~ "' is not a package", attribute.location);
             }
@@ -73,7 +73,7 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
             }
             uint a = values[e.left];
             uint b = values[e.right];
-            switch(e.infixType)
+            switch(e.type)
             {
                 case parse.Token.Add: 
                     if(a + ast.Expression.Max < b)
@@ -152,7 +152,7 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
                     values[e] = a & (1 << b);
                     break;
                 default:
-                    error("infix operator " ~ parse.getSimpleTokenName(e.infixType) ~ " cannot be used in constant expression", e.location);
+                    error("infix operator " ~ parse.getSimpleTokenName(e.type) ~ " cannot be used in constant expression", e.location);
             }
         },
 
@@ -163,7 +163,7 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
                 return;
             }
             uint r = values[e.operand];
-            switch(e.prefixType)
+            switch(e.type)
             {
                 case parse.Token.Less:
                     values[e] = r & 0xFF;
@@ -175,7 +175,7 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
                     values[e] = ((r & 0x0F0F) << 4) | ((r & 0xF0F0) >> 4);
                     break;
                 default:
-                    error("prefix operator " ~ parse.getSimpleTokenName(e.prefixType) ~ " cannot be used in constant expression", e.location);
+                    error("prefix operator " ~ parse.getSimpleTokenName(e.type) ~ " cannot be used in constant expression", e.location);
             }
         },
 
@@ -187,7 +187,7 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
             }
             else
             {
-                error("postfix operator " ~ parse.getSimpleTokenName(e.postfixType) ~ " cannot be used in constant expression", e.location);
+                error("postfix operator " ~ parse.getSimpleTokenName(e.type) ~ " cannot be used in constant expression", e.location);
             }
         },
 
@@ -225,14 +225,14 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
 
 bool foldStorage(Program program, ast.Storage s, ref uint result)
 {
-    if(foldConstExpr(program, s.arraySize, result))
+    if(foldConstExpr(program, s.size, result))
     {
-        switch(s.storageType)
+        switch(s.type)
         {
             case parse.Keyword.BYTE: break;
             case parse.Keyword.WORD: result *= 2; break;
             default:
-                error("Unsupported storage type " ~ parse.getKeywordName(s.storageType), s.location);
+                error("Unsupported storage type " ~ parse.getKeywordName(s.type), s.location);
         }
         return true;
     }
@@ -368,7 +368,7 @@ void aggregate(Program program, ast.Node root)
                 foreach(i, name; decl.names)
                 {
                     auto def = program.environment.get!(sym.BankDef)(name);
-                    def.bank = new Bank(name, decl.bankType == "rom", size);
+                    def.bank = new Bank(name, decl.type == "rom", size);
                     program.addBank(def.bank);
                 }
             }

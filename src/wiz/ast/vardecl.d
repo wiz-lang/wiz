@@ -17,21 +17,4 @@ class VarDecl : Statement
 
     mixin compile.BranchAcceptor!(_storage);
     mixin helper.Accessor!(_names, _storage);
-
-    /*void aggregate()
-    {
-        enum DESCRIPTION = "variable declaration";
-        foreach(name; names)
-        {
-            uint size;
-            if(storage.checkSize("array width", size))
-            {
-                compile.Bank bank = compile.program.checkActiveBank(DESCRIPTION, location);
-                _address = bank.checkAddress(DESCRIPTION, location);
-                bank.reserveVirtual(DESCRIPTION, size, location);
-
-                compile.environment.put(name, this);
-            }
-        }
-    }*/
 }

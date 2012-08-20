@@ -747,37 +747,24 @@ class Parser
             context = "'not'";
         }
         
-        string flag = null;
         switch(token)
         {
             case Token.Identifier:
-                checkIdentifier();
-                flag = text;
-                nextToken(); // condition
-                break;
+                auto attr = parseAttribute();
+                return new ast.JumpCondition(negated, attr, scanner.getLocation());
             case Token.NotEqual:
-                negated = !negated;
-                flag = "zero";
-                nextToken(); // !=
-                break;
             case Token.Equal:
-                flag = "zero";
-                nextToken(); // ==
-                break;
             case Token.Less:
-                negated = !negated;
-                flag = "carry";
-                nextToken(); // <
-                break;
+            case Token.Greater:
+            case Token.LessEqual:
             case Token.GreaterEqual:
-                flag = "carry";
-                nextToken(); // >=
-                break;
+                Token operator = token;
+                nextToken(); // operator token
+                return new ast.JumpCondition(negated, operator, scanner.getLocation());
             default:
-                reject("flag name after " ~ context);
+                reject("condition after " ~ context);
                 return null;
         }        
-        return new ast.JumpCondition(negated, flag, scanner.getLocation());
     }
     
     ast.Conditional parseConditional()
@@ -1006,6 +993,7 @@ class Parser
             case Token.Less:
             case Token.Greater:
             case Token.Swap:
+            case Token.Sub:
                 return true;
             default:
                 return false;
@@ -1082,43 +1070,6 @@ class Parser
         }
     }
 
-    ast.Expression parseNumber(uint radix)
-    {
-        // number = INTEGER | HEXADECIMAL | BINARY
-        compile.Location location = scanner.getLocation();
-        Token numberToken = token;
-        string numberText = text;
-        nextToken(); // number
-
-        uint value;
-        try
-        {
-            string t = numberText;
-            // prefix?
-            if(radix != 10)
-            {
-                t = t[2..t.length];
-                // A prefix with no number following isn't valid.
-                if(t.length == 0)
-                {
-                    error(getVerboseTokenName(numberToken, numberText) ~ " is not a valid integer literal", location);
-                    return null;
-                }
-            }
-            value = std.conv.to!uint(t, radix);
-        }
-        catch(std.conv.ConvOverflowException e)
-        {
-            value = 0x10000;
-        }
-        if(value > 0xFFFF)
-        {
-            error(getVerboseTokenName(numberToken, numberText) ~ " is outside of permitted range 0..65535.", location);
-            return null;
-        }
-        return new ast.Number(numberToken, value, location);
-    }
-
     ast.Expression parseAssignableTerm()
     {
         // assignable_term = term ('@' term)?
@@ -1164,6 +1115,13 @@ class Parser
             case Token.LBracket:
                 nextToken(); // [
                 ast.Expression expr = parseExpression(); // expression
+                
+                if(token == Token.Colon)
+                {
+                    nextToken(); // :
+                    ast.Expression index = parseExpression(); // expression
+                    expr = new ast.Infix(Token.Colon, expr, index, location);
+                }
                 consume(Token.RBracket); // ]
                 return new ast.Prefix(Token.LBracket, expr, location);
             case Token.Identifier:
@@ -1172,37 +1130,79 @@ class Parser
                     nextToken(); // IDENTIFIER
                     return new ast.Pop(location);
                 }
+                return parseAttribute();
+            default:
+                reject("expression");
+                return null;
+        }
+    }
 
-                string[] pieces;
+    ast.Number parseNumber(uint radix)
+    {
+        // number = INTEGER | HEXADECIMAL | BINARY
+        compile.Location location = scanner.getLocation();
+        Token numberToken = token;
+        string numberText = text;
+        nextToken(); // number
+
+        uint value;
+        try
+        {
+            string t = numberText;
+            // prefix?
+            if(radix != 10)
+            {
+                t = t[2..t.length];
+                // A prefix with no number following isn't valid.
+                if(t.length == 0)
+                {
+                    error(getVerboseTokenName(numberToken, numberText) ~ " is not a valid integer literal", location);
+                    return null;
+                }
+            }
+            value = std.conv.to!uint(t, radix);
+        }
+        catch(std.conv.ConvOverflowException e)
+        {
+            value = 0x10000;
+        }
+        if(value > 0xFFFF)
+        {
+            error(getVerboseTokenName(numberToken, numberText) ~ " is outside of permitted range 0..65535.", location);
+            return null;
+        }
+        return new ast.Number(numberToken, value, location);
+    }
+
+    ast.Attribute parseAttribute()
+    {
+        compile.Location location = scanner.getLocation();
+        string[] pieces;
+        if(checkIdentifier())
+        {
+            pieces ~= text;
+        }
+        nextToken(); // IDENTIFIER
+        
+        // Check if we should match ('.' IDENTIFIER)*
+        while(token == Token.Dot)
+        {
+            nextToken(); // .
+            if(token == Token.Identifier)
+            {
                 if(checkIdentifier())
                 {
                     pieces ~= text;
                 }
                 nextToken(); // IDENTIFIER
-                
-                // Check if we should match ('.' IDENTIFIER)*
-                while(token == Token.Dot)
-                {
-                    nextToken(); // .
-                    if(token == Token.Identifier)
-                    {
-                        if(checkIdentifier())
-                        {
-                            pieces ~= text;
-                        }
-                        nextToken(); // IDENTIFIER
-                    }
-                    else
-                    {
-                        reject("identifier after '.' in term");
-                        break;
-                    }
-                }
-
-                return new ast.Attribute(pieces, location);
-            default:
-                reject("expression");
-                return null;
+            }
+            else
+            {
+                reject("identifier after '.' in term");
+                break;
+            }
         }
+
+        return new ast.Attribute(pieces, location);
     }
 }
