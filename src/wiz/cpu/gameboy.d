@@ -232,37 +232,41 @@ class GameboyPlatform : Platform
     
     ubyte[] generateJump(compile.Program program, ast.Jump stmt)
     {
-        ubyte getJumpOpcode(ArgumentType type = ArgumentType.None, bool negated = false)
+        ubyte[] getJumpCode(uint address, ArgumentType type = ArgumentType.None, bool negated = false)
         {
+            ubyte opcode;
             switch(type)
             {
-                case ArgumentType.Zero: return negated ? 0xC2 : 0xCA;
-                case ArgumentType.Carry: return negated ? 0xD2 : 0xDA;
-                case ArgumentType.None: return 0xC3;
+                case ArgumentType.Zero: opcode = negated ? 0xC2 : 0xCA; break;
+                case ArgumentType.Carry: opcode = negated ? 0xD2 : 0xDA; break;
+                case ArgumentType.None: opcode = 0xC3; break;
                 default:
                     assert(0);
             }
+            return [opcode, address & 0xFF, (address >> 8) & 0xFF];
         }
 
-        ubyte getCallOpcode(ArgumentType type = ArgumentType.None, bool negated = false)
+        ubyte[] getCallCode(uint address, ArgumentType type = ArgumentType.None, bool negated = false)
         {
+            ubyte opcode;
             switch(type)
             {
-                case ArgumentType.Zero: return negated ? 0xC4 : 0xCC;
-                case ArgumentType.Carry: return negated ? 0xD4 : 0xDC;
-                case ArgumentType.None: return 0xCD;
+                case ArgumentType.Zero: opcode = negated ? 0xC4 : 0xCC; break;
+                case ArgumentType.Carry: opcode = negated ? 0xD4 : 0xDC; break;
+                case ArgumentType.None: opcode = 0xCD; break;
                 default:
                     assert(0);
             }
+            return [opcode, address & 0xFF, (address >> 8) & 0xFF];
         }
 
-        ubyte getReturnOpcode(ArgumentType type = ArgumentType.None, bool negated = false)
+        ubyte[] getReturnCode(ArgumentType type = ArgumentType.None, bool negated = false)
         {
             switch(type)
             {
-                case ArgumentType.Zero: return negated ? 0xC0 : 0xC8;
-                case ArgumentType.Carry: return negated ? 0xD0 : 0xD8;
-                case ArgumentType.None: return 0xC9;
+                case ArgumentType.Zero: return [negated ? 0xC0 : 0xC8];
+                case ArgumentType.Carry: return [negated ? 0xD0 : 0xD8];
+                case ArgumentType.None: return [0xC9];
                 default:
                     assert(0);
             }
@@ -284,7 +288,7 @@ class GameboyPlatform : Platform
                         }
                         if(stmt.condition is null)
                         {
-                            return [getJumpOpcode(), address & 0xFF, (address >> 8) & 0xFF];
+                            return getJumpCode(address);
                         }
                         else
                         {
@@ -295,13 +299,13 @@ class GameboyPlatform : Platform
                                 final switch(cond.branch)
                                 {
                                     case parse.Branch.Equal:
-                                        opcode = getJumpOpcode(ArgumentType.Zero, cond.negated);
+                                        return getJumpCode(address, ArgumentType.Zero, cond.negated);
                                     case parse.Branch.NotEqual:
-                                        opcode = getJumpOpcode(ArgumentType.Zero, !cond.negated);
+                                        return getJumpCode(address, ArgumentType.Zero, !cond.negated);
                                     case parse.Branch.Less:
-                                        opcode = getJumpOpcode(ArgumentType.Carry, !cond.negated);
+                                        return getJumpCode(address, ArgumentType.Carry, !cond.negated);
                                     case parse.Branch.GreaterEqual:
-                                        opcode = getJumpOpcode(ArgumentType.Carry, cond.negated);
+                                        return getJumpCode(address, ArgumentType.Carry, cond.negated);
                                     case parse.Branch.Greater:
                                     case parse.Branch.LessEqual:
                                         error(
@@ -310,7 +314,6 @@ class GameboyPlatform : Platform
                                         );
                                         return [];
                                 }
-                                return [opcode, address & 0xFF, (address >> 8) & 0xFF];
                             }
                             else
                             {
@@ -321,15 +324,8 @@ class GameboyPlatform : Platform
                                     switch(builtin.type)
                                     {
                                         case ArgumentType.Carry:
-                                            return [
-                                                getJumpOpcode(ArgumentType.Carry, cond.negated),
-                                                address & 0xFF, (address >> 8) & 0xFF
-                                            ];
                                         case ArgumentType.Zero:
-                                            return [
-                                                getJumpOpcode(ArgumentType.Zero, cond.negated),
-                                                address & 0xFF, (address >> 8) & 0xFF
-                                            ];
+                                            return getJumpCode(address, builtin.type, cond.negated);                                        
                                         default:
                                     }
                                 }
@@ -368,7 +364,7 @@ class GameboyPlatform : Platform
                         }
                         if(stmt.condition is null)
                         {
-                            return [getCallOpcode(), address & 0xFF, (address >> 8) & 0xFF];
+                            return getCallCode(address);
                         }
                         else
                         {
@@ -379,13 +375,13 @@ class GameboyPlatform : Platform
                                 final switch(cond.branch)
                                 {
                                     case parse.Branch.Equal:
-                                        opcode = getCallOpcode(ArgumentType.Zero, cond.negated);
+                                        return getCallCode(address, ArgumentType.Zero, cond.negated);
                                     case parse.Branch.NotEqual:
-                                        opcode = getCallOpcode(ArgumentType.Zero, !cond.negated);
+                                        return getCallCode(address, ArgumentType.Zero, !cond.negated);
                                     case parse.Branch.Less:
-                                        opcode = getCallOpcode(ArgumentType.Carry, !cond.negated);
+                                        return getCallCode(address, ArgumentType.Carry, !cond.negated);
                                     case parse.Branch.GreaterEqual:
-                                        opcode = getCallOpcode(ArgumentType.Carry, cond.negated);
+                                        return getCallCode(address, ArgumentType.Carry, cond.negated);
                                     case parse.Branch.Greater:
                                     case parse.Branch.LessEqual:
                                         error(
@@ -394,7 +390,6 @@ class GameboyPlatform : Platform
                                         );
                                         return [];
                                 }
-                                return [opcode, address & 0xFF, (address >> 8) & 0xFF];
                             }
                             else
                             {
@@ -405,15 +400,8 @@ class GameboyPlatform : Platform
                                     switch(builtin.type)
                                     {
                                         case ArgumentType.Carry:
-                                            return [
-                                                getCallOpcode(ArgumentType.Carry, cond.negated),
-                                                address & 0xFF, (address >> 8) & 0xFF
-                                            ];
                                         case ArgumentType.Zero:
-                                            return [
-                                                getCallOpcode(ArgumentType.Zero, cond.negated),
-                                                address & 0xFF, (address >> 8) & 0xFF
-                                            ];
+                                            return getCallCode(address, builtin.type, cond.negated);
                                         default:
                                     }
                                 }
@@ -431,7 +419,7 @@ class GameboyPlatform : Platform
             case parse.Keyword.Return:
                 if(stmt.condition is null)
                 {
-                    return [getReturnOpcode()];
+                    return getReturnCode();
                 }
                 else
                 {
@@ -442,13 +430,13 @@ class GameboyPlatform : Platform
                         final switch(cond.branch)
                         {
                             case parse.Branch.Equal:
-                                return [getReturnOpcode(ArgumentType.Zero, cond.negated)];
+                                return getReturnCode(ArgumentType.Zero, cond.negated);
                             case parse.Branch.NotEqual:
-                                return [getReturnOpcode(ArgumentType.Zero, !cond.negated)];
+                                return getReturnCode(ArgumentType.Zero, !cond.negated);
                             case parse.Branch.Less:
-                                return [getReturnOpcode(ArgumentType.Carry, !cond.negated)];
+                                return getReturnCode(ArgumentType.Carry, !cond.negated);
                             case parse.Branch.GreaterEqual:
-                                return [getReturnOpcode(ArgumentType.Carry, cond.negated)];
+                                return getReturnCode(ArgumentType.Carry, cond.negated);
                             case parse.Branch.Greater:
                             case parse.Branch.LessEqual:
                                 error(
@@ -467,9 +455,8 @@ class GameboyPlatform : Platform
                             switch(builtin.type)
                             {
                                 case ArgumentType.Carry:
-                                    return [getReturnOpcode(ArgumentType.Zero, cond.negated)];
                                 case ArgumentType.Zero:
-                                    return [getReturnOpcode(ArgumentType.Carry, cond.negated)];
+                                    return getReturnCode(builtin.type, cond.negated);
                                 default:
                             }
                         }
