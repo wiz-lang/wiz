@@ -17,11 +17,9 @@ class Program
     this(cpu.Platform platform)
     {
         this.platform = platform;
-        this.bank = null;
-        _environment = new Environment();
 
         auto builtins = platform.builtins();
-        auto env = _environment;
+        auto env = new Environment();
         auto pkg = new sym.PackageDef(new ast.BuiltinDecl(), new Environment(env));
         
         foreach(name, builtin; builtins)
@@ -35,6 +33,10 @@ class Program
         {
             env.put(name, builtin);
         }
+
+        bank = null;
+        _environment = env;
+        environmentStack ~= env;
     }
 
     mixin helper.Accessor!(_environment);
@@ -100,6 +102,7 @@ class Program
         }
         else
         {
+            std.stdio.writefln("stack underflow", _environment);
             _environment = null;
         }
     }

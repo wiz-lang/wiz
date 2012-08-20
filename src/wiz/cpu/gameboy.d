@@ -189,7 +189,7 @@ private
 
 class GameboyPlatform : Platform
 {
-    sym.Definition[string] builtins()
+    BuiltinTable builtins()
     {
         return [
             "a": new Builtin(ArgumentType.A),

@@ -22,28 +22,27 @@ sym.Definition resolveAttribute(Program program, ast.Attribute attribute)
         
         if(prev is null)
         {
-            def = env.get!(sym.Definition)(piece, true);
+            def = env.get!(sym.Definition)(piece);
         }
         else
         {
             sym.PackageDef pkg = cast(sym.PackageDef) prev;
             if(pkg is null)
             {
-                string fullyQualifiedName = attribute.fullName();
                 string previousName = std.string.join(partialQualifiers[0 .. partialQualifiers.length - 1], ".");
-                error("attempt to get symbol '" ~ fullyQualifiedName ~ "', but '" ~ previousName ~ "' is not a package", attribute.location);
+                error("attempt to get symbol '" ~ attribute.fullName() ~ "', but '" ~ previousName ~ "' is not a package", attribute.location);
             }
             else
             {
                 env = pkg.environment;
-                def = env.get!(sym.Definition)(piece, false);
+                def = env.get!(sym.Definition)(piece, true); // qualified lookup is shallow.
             }
         }
         
         if(def is null)
         {
             string partiallyQualifiedName = std.string.join(partialQualifiers, ".");
-            string fullyQualifiedName = std.string.join(attribute.pieces, ".");
+            string fullyQualifiedName = attribute.fullName();
             
             if(partiallyQualifiedName == fullyQualifiedName)
             {
