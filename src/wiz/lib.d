@@ -11,5 +11,5 @@ alias compile.error error;
 alias compile.notice notice;
 alias helper.staticInit staticInit;
 
-enum PROGRAM_NAME = "wiz";
-enum VERSION_TEXT = "0.1";
+enum ProgramName = "wiz";
+enum VersionText = "0.1";

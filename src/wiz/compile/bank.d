@@ -7,7 +7,7 @@ class Bank
 {
     private:
         // Value used to pad unused bank space.
-        enum ubyte PAD_VALUE = 0xFF;
+        enum ubyte PadValue = 0xFF;
 
         // The name of this bank.
         string name;
@@ -66,7 +66,7 @@ class Bank
             if(physical)
             {
                 data = new ubyte[capacity];
-                data[] = PAD_VALUE;
+                data[] = PadValue;
             }
         }
 

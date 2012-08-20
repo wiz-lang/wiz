@@ -229,8 +229,8 @@ bool foldStorage(Program program, ast.Storage s, ref uint result)
     {
         switch(s.type)
         {
-            case parse.Keyword.BYTE: break;
-            case parse.Keyword.WORD: result *= 2; break;
+            case parse.Keyword.Byte: break;
+            case parse.Keyword.Word: result *= 2; break;
             default:
                 error("Unsupported storage type " ~ parse.getKeywordName(s.type), s.location);
         }
@@ -243,7 +243,7 @@ auto createBlockHandler(Program program)
 {
     return(Visitor.Pass pass, ast.Block block)
     {
-        if(pass == Visitor.Pass.BEFORE)
+        if(pass == Visitor.Pass.Before)
         {
             if(block.name)
             {

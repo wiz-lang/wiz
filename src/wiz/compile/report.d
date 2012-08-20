@@ -59,7 +59,7 @@ void verify()
 
 void notice(string message)
 {
-    std.stdio.writefln("* %s: %s", PROGRAM_NAME, message);
+    std.stdio.writefln("* %s: %s", ProgramName, message);
 }
 
 void log(string message)

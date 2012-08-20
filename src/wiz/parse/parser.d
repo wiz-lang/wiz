@@ -28,7 +28,7 @@ class Parser
     {
         token = scanner.next();
         text = scanner.getLastText();
-        keyword = Keyword.NONE;
+        keyword = Keyword.None;
         if(token == Token.Identifier)
         {
             keyword = findKeyword(text);
@@ -72,7 +72,7 @@ class Parser
     
     bool checkIdentifier(bool allowKeywords = false)
     {
-        if(token == Token.Identifier && (!allowKeywords && keyword == Keyword.NONE || allowKeywords))
+        if(token == Token.Identifier && (!allowKeywords && keyword == Keyword.None || allowKeywords))
         {
             return true; 
         }
@@ -87,7 +87,7 @@ class Parser
     {
         checkIdentifier(true);
         
-        if(keyword == Keyword.NONE || std.algorithm.find(permissibleKeywords, keyword).length > 0)
+        if(keyword == Keyword.None || std.algorithm.find(permissibleKeywords, keyword).length > 0)
         {
             return true;
         }
@@ -138,11 +138,11 @@ class Parser
                     nextToken();
                 }
             }
-            if(keyword == Keyword.END || keyword == Keyword.ELSE || keyword == Keyword.ELSEIF)
+            if(keyword == Keyword.End || keyword == Keyword.Else || keyword == Keyword.ElseIf)
             {
                 reject();
             }
-            if(keyword == Keyword.INCLUDE)
+            if(keyword == Keyword.Include)
             {
                 parseInclude();
             }
@@ -167,11 +167,11 @@ class Parser
                 reject("'end'");
                 return null;
             }
-            if(keyword == Keyword.END)
+            if(keyword == Keyword.End)
             {
                 return statements;
             }
-            if(keyword == Keyword.ELSE || keyword == Keyword.ELSEIF || keyword == Keyword.INCLUDE)
+            if(keyword == Keyword.Else || keyword == Keyword.ElseIf || keyword == Keyword.Include)
             {
                 reject("'end'");
             }
@@ -194,11 +194,11 @@ class Parser
             {
                 reject("'end'");
             }
-            if(keyword == Keyword.END || keyword == Keyword.ELSE || keyword == Keyword.ELSEIF)
+            if(keyword == Keyword.End || keyword == Keyword.Else|| keyword == Keyword.ElseIf)
             {
                 return statements;
             }
-            if(keyword == Keyword.INCLUDE)
+            if(keyword == Keyword.Include)
             {
                 reject("'end'");
             }
@@ -233,40 +233,40 @@ class Parser
             case Token.Identifier:
                 switch(keyword)
                 {
-                    case Keyword.EMBED:
+                    case Keyword.Embed:
                         return parseEmbed();
-                    case Keyword.IN:
+                    case Keyword.In:
                         return parseRelocation();
-                    case Keyword.DO, Keyword.PACKAGE:
+                    case Keyword.Do, Keyword.Package:
                         return parseBlock();
-                    case Keyword.BANK:
+                    case Keyword.Bank:
                         return parseBankDecl();
-                    case Keyword.DEF:
+                    case Keyword.Def:
                         return parseLabelDecl();
-                    case Keyword.LET:
+                    case Keyword.Let:
                         return parseConstDecl();
-                    case Keyword.ENUM:
+                    case Keyword.Enum:
                         return parseEnumDecl();
-                    case Keyword.VAR:
+                    case Keyword.Var:
                         return parseVarDecl();
-                    case Keyword.BYTE, Keyword.WORD:
+                    case Keyword.Byte, Keyword.Word:
                         return parseData();
-                    case Keyword.GOTO, Keyword.CALL,
-                        Keyword.RETURN, Keyword.RESUME,
-                        Keyword.BREAK, Keyword.CONTINUE,
-                        Keyword.WHILE, Keyword.UNTIL,
-                        Keyword.ABORT, Keyword.SLEEP, Keyword.SUSPEND, Keyword.NOP:
+                    case Keyword.Goto, Keyword.Call,
+                        Keyword.Return, Keyword.Resume,
+                        Keyword.Break, Keyword.Continue,
+                        Keyword.While, Keyword.Until,
+                        Keyword.Abort, Keyword.Sleep, Keyword.Suspend, Keyword.Nop:
                         return parseJump();
-                    case Keyword.IF:
+                    case Keyword.If:
                         return parseConditional();
-                    case Keyword.REPEAT:
+                    case Keyword.Repeat:
                         return parseLoop();
-                    case Keyword.COMPARE:
+                    case Keyword.Compare:
                         return parseComparison();
-                    case Keyword.BIT:
-                    case Keyword.PUSH:
+                    case Keyword.Bit:
+                    case Keyword.Push:
                         return parseCommand();
-                    case Keyword.NONE:
+                    case Keyword.None:
                         // Some unreserved identifier. Try and parse as a term in an assignment!
                         return parseAssignment();
                     default:
@@ -409,12 +409,12 @@ class Parser
         compile.Location location = scanner.getLocation();
         switch(keyword)
         {
-            case Keyword.DO:
+            case Keyword.Do:
                 nextToken(); // IDENTIFIER (keyword 'do')
                 ast.Statement[] statements = parseCompound(); // compound statement
                 nextToken(); // IDENTIFIER (keyword 'end')
                 return new ast.Block(statements, location);
-            case Keyword.PACKAGE:
+            case Keyword.Package:
                 string name;
                 
                 nextToken(); // IDENTIFIER (keyword 'package')
@@ -509,8 +509,8 @@ class Parser
             Keyword storageType;
             switch(keyword)
             {
-                case Keyword.BYTE:
-                case Keyword.WORD:
+                case Keyword.Byte:
+                case Keyword.Word:
                     storageType = keyword;
                     break;
                 default:
@@ -706,27 +706,27 @@ class Parser
         nextToken(); // IDENTIFIER (keyword)
         switch(type)
         {
-            case Keyword.GOTO, Keyword.CALL:
+            case Keyword.Goto, Keyword.Call:
                 ast.Expression destination = parseExpression();
                 ast.JumpCondition condition = null;
-                if(token == Token.Identifier && keyword == Keyword.WHEN)
+                if(token == Token.Identifier && keyword == Keyword.When)
                 {
                     nextToken(); // IDENTIFIER (keyword 'when')
                     condition = parseJumpCondition("'when'");
                 }
                 return new ast.Jump(type, destination, condition, location);
                 break;
-            case Keyword.RETURN, Keyword.RESUME, Keyword.BREAK, Keyword.CONTINUE:
+            case Keyword.Return, Keyword.Resume, Keyword.Break, Keyword.Continue:
                 ast.JumpCondition condition = null;
-                if(token == Token.Identifier && keyword == Keyword.WHEN)
+                if(token == Token.Identifier && keyword == Keyword.When)
                 {
                     nextToken(); // IDENTIFIER (keyword 'when')
                     condition = parseJumpCondition("'when'");
                 }
                 return new ast.Jump(type, condition, location);
-            case Keyword.WHILE:
+            case Keyword.While:
                 return new ast.Jump(type, parseJumpCondition("'while'"), location);
-            case Keyword.UNTIL:
+            case Keyword.Until:
                 return new ast.Jump(type, parseJumpCondition("'until'"), location);
             default:
                 return new ast.Jump(type, location);
@@ -740,7 +740,7 @@ class Parser
         
         // 'not'* (not isn't a keyword, but it has special meaning)
         bool negated = false;
-        while(keyword == Keyword.NOT)
+        while(keyword == Keyword.Not)
         {
             nextToken(); // IDENTIFIER (keyword 'not')
             negated = !negated;
@@ -783,7 +783,7 @@ class Parser
             
             ast.JumpCondition condition = parseJumpCondition("'if'");
             
-            if(keyword == Keyword.THEN)
+            if(keyword == Keyword.Then)
             {
                 nextToken(); // IDENTIFIER (keyword 'then')
             }
@@ -808,10 +808,10 @@ class Parser
             {
                 first = statement;
             }
-        } while(keyword == Keyword.ELSEIF);
+        } while(keyword == Keyword.ElseIf);
         
         // ('else' statement*)? 'end' (with error recovery for an invalid trailing else/elseif placement)
-        if(keyword == Keyword.ELSE)
+        if(keyword == Keyword.Else)
         {
             compile.Location location = scanner.getLocation();
             nextToken(); // IDENTIFIER (keyword 'else')
@@ -819,17 +819,17 @@ class Parser
         }
         switch(keyword)
         {
-            case Keyword.ELSE:
+            case Keyword.Else:
                 error("duplicate 'else' clause found.", scanner.getLocation());
                 break;
-            case Keyword.ELSEIF:
+            case Keyword.ElseIf:
                 // Seeing as we loop on elseif before an else/end, this must be an illegal use of elseif.
                 error("'elseif' can't appear after 'else' clause.", scanner.getLocation());
                 break;
             default:
         }
 
-        if(keyword == Keyword.END)
+        if(keyword == Keyword.End)
         {
             nextToken(); // IDENTIFIER (keyword 'end')
         }
@@ -856,7 +856,7 @@ class Parser
         compile.Location location = scanner.getLocation();
         nextToken(); // IDENTIFIER (keyword 'cmp')
         ast.Expression term = parseAssignableTerm();
-        if(keyword == Keyword.TO)
+        if(keyword == Keyword.To)
         {
             nextToken(); // IDENTIFIER (keyword 'to')
             ast.Expression other = parseExpression();
@@ -896,7 +896,7 @@ class Parser
                     parseExpression();
                     break;
                 case Token.Identifier:
-                    if(keyword == Keyword.NONE || keyword == Keyword.POP)
+                    if(keyword == Keyword.None || keyword == Keyword.Pop)
                     {
                         parseExpression();
                     }
@@ -918,7 +918,7 @@ class Parser
         {
             nextToken(); // =
             ast.Expression src = parseExpression(); // expression
-            if(token == Token.Identifier && keyword == Keyword.VIA)
+            if(token == Token.Identifier && keyword == Keyword.Via)
             {
                 nextToken(); // IDENTIFIER (keyword 'via')
                 ast.Expression intermediary = parseTerm(); // term
@@ -1125,7 +1125,7 @@ class Parser
                 consume(Token.RBracket); // ]
                 return new ast.Prefix(Token.LBracket, expr, location);
             case Token.Identifier:
-                if(keyword == Keyword.POP)
+                if(keyword == Keyword.Pop)
                 {
                     nextToken(); // IDENTIFIER
                     return new ast.Pop(location);

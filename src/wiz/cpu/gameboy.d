@@ -218,7 +218,7 @@ class GameboyPlatform : Platform
     {
         switch(stmt.type)
         {
-            case parse.Keyword.PUSH:
+            case parse.Keyword.Push:
                 auto argument = buildArgument(program, stmt.argument);
                 switch(argument.type)
                 {
@@ -237,7 +237,7 @@ class GameboyPlatform : Platform
     {
         switch(stmt.type)
         {
-            case parse.Keyword.GOTO:
+            case parse.Keyword.Goto:
                 auto argument = buildArgument(program, stmt.destination);
                 switch(argument.type)
                 {
@@ -319,27 +319,27 @@ class GameboyPlatform : Platform
                         }
                     default: return [];
                 }
-            case parse.Keyword.CALL:
+            case parse.Keyword.Call:
                 return [];
-            case parse.Keyword.RETURN:
+            case parse.Keyword.Return:
                 return [];
-            case parse.Keyword.RESUME:
+            case parse.Keyword.Resume:
                 return [0xD9];
-            case parse.Keyword.BREAK:
+            case parse.Keyword.Break:
                 return [];
-            case parse.Keyword.CONTINUE:
+            case parse.Keyword.Continue:
                 return [];
-            case parse.Keyword.WHILE:
+            case parse.Keyword.While:
                 return [];
-            case parse.Keyword.UNTIL:
+            case parse.Keyword.Until:
                 return [];
-            case parse.Keyword.ABORT:
+            case parse.Keyword.Abort:
                 return [0x40];
-            case parse.Keyword.SLEEP:
+            case parse.Keyword.Sleep:
                 return [0x76];
-            case parse.Keyword.SUSPEND:
+            case parse.Keyword.Suspend:
                 return [0x10, 0x00];
-            case parse.Keyword.NOP:
+            case parse.Keyword.Nop:
                 return [0x00];
             default:
                 return [];

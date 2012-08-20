@@ -7,8 +7,8 @@ class Visitor
 {
     enum Pass
     {
-        BEFORE,
-        AFTER
+        Before,
+        After
     }
 
     bool preVisit(Object o)
@@ -56,14 +56,14 @@ class Visitor
         {
             static if(is(Ret == void))
             {
-                pre[Par[1].classinfo] = (Object o) { callback(Pass.BEFORE, cast(Par[1]) o); return true; };
-                post[Par[1].classinfo] = (Object o) { callback(Pass.AFTER, cast(Par[1]) o); return true; };
+                pre[Par[1].classinfo] = (Object o) { callback(Pass.Before, cast(Par[1]) o); return true; };
+                post[Par[1].classinfo] = (Object o) { callback(Pass.After, cast(Par[1]) o); return true; };
                 return this;
             }
             else static if(is(Ret == bool))
             {
-                pre[Par[1].classinfo] = (Object o) { return callback(Pass.BEFORE, cast(Par[1]) o); };
-                post[Par[1].classinfo] = (Object o) { return callback(Pass.AFTER, cast(Par[1]) o); };
+                pre[Par[1].classinfo] = (Object o) { return callback(Pass.Before, cast(Par[1]) o); };
+                post[Par[1].classinfo] = (Object o) { return callback(Pass.After, cast(Par[1]) o); };
                 return this;
             }
         }

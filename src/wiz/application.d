@@ -9,19 +9,19 @@ import wiz = wiz.lib;
 
 private enum ArgumentState
 {
-    INPUT,
-    OUTPUT
+    Input,
+    Output
 }
 
 int run(string[] arguments)
 {
     string[] args = arguments[1 .. arguments.length];
     
-    ArgumentState state = ArgumentState.INPUT;
+    ArgumentState state = ArgumentState.Input;
     string input;
     string output;
     
-    wiz.notice("version " ~ wiz.VERSION_TEXT);
+    wiz.notice("version " ~ wiz.VersionText);
     
     foreach(i, arg; args)
     {
@@ -30,11 +30,11 @@ int run(string[] arguments)
             switch(arg)
             {
                 case "-o":
-                    state = ArgumentState.OUTPUT;
+                    state = ArgumentState.Output;
                     break;
                 case "-h":
                 case "--help":
-                    std.stdio.writeln("usage: " ~ wiz.PROGRAM_NAME ~ " [... arg]");
+                    std.stdio.writeln("usage: " ~ wiz.ProgramName ~ " [... arg]");
                     std.stdio.writeln("  where args can can be one of:");
                     std.stdio.writeln("    input_filename");
                     std.stdio.writeln("      (required) the name of the nel source file to compile");
@@ -54,7 +54,7 @@ int run(string[] arguments)
             switch(state)
             {
                 default:
-                case ArgumentState.INPUT:
+                case ArgumentState.Input:
                     
                     if(input != "")
                     {
@@ -65,7 +65,7 @@ int run(string[] arguments)
                         input = arg;
                     }
                     break;
-                case ArgumentState.OUTPUT:
+                case ArgumentState.Output:
                     if(output != "")
                     {
                         wiz.notice(std.string.format("output file already set to '%s'. skipping '%s'", output, arg));
@@ -74,7 +74,7 @@ int run(string[] arguments)
                     {
                         output = arg;
                     }
-                    state = ArgumentState.INPUT;
+                    state = ArgumentState.Input;
                     break;
             }
         }
@@ -82,7 +82,7 @@ int run(string[] arguments)
     
     if(!input)
     {
-        wiz.notice("no input file given. type `" ~ wiz.PROGRAM_NAME ~ " --help` to see program usage.");
+        wiz.notice("no input file given. type `" ~ wiz.ProgramName ~ " --help` to see program usage.");
         return 1;
     }
     // Assume a default file of <<input_filename>>.gb
