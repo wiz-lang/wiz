@@ -561,7 +561,7 @@ class GameboyPlatform : Platform
             if(stmt.intermediary)
             {
                 auto intermediary = buildArgument(program, stmt.intermediary);
-                return
+                return // 'x = y via z' -> 'z = y; x = z'
                     generateCalculation(program, stmt, intermediary, stmt.src)
                     ~ generateLoad(program, stmt, dest, stmt.intermediary);
             }
