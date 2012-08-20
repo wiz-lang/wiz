@@ -270,32 +270,32 @@ static this()
     }
 }
 
-string getSimpleTokenName(Token token)
+auto getSimpleTokenName(Token token)
 {
     return tokenNames[token];
 }
 
-string getBranchName(Branch op)
+auto getBranchName(Branch op)
 {
     return tokenNames[op];
 }
 
-string getPrefixName(Prefix op)
+auto getPrefixName(Prefix op)
 {
     return tokenNames[op];
 }
 
-string getPostfixName(Postfix op)
+auto getPostfixName(Postfix op)
 {
     return tokenNames[op];
 }
 
-string getInfixName(Infix op)
+auto getInfixName(Infix op)
 {
     return tokenNames[op];
 }
 
-string getVerboseTokenName(Token token, string text)
+auto getVerboseTokenName(Token token, string text)
 {
     if(token == Token.String)
     {
@@ -323,12 +323,12 @@ string getVerboseTokenName(Token token, string text)
     }
 }
 
-string getKeywordName(Keyword keyword)
+auto getKeywordName(Keyword keyword)
 {
     return keywordNames[keyword];
 }
 
-Keyword findKeyword(string text)
+auto findKeyword(string text)
 {
     return keywords.get(text, Keyword.None);
 }
