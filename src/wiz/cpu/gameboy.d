@@ -587,6 +587,8 @@ class GameboyPlatform : Platform
         final switch(dest.type)
         {
             case ArgumentType.A:
+                // 'a = <>a' -> 'swap a'
+                // 'a = ~a' -> 'cpl a'
                 // 'a = r' -> 'ld a, r'
                 // 'a = n' -> 'ld a, n'
                 // 'a = [hl]' -> 'ld a, [hl]'
@@ -599,31 +601,37 @@ class GameboyPlatform : Platform
                 // 'a = [hl--]' -> 'ld a, [hl-]'
                 return [];
             case ArgumentType.B:
+                // 'b = <>b' -> 'swap b'
                 // 'b = r' -> 'ld b, r'
                 // 'b = n' -> 'ld b, n'
                 // 'b = [hl]' -> 'ld b, [hl]'
                 return [];
             case ArgumentType.C:
+                // 'c = <>c' -> 'swap c'
                 // 'c = r' -> 'ld c, r'
                 // 'c = n' -> 'ld c, n'
                 // 'c = [hl]' -> 'ld c, [hl]'
                 return [];
             case ArgumentType.D:
+                // 'd = <>d' -> 'swap d'
                 // 'd = r' -> 'ld d, r'
                 // 'd = n' -> 'ld d, n'
                 // 'd = [hl]' -> 'ld d, [hl]'
                 return [];
             case ArgumentType.E:
+                // 'e = <>e' -> 'swap e'
                 // 'e = r' -> 'ld e, r'
                 // 'e = n' -> 'ld e, n'
                 // 'e = [hl]' -> 'ld e, [hl]'
                 return [];
             case ArgumentType.H:
+                // 'h = <>h' -> 'swap h'
                 // 'h = r' -> 'ld h, r'
                 // 'h = n' -> 'ld h, n'
                 // 'h = [hl]' -> 'ld h, [hl]'
                 return [];
             case ArgumentType.L:
+                // 'l = <>l' -> 'swap l'
                 // 'l = r' -> 'ld l, r'
                 // 'l = n' -> 'ld l, n'
                 // 'l = [hl]' -> 'ld l, [hl]'
@@ -643,6 +651,7 @@ class GameboyPlatform : Platform
                         return [];
                     case ArgumentType.HL:
                         // '[hl] = a' -> 'ld [hl], a'
+                        // '[hl] = <>[hl]' -> 'swap [hl]'
                         return [];
                     default:
                         return [];
