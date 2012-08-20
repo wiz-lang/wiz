@@ -146,9 +146,7 @@ class Parser
             {
                 parseInclude();
             }
-            
-            auto statement = parseStatement();
-            if(statement !is null)
+            if(auto statement = parseStatement())
             {
                 statements ~= statement;
             }
@@ -175,9 +173,7 @@ class Parser
             {
                 reject("'end'");
             }
-            
-            auto statement = parseStatement();
-            if(statement !is null)
+            if(auto statement = parseStatement())
             {
                 statements ~= statement;
             }
@@ -202,8 +198,7 @@ class Parser
             {
                 reject("'end'");
             }
-            auto statement = parseStatement();
-            if(statement !is null)
+            if(auto statement = parseStatement())
             {
                 statements ~= statement;
             }
@@ -800,7 +795,7 @@ class Parser
             statement = new ast.Conditional(condition, block, location);
 
             // If this is an 'elseif', join to previous 'if'/'elseif'.
-            if(previous !is null)
+            if(previous)
             {
                 previous.alternative = statement;
             }
