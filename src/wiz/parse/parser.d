@@ -105,7 +105,7 @@ class Parser
         }
     }
     
-    ast.Block parse()
+    auto parse()
     {
         nextToken();
         auto program = parseProgram();
@@ -113,7 +113,7 @@ class Parser
         return program;
     }
     
-    ast.Block parseProgram()
+    auto parseProgram()
     {
         // program = (include | statement)* EOF
         compile.Location location = scanner.getLocation();
@@ -357,10 +357,10 @@ class Parser
         nextToken();
     }
     
-    ast.Embed parseEmbed()
+    auto parseEmbed()
     {
         // embed = 'embed' STRING
-        compile.Location location = scanner.getLocation();
+        auto location = scanner.getLocation();
         nextToken(); // IDENTIFIER (keyword 'embed')
         
         if(token == Token.String)
@@ -379,10 +379,10 @@ class Parser
         }
     }
     
-    ast.Relocation parseRelocation()
+    auto parseRelocation()
     {
         // relocation = 'in' IDENTIFIER (',' expression)? ':'
-        compile.Location location = scanner.getLocation();
+        auto location = scanner.getLocation();
         string name;
         ast.Expression dest;
         
@@ -403,15 +403,15 @@ class Parser
         return new ast.Relocation(name, dest, location);
     }
     
-    ast.Block parseBlock()
+    auto parseBlock()
     {
         // block = ('package' IDENTIFIER | 'do') statement* 'end'
-        compile.Location location = scanner.getLocation();
+        auto location = scanner.getLocation();
         switch(keyword)
         {
             case Keyword.Do:
                 nextToken(); // IDENTIFIER (keyword 'do')
-                ast.Statement[] statements = parseCompound(); // compound statement
+                auto statements = parseCompound(); // compound statement
                 nextToken(); // IDENTIFIER (keyword 'end')
                 return new ast.Block(statements, location);
             case Keyword.Package:
@@ -423,7 +423,7 @@ class Parser
                     name = text;
                 }
                 nextToken(); // IDENTIFIER
-                ast.Statement[] statements = parseCompound(); // compound statement
+                auto statements = parseCompound(); // compound statement
                 nextToken(); // IDENTIFIER (keyword 'end')
                 return new ast.Block(name, statements, location);
             default:
@@ -432,10 +432,10 @@ class Parser
         }
     }
     
-    ast.BankDecl parseBankDecl()
+    auto parseBankDecl()
     {
         // bank = 'bank' IDENTIFIER (',' IDENTIFIER)* ':' IDENTIFIER '*' expression
-        compile.Location location = scanner.getLocation();
+        auto location = scanner.getLocation();
         
         string[] names;
         string type;
@@ -482,10 +482,10 @@ class Parser
         return new ast.BankDecl(names, type, size, location);
     }
     
-    ast.LabelDecl parseLabelDecl()
+    auto parseLabelDecl()
     {
         // label = 'def' IDENTIFIER ':'
-        compile.Location location = scanner.getLocation();
+        auto location = scanner.getLocation();
         
         string name;
         
@@ -500,10 +500,10 @@ class Parser
         return new ast.LabelDecl(name, location);
     }
 
-    ast.Storage parseStorage()
+    auto parseStorage()
     {
         // storage = ('byte' | 'word') ('*' expression)?
-        compile.Location location = scanner.getLocation();
+        auto location = scanner.getLocation();
         if(checkIdentifier(true))
         {
             Keyword storageType;
@@ -533,10 +533,10 @@ class Parser
         }
     }
     
-    ast.ConstDecl parseConstDecl()
+    auto parseConstDecl()
     {
         // constant = 'let' IDENTIFIER '=' expression
-        compile.Location location = scanner.getLocation();
+        auto location = scanner.getLocation();
         
         string name;
         ast.Storage storage;
@@ -553,12 +553,12 @@ class Parser
         return new ast.ConstDecl(name, value, location);
     }
     
-    ast.EnumDecl parseEnumDecl()
+    auto parseEnumDecl()
     {
         // enumeration = 'enum' ':' enum_item (',' enum_item)*
         //      where enum_item = IDENTIFIER ('=' expression)?
-        compile.Location enumLocation = scanner.getLocation();
-        compile.Location constantLocation = enumLocation;
+        auto enumLocation = scanner.getLocation();
+        auto constantLocation = enumLocation;
         string name;
         ast.Expression value;
         uint offset;
@@ -620,11 +620,11 @@ class Parser
         return new ast.EnumDecl(constants, enumLocation);
     }
     
-    ast.VarDecl parseVarDecl()
+    auto parseVarDecl()
     {
         // variable = 'var' IDENTIFIER (',' IDENTIFIER)*
         //      ':' ('byte' | 'word') '*' expression
-        compile.Location location = scanner.getLocation();
+        auto location = scanner.getLocation();
         
         string[] names;
         nextToken(); // IDENTIFIER (keyword 'var')
@@ -656,16 +656,16 @@ class Parser
         }
         
         consume(Token.Colon); // :
-        ast.Storage storage = parseStorage();
+        auto storage = parseStorage();
         return new ast.VarDecl(names, storage, location);
     }
     
-    ast.Data parseData()
+    auto parseData()
     {
         // data = ('byte' | 'word') data_item (',' data_item)*
         //      where data_item = expression | STRING
-        compile.Location location = scanner.getLocation();
-        ast.Storage storage = parseStorage();
+        auto location = scanner.getLocation();
+        auto storage = parseStorage();
         consume(Token.Colon); // :
         
         ast.DataItem[] items;
@@ -686,7 +686,7 @@ class Parser
         return new ast.Data(storage, items, location);
     }
     
-    ast.Jump parseJump()
+    auto parseJump()
     {
         // jump = 'goto' expression ('when' jump_condition)?
         //      | 'call' expression ('when' jump_condition)?
@@ -700,14 +700,14 @@ class Parser
         //      | 'sleep'
         //      | 'suspend'
         //      | 'nop'
-        compile.Location location = scanner.getLocation();
+        auto location = scanner.getLocation();
 
-        Keyword type = keyword;
+        auto type = keyword;
         nextToken(); // IDENTIFIER (keyword)
         switch(type)
         {
             case Keyword.Goto, Keyword.Call:
-                ast.Expression destination = parseExpression();
+                auto destination = parseExpression();
                 ast.JumpCondition condition = null;
                 if(token == Token.Identifier && keyword == Keyword.When)
                 {
@@ -733,7 +733,7 @@ class Parser
         }
     }
     
-    ast.JumpCondition parseJumpCondition(string context)
+    auto parseJumpCondition(string context)
     {
         // jump_condition = 'not'* (IDENTIFIER | '!=' | '==' | '<' | '>' | '<=' | '>=')
         ast.JumpCondition condition = null;
@@ -758,7 +758,7 @@ class Parser
             case Token.Greater:
             case Token.LessEqual:
             case Token.GreaterEqual:
-                Branch type = cast(Branch) token;
+                auto type = cast(Branch) token;
                 nextToken(); // operator token
                 return new ast.JumpCondition(negated, type, scanner.getLocation());
             default:
@@ -767,7 +767,7 @@ class Parser
         }        
     }
     
-    ast.Conditional parseConditional()
+    auto parseConditional()
     {
         // condition = 'if' condition 'then' statement*
         //      ('elseif' condition 'then' statement*)*
@@ -778,10 +778,10 @@ class Parser
         // 'if' condition 'then' statement* ('elseif' condition 'then' statement*)*
         do
         {
-            compile.Location location = scanner.getLocation();
+            auto location = scanner.getLocation();
             nextToken(); // IDENTIFIER (keyword 'if' / 'elseif')
             
-            ast.JumpCondition condition = parseJumpCondition("'if'");
+            auto condition = parseJumpCondition("'if'");
             
             if(keyword == Keyword.Then)
             {
@@ -793,10 +793,10 @@ class Parser
             }
             
             // statement*
-            ast.Block block = new ast.Block(parseConditionalCompound(), location);
+            auto block = new ast.Block(parseConditionalCompound(), location);
             
             // Construct if statement, which is either static or runtime depending on argument before 'then'.
-            ast.Conditional previous = statement;
+            auto previous = statement;
             statement = new ast.Conditional(condition, block, location);
 
             // If this is an 'elseif', join to previous 'if'/'elseif'.
@@ -813,7 +813,7 @@ class Parser
         // ('else' statement*)? 'end' (with error recovery for an invalid trailing else/elseif placement)
         if(keyword == Keyword.Else)
         {
-            compile.Location location = scanner.getLocation();
+            auto location = scanner.getLocation();
             nextToken(); // IDENTIFIER (keyword 'else')
             statement.alternative = new ast.Block(parseConditionalCompound(), location); // statement*
         }
@@ -840,22 +840,22 @@ class Parser
         return first;
     }
     
-    ast.Loop parseLoop()
+    auto parseLoop()
     {
         // loop = 'repeat' statement* 'end'
-        compile.Location location = scanner.getLocation();
+        auto location = scanner.getLocation();
         nextToken(); // IDENTIFIER (keyword 'repeat')
-        ast.Block block = new ast.Block(parseCompound(), location); // statement*
+        auto block = new ast.Block(parseCompound(), location); // statement*
         nextToken(); // IDENTIFIER (keyword 'end')
         return new ast.Loop(block, location);
     }
 
-    ast.Comparison parseComparison()
+    auto parseComparison()
     {
         // comparison = 'cmp' expression ('to' expression)?
-        compile.Location location = scanner.getLocation();
+        auto location = scanner.getLocation();
         nextToken(); // IDENTIFIER (keyword 'cmp')
-        ast.Expression term = parseAssignableTerm();
+        auto term = parseAssignableTerm();
         if(keyword == Keyword.To)
         {
             nextToken(); // IDENTIFIER (keyword 'to')
@@ -868,13 +868,13 @@ class Parser
         }
     }
 
-    ast.Command parseCommand()
+    auto parseCommand()
     {
         // command = command_token expression
-        compile.Location location = scanner.getLocation();
-        Keyword command = keyword;
+        auto location = scanner.getLocation();
+        auto command = keyword;
         nextToken(); // IDENTIFIER (keyword)
-        ast.Expression argument = parseExpression();
+        auto argument = parseExpression();
         return new ast.Command(command, argument, location);
     }
 
@@ -906,22 +906,21 @@ class Parser
         }
     }
 
-    ast.Assignment parseAssignment()
+    auto parseAssignment()
     {
         // assignment = assignable_term ('=' expression ('via' term)? | postfix_token)
-        compile.Location location = scanner.getLocation();
-        Token lead = token;
-        string leadText = text;
-        ast.Expression dest = parseAssignableTerm(); // term
-        Token op = token;
+        auto location = scanner.getLocation();
+        auto op = token;
+        auto opText = text;
+        auto dest = parseAssignableTerm(); // term
         if(token == Token.Set)
         {
             nextToken(); // =
-            ast.Expression src = parseExpression(); // expression
+            auto src = parseExpression(); // expression
             if(token == Token.Identifier && keyword == Keyword.Via)
             {
                 nextToken(); // IDENTIFIER (keyword 'via')
-                ast.Expression intermediary = parseTerm(); // term
+                auto intermediary = parseTerm(); // term
                 return new ast.Assignment(dest, intermediary, src, location);
             }
             else
@@ -938,7 +937,7 @@ class Parser
         {
             if(token == Token.Identifier || token == Token.Integer || token == Token.Hexadecimal || token == Token.Binary)
             {
-                reject(lead, leadText, "statement", false);
+                reject(op, opText, "statement", false);
             }
             else
             {
@@ -949,7 +948,7 @@ class Parser
         }
     }
 
-    ast.Expression parseExpression()
+    auto parseExpression()
     {
         // expression = infix
         return parseInfix();
@@ -1019,12 +1018,12 @@ class Parser
         ast.Expression left = parsePrefix(); // postfix
         while(true)
         {
-            compile.Location location = scanner.getLocation();
+            auto location = scanner.getLocation();
             if(isInfixToken())
             {
-                Infix type = cast(Infix) token;
+                auto type = cast(Infix) token;
                 nextToken(); // operator token
-                ast.Expression right = parsePrefix(); // postfix
+                auto right = parsePrefix(); // postfix
                 left = new ast.Infix(type, left, right, location);
             }
             else
@@ -1039,10 +1038,10 @@ class Parser
         // prefix = prefix_token prefix | postfix
         if(isPrefixToken())
         {
-            compile.Location location = scanner.getLocation();
-            Prefix op = cast(Prefix) token;
+            auto location = scanner.getLocation();
+            auto op = cast(Prefix) token;
             nextToken(); // operator token
-            ast.Expression expr = parsePrefix(); // prefix
+            auto expr = parsePrefix(); // prefix
             return new ast.Prefix(op, expr, location);
         }
         else
@@ -1054,12 +1053,12 @@ class Parser
     ast.Expression parsePostfix()
     {
         // postfix = term postfix_token*
-        ast.Expression expr = parseTerm(); // term
+        auto expr = parseTerm(); // term
         while(true)
         {
             if(isPostfixToken())
             {
-                Postfix op = cast(Postfix) token;
+                auto op = cast(Postfix) token;
                 expr = new ast.Postfix(op, expr, scanner.getLocation());
                 nextToken(); // operator token
             }
@@ -1073,8 +1072,8 @@ class Parser
     ast.Expression parseAssignableTerm()
     {
         // assignable_term = term ('@' term)?
-        compile.Location location = scanner.getLocation();
-        ast.Expression expr = parseTerm();
+        auto location = scanner.getLocation();
+        auto expr = parseTerm();
         if(token == Token.At)
         {
             nextToken(); // '@'
@@ -1094,7 +1093,7 @@ class Parser
         //      | LBRACKET expression RBRACKET
         //      | IDENTIFIER ('.' IDENTIFIER)*
         //      | 'pop'
-        compile.Location location = scanner.getLocation();
+        auto location = scanner.getLocation();
         switch(token)
         {
             case Token.Integer:
@@ -1137,18 +1136,18 @@ class Parser
         }
     }
 
-    ast.Number parseNumber(uint radix)
+    auto parseNumber(uint radix)
     {
         // number = INTEGER | HEXADECIMAL | BINARY
-        compile.Location location = scanner.getLocation();
-        Token numberToken = token;
-        string numberText = text;
+        auto location = scanner.getLocation();
+        auto numberToken = token;
+        auto numberText = text;
         nextToken(); // number
 
         uint value;
         try
         {
-            string t = numberText;
+            auto t = numberText;
             // prefix?
             if(radix != 10)
             {
@@ -1174,9 +1173,9 @@ class Parser
         return new ast.Number(numberToken, value, location);
     }
 
-    ast.Attribute parseAttribute()
+    auto parseAttribute()
     {
-        compile.Location location = scanner.getLocation();
+        auto location = scanner.getLocation();
         string[] pieces;
         if(checkIdentifier())
         {
