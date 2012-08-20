@@ -278,7 +278,7 @@ class Parser
                 skipAssignment(false);
                 break;
             case Token.LBracket:
-                parseAssignment();
+                return parseAssignment();
                 break;
             case Token.Semi:
                 // semi-colon, skip.

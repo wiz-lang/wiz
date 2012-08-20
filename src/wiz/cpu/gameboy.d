@@ -15,6 +15,7 @@ private
         PositiveIndex,
         NegativeIndex,
         BitIndex,
+        Swap,
         A,
         B,
         C,
@@ -167,7 +168,11 @@ private
         {
             if(prefix.type == parse.Token.LBracket)
             {
-                return buildIndirection(program, prefix);
+                return buildIndirection(program, prefix.operand);
+            }
+            if(prefix.type == parse.Token.Swap)
+            {
+                return new Argument(ArgumentType.Swap, buildArgument(program, prefix.operand));
             }
         }
         else if(auto infix = cast(ast.Infix) root)
@@ -576,6 +581,10 @@ class GameboyPlatform : Platform
     ubyte[] generateCalculation(compile.Program program, ast.Assignment stmt, Argument dest, ast.Expression src)
     {
         ubyte[] code = generateLoad(program, stmt, dest, src);
+        if(dest is null)
+        {
+            return [];
+        }
         // TODO: This code will be gigantic.
         // a:
         //      + (add), - (sub), +# (adc), -# (sbc),
@@ -594,6 +603,10 @@ class GameboyPlatform : Platform
     {
         // TODO: fold constant left-hand of expressions.
         // TODO: giant fucking assignment compatibility instruction lookup table.
+        if(dest is null)
+        {
+            return [];
+        }
         final switch(dest.type)
         {
             case ArgumentType.A:
@@ -652,18 +665,58 @@ class GameboyPlatform : Platform
                     case ArgumentType.Immediate:
                         // '[n] = a' -> 'ld [n], a'
                         // '[0xFFnn] = a' -> 'ldh [nn], a'
+                        error("Invalid assignment to indirected expression.", stmt.location);
                         return [];
                     case ArgumentType.BC:
                         // '[bc] = a' -> 'ld [bc], a'
+                        auto load = buildArgument(program, src);
+                        if(load)
+                        {
+                            if(load.type == ArgumentType.A)
+                            {
+                                return [0x02];
+                            }
+                        }
+                        error("Invalid initializer in '[bc] = ...'", stmt.location);
                         return [];
                     case ArgumentType.DE:
                         // '[de] = a' -> 'ld [de], a'
+                        auto load = buildArgument(program, src);
+                        if(load)
+                        {
+                            if(load.type == ArgumentType.A)
+                            {
+                                return [0x12];
+                            }
+                        }
+                        error("Invalid initializer in '[de] = ...'", stmt.location);
                         return [];
                     case ArgumentType.HL:
-                        // '[hl] = a' -> 'ld [hl], a'
-                        // '[hl] = <>[hl]' -> 'swap [hl]'
+                        auto load = buildArgument(program, src);
+                        bool swap = false;
+                        if(load)
+                        {
+                            // '[hl] = <>v' -> 'hl = v; hl = <>hl'
+                            if(load.type == ArgumentType.Swap)
+                            {
+                                load = load.base;
+                                swap = true;
+                            }
+                            // '[hl] = [hl]'
+                            if(load.type == dest.type && load.base.type == dest.base.type)
+                            {
+                                return swap ? [0x36] : [];
+                            }
+                            // '[hl] = a' -> 'ld [hl], a'
+                            if(load.type == ArgumentType.A)
+                            {
+                                return swap ? [0x36, 0x77] : [0x77];
+                            }
+                        }
+                        error("Invalid initializer in '[hl] = " ~ (swap ? "<> " : "") ~ "...'", stmt.location);
                         return [];
                     default:
+                        error("Invalid assignment to indirected expression.", stmt.location);
                         return [];
                 }
             case ArgumentType.AF:
@@ -708,17 +761,20 @@ class GameboyPlatform : Platform
             case ArgumentType.Immediate:
                 error("assignment '=' to immediate constant is invalid.", stmt.location);
                 return [];
+            case ArgumentType.Swap:
+                error("assignment '=' to swap expression '<>' is invalid.", stmt.location);
+                return [];
             case ArgumentType.F:
-                error("assignment '=' to 'f' register is not invalid.", stmt.location);
+                error("assignment '=' to 'f' register is invalid.", stmt.location);
                 return [];
             case ArgumentType.Zero:
-                error("assignment '=' to 'zero' flag is not invalid.", stmt.location);
+                error("assignment '=' to 'zero' flag is invalid.", stmt.location);
                 return [];
             case ArgumentType.Carry:
                 // 'carry = 1' -> 'scf'
                 // 'carry = carry ^ 1' -> 'ccf'
                 // 'carry = 0' -> 'scf; ccf'
-                error("assignment '=' to 'carry' flag is not invalid.", stmt.location);
+                error("assignment '=' to 'carry' flag is invalid.", stmt.location);
                 return [];
             case ArgumentType.None:
                 return [];

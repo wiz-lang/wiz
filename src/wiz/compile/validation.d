@@ -310,7 +310,10 @@ auto createCommandHandler(Program program)
 {
     return(ast.Command stmt)
     {
+        auto description = parse.getKeywordName(stmt.type) ~ " statement";
         auto code = program.platform.generateCommand(program, stmt);
+        auto bank = program.checkBank(description, stmt.location);
+        bank.reservePhysical(description, code.length, stmt.location);
     };
 }
 
@@ -318,7 +321,10 @@ auto createJumpHandler(Program program)
 {
     return(ast.Jump stmt)
     {
+        auto description = parse.getKeywordName(stmt.type) ~ " statement";
         auto code = program.platform.generateJump(program, stmt);
+        auto bank = program.checkBank(description, stmt.location);
+        bank.reservePhysical(description, code.length, stmt.location);
     };
 }
 
@@ -326,7 +332,10 @@ auto createAssignmentHandler(Program program)
 {
     return(ast.Assignment stmt)
     {
+        enum description = "assignment";
         auto code = program.platform.generateAssignment(program, stmt);
+        auto bank = program.checkBank(description, stmt.location);
+        bank.reservePhysical(description, code.length, stmt.location);
     };
 }
 
@@ -427,30 +436,6 @@ void aggregate(Program program, ast.Node root)
             auto bank = program.checkBank(description, decl.location);
             auto def = program.environment.get!(sym.LabelDef)(decl.name);
             def.address = bank.checkAddress(description, decl.location);
-        },
-        
-        (ast.Command stmt)
-        {
-            auto description = parse.getKeywordName(stmt.type) ~ " statement";
-            auto code = program.platform.generateCommand(program, stmt);
-            auto bank = program.checkBank(description, stmt.location);
-            bank.reservePhysical(description, code.length, stmt.location);
-        },
-
-        (ast.Jump stmt)
-        {
-            auto description = parse.getKeywordName(stmt.type) ~ " statement";
-            auto code = program.platform.generateJump(program, stmt);
-            auto bank = program.checkBank(description, stmt.location);
-            bank.reservePhysical(description, code.length, stmt.location);
-        },
-
-        (ast.Assignment stmt)
-        {
-            enum description = "assignment";
-            auto code = program.platform.generateAssignment(program, stmt);
-            auto bank = program.checkBank(description, stmt.location);
-            bank.reservePhysical(description, code.length, stmt.location);
         },
     );
     verify();

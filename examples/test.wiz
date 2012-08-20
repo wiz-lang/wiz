@@ -36,6 +36,8 @@ def disable_display: do
     return
 end
 
+[hl] = <>a
+
 def memset: do
     c++; b++
     repeat
@@ -170,7 +172,7 @@ def main: do
         call gfx_load_pal_color
         
         // Setup bank for the tileset load happening soon.
-        gb.color.select.vram = 0
+        [gb.color.select.vram] = 0
     end
 
     // Now actually enable the screen
