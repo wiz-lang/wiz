@@ -847,9 +847,9 @@ class Parser
 
     auto parseComparison()
     {
-        // comparison = 'cmp' expression ('to' expression)?
+        // comparison = 'compare' expression ('to' expression)?
         auto location = scanner.getLocation();
-        nextToken(); // IDENTIFIER (keyword 'cmp')
+        nextToken(); // IDENTIFIER (keyword 'compare')
         auto term = parseAssignableTerm();
         if(keyword == Keyword.To)
         {
