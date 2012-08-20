@@ -491,9 +491,9 @@ class GameboyPlatform : Platform
 
     ubyte[] generateAssignment(compile.Program program, ast.Assignment stmt)
     {
-        if(stmt.dest && stmt.src is null)
+        auto dest = buildArgument(program, stmt.dest);
+        if(stmt.src is null)
         {
-            auto dest = buildArgument(program, stmt.dest);
             final switch(stmt.postfix)
             {
                 case parse.Postfix.Inc:
@@ -556,7 +556,151 @@ class GameboyPlatform : Platform
                     }
             }
         }
+        else
+        {
+            if(stmt.intermediary)
+            {
+                auto intermediary = buildArgument(program, stmt.intermediary);
+                return
+                    generateCalculation(program, stmt, intermediary, stmt.src)
+                    ~ generateLoad(program, stmt, dest, stmt.intermediary);
+            }
+            else
+            {
+                return generateCalculation(program, stmt, dest, stmt.src);
+            }
+        }
         return [];
+    }
+
+    ubyte[] generateCalculation(compile.Program program, ast.Assignment stmt, Argument dest, ast.Expression src)
+    {
+        ubyte[] code = generateLoad(program, stmt, dest, src);
+        // TODO
+        return code;
+    }
+
+    ubyte[] generateLoad(compile.Program program, ast.Assignment stmt, Argument dest, ast.Expression src)
+    {
+        // TODO: fold constant left-hand of expressions.
+        // TODO: giant fucking assignment compatibility instruction lookup table.
+        final switch(dest.type)
+        {
+            case ArgumentType.A:
+                // 'a = r' -> 'ld a, r'
+                // 'a = n' -> 'ld a, n'
+                // 'a = [hl]' -> 'ld a, [hl]'
+                // 'a = [bc]' -> 'ld a, [bc]'
+                // 'a = [de]' -> 'ld a, [de]'
+                // 'a = [n]' -> 'ld a, [n]'
+                // 'a = [0xFFnn]' -> 'ldh a, [nn]'
+                // 'a = [0xFF00:c]' -> 'ldh a, [c]'
+                // 'a = [hl++]' -> 'ld a, [hl+]'
+                // 'a = [hl--]' -> 'ld a, [hl-]'
+                return [];
+            case ArgumentType.B:
+                // 'b = r' -> 'ld b, r'
+                // 'b = n' -> 'ld b, n'
+                // 'b = [hl]' -> 'ld b, [hl]'
+                return [];
+            case ArgumentType.C:
+                // 'c = r' -> 'ld c, r'
+                // 'c = n' -> 'ld c, n'
+                // 'c = [hl]' -> 'ld c, [hl]'
+                return [];
+            case ArgumentType.D:
+                // 'd = r' -> 'ld d, r'
+                // 'd = n' -> 'ld d, n'
+                // 'd = [hl]' -> 'ld d, [hl]'
+                return [];
+            case ArgumentType.E:
+                // 'e = r' -> 'ld e, r'
+                // 'e = n' -> 'ld e, n'
+                // 'e = [hl]' -> 'ld e, [hl]'
+                return [];
+            case ArgumentType.H:
+                // 'h = r' -> 'ld h, r'
+                // 'h = n' -> 'ld h, n'
+                // 'h = [hl]' -> 'ld h, [hl]'
+                return [];
+            case ArgumentType.L:
+                // 'l = r' -> 'ld l, r'
+                // 'l = n' -> 'ld l, n'
+                // 'l = [hl]' -> 'ld l, [hl]'
+                return [];
+            case ArgumentType.Indirection:
+                switch(dest.base.type)
+                {
+                    case ArgumentType.Immediate:
+                        // '[n] = a' -> 'ld [n], a'
+                        // '[0xFFnn] = a' -> 'ldh [nn], a'
+                        return [];
+                    case ArgumentType.BC:
+                        // '[bc] = a' -> 'ld [bc], a'
+                        return [];
+                    case ArgumentType.DE:
+                        // '[de] = a' -> 'ld [de], a'
+                        return [];
+                    case ArgumentType.HL:
+                        // '[hl] = a' -> 'ld [hl], a'
+                        return [];
+                    default:
+                        return [];
+                }
+            case ArgumentType.AF:
+                // 'af = pop' -> 'pop af'
+                return [];
+            case ArgumentType.BC:
+                // 'bc = n' -> 'ld bc, n'
+                // 'bc = pop' -> 'pop bc'
+                return [];
+            case ArgumentType.DE:
+                // 'de = n' -> 'ld de, n'
+                // 'de = pop' -> 'pop de'
+                return [];
+            case ArgumentType.HL:
+                // 'hl = n' -> 'ld hl, n'
+                // 'hl = sp' -> 'ld hl, sp + k'
+                // 'hl = pop' -> 'pop hl'
+                return [];
+            case ArgumentType.SP:
+                // 'sp = hl' -> 'ld sp, hl'
+                return [];
+            case ArgumentType.IndirectionInc:
+                // '[hl++] = a' -> 'ld [hl+], a'
+                return [];
+            case ArgumentType.IndirectionDec:
+                // '[hl--] = a' -> 'ld [hl-], a'
+                return [];
+            case ArgumentType.PositiveIndex:
+                // '[FF00:c]' -> 'ldh [c], a'
+                return [];
+            case ArgumentType.NegativeIndex:
+                error("Negative indexing is not supported.", stmt.location);
+                return [];
+            case ArgumentType.BitIndex:
+                // 'r@i = 0' -> 'res r, i'
+                // 'r@i = 1' -> 'set r, i'
+                return [];
+            case ArgumentType.Interrupt:
+                // 'interrupt = 0' -> 'di'
+                // 'interrupt = 1' -> 'ei'
+                return [];
+            case ArgumentType.Immediate:
+                error("assignment '=' to immediate constant is invalid.", stmt.location);
+                return [];
+            case ArgumentType.F:
+                error("assignment '=' to 'f' register is not invalid.", stmt.location);
+                return [];
+            case ArgumentType.Zero:
+                error("assignment '=' to 'zero' flag is not invalid.", stmt.location);
+                return [];
+            case ArgumentType.Carry:
+                error("assignment '=' to 'carry' flag is not invalid.", stmt.location);
+                return [];
+            case ArgumentType.None:
+                return [];
+        }
     }
 
     ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
@@ -568,12 +712,12 @@ class GameboyPlatform : Platform
             case ArgumentType.A:
                 if(right is null)
                 {
-                    // 'or a'
+                    // 'compare a' -> 'or a'
                     return [0xB7];
                 }
                 else
                 {
-                    // 'cp a, expr'
+                    // 'compare a to expr' -> 'cp a, expr'
                     switch(right.type)
                     {
                         case ArgumentType.Immediate:
@@ -608,6 +752,7 @@ class GameboyPlatform : Platform
                     }
                 }
             case ArgumentType.BitIndex:
+                // 'compare r@i' -> 'bit r, i'
                 if(right is null)
                 {
                     uint index;
@@ -645,7 +790,6 @@ class GameboyPlatform : Platform
                             default:
                                 return [];
                         }
-                        // 'bit r, i'
                         return [0xCB, (0x40 + (0x08 * index) + r) & 0xFF];
                     }
                 }
