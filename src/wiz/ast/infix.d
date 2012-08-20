@@ -5,10 +5,10 @@ import wiz.ast.lib;
 
 class Infix : Expression
 {
-    private parse.Token _type;
+    private parse.Infix _type;
     private Expression _left, _right;
 
-    this(parse.Token type, Expression left, Expression right, compile.Location location)
+    this(parse.Infix type, Expression left, Expression right, compile.Location location)
     {
         super(location);
         _type = type;

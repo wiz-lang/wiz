@@ -87,7 +87,7 @@ private
         }
         else if(auto prefix = cast(ast.Prefix) root)
         {
-            if(prefix.type == parse.Token.LBracket)
+            if(prefix.type == parse.Prefix.Indirection)
             {
                 error("double-indirection is not supported on the gameboy", prefix.location);
                 return null;
@@ -96,13 +96,10 @@ private
         else if(auto postfix = cast(ast.Postfix) root)
         {
             ArgumentType argumentType;
-            switch(postfix.type)
+            final switch(postfix.type)
             {
-                case parse.Token.Inc: argumentType = ArgumentType.IndirectionInc; break;
-                case parse.Token.Dec: argumentType = ArgumentType.IndirectionDec; break;
-                default:
-                    error("operator " ~ parse.getSimpleTokenName(postfix.type) ~ " is not supported", postfix.location);
-                    return null;
+                case parse.Postfix.Inc: argumentType = ArgumentType.IndirectionInc; break;
+                case parse.Postfix.Dec: argumentType = ArgumentType.IndirectionDec; break;
             }
             if(auto attr = cast(ast.Attribute) postfix.operand)
             {
@@ -116,7 +113,7 @@ private
                 }
             }
             error(
-                "operator " ~ parse.getSimpleTokenName(postfix.type)
+                "operator " ~ parse.getPostfixName(postfix.type)
                 ~ " on indirected operand is not supported (only 'hl' is valid)",
                 postfix.location
             );
@@ -127,7 +124,7 @@ private
             Builtin registerLeft;
             Builtin registerRight;
 
-            if(infix.type == parse.Token.Colon)
+            if(infix.type == parse.Infix.Colon)
             {
                 if(auto attr = cast(ast.Attribute) infix.right)
                 {
@@ -136,7 +133,7 @@ private
                     {
                         if(auto prefix = cast(ast.Prefix) infix.left)
                         {
-                            if(prefix.type == parse.Token.Sub)
+                            if(prefix.type == parse.Infix.Sub)
                             {
                                 return new Argument(ArgumentType.NegativeIndex, prefix.operand, new Argument(builtin.type));
                             }
@@ -258,21 +255,20 @@ class GameboyPlatform : Platform
                             auto cond = stmt.condition;
                             if(cond.attr is null)
                             {
-                                switch(cond.operator)
+                                final switch(cond.branch)
                                 {
-                                    case parse.Token.Equal:
+                                    case parse.Branch.Equal:
                                         break;
-                                    case parse.Token.NotEqual:
+                                    case parse.Branch.NotEqual:
                                         break;
-                                    case parse.Token.Less:
+                                    case parse.Branch.Less:
                                         break;
-                                    case parse.Token.Greater:
+                                    case parse.Branch.Greater:
                                         break;
-                                    case parse.Token.LessEqual:
+                                    case parse.Branch.LessEqual:
                                         break;
-                                    case parse.Token.GreaterEqual:
+                                    case parse.Branch.GreaterEqual:
                                         break;
-                                    default:
                                 }
                             }
                             else

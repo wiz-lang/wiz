@@ -410,7 +410,7 @@ class Scanner
                     default:
                         break;
                 }
-                return Token.EOF;
+                return Token.EndOfFile;
             }
         }
         assert(false);

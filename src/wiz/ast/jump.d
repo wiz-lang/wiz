@@ -35,7 +35,7 @@ class JumpCondition : Node
 {
     private bool _negated;
     private Attribute _attr;
-    private parse.Token _operator;
+    private parse.Branch _branch;
 
     this(bool negated, Attribute attr, compile.Location location)
     {
@@ -44,13 +44,13 @@ class JumpCondition : Node
         _attr = attr;
     }
 
-    this(bool negated, parse.Token operator, compile.Location location)
+    this(bool negated, parse.Branch branch, compile.Location location)
     {
         super(location);
         _negated = negated;
-        _operator = operator;
+        _branch = branch;
     }
 
     mixin compile.BranchAcceptor!(_attr);
-    mixin helper.Accessor!(_negated, _attr, _operator);
+    mixin helper.Accessor!(_negated, _attr, _branch);
 }

@@ -2,8 +2,8 @@ module wiz.parse.token;
 
 enum Token
 {
-    Empty,
-    EOF,
+    None,
+    EndOfFile,
     InvalidChar,
     // Identifier. Keywords are also identifiers, but have reserved meaning determined later.
     Identifier,
@@ -117,6 +117,56 @@ private string[] tokenNames = [
     "'>>>#'",
 ];
 
+enum Branch
+{
+    Less = Token.Less,
+    Greater = Token.Greater,
+    LessEqual = Token.LessEqual,
+    GreaterEqual = Token.GreaterEqual,
+    NotEqual = Token.NotEqual,
+    Equal = Token.Equal,
+}
+
+enum Prefix
+{
+    Not = Token.Not,
+    Low = Token.Less,
+    High = Token.Greater,
+    Swap = Token.Swap,
+    Grouping = Token.LParen,
+    Indirection = Token.LBracket,
+}
+
+enum Postfix
+{
+    Inc = Token.Inc,
+    Dec = Token.Dec,
+}
+
+enum Infix
+{
+    At = Token.At,
+    Add = Token.Add,
+    Sub = Token.Sub,
+    Mul = Token.Mul,
+    Div = Token.Div,
+    Mod = Token.Mod,
+    AddC = Token.AddC,
+    SubC = Token.SubC,
+    ShiftL = Token.ShiftL,
+    ShiftR = Token.ShiftR,
+    RotateL = Token.RotateL,
+    RotateR = Token.RotateR,
+    RotateLC = Token.RotateLC,
+    RotateRC = Token.RotateRC,
+    ArithShiftL = Token.ArithShiftL,
+    ArithShiftR = Token.ArithShiftR,
+    Or = Token.Or,
+    And = Token.And,
+    Xor = Token.Xor,
+    Colon = Token.Colon,
+}
+
 enum Keyword
 {
     None,
@@ -223,6 +273,26 @@ static this()
 string getSimpleTokenName(Token token)
 {
     return tokenNames[token];
+}
+
+string getBranchName(Branch op)
+{
+    return tokenNames[op];
+}
+
+string getPrefixName(Prefix op)
+{
+    return tokenNames[op];
+}
+
+string getPostfixName(Postfix op)
+{
+    return tokenNames[op];
+}
+
+string getInfixName(Infix op)
+{
+    return tokenNames[op];
 }
 
 string getVerboseTokenName(Token token, string text)

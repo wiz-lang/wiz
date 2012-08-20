@@ -120,7 +120,7 @@ class Parser
         ast.Statement[] statements;
         while(true)
         {
-            if(token == Token.EOF)
+            if(token == Token.EndOfFile)
             {
                 if(includes.length == 0)
                 {
@@ -162,7 +162,7 @@ class Parser
         ast.Statement[] statements;
         while(true)
         {
-            if(token == Token.EOF)
+            if(token == Token.EndOfFile)
             {
                 reject("'end'");
                 return null;
@@ -190,7 +190,7 @@ class Parser
         ast.Statement[] statements;
         while(true)
         {
-            if(token == Token.EOF)
+            if(token == Token.EndOfFile)
             {
                 reject("'end'");
             }
@@ -735,7 +735,7 @@ class Parser
     
     ast.JumpCondition parseJumpCondition(string context)
     {
-        // jump_condition = 'not'* (IDENTIFIER | '!=' | '==' | '<' | '>=')
+        // jump_condition = 'not'* (IDENTIFIER | '!=' | '==' | '<' | '>' | '<=' | '>=')
         ast.JumpCondition condition = null;
         
         // 'not'* (not isn't a keyword, but it has special meaning)
@@ -758,9 +758,9 @@ class Parser
             case Token.Greater:
             case Token.LessEqual:
             case Token.GreaterEqual:
-                Token operator = token;
+                Branch type = cast(Branch) token;
                 nextToken(); // operator token
-                return new ast.JumpCondition(negated, operator, scanner.getLocation());
+                return new ast.JumpCondition(negated, type, scanner.getLocation());
             default:
                 reject("condition after " ~ context);
                 return null;
@@ -1022,10 +1022,10 @@ class Parser
             compile.Location location = scanner.getLocation();
             if(isInfixToken())
             {
-                Token op = token;
+                Infix type = cast(Infix) token;
                 nextToken(); // operator token
                 ast.Expression right = parsePrefix(); // postfix
-                left = new ast.Infix(op, left, right, location);
+                left = new ast.Infix(type, left, right, location);
             }
             else
             {
@@ -1040,7 +1040,7 @@ class Parser
         if(isPrefixToken())
         {
             compile.Location location = scanner.getLocation();
-            Token op = token;
+            Prefix op = cast(Prefix) token;
             nextToken(); // operator token
             ast.Expression expr = parsePrefix(); // prefix
             return new ast.Prefix(op, expr, location);
@@ -1059,7 +1059,7 @@ class Parser
         {
             if(isPostfixToken())
             {
-                Token op = token;
+                Postfix op = cast(Postfix) token;
                 expr = new ast.Postfix(op, expr, scanner.getLocation());
                 nextToken(); // operator token
             }
@@ -1078,7 +1078,7 @@ class Parser
         if(token == Token.At)
         {
             nextToken(); // '@'
-            return new ast.Infix(Token.At, expr, parseTerm(), location);
+            return new ast.Infix(Infix.At, expr, parseTerm(), location);
         }
         else
         {
@@ -1111,7 +1111,7 @@ class Parser
                 nextToken(); // (
                 ast.Expression expr = parseExpression(); // expression 
                 consume(Token.RParen); // )
-                return new ast.Prefix(Token.LParen, expr, location);
+                return new ast.Prefix(Prefix.Grouping, expr, location);
             case Token.LBracket:
                 nextToken(); // [
                 ast.Expression expr = parseExpression(); // expression
@@ -1120,10 +1120,10 @@ class Parser
                 {
                     nextToken(); // :
                     ast.Expression index = parseExpression(); // expression
-                    expr = new ast.Infix(Token.Colon, expr, index, location);
+                    expr = new ast.Infix(Infix.Colon, expr, index, location);
                 }
                 consume(Token.RBracket); // ]
-                return new ast.Prefix(Token.LBracket, expr, location);
+                return new ast.Prefix(Prefix.Indirection, expr, location);
             case Token.Identifier:
                 if(keyword == Keyword.Pop)
                 {

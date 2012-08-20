@@ -73,9 +73,9 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
             }
             uint a = values[e.left];
             uint b = values[e.right];
-            switch(e.type)
+            final switch(e.type)
             {
-                case parse.Token.Add: 
+                case parse.Infix.Add: 
                     if(a + ast.Expression.Max < b)
                     {
                         error("addition yields result which will overflow outside of 0..65535.", e.right.location);
@@ -85,7 +85,7 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
                         values[e] = a + b;
                     }
                     break;
-                case parse.Token.Sub:
+                case parse.Infix.Sub:
                     if(a < b)
                     {
                         error("subtraction yields result which will overflow outside of 0..65535.", e.right.location);
@@ -95,7 +95,7 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
                         values[e] = a - b;
                     }
                     break;
-                case parse.Token.Mul:
+                case parse.Infix.Mul:
                     if(a > ast.Expression.Max / b)
                     {
                         error("multiplication yields result which will overflow outside of 0..65535.", e.right.location);
@@ -105,7 +105,7 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
                         values[e] = a * b;
                     }
                     break;
-                case parse.Token.Div:
+                case parse.Infix.Div:
                     if(a == 0)
                     {
                         error("division by zero is undefined.", e.right.location);
@@ -115,7 +115,7 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
                         values[e] = a / b;
                     }
                     break;
-                case parse.Token.Mod:
+                case parse.Infix.Mod:
                     if(a == 0)
                     {
                         error("modulo by zero is undefined.", e.right.location);
@@ -125,7 +125,7 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
                         values[e] = a % b;
                     }
                     break;
-                case parse.Token.ShiftL:
+                case parse.Infix.ShiftL:
                     // If shifting more than N bits, or ls << rs > 2^N-1, then error.
                     if(b > 16 || (b > 0 && (a & ~(1 << (16 - b))) != 0))
                     {
@@ -136,23 +136,27 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
                         values[e] = a << b;
                     }
                     break;
-                case parse.Token.ShiftR:
+                case parse.Infix.ShiftR:
                     values[e] = a >> b;
                     break;
-                case parse.Token.And:
+                case parse.Infix.And:
                     values[e] = a & b;
                     break;
-                case parse.Token.Or:
+                case parse.Infix.Or:
                     values[e] = a | b;
                     break;
-                case parse.Token.Xor:
+                case parse.Infix.Xor:
                     values[e] = a ^ b;
                     break;
-                case parse.Token.At:
+                case parse.Infix.At:
                     values[e] = a & (1 << b);
                     break;
-                default:
-                    error("infix operator " ~ parse.getSimpleTokenName(e.type) ~ " cannot be used in constant expression", e.location);
+                case parse.Infix.AddC, parse.Infix.SubC,
+                    parse.Infix.ArithShiftL, parse.Infix.ArithShiftR,
+                    parse.Infix.RotateL, parse.Infix.RotateR,
+                    parse.Infix.RotateLC, parse.Infix.RotateRC,
+                    parse.Infix.Colon:
+                    error("infix operator " ~ parse.getInfixName(e.type) ~ " cannot be used in constant expression", e.location);
             }
         },
 
@@ -163,19 +167,21 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
                 return;
             }
             uint r = values[e.operand];
-            switch(e.type)
+            final switch(e.type)
             {
-                case parse.Token.Less:
+                case parse.Prefix.Low:
                     values[e] = r & 0xFF;
                     break;
-                case parse.Token.Greater:
+                case parse.Prefix.High:
                     values[e] = (r >> 8) & 0xFF;
                     break;
-                case parse.Token.Swap:
+                case parse.Prefix.Swap:
                     values[e] = ((r & 0x0F0F) << 4) | ((r & 0xF0F0) >> 4);
                     break;
-                default:
-                    error("prefix operator " ~ parse.getSimpleTokenName(e.type) ~ " cannot be used in constant expression", e.location);
+                case parse.Prefix.Grouping:
+                    values[e] = r;
+                case parse.Prefix.Not, parse.Prefix.Indirection:
+                    error("prefix operator " ~ parse.getPrefixName(e.type) ~ " cannot be used in constant expression", e.location);
             }
         },
 
@@ -187,7 +193,7 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
             }
             else
             {
-                error("postfix operator " ~ parse.getSimpleTokenName(e.type) ~ " cannot be used in constant expression", e.location);
+                error("postfix operator " ~ parse.getPostfixName(e.type) ~ " cannot be used in constant expression", e.location);
             }
         },
 
