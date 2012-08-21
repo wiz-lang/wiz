@@ -16,6 +16,7 @@ private
         NegativeIndex,
         BitIndex,
         Swap,
+        Pop,
         A,
         B,
         C,
@@ -150,6 +151,11 @@ private
                 return null;
             }
         }
+        else if(auto pop = cast(ast.Pop) root)
+        {
+            error("'pop' is not allowed inside of indirection", pop.location);
+            return null;
+        }
         return new Argument(ArgumentType.Indirection, new Argument(ArgumentType.Immediate, root));
     }
 
@@ -188,6 +194,10 @@ private
                     }
                 }
             }
+        }
+        else if(auto pop = cast(ast.Pop) root)
+        {
+            return new Argument(ArgumentType.Pop);
         }
         return new Argument(ArgumentType.Immediate, root);
     }
@@ -664,7 +674,7 @@ class GameboyPlatform : Platform
                     case ArgumentType.Immediate:
                         // '[n] = a' -> 'ld [n], a'
                         // '[0xFFnn] = a' -> 'ldh [nn], a'
-                        error("Invalid assignment to indirected expression.", stmt.location);
+                        error("TODO: assignment to indirected immediate", stmt.location);
                         return [];
                     case ArgumentType.BC:
                         // '[bc] = a' -> 'ld [bc], a'
@@ -719,20 +729,73 @@ class GameboyPlatform : Platform
                 // 'af = pop' -> 'pop af'
                 return [];
             case ArgumentType.BC:
-                // 'bc = n' -> 'ld bc, n'
-                // 'bc = pop' -> 'pop bc'
+                if(auto load = buildArgument(program, src))
+                {
+                    switch(load.type)
+                    {
+                        case ArgumentType.Immediate:
+                            // 'bc = n' -> 'ld bc, n'
+                            error("TODO: assignment of 'bc' to immediate", stmt.location);
+                            return [];
+                        case ArgumentType.Pop:
+                            // 'bc = pop' -> 'pop bc'
+                            return [0xC1];
+                        default:
+                    }
+                }
+                error("Invalid assignment to 'bc'.", stmt.location);
                 return [];
             case ArgumentType.DE:
-                // 'de = n' -> 'ld de, n'
-                // 'de = pop' -> 'pop de'
+                if(auto load = buildArgument(program, src))
+                {
+                    switch(load.type)
+                    {
+                        case ArgumentType.Immediate:
+                            // 'de = n' -> 'ld de, n'
+                            error("TODO: assignment of 'de' to immediate", stmt.location);
+                            return [];
+                        case ArgumentType.Pop:
+                            // 'de = pop' -> 'pop de'
+                            return [0xD1];
+                        default:
+                    }
+                }
+                error("Invalid assignment to 'de'.", stmt.location);
                 return [];
             case ArgumentType.HL:
-                // 'hl = n' -> 'ld hl, n'
-                // 'hl = sp' -> 'ld hl, sp + k'
-                // 'hl = pop' -> 'pop hl'
+                if(auto load = buildArgument(program, src))
+                {
+                    // TODO: 'hl = sp' -> 'ld hl, sp + k'
+                    switch(load.type)
+                    {
+                        case ArgumentType.Immediate:
+                            // 'hl = n' -> 'ld hl, n'
+                            error("TODO: assignment of 'hl' to immediate", stmt.location);
+                            return [];
+                        case ArgumentType.Pop:
+                            // 'hl = pop' -> 'pop hl'
+                            return [0xE1];
+                        default:
+                    }
+                }
+                error("Invalid assignment to 'hl'.", stmt.location);
                 return [];
             case ArgumentType.SP:
-                // 'sp = hl' -> 'ld sp, hl'
+                if(auto load = buildArgument(program, src))
+                {
+                    switch(load.type)
+                    {
+                        case ArgumentType.Immediate:
+                            // 'sp = n' -> 'ld sp, n'
+                            error("TODO: assignment of 'sp' to immediate", stmt.location);
+                            return [];
+                        case ArgumentType.HL:
+                            // 'sp = hl' -> 'ld sp, hl'
+                            return [0xF9];
+                        default:
+                    }
+                }
+                error("Invalid assignment to 'hl'.", stmt.location);
                 return [];
             case ArgumentType.IndirectionInc:
                 // '[hl++] = a' -> 'ld [hl+], a'
@@ -771,6 +834,9 @@ class GameboyPlatform : Platform
                 // 'carry = carry ^ 1' -> 'ccf'
                 // 'carry = 0' -> 'scf; ccf'
                 error("assignment '=' to 'carry' flag is invalid.", stmt.location);
+                return [];
+            case ArgumentType.Pop:
+                error("'pop' operator on left hand of assignment '=' is invalid.", stmt.location);
                 return [];
             case ArgumentType.None:
                 return [];
