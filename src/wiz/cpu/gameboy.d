@@ -430,7 +430,6 @@ class GameboyPlatform : Platform
                     auto cond = stmt.condition;
                     if(cond.attr is null)
                     {
-                        ubyte opcode;
                         final switch(cond.branch)
                         {
                             case parse.Branch.Equal:
@@ -669,8 +668,7 @@ class GameboyPlatform : Platform
                         return [];
                     case ArgumentType.BC:
                         // '[bc] = a' -> 'ld [bc], a'
-                        auto load = buildArgument(program, src);
-                        if(load)
+                        if(auto load = buildArgument(program, src))
                         {
                             if(load.type == ArgumentType.A)
                             {
@@ -681,8 +679,7 @@ class GameboyPlatform : Platform
                         return [];
                     case ArgumentType.DE:
                         // '[de] = a' -> 'ld [de], a'
-                        auto load = buildArgument(program, src);
-                        if(load)
+                        if(auto load = buildArgument(program, src))
                         {
                             if(load.type == ArgumentType.A)
                             {
@@ -692,9 +689,8 @@ class GameboyPlatform : Platform
                         error("Invalid initializer in '[de] = ...'", stmt.location);
                         return [];
                     case ArgumentType.HL:
-                        auto load = buildArgument(program, src);
                         bool swap = false;
-                        if(load)
+                        if(auto load = buildArgument(program, src))
                         {
                             // '[hl] = <>v' -> 'hl = v; hl = <>hl'
                             if(load.type == ArgumentType.Swap)
