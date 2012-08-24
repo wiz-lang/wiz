@@ -459,7 +459,7 @@ class Parser
             }
             else
             {
-                reject("identifier after ',' in bank Defaration");
+                reject("identifier after ',' in bank declaration");
                 break;
             }
         }
@@ -607,7 +607,7 @@ class Parser
             }
             else
             {
-                reject("identifier after ',' in enum Defaration");
+                reject("identifier after ',' in enum declaration");
                 break;
             }
         }
@@ -645,7 +645,7 @@ class Parser
             }
             else
             {
-                reject("identifier after ',' in variable Defaration");
+                reject("identifier after ',' in variable declaration");
                 break;
             }
         }
@@ -702,6 +702,12 @@ class Parser
         switch(type)
         {
             case Keyword.Goto, Keyword.Call:
+                bool far = false;
+                if(token == Token.Exclaim)
+                {
+                    nextToken(); // '!'
+                    far = true;
+                }
                 auto destination = parseExpression();
                 ast.JumpCondition condition = null;
                 if(token == Token.Identifier && keyword == Keyword.When)
@@ -709,7 +715,7 @@ class Parser
                     nextToken(); // IDENTIFIER (keyword 'when')
                     condition = parseJumpCondition("'when'");
                 }
-                return new ast.Jump(type, destination, condition, location);
+                return new ast.Jump(type, far, destination, condition, location);
                 break;
             case Keyword.Return, Keyword.Resume, Keyword.Break, Keyword.Continue:
                 ast.JumpCondition condition = null;
@@ -730,7 +736,7 @@ class Parser
     
     auto parseJumpCondition(string context)
     {
-        // jump_condition = 'not'* (IDENTIFIER | '!=' | '==' | '<' | '>' | '<=' | '>=')
+        // jump_condition = 'not'* (IDENTIFIER | '~=' | '==' | '<' | '>' | '<=' | '>=')
         ast.JumpCondition condition = null;
         
         // 'not'* (not isn't a keyword, but it has special meaning)
@@ -776,6 +782,13 @@ class Parser
             auto location = scanner.getLocation();
             nextToken(); // IDENTIFIER (keyword 'if' / 'elseif')
             
+            bool far = false;
+            if(token == Token.Exclaim)
+            {
+                nextToken(); // '!'
+                far = true;
+            }
+            
             auto condition = parseJumpCondition("'if'");
             
             if(keyword == Keyword.Then)
@@ -792,7 +805,7 @@ class Parser
             
             // Construct if statement, which is either static or runtime depending on argument before 'then'.
             auto previous = statement;
-            statement = new ast.Conditional(condition, block, location);
+            statement = new ast.Conditional(condition, far, block, location);
 
             // If this is an 'elseif', join to previous 'if'/'elseif'.
             if(previous)
@@ -840,9 +853,15 @@ class Parser
         // loop = 'repeat' statement* 'end'
         auto location = scanner.getLocation();
         nextToken(); // IDENTIFIER (keyword 'repeat')
+        bool far = false;
+        if(token == Token.Exclaim)
+        {
+            nextToken(); // '!'
+            far = true;
+        }
         auto block = new ast.Block(parseCompound(), location); // statement*
         nextToken(); // IDENTIFIER (keyword 'end')
-        return new ast.Loop(block, location);
+        return new ast.Loop(block, far, location);
     }
 
     auto parseComparison()

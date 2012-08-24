@@ -5,6 +5,7 @@ import wiz.ast.lib;
 
 class Jump : Statement
 {
+    private bool _far;
     private parse.Keyword _type;
     private Expression _destination;
     private JumpCondition _condition;
@@ -21,14 +22,15 @@ class Jump : Statement
         _condition = condition;
     }
 
-    this(parse.Keyword type, Expression destination, JumpCondition condition, compile.Location location)
+    this(parse.Keyword type, bool far, Expression destination, JumpCondition condition, compile.Location location)
     {
         this(type, condition, location);
+        _far = far;
         _destination = destination;
     }
 
     mixin compile.BranchAcceptor!(_destination, _condition);
-    mixin helper.Accessor!(_type, _destination, _condition);
+    mixin helper.Accessor!(_type, _far, _destination, _condition);
 }
 
 class JumpCondition : Node

@@ -20,7 +20,7 @@ private enum State
     SlashSlashComment,
     SlashStarComment,
     SlashStarCommentStar,
-    Exclaim,
+    Tilde,
     Plus,
     Minus,
     Equals,
@@ -120,10 +120,10 @@ class Scanner
                             case '*': position++; return Token.Mul;
                             case '%': position++; return Token.Mod;
                             case '@': position++; return Token.At;
-                            case '~': position++; return Token.Not;
                             case '&': position++; return Token.And;
                             case '^': position++; return Token.Xor;
-                            case '!': state = State.Exclaim; break;
+                            case '!': position++; return Token.Exclaim;
+                            case '~': state = State.Tilde; break;
                             case '+': state = State.Plus; break;
                             case '-': state = State.Minus; break;
                             case '/': state = State.Slash; break;
@@ -232,12 +232,12 @@ class Scanner
                                 return Token.Binary;
                         }
                         break;
-                    case State.Exclaim:
+                    case State.Tilde:
                         state = State.Start;
                         switch(c)
                         {
                             case '=': position++; return Token.NotEqual;
-                            default: return Token.Exclaim;
+                            default: return Token.Not;
                         }
                         break;
                     case State.Plus:

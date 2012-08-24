@@ -685,7 +685,7 @@ class GameboyPlatform : Platform
                                 return [0x02];
                             }
                         }
-                        error("Invalid initializer in '[bc] = ...'", stmt.location);
+                        error("invalid initializer in '[bc] = ...'", stmt.location);
                         return [];
                     case ArgumentType.DE:
                         // '[de] = a' -> 'ld [de], a'
@@ -696,7 +696,7 @@ class GameboyPlatform : Platform
                                 return [0x12];
                             }
                         }
-                        error("Invalid initializer in '[de] = ...'", stmt.location);
+                        error("invalid initializer in '[de] = ...'", stmt.location);
                         return [];
                     case ArgumentType.HL:
                         bool swap = false;
@@ -719,10 +719,10 @@ class GameboyPlatform : Platform
                                 return swap ? [0x36, 0x77] : [0x77];
                             }
                         }
-                        error("Invalid initializer in '[hl] = " ~ (swap ? "<> " : "") ~ "...'", stmt.location);
+                        error("invalid initializer in '[hl] = " ~ (swap ? "<> " : "") ~ "...'", stmt.location);
                         return [];
                     default:
-                        error("Invalid assignment to indirected expression.", stmt.location);
+                        error("invalid assignment '=' to indirected expression.", stmt.location);
                         return [];
                 }
             case ArgumentType.AF:
@@ -743,7 +743,7 @@ class GameboyPlatform : Platform
                         default:
                     }
                 }
-                error("Invalid assignment to 'bc'.", stmt.location);
+                error("invalid assignment '=' to 'bc'.", stmt.location);
                 return [];
             case ArgumentType.DE:
                 if(auto load = buildArgument(program, src))
@@ -760,7 +760,7 @@ class GameboyPlatform : Platform
                         default:
                     }
                 }
-                error("Invalid assignment to 'de'.", stmt.location);
+                error("invalid assignment '=' to 'de'.", stmt.location);
                 return [];
             case ArgumentType.HL:
                 if(auto load = buildArgument(program, src))
@@ -778,7 +778,7 @@ class GameboyPlatform : Platform
                         default:
                     }
                 }
-                error("Invalid assignment to 'hl'.", stmt.location);
+                error("invalid assignment '=' to 'hl'.", stmt.location);
                 return [];
             case ArgumentType.SP:
                 if(auto load = buildArgument(program, src))
@@ -795,19 +795,39 @@ class GameboyPlatform : Platform
                         default:
                     }
                 }
-                error("Invalid assignment to 'hl'.", stmt.location);
+                error("invalid assignment '=' to 'hl'.", stmt.location);
                 return [];
             case ArgumentType.IndirectionInc:
-                // '[hl++] = a' -> 'ld [hl+], a'
+                if(auto load = buildArgument(program, src))
+                {
+                    switch(load.type)
+                    {
+                        case ArgumentType.A:
+                            // '[hl++] = a' -> 'ld [hl+], a'
+                            return [0x22];
+                        default:
+                    }
+                }
+                error("invalid assignment '=' to '[hl++]'.", stmt.location);
                 return [];
             case ArgumentType.IndirectionDec:
-                // '[hl--] = a' -> 'ld [hl-], a'
+                if(auto load = buildArgument(program, src))
+                {
+                    switch(load.type)
+                    {
+                        case ArgumentType.A:
+                            // '[hl--] = a' -> 'ld [hl-], a'
+                            return [0x32];
+                        default:
+                    }
+                }
+                error("invalid assignment '=' to '[hl--]'.", stmt.location);
                 return [];
             case ArgumentType.PositiveIndex:
                 // '[FF00:c]' -> 'ldh [c], a'
                 return [];
             case ArgumentType.NegativeIndex:
-                error("Negative indexing is not supported.", stmt.location);
+                error("negative indexing is not supported.", stmt.location);
                 return [];
             case ArgumentType.BitIndex:
                 // 'r@i = 0' -> 'res r, i'
@@ -830,9 +850,19 @@ class GameboyPlatform : Platform
                 error("assignment '=' to 'zero' flag is invalid.", stmt.location);
                 return [];
             case ArgumentType.Carry:
-                // 'carry = 1' -> 'scf'
-                // 'carry = carry ^ 1' -> 'ccf'
-                // 'carry = 0' -> 'scf; ccf'
+                if(auto load = buildArgument(program, src))
+                {
+                    // TODO: 'carry = carry ^ 1' -> 'ccf'
+                    switch(load.type)
+                    {
+                        case ArgumentType.Immediate:
+                            // 'carry = 1' -> 'scf'
+                            // 'carry = 0' -> 'scf; ccf'
+                            error("TODO: assignment of 'carry' to immediate", stmt.location);
+                            return [];
+                        default:
+                    }
+                }
                 error("assignment '=' to 'carry' flag is invalid.", stmt.location);
                 return [];
             case ArgumentType.Pop:

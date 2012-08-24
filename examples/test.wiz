@@ -31,7 +31,7 @@ def disable_display: do
     repeat
         a = [gb.lcd.stat] & STAT_MODE_MASK
         compare a to gb.lcd.STAT_MODE_VBLANK
-    while != end
+    while ~= end
     [gb.lcd.ctrl] = 0 via a
     return
 end
@@ -49,6 +49,8 @@ def memset: do
         [hl++] = a
     end
 end
+
+goto! foo
 
 def main: do
     interrupt = 0
@@ -74,12 +76,11 @@ def main: do
     repeat
         a = b | c
     until zero
-        [hl++] = 0
+        [hl++] = 0 via a
         bc--
     end
 
     call disable_display
-    
     // Save d into hardware_type, now that RAM is clear.
     [hardware_type] = d via a
     
@@ -153,7 +154,7 @@ def main: do
 
     a = [hardware_type] // Check hardware type.
     compare a
-    if zero then
+    if! zero then
         // Load greyscale palette.
         call gfx_load_pal_greyscale
     else
@@ -183,7 +184,7 @@ def main: do
     // Prepare the map loop.
     call map_start
     
-    repeat
+    repeat!
         // The main game loop.
         // Usually runs once per frame, but it may take longer than that.
         // For instance, when it's busy loading compressed resources: That can take a while.
@@ -217,7 +218,7 @@ def draw: do
         repeat
             [hl] = [hl] + 1 via a
             compare a to 60
-        until !=
+        until ~=
             [hl++] = 0 via a
             c--
         until zero end
