@@ -76,141 +76,174 @@ bool partiallyFoldConstExpr(Program program, ast.Expression root, ref uint resul
     traverse(root,
         (ast.Infix e)
         {
-            if((e.left in values) is null || (e.right in values) is null)
+            auto first = e.operands[0];
+            if((first in values) is null)
             {
                 return;
             }
-            uint a = values[e.left];
-            uint b = values[e.right];
-            final switch(e.type)
-            {
-                case parse.Infix.Add: 
-                    if(a + ast.Expression.Max < b)
-                    {
-                        error("addition yields result which will overflow outside of 0..65535.", e.right.location);
-                    }
-                    else
-                    {
-                        values[e] = a + b;
-                    }
-                    break;
-                case parse.Infix.Sub:
-                    if(a < b)
-                    {
-                        error("subtraction yields result which will overflow outside of 0..65535.", e.right.location);
-                    }
-                    else
-                    {
-                        values[e] = a - b;
-                    }
-                    break;
-                case parse.Infix.Mul:
-                    if(a > ast.Expression.Max / b)
-                    {
-                        error("multiplication yields result which will overflow outside of 0..65535.", e.right.location);
-                    }
-                    else
-                    {
-                        values[e] = a * b;
-                    }
-                    break;
-                case parse.Infix.Div:
-                    if(a == 0)
-                    {
-                        error("division by zero is undefined.", e.right.location);
-                    }
-                    else
-                    {
-                        values[e] = a / b;
-                    }
-                    break;
-                case parse.Infix.Mod:
-                    if(a == 0)
-                    {
-                        error("modulo by zero is undefined.", e.right.location);
-                    }
-                    else
-                    {
-                        values[e] = a % b;
-                    }
-                    break;
-                case parse.Infix.ShiftL:
-                    // If shifting more than N bits, or ls << rs > 2^N-1, then error.
-                    if(b > 16 || (b > 0 && (a & ~(1 << (16 - b))) != 0))
-                    {
-                        error("logical shift left yields result which will overflow outside of 0..65535.", e.right.location);
-                    }
-                    else
-                    {
-                        values[e] = a << b;
-                    }
-                    break;
-                case parse.Infix.ShiftR:
-                    values[e] = a >> b;
-                    break;
-                case parse.Infix.And:
-                    values[e] = a & b;
-                    break;
-                case parse.Infix.Or:
-                    values[e] = a | b;
-                    break;
-                case parse.Infix.Xor:
-                    values[e] = a ^ b;
-                    break;
-                case parse.Infix.At:
-                    values[e] = a & (1 << b);
-                    break;
-                case parse.Infix.AddC, parse.Infix.SubC,
-                    parse.Infix.ArithShiftL, parse.Infix.ArithShiftR,
-                    parse.Infix.RotateL, parse.Infix.RotateR,
-                    parse.Infix.RotateLC, parse.Infix.RotateRC,
-                    parse.Infix.Colon:
-                    constant = false;
-                    if(mustFold)
-                    {
-                        error("infix operator " ~ parse.getInfixName(e.type) ~ " cannot be used in constant expression", e.location);
-                    }
+            uint a = values[first];
+
+            foreach(i, type; e.types)
+            {                
+                auto operand = e.operands[i + 1];
+                if((operand in values) is null)
+                {
+                    return;
+                }
+                uint b = values[operand];
+
+                final switch(type)
+                {
+                    case parse.Infix.Add: 
+                        if(a + ast.Expression.Max < b)
+                        {
+                            error("addition yields result which will overflow outside of 0..65535.", operand.location);
+                        }
+                        else
+                        {
+                            a += b;
+                        }
+                        break;
+                    case parse.Infix.Sub:
+                        if(a < b)
+                        {
+                            error("subtraction yields result which will overflow outside of 0..65535.", operand.location);
+                        }
+                        else
+                        {
+                            a -= b;
+                        }
+                        break;
+                    case parse.Infix.Mul:
+                        if(a > ast.Expression.Max / b)
+                        {
+                            error("multiplication yields result which will overflow outside of 0..65535.", operand.location);
+                        }
+                        else
+                        {
+                            a *= b;
+                        }
+                        break;
+                    case parse.Infix.Div:
+                        if(a == 0)
+                        {
+                            error("division by zero is undefined.", operand.location);
+                        }
+                        else
+                        {
+                            a /= b;
+                        }
+                        break;
+                    case parse.Infix.Mod:
+                        if(a == 0)
+                        {
+                            error("modulo by zero is undefined.", operand.location);
+                        }
+                        else
+                        {
+                            a %= b;
+                        }
+                        break;
+                    case parse.Infix.ShiftL:
+                        // If shifting more than N bits, or ls << rs > 2^N-1, then error.
+                        if(b > 16 || (b > 0 && (a & ~(1 << (16 - b))) != 0))
+                        {
+                            error("logical shift left yields result which will overflow outside of 0..65535.", operand.location);
+                        }
+                        else
+                        {
+                            a <<= b;
+                        }
+                        break;
+                    case parse.Infix.ShiftR:
+                        a >>= b;
+                        break;
+                    case parse.Infix.And:
+                        a &= b;
+                        break;
+                    case parse.Infix.Or:
+                        a |= b;
+                        break;
+                    case parse.Infix.Xor:
+                        a ^= b;
+                        break;
+                    case parse.Infix.At:
+                        a &= (1 << b);
+                        break;
+                    case parse.Infix.AddC, parse.Infix.SubC,
+                        parse.Infix.ArithShiftL, parse.Infix.ArithShiftR,
+                        parse.Infix.RotateL, parse.Infix.RotateR,
+                        parse.Infix.RotateLC, parse.Infix.RotateRC,
+                        parse.Infix.Colon:
+                        constant = false;
+                        if(mustFold)
+                        {
+                            error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in constant expression", operand.location);
+                        }
+                        return;
+                }
+                if(constant)
+                {
+                    values[e] = a;
+                    lastConst = e;
+                }
             }
         },
 
         (Visitor.Pass pass, ast.Prefix e)
         {
-            if(pass == Visitor.Pass.Before && e.type == parse.Prefix.Grouping)
+            if(pass == Visitor.Pass.Before)
             {
-                depth++;
-                mustFold = true;
-                return;
+                if(e.type == parse.Prefix.Grouping)
+                {
+                    depth++;
+                    mustFold = true;
+                }
             }
-            depth--;
-            if(depth == 0)
+            else
             {
-                mustFold = mustFoldRoot;
-            }
-
-            if((e.operand in values) is null)
-            {
-                return;
-            }
-            uint r = values[e.operand];
-            final switch(e.type)
-            {
-                case parse.Prefix.Low:
-                    values[e] = r & 0xFF;
-                    break;
-                case parse.Prefix.High:
-                    values[e] = (r >> 8) & 0xFF;
-                    break;
-                case parse.Prefix.Swap:
-                    values[e] = ((r & 0x0F0F) << 4) | ((r & 0xF0F0) >> 4);
-                    break;
-                case parse.Prefix.Grouping:
-                    values[e] = r;
-                case parse.Prefix.Not, parse.Prefix.Indirection:
-                    constant = false;
-                    if(mustFold)
-                    {
-                        error("prefix operator " ~ parse.getPrefixName(e.type) ~ " cannot be used in constant expression", e.location);
-                    }
+                final switch(e.type)
+                {
+                    case parse.Prefix.Low, parse.Prefix.High, parse.Prefix.Swap:
+                        break;
+                    case parse.Prefix.Grouping:
+                        depth--;
+                        if(depth == 0)
+                        {
+                            mustFold = mustFoldRoot;
+                        }
+                        break;
+                    case parse.Prefix.Not, parse.Prefix.Indirection:
+                        constant = false;
+                        if(mustFold)
+                        {
+                            error("prefix operator " ~ parse.getPrefixName(e.type) ~ " cannot be used in constant expression", e.location);
+                        }
+                        return;
+                }
+                
+                if((e.operand in values) is null)
+                {
+                    return;
+                }
+                uint r = values[e.operand];
+                final switch(e.type)
+                {
+                    case parse.Prefix.Low:
+                        values[e] = r & 0xFF;
+                        break;
+                    case parse.Prefix.High:
+                        values[e] = (r >> 8) & 0xFF;
+                        break;
+                    case parse.Prefix.Swap:
+                        values[e] = ((r & 0x0F0F) << 4) | ((r & 0xF0F0) >> 4);
+                        break;
+                    case parse.Prefix.Grouping:
+                        values[e] = r;
+                        break;
+                    case parse.Prefix.Not, parse.Prefix.Indirection:
+                        break;
+                }
             }
         },
 
@@ -222,6 +255,7 @@ bool partiallyFoldConstExpr(Program program, ast.Expression root, ref uint resul
             }
             else
             {
+                constant = false;
                 if(mustFold)
                 {
                     error("postfix operator " ~ parse.getPostfixName(e.type) ~ " cannot be used in constant expression", e.location);

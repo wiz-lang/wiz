@@ -1030,20 +1030,29 @@ class Parser
     ast.Expression parseInfix()
     {
         // infix = postfix (infix_token postfix)*
-        ast.Expression left = parsePrefix(); // postfix
+        auto location = scanner.getLocation();
+        Infix[] types;
+        ast.Expression[] operands;
+
+        operands ~= parsePrefix(); // postfix
         while(true)
         {
-            auto location = scanner.getLocation();
             if(isInfixToken())
             {
-                auto type = cast(Infix) token;
+                types ~= cast(Infix) token;
                 nextToken(); // operator token
-                auto right = parsePrefix(); // postfix
-                left = new ast.Infix(type, left, right, location);
+                operands ~= parsePrefix(); // postfix
             }
             else
             {
-                return left;
+                if(operands.length > 1)
+                {
+                    return new ast.Infix(types, operands, location);
+                }
+                else
+                {
+                    return operands[0];
+                }
             }
         }
     }

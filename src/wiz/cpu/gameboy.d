@@ -173,9 +173,9 @@ private
             Builtin registerLeft;
             Builtin registerRight;
 
-            if(infix.type == parse.Infix.Colon)
+            if(infix.types[0] == parse.Infix.Colon)
             {
-                if(auto attr = cast(ast.Attribute) infix.right)
+                if(auto attr = cast(ast.Attribute) infix.operands[1])
                 {
                     auto def = compile.resolveAttribute(program, attr);
                     if(!def)
@@ -184,14 +184,14 @@ private
                     }
                     if(auto builtin = cast(Builtin) def)
                     {
-                        if(auto prefix = cast(ast.Prefix) infix.left)
+                        if(auto prefix = cast(ast.Prefix) infix.operands[0])
                         {
                             if(prefix.type == parse.Infix.Sub)
                             {
                                 return new Argument(ArgumentType.NegativeIndex, prefix.operand, new Argument(builtin.type));
                             }
                         }
-                        return new Argument(ArgumentType.PositiveIndex, infix.left, new Argument(builtin.type));
+                        return new Argument(ArgumentType.PositiveIndex, infix.operands[0], new Argument(builtin.type));
                     }
                 }
                 error(
@@ -241,9 +241,9 @@ private
         }
         else if(auto infix = cast(ast.Infix) root)
         {
-            if(infix.type == parse.Token.At)
+            if(infix.types[0] == parse.Token.At)
             {
-                if(auto attr = cast(ast.Attribute) infix.left)
+                if(auto attr = cast(ast.Attribute) infix.operands[0])
                 {
                     auto def = compile.resolveAttribute(program, attr);
                     if(!def)
@@ -252,7 +252,7 @@ private
                     }
                     if(auto builtin = cast(Builtin) def)
                     {
-                        return new Argument(ArgumentType.BitIndex, infix.right, new Argument(builtin.type));
+                        return new Argument(ArgumentType.BitIndex, infix.operands[1], new Argument(builtin.type));
                     }
                 }
             }
@@ -680,11 +680,19 @@ class GameboyPlatform : Platform
 
     ubyte[] generateCalculation(compile.Program program, ast.Assignment stmt, Argument dest, ast.Expression src)
     {
-        ubyte[] code = generateLoad(program, stmt, dest, src);
         if(dest is null)
         {
             return [];
         }
+
+        // TODO: fold constant left part of src expressions.
+        auto load = src;
+        if(auto infix = cast(ast.Infix) load)
+        {
+            load = infix.operands[0];
+        }
+        ubyte[] code = generateLoad(program, stmt, dest, load);
+
         // TODO: This code will be gigantic.
         // a:
         //      + (add), - (sub), +# (adc), -# (sbc),
@@ -711,7 +719,6 @@ class GameboyPlatform : Platform
         // This way, prefix operators run after the dest has been loaded with values they act on.
         ubyte[][] code;
 
-        // TODO: fold constant left-hand of expressions.
         if(dest is null)
         {
             return [];
