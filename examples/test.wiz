@@ -50,8 +50,6 @@ def memset: do
     end
 end
 
-goto! foo
-
 def main: do
     interrupt = 0
     sp = stack_top via hl
@@ -173,7 +171,7 @@ def main: do
         call gfx_load_pal_color
         
         // Setup bank for the tileset load happening soon.
-        [gb.color.select.vram] = 0
+        [gb.color.select.vram] = 0 via a
     end
 
     // Now actually enable the screen

@@ -5,6 +5,7 @@ import wiz.sym.lib;
 
 class VarDef : Definition
 {
+    bool hasAddress;
     uint address;
     
     this(ast.Node decl)

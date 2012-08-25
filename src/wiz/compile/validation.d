@@ -46,11 +46,11 @@ sym.Definition resolveAttribute(Program program, ast.Attribute attribute)
             
             if(partiallyQualifiedName == fullyQualifiedName)
             {
-                error("reference to undefined symbol '" ~ partiallyQualifiedName ~ "'", attribute.location);
+                error("reference to undeclared symbol '" ~ partiallyQualifiedName ~ "'", attribute.location);
             }
             else
             {
-                error("reference to undefined symbol '" ~ partiallyQualifiedName ~ "' (in '" ~ fullyQualifiedName ~ "')", attribute.location);
+                error("reference to undeclared symbol '" ~ partiallyQualifiedName ~ "' (in '" ~ fullyQualifiedName ~ "')", attribute.location);
             }
             return null;
         }
@@ -60,9 +60,19 @@ sym.Definition resolveAttribute(Program program, ast.Attribute attribute)
     return def;
 }
 
-bool foldConstExpr(Program program, ast.Expression root, ref uint result)
+bool foldConstExpr(Program program, ast.Expression root, ref uint result, bool forbidUndefined = true)
+{
+    ast.Expression  _;
+    return partiallyFoldConstExpr(program, root, result, _, true, forbidUndefined);
+}
+
+bool partiallyFoldConstExpr(Program program, ast.Expression root, ref uint result, ref ast.Expression lastConst, bool mustFold, bool forbidUndefined)
 {
     uint[ast.Expression] values;
+    bool constant = true;
+    bool mustFoldRoot = mustFold;
+    uint depth = 0;
+
     traverse(root,
         (ast.Infix e)
         {
@@ -155,12 +165,28 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
                     parse.Infix.RotateL, parse.Infix.RotateR,
                     parse.Infix.RotateLC, parse.Infix.RotateRC,
                     parse.Infix.Colon:
-                    error("infix operator " ~ parse.getInfixName(e.type) ~ " cannot be used in constant expression", e.location);
+                    constant = false;
+                    if(mustFold)
+                    {
+                        error("infix operator " ~ parse.getInfixName(e.type) ~ " cannot be used in constant expression", e.location);
+                    }
             }
         },
 
-        (ast.Prefix e)
+        (Visitor.Pass pass, ast.Prefix e)
         {
+            if(pass == Visitor.Pass.Before && e.type == parse.Prefix.Grouping)
+            {
+                depth++;
+                mustFold = true;
+                return;
+            }
+            depth--;
+            if(depth == 0)
+            {
+                mustFold = mustFoldRoot;
+            }
+
             if((e.operand in values) is null)
             {
                 return;
@@ -180,7 +206,11 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
                 case parse.Prefix.Grouping:
                     values[e] = r;
                 case parse.Prefix.Not, parse.Prefix.Indirection:
-                    error("prefix operator " ~ parse.getPrefixName(e.type) ~ " cannot be used in constant expression", e.location);
+                    constant = false;
+                    if(mustFold)
+                    {
+                        error("prefix operator " ~ parse.getPrefixName(e.type) ~ " cannot be used in constant expression", e.location);
+                    }
             }
         },
 
@@ -192,7 +222,10 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
             }
             else
             {
-                error("postfix operator " ~ parse.getPostfixName(e.type) ~ " cannot be used in constant expression", e.location);
+                if(mustFold)
+                {
+                    error("postfix operator " ~ parse.getPostfixName(e.type) ~ " cannot be used in constant expression", e.location);
+                }
             }
         },
 
@@ -204,13 +237,54 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
                 uint v;
                 if(foldConstExpr(program, (cast(ast.ConstDecl) constdef.decl).value, v))
                 {
+                    if(constant)
+                    {
+                        lastConst = a;
+                    }
                     values[a] = v;
+                    return;
                 }
+            }
+            else if(auto vardef = cast(sym.LabelDef) def)
+            {
+                uint v;
+                if(vardef.hasAddress)
+                {
+                    if(constant)
+                    {
+                        lastConst = a;
+                    }
+                    values[a] = vardef.address;
+                    return;
+                }
+            }
+            else if(auto labeldef = cast(sym.LabelDef) def)
+            {
+                uint v;
+                if(labeldef.hasAddress)
+                {
+                    if(constant)
+                    {
+                        lastConst = a;
+                    }
+                    values[a] = labeldef.address;
+                    return;
+                }
+            }
+
+            constant = false;
+            if(def && mustFold && forbidUndefined)
+            {
+                error("'" ~ a.fullName() ~ "' was declared, but could not be evaluated.", root.location);
             }
         },
 
         (ast.Number n)
         {
+            if(constant)
+            {
+                lastConst = n;
+            }
             values[n] = n.value;
         },
     );
@@ -218,7 +292,10 @@ bool foldConstExpr(Program program, ast.Expression root, ref uint result)
     auto resolution = (root in values);
     if(resolution is null)
     {
-        error("expression could not be resolved as a constant", root.location);
+        if(mustFold)
+        {
+            error("expression could not be resolved as a constant", root.location);
+        }
         return false;
     }
     else
@@ -413,6 +490,7 @@ void aggregate(Program program, ast.Node root)
                 foreach(i, name; decl.names)
                 {
                     auto def = program.environment.get!(sym.VarDef)(name);
+                    def.hasAddress = true;
                     def.address = bank.checkAddress(description, decl.location);
                     bank.reserveVirtual(description, size, decl.location);
                 }
@@ -435,6 +513,7 @@ void aggregate(Program program, ast.Node root)
             enum description = "label declaration";
             auto bank = program.checkBank(description, decl.location);
             auto def = program.environment.get!(sym.LabelDef)(decl.name);
+            def.hasAddress = true;
             def.address = bank.checkAddress(description, decl.location);
         },
     );

@@ -3,6 +3,8 @@ module wiz.cpu.gameboy;
 import wiz.lib;
 import wiz.cpu.lib;
 
+static import std.array;
+
 private
 {
     enum ArgumentType
@@ -78,11 +80,50 @@ private
         }
     }
 
+    ubyte getRegisterIndex(Argument dest)
+    {
+        switch(dest.type)
+        {
+            case ArgumentType.B: return 0x0; break;
+            case ArgumentType.C: return 0x1; break;
+            case ArgumentType.D: return 0x2; break;
+            case ArgumentType.E: return 0x3; break;
+            case ArgumentType.H: return 0x4; break;
+            case ArgumentType.L: return 0x5; break;
+            case ArgumentType.Indirection:
+                if(dest.base.type == ArgumentType.HL)
+                {
+                    return 0x6;
+                }
+                break;
+            case ArgumentType.A: return 0x7; break;
+            default:
+        }
+        assert(0);
+    }
+
+    ubyte getPairIndex(Argument dest)
+    {
+        switch(dest.type)
+        {
+            case ArgumentType.BC: return 0x0; break;
+            case ArgumentType.DE: return 0x1; break;
+            case ArgumentType.HL: return 0x2; break;
+            case ArgumentType.SP: return 0x3; break;
+            default:
+        }
+        assert(0);
+    }
+
     Argument buildIndirection(compile.Program program, ast.Expression root)
     {
         if(auto attr = cast(ast.Attribute) root)
         {
             auto def = compile.resolveAttribute(program, attr);
+            if(!def)
+            {
+                return null;
+            }
             if(auto builtin = cast(Builtin) def)
             {
                 return new Argument(ArgumentType.Indirection, new Argument(builtin.type));
@@ -107,6 +148,10 @@ private
             if(auto attr = cast(ast.Attribute) postfix.operand)
             {
                 auto def = compile.resolveAttribute(program, attr);
+                if(!def)
+                {
+                    return null;
+                }
                 if(auto builtin = cast(Builtin) def)
                 {
                     if(builtin.type == ArgumentType.HL)
@@ -133,6 +178,10 @@ private
                 if(auto attr = cast(ast.Attribute) infix.right)
                 {
                     auto def = compile.resolveAttribute(program, attr);
+                    if(!def)
+                    {
+                        return null;
+                    }
                     if(auto builtin = cast(Builtin) def)
                     {
                         if(auto prefix = cast(ast.Prefix) infix.left)
@@ -166,6 +215,10 @@ private
         if(auto attr = cast(ast.Attribute) root)
         {
             auto def = compile.resolveAttribute(program, attr);
+            if(!def)
+            {
+                return null;
+            }
             if(auto builtin = cast(Builtin) def)
             {
                 return new Argument(builtin.type);
@@ -193,6 +246,10 @@ private
                 if(auto attr = cast(ast.Attribute) infix.left)
                 {
                     auto def = compile.resolveAttribute(program, attr);
+                    if(!def)
+                    {
+                        return null;
+                    }
                     if(auto builtin = cast(Builtin) def)
                     {
                         return new Argument(ArgumentType.BitIndex, infix.right, new Argument(builtin.type));
@@ -351,6 +408,10 @@ class GameboyPlatform : Platform
         {
             case parse.Keyword.Goto:
                 auto argument = buildArgument(program, stmt.destination);
+                if(!argument)
+                {
+                    return [];
+                }
                 switch(argument.type)
                 {
                     case ArgumentType.Immediate:
@@ -414,6 +475,10 @@ class GameboyPlatform : Platform
                 }
             case parse.Keyword.Call:
                 auto argument = buildArgument(program, stmt.destination);
+                if(!argument)
+                {
+                    return [];
+                }
                 switch(argument.type)
                 {
                     case ArgumentType.Immediate:
@@ -557,7 +622,7 @@ class GameboyPlatform : Platform
                         case ArgumentType.H: return [0x24];
                         case ArgumentType.L: return [0x2C];
                         case ArgumentType.Indirection:
-                            if(dest.base.base.type == ArgumentType.HL)
+                            if(dest.base.type == ArgumentType.HL)
                             {
                                 return [0x34];
                             }
@@ -586,7 +651,7 @@ class GameboyPlatform : Platform
                         case ArgumentType.H: return [0x25];
                         case ArgumentType.L: return [0x2D];
                         case ArgumentType.Indirection:
-                            if(dest.base.base.type == ArgumentType.HL)
+                            if(dest.base.type == ArgumentType.HL)
                             {
                                 return [0x35];
                             }
@@ -646,6 +711,15 @@ class GameboyPlatform : Platform
 
     ubyte[] generateLoad(compile.Program program, ast.Assignment stmt, Argument dest, ast.Expression src)
     {
+        ubyte[] invalidAssignment(string desc)
+        {
+            error("invalid assignment '=' to " ~ desc ~ ".", stmt.location);
+            return [];
+        }
+
+        // A sequence of code blobs, to be executed in reverse order.
+        ubyte[][] code = [];
+
         // TODO: fold constant left-hand of expressions.
         // TODO: giant fucking assignment compatibility instruction lookup table.
         if(dest is null)
@@ -655,194 +729,335 @@ class GameboyPlatform : Platform
         final switch(dest.type)
         {
             case ArgumentType.A:
-                // 'a = <>a' -> 'swap a'
-                // 'a = ~a' -> 'cpl a'
-                // 'a = r' -> 'ld a, r'
-                // 'a = n' -> 'ld a, n'
-                // 'a = [hl]' -> 'ld a, [hl]'
-                // 'a = [bc]' -> 'ld a, [bc]'
-                // 'a = [de]' -> 'ld a, [de]'
-                // 'a = [n]' -> 'ld a, [n]'
-                // 'a = [0xFFnn]' -> 'ldh a, [nn]'
-                // 'a = [0xFF00:c]' -> 'ldh a, [c]'
-                // 'a = [hl++]' -> 'ld a, [hl+]'
-                // 'a = [hl--]' -> 'ld a, [hl-]'
-                return [];
+                if(auto load = buildArgument(program, src))
+                {
+                    while(true)
+                    {
+                        if(load.type == ArgumentType.Swap)
+                        {
+                            // 'a = <>a' -> 'swap a'
+                            code ~= [0xCB, 0x37];
+                            load = load.base;
+                            continue;
+                        }
+                        else if(load.type == ArgumentType.Not)
+                        {
+                            // 'a = ~a' -> 'cpl a'
+                            code ~= [0x2F];
+                            load = load.base;
+                            continue;
+                        }
+                        break;
+                    }
+                    switch(load.type)
+                    {
+                        // 'a = n' -> 'ld a, n'
+                        case ArgumentType.Immediate:
+                            uint value;
+                            compile.foldConstExpr(program, load.immediate, value);
+                            code ~= [0x3E, value & 0xFF];
+                            break;
+                        // 'a = a' -> (nothing)
+                        case ArgumentType.A:
+                            break;
+                        // 'a = r' -> 'ld a, r'
+                        case ArgumentType.B:
+                        case ArgumentType.D:
+                        case ArgumentType.E:
+                        case ArgumentType.H:
+                        case ArgumentType.L:
+                            ubyte sourceIndex = getRegisterIndex(load);
+                            code ~= [(0x78 + sourceIndex) & 0xFF];
+                            break;
+                        case ArgumentType.Indirection:
+                            switch(load.base.type)
+                            {
+                                case ArgumentType.Immediate:
+                                    uint value;
+                                    compile.foldConstExpr(program, load.base.immediate, value);
+                                    // 'a = [0xFFnn]' -> 'ldh a, [nn]'
+                                    if((value & 0xFF00) == 0xFF00)
+                                    {
+                                        code ~= [0xF0, value & 0xFF];
+                                    }
+                                    // 'a = [nnnn]' -> 'ld a, [nnnn]'
+                                    else
+                                    {
+                                        code ~= [0xFA, value & 0xFF, (value >> 8) & 0xFF];
+                                    }
+                                    break;
+                                // 'a = [hl]' -> 'ld a, [hl]'
+                                case ArgumentType.HL: code ~= [0x7E]; break;
+                                // 'a = [bc]' -> 'ld a, [bc]'
+                                case ArgumentType.BC: code ~= [0x0A]; break;
+                                // 'a = [de]' -> 'ld a, [de]'
+                                case ArgumentType.DE: code ~= [0x1A]; break;
+                                default: return invalidAssignment("'a'");
+                            }
+                            break;
+                        case ArgumentType.IndirectionInc:
+                            switch(load.base.type)
+                            {
+                                // 'a = [hl++]' -> 'ldi a, [hl]'
+                                case ArgumentType.HL: code ~= [0x2A]; break;
+                                default: return invalidAssignment("'a'");
+                            }
+                            break;
+                        case ArgumentType.IndirectionDec:
+                            switch(load.base.type)
+                            {
+                                // 'a = [hl--]' -> 'ldd a, [hl]'
+                                case ArgumentType.HL: code ~= [0x2A]; break;
+                                default: return invalidAssignment("'a'");
+                            }
+                            break;
+                        default: return invalidAssignment("'a'");
+                    }
+                }
+                break;
             case ArgumentType.B:
-                // 'b = <>b' -> 'swap b'
-                // 'b = r' -> 'ld b, r'
-                // 'b = n' -> 'ld b, n'
-                // 'b = [hl]' -> 'ld b, [hl]'
-                return [];
             case ArgumentType.C:
-                // 'c = <>c' -> 'swap c'
-                // 'c = r' -> 'ld c, r'
-                // 'c = n' -> 'ld c, n'
-                // 'c = [hl]' -> 'ld c, [hl]'
-                return [];
             case ArgumentType.D:
-                // 'd = <>d' -> 'swap d'
-                // 'd = r' -> 'ld d, r'
-                // 'd = n' -> 'ld d, n'
-                // 'd = [hl]' -> 'ld d, [hl]'
-                return [];
             case ArgumentType.E:
-                // 'e = <>e' -> 'swap e'
-                // 'e = r' -> 'ld e, r'
-                // 'e = n' -> 'ld e, n'
-                // 'e = [hl]' -> 'ld e, [hl]'
-                return [];
             case ArgumentType.H:
-                // 'h = <>h' -> 'swap h'
-                // 'h = r' -> 'ld h, r'
-                // 'h = n' -> 'ld h, n'
-                // 'h = [hl]' -> 'ld h, [hl]'
-                return [];
             case ArgumentType.L:
-                // 'l = <>l' -> 'swap l'
-                // 'l = r' -> 'ld l, r'
-                // 'l = n' -> 'ld l, n'
-                // 'l = [hl]' -> 'ld l, [hl]'
-                return [];
+                if(auto load = buildArgument(program, src))
+                {
+                    ubyte destIndex = getRegisterIndex(dest);
+                    while(true)
+                    {
+                        if(load.type == ArgumentType.Swap)
+                        {
+                            // 'r = <>r' -> 'swap r'
+                            code ~= [0xCB, (0x20 + destIndex) & 0xFF];
+                            load = load.base;
+                            continue;
+                        }
+                        break;
+                    }
+                    switch(load.type)
+                    {
+                        // 'r = n' -> 'ld r, n'
+                        case ArgumentType.Immediate:
+                            uint value;
+                            compile.foldConstExpr(program, load.immediate, value);
+                            code ~= [(0x06 + destIndex * 8) & 0xFF, value & 0xFF];
+                            break;
+                        // 'r = r' -> (nothing)
+                        // 'r = r2' -> 'ld r, r2'
+                        case ArgumentType.A: 
+                        case ArgumentType.B:
+                        case ArgumentType.C:
+                        case ArgumentType.D:
+                        case ArgumentType.E:
+                        case ArgumentType.H:
+                        case ArgumentType.L:
+                            ubyte sourceIndex = getRegisterIndex(load);
+                            if(sourceIndex != destIndex)
+                            {
+                                code ~= [(0x40 + destIndex * 8 + sourceIndex) & 0xFF];
+                            }
+                            break;
+                        case ArgumentType.Indirection:
+                            switch(load.base.type)
+                            {
+                                // 'r = [hl]' -> 'ld r, [hl]'
+                                case ArgumentType.HL:
+                                    ubyte sourceIndex = getRegisterIndex(load);
+                                    code ~= [(0x40 + destIndex * 8 + sourceIndex) & 0xFF];
+                                    break;
+                                default: return invalidAssignment("register");
+                            }
+                            break;
+                        default: return invalidAssignment("register");
+                    }
+                }
+                break;
             case ArgumentType.Indirection:
                 switch(dest.base.type)
                 {
                     case ArgumentType.Immediate:
-                        // '[n] = a' -> 'ld [n], a'
-                        // '[0xFFnn] = a' -> 'ldh [nn], a'
-                        error("TODO: assignment to indirected immediate", stmt.location);
-                        return [];
+                        if(auto load = buildArgument(program, src))
+                        {
+                            if(load.type == ArgumentType.A)
+                            {
+                                uint value;
+                                compile.foldConstExpr(program, dest.base.immediate, value);
+                                // '[0xFFnn] = a' -> 'ldh [nn], a'
+                                if((value & 0xFF00) == 0xFF00)
+                                {
+                                    code ~= [0xE0, value & 0xFF];
+                                }
+                                // '[nnnn] = a' -> 'ld [nnnn], a'
+                                else
+                                {
+                                    code ~= [0xEA, value & 0xFF, (value >> 8) & 0xFF];
+                                }
+                                break;
+                            }
+                            else
+                            {
+                                return invalidAssignment("indirected immediate");
+                            }
+                        }
+                        break;
                     case ArgumentType.BC:
                         // '[bc] = a' -> 'ld [bc], a'
                         if(auto load = buildArgument(program, src))
                         {
                             if(load.type == ArgumentType.A)
                             {
-                                return [0x02];
+                                code ~= [0x02];
                             }
                         }
-                        error("invalid initializer in '[bc] = ...'", stmt.location);
-                        return [];
+                        else
+                        {
+                            return invalidAssignment("'[bc]'");
+                        }
+                        break;
                     case ArgumentType.DE:
                         // '[de] = a' -> 'ld [de], a'
                         if(auto load = buildArgument(program, src))
                         {
                             if(load.type == ArgumentType.A)
                             {
-                                return [0x12];
+                                code ~= [0x12];
                             }
                         }
-                        error("invalid initializer in '[de] = ...'", stmt.location);
-                        return [];
+                        else
+                        {
+                            return invalidAssignment("'[bc]'");
+                        }
+                        break;
                     case ArgumentType.HL:
-                        bool swap = false;
+                        ubyte destIndex = getRegisterIndex(dest);
                         if(auto load = buildArgument(program, src))
                         {
-                            // '[hl] = <>v' -> 'hl = v; hl = <>hl'
-                            if(load.type == ArgumentType.Swap)
+                            while(true)
                             {
-                                load = load.base;
-                                swap = true;
+                                if(load.type == ArgumentType.Swap)
+                                {
+                                    // 'r = <>r' -> 'swap r'
+                                    code ~= [0xCB, (0x20 + destIndex) & 0xFF];
+                                    load = load.base;
+                                    continue;
+                                }
+                                break;
                             }
-                            // '[hl] = [hl]'
-                            if(load.type == dest.type && load.base.type == dest.base.type)
+                            switch(load.type)
                             {
-                                return swap ? [0x36] : [];
-                            }
-                            // '[hl] = a' -> 'ld [hl], a'
-                            if(load.type == ArgumentType.A)
-                            {
-                                return swap ? [0x36, 0x77] : [0x77];
+                                // '[hl] = n' -> 'ld [hl], n'
+                                case ArgumentType.Immediate:
+                                    uint value;
+                                    compile.foldConstExpr(program, load.immediate, value);
+                                    code ~= [(0x06 + destIndex * 8) & 0xFF, value & 0xFF];
+                                    break;
+                                // '[hl] = r' -> 'ld [hl], r'
+                                case ArgumentType.A: 
+                                case ArgumentType.B:
+                                case ArgumentType.C:
+                                case ArgumentType.D:
+                                case ArgumentType.E:
+                                case ArgumentType.H:
+                                case ArgumentType.L:
+                                    ubyte sourceIndex = getRegisterIndex(load);
+                                    if(sourceIndex != destIndex)
+                                    {
+                                        code ~= [(0x40 + destIndex * 8 + sourceIndex) & 0xFF];
+                                    }
+                                    break;
+                                case ArgumentType.Indirection:
+                                    switch(load.base.type)
+                                    {
+                                        // '[hl] = [hl]' -> (nothing)
+                                        case ArgumentType.HL:
+                                            break;
+                                        default: return invalidAssignment("register");
+                                    }
+                                    break;
+                                default:
+                                    return invalidAssignment("'[hl]'");
                             }
                         }
-                        error("invalid initializer in '[hl] = " ~ (swap ? "<> " : "") ~ "...'", stmt.location);
-                        return [];
+                        else
+                        {
+                            return invalidAssignment("'[hl]'");
+                        }
+                        break;
                     default:
                         error("invalid assignment '=' to indirected expression.", stmt.location);
                         return [];
                 }
+                break;
             case ArgumentType.AF:
                 if(auto load = buildArgument(program, src))
                 {
                     switch(load.type)
                     {
+                        // 'af = pop' -> 'pop af'
                         case ArgumentType.Pop:
-                            // 'af = pop' -> 'pop af'
-                            return [0xF1];
+                            code ~= [0xF1];
+                            break;
                         default:
+                            return invalidAssignment("'af'");
                     }
                 }
-                error("invalid assignment '=' to 'af'.", stmt.location);
-                return [];
+                break;
             case ArgumentType.BC:
-                if(auto load = buildArgument(program, src))
-                {
-                    switch(load.type)
-                    {
-                        case ArgumentType.Immediate:
-                            // 'bc = n' -> 'ld bc, n'
-                            error("TODO: assignment of immediate to 'bc'", stmt.location);
-                            return [];
-                        case ArgumentType.Pop:
-                            // 'bc = pop' -> 'pop bc'
-                            return [0xC1];
-                        default:
-                    }
-                }
-                error("invalid assignment '=' to 'bc'.", stmt.location);
-                return [];
             case ArgumentType.DE:
-                if(auto load = buildArgument(program, src))
-                {
-                    switch(load.type)
-                    {
-                        case ArgumentType.Immediate:
-                            // 'de = n' -> 'ld de, n'
-                            error("TODO: assignment of immediate to 'de'", stmt.location);
-                            return [];
-                        case ArgumentType.Pop:
-                            // 'de = pop' -> 'pop de'
-                            return [0xD1];
-                        default:
-                    }
-                }
-                error("invalid assignment '=' to 'de'.", stmt.location);
-                return [];
             case ArgumentType.HL:
                 if(auto load = buildArgument(program, src))
                 {
-                    // TODO: 'hl = sp' -> 'ld hl, sp + k'
+                    ubyte destIndex = getPairIndex(dest);
                     switch(load.type)
                     {
+                        // 'rr = n' -> 'ld rr, n'
                         case ArgumentType.Immediate:
-                            // 'hl = n' -> 'ld hl, n'
-                            error("TODO: assignment of immediate to 'hl'", stmt.location);
-                            return [];
+                            uint value;
+                            compile.foldConstExpr(program, load.immediate, value);
+                            code ~= [(0x01 + destIndex * 16) & 0xFF, value & 0xFF, (value >> 8) & 0xFF];
+                            break;
+                        // 'rr = pop' -> 'pop rr'
                         case ArgumentType.Pop:
-                            // 'hl = pop' -> 'pop hl'
-                            return [0xE1];
+                            code ~= [(0xC1 + destIndex * 16) & 0xFF];
+                            break;
+                        case ArgumentType.SP:
+                            if(dest.type == ArgumentType.HL)
+                            {
+                                // 'hl = sp' -> 'ldhl sp,0'
+                                // (TODO: grab additive constant directly after sp. 'hl = sp + k' -> 'ldhl sp, k'
+                                code ~= [0xF8, 0x00];
+                            }
+                            else
+                            {
+                                return invalidAssignment("register pair");
+                            }
+                            break;
                         default:
+                            return invalidAssignment("register pair");
                     }
                 }
-                error("invalid assignment '=' to 'hl'.", stmt.location);
-                return [];
+                break;
             case ArgumentType.SP:
                 if(auto load = buildArgument(program, src))
                 {
                     switch(load.type)
                     {
+                        // 'sp = n' -> 'ld sp, n'
                         case ArgumentType.Immediate:
-                            // 'sp = n' -> 'ld sp, n'
-                            error("TODO: assignment of immediate to 'sp'", stmt.location);
-                            return [];
+                            uint value;
+                            compile.foldConstExpr(program, load.immediate, value);
+                            code ~= [(0x01 + getPairIndex(dest) * 16) & 0xFF, value & 0xFF, (value >> 8) & 0xFF];
+                            break;
+                        // 'sp = hl' -> 'ld sp, hl'
                         case ArgumentType.HL:
-                            // 'sp = hl' -> 'ld sp, hl'
-                            return [0xF9];
+                            code ~= [0xF9];
+                            break;
                         default:
+                            return invalidAssignment("'sp'");
                     }
                 }
-                error("invalid assignment '=' to 'hl'.", stmt.location);
-                return [];
+                break;
             case ArgumentType.IndirectionInc:
                 if(auto load = buildArgument(program, src))
                 {
@@ -850,12 +1065,13 @@ class GameboyPlatform : Platform
                     {
                         case ArgumentType.A:
                             // '[hl++] = a' -> 'ld [hl+], a'
-                            return [0x22];
+                            code ~= [0x22];
+                            break;
                         default:
+                            return invalidAssignment("'[hl++]'");
                     }
                 }
-                error("invalid assignment '=' to '[hl++]'.", stmt.location);
-                return [];
+                break;
             case ArgumentType.IndirectionDec:
                 if(auto load = buildArgument(program, src))
                 {
@@ -863,12 +1079,13 @@ class GameboyPlatform : Platform
                     {
                         case ArgumentType.A:
                             // '[hl--] = a' -> 'ld [hl-], a'
-                            return [0x32];
+                            code ~= [0x32];
+                            break;
                         default:
+                            return invalidAssignment("'[hl--]'");
                     }
                 }
-                error("invalid assignment '=' to '[hl--]'.", stmt.location);
-                return [];
+                break;
             case ArgumentType.PositiveIndex:
                 // '[FF00:c]' -> 'ldh [c], a'
                 return [];
@@ -901,32 +1118,53 @@ class GameboyPlatform : Platform
             case ArgumentType.Carry:
                 if(auto load = buildArgument(program, src))
                 {
+                    while(true)
+                    {
+                        if(load.type == ArgumentType.Not)
+                        {
+                            // 'carry = ~carry' -> 'ccf'
+                            code ~= [0x3F];
+                            load = load.base;
+                            continue;
+                        }
+                        break;
+                    }
                     switch(load.type)
                     {
                         case ArgumentType.Immediate:
-                            // 'carry = 1' -> 'scf'
-                            // 'carry = 0' -> 'scf; ccf'
-                            error("TODO: assignment of 'carry' to immediate", stmt.location);
-                            return [];
-                        case ArgumentType.Not:
-                            // 'carry = ~carry' -> 'ccf'
-                            load = load.base;
-                            if(load.type == ArgumentType.Carry)
+                            uint value;
+                            if(compile.foldConstExpr(program, load.immediate, value))
                             {
-                                return [0x0F];
+                                // 'carry = 0' -> 'scf; ccf'    
+                                if(value == 0)
+                                {
+                                    code ~= [0x37, 0x3F];
+                                    
+                                }
+                                // 'carry = 1' -> 'scf'
+                                else if(value == 1)
+                                {
+                                    code ~= [0x37];
+                                }
+                                else
+                                {
+                                    return invalidAssignment("'carry'");
+                                }
                             }
+                            break;
+                        case ArgumentType.Carry:
                             break;
                         default:
                     }
                 }
-                error("assignment '=' to 'carry' flag is invalid.", stmt.location);
-                return [];
+                break;
             case ArgumentType.Pop:
                 error("'pop' operator on left hand of assignment '=' is invalid.", stmt.location);
                 return [];
             case ArgumentType.None:
                 return [];
         }
+        return std.array.join(code.reverse);
     }
 
     ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
@@ -962,7 +1200,7 @@ class GameboyPlatform : Platform
                         case ArgumentType.H: return [0xBC];
                         case ArgumentType.L: return [0xBD];
                         case ArgumentType.Indirection:
-                            if(left.base.base.type == ArgumentType.HL)
+                            if(left.base.type == ArgumentType.HL)
                             {
                                 return [0xBE];
                             }
@@ -993,7 +1231,8 @@ class GameboyPlatform : Platform
                             error("right-hand side of '@' must be in the range 0..7.", left.immediate.location);
                         }
                         ubyte r;
-                        switch(left.base.type)
+                        left = left.base;
+                        switch(left.type)
                         {
                             case ArgumentType.B: r = 0x0; break;
                             case ArgumentType.C: r = 0x1; break;
@@ -1002,7 +1241,7 @@ class GameboyPlatform : Platform
                             case ArgumentType.H: r = 0x4; break;
                             case ArgumentType.L: r = 0x5; break;
                             case ArgumentType.Indirection:
-                                if(left.base.base.type == ArgumentType.HL)
+                                if(left.base.type == ArgumentType.HL)
                                 {
                                     r = 0x6;
                                 }
