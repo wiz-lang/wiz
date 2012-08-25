@@ -1007,6 +1007,7 @@ class Parser
             case Token.Greater:
             case Token.Swap:
             case Token.Sub:
+            case Token.Not:
                 return true;
             default:
                 return false;

@@ -416,12 +416,7 @@ class GameboyPlatform : Platform
                 {
                     case ArgumentType.Immediate:
                         uint address;
-                        if(!compile.foldConstExpr(program, argument.immediate, address))
-                        {
-                            // For now, sub a placeholder expression.
-                            // At a later pass, we will ensure that the address is resolvable.
-                            address = 0xFACE;
-                        }
+                        compile.foldConstExpr(program, argument.immediate, address);
                         if(stmt.condition is null)
                         {
                             return getJumpCode(stmt.far, address);
@@ -483,12 +478,7 @@ class GameboyPlatform : Platform
                 {
                     case ArgumentType.Immediate:
                         uint address;
-                        if(!compile.foldConstExpr(program, argument.immediate, address))
-                        {
-                            // For now, sub a placeholder expression.
-                            // At a later pass, we will ensure that the address is resolvable.
-                            address = 0xFACE;
-                        }
+                        compile.foldConstExpr(program, argument.immediate, address);
                         if(stmt.condition is null)
                         {
                             return getCallCode(address);
@@ -717,11 +707,11 @@ class GameboyPlatform : Platform
             return [];
         }
 
-        // A sequence of code blobs, to be executed in reverse order.
-        ubyte[][] code = [];
+        // A sequence of instructions, to be executed in reverse order
+        // This way, prefix operators run after the dest has been loaded with values they act on.
+        ubyte[][] code;
 
         // TODO: fold constant left-hand of expressions.
-        // TODO: giant fucking assignment compatibility instruction lookup table.
         if(dest is null)
         {
             return [];
@@ -740,7 +730,7 @@ class GameboyPlatform : Platform
                             load = load.base;
                             continue;
                         }
-                        else if(load.type == ArgumentType.Not)
+                        if(load.type == ArgumentType.Not)
                         {
                             // 'a = ~a' -> 'cpl a'
                             code ~= [0x2F];
@@ -810,6 +800,22 @@ class GameboyPlatform : Platform
                                 case ArgumentType.HL: code ~= [0x2A]; break;
                                 default: return invalidAssignment("'a'");
                             }
+                            break;
+                        case ArgumentType.PositiveIndex:
+                            uint value;
+                            compile.foldConstExpr(program, load.immediate, value);
+
+                            if(value != 0xFF00 || load.base.type != ArgumentType.C)
+                            {
+                                return invalidAssignment("'a'");
+                            }
+                            else
+                            {
+                                code ~= [0xF2];
+                            }
+                            break;
+                        case ArgumentType.NegativeIndex:
+                            error("negative indexing is not supported.", stmt.location);
                             break;
                         default: return invalidAssignment("'a'");
                     }
@@ -897,7 +903,7 @@ class GameboyPlatform : Platform
                             }
                             else
                             {
-                                return invalidAssignment("indirected immediate");
+                                return invalidAssignment("indirected immediate (can only be assigned 'a')");
                             }
                         }
                         break;
@@ -912,7 +918,7 @@ class GameboyPlatform : Platform
                         }
                         else
                         {
-                            return invalidAssignment("'[bc]'");
+                            return invalidAssignment("'[bc]' (can only be assigned 'a')");
                         }
                         break;
                     case ArgumentType.DE:
@@ -926,7 +932,7 @@ class GameboyPlatform : Platform
                         }
                         else
                         {
-                            return invalidAssignment("'[bc]'");
+                            return invalidAssignment("'[bc]' (can only be assigned 'a')");
                         }
                         break;
                     case ArgumentType.HL:
@@ -972,7 +978,7 @@ class GameboyPlatform : Platform
                                         // '[hl] = [hl]' -> (nothing)
                                         case ArgumentType.HL:
                                             break;
-                                        default: return invalidAssignment("register");
+                                        default: return invalidAssignment("'[hl]'");
                                     }
                                     break;
                                 default:
@@ -1030,7 +1036,7 @@ class GameboyPlatform : Platform
                             }
                             else
                             {
-                                return invalidAssignment("register pair");
+                                return invalidAssignment("register pair (only 'hl' or 'sp' can be assigned to 'sp')");
                             }
                             break;
                         default:
@@ -1087,19 +1093,113 @@ class GameboyPlatform : Platform
                 }
                 break;
             case ArgumentType.PositiveIndex:
-                // '[FF00:c]' -> 'ldh [c], a'
-                return [];
+                uint value;
+                compile.foldConstExpr(program, dest.immediate, value);
+
+                if(value != 0xFF00 || dest.base.type != ArgumentType.C)
+                {
+                    error("assignment '=' to indexed memory location other than '[0xFF00:c]' is invalid.", stmt.location);
+                    return [];
+                }
+                if(auto load = buildArgument(program, src))
+                {
+                    switch(load.type)
+                    {
+                        // '[FF00:c]' -> 'ldh [c], a'
+                        case ArgumentType.A:
+                            code ~= [0xE2];
+                            break;
+                        default:
+                            return invalidAssignment("'[0xFF00:c]'");
+                    }
+                }
+                break;
             case ArgumentType.NegativeIndex:
                 error("negative indexing is not supported.", stmt.location);
                 return [];
             case ArgumentType.BitIndex:
-                // 'r@i = 0' -> 'res r, i'
-                // 'r@i = 1' -> 'set r, i'
-                return [];
+                uint index;
+                compile.foldConstExpr(program, dest.immediate, index);
+                if(index > 7)
+                {
+                    error("right-hand side of '@' must be in the range 0..7.", dest.immediate.location);
+                }
+                dest = dest.base;
+                switch(dest.type)
+                {
+                    case ArgumentType.A: break;
+                    case ArgumentType.B: break;
+                    case ArgumentType.C: break;
+                    case ArgumentType.D: break;
+                    case ArgumentType.E: break;
+                    case ArgumentType.H: break;
+                    case ArgumentType.L: break;
+                    case ArgumentType.Indirection:
+                        if(dest.base.type != ArgumentType.HL)
+                        {
+                            error("indirected operand on left-hand side of '@' is not supported (only '[hl] @ ...' is valid)", stmt.location);
+                            return [];
+                        }
+                        break;
+                    default:
+                        error("unsupported operand on left-hand side of '@'", stmt.location);
+                        return [];
+                }
+                if(auto load = buildArgument(program, src))
+                {
+                    switch(load.type)
+                    {
+                        // 'r@i = 0' -> 'res r, i'
+                        // 'r@i = 1' -> 'set r, i'
+                        case ArgumentType.Immediate:
+                            uint value;
+                            compile.foldConstExpr(program, load.immediate, value);
+                            if(value == 0)
+                            {
+                                code ~= [0xCB, (0x80 + index * 8 + getRegisterIndex(dest)) & 0xFF];
+                            }
+                            else if(value == 1)
+                            {
+                                code ~= [0xCB, (0xC0 + index * 8 + getRegisterIndex(dest)) & 0xFF];
+                            }
+                            else
+                            {
+                                return invalidAssignment("bit-indexed register (immediate must be 0 or 1, not " ~ std.conv.to!string(value) ~ ")");
+                            }
+                            break;
+                        default:
+                            return invalidAssignment("bit-indexed register");
+                    }
+                }
+                break;
             case ArgumentType.Interrupt:
-                // 'interrupt = 0' -> 'di'
-                // 'interrupt = 1' -> 'ei'
-                return [];
+                if(auto load = buildArgument(program, src))
+                {
+                    switch(load.type)
+                    {
+                        // 'interrupt = 0' -> 'di'
+                        // 'interrupt = 1' -> 'ei'
+                        case ArgumentType.Immediate:
+                            uint value;
+                            compile.foldConstExpr(program, load.immediate, value);
+                            if(value == 0)
+                            {
+                                code ~= [0xF3];
+                            }
+                            else if(value == 1)
+                            {
+                                code ~= [0xFB];
+                            }
+                            else
+                            {
+                                return invalidAssignment("'interrupt' (immediate must be 0 or 1, not " ~ std.conv.to!string(value) ~ ")");
+                            }
+                            break;
+                        default:
+                            return invalidAssignment("'interrupt'");
+                    }
+                }
+                break;
             case ArgumentType.Immediate:
                 error("assignment '=' to immediate constant is invalid.", stmt.location);
                 return [];
@@ -1148,7 +1248,7 @@ class GameboyPlatform : Platform
                                 }
                                 else
                                 {
-                                    return invalidAssignment("'carry'");
+                                    return invalidAssignment("'carry' (immediate must be 0 or 1, not " ~ std.conv.to!string(value) ~ ")");
                                 }
                             }
                             break;
@@ -1193,14 +1293,15 @@ class GameboyPlatform : Platform
                                 value = 0xFACE;
                             }
                             return [0xFE, value & 0xFF];
-                        case ArgumentType.B: return [0xB8];
-                        case ArgumentType.C: return [0xB9];
-                        case ArgumentType.D: return [0xBA];
-                        case ArgumentType.E: return [0xBB];
-                        case ArgumentType.H: return [0xBC];
-                        case ArgumentType.L: return [0xBD];
+                        case ArgumentType.B:
+                        case ArgumentType.C:
+                        case ArgumentType.D:
+                        case ArgumentType.E:
+                        case ArgumentType.H:
+                        case ArgumentType.L:
+                            return [(0xB8 + getRegisterIndex(left)) & 0xFF];
                         case ArgumentType.Indirection:
-                            if(left.base.type == ArgumentType.HL)
+                            if(right.base.type == ArgumentType.HL)
                             {
                                 return [0xBE];
                             }
@@ -1220,43 +1321,33 @@ class GameboyPlatform : Platform
                 if(right is null)
                 {
                     uint index;
-                    if(!compile.foldConstExpr(program, left.immediate, index))
+                    compile.foldConstExpr(program, left.immediate, index);
+                    if(index > 7)
                     {
-                        return [];
+                        error("right-hand side of '@' must be in the range 0..7.", left.immediate.location);
                     }
-                    else
+                    left = left.base;
+                    switch(left.type)
                     {
-                        if(index > 7)
-                        {
-                            error("right-hand side of '@' must be in the range 0..7.", left.immediate.location);
-                        }
-                        ubyte r;
-                        left = left.base;
-                        switch(left.type)
-                        {
-                            case ArgumentType.B: r = 0x0; break;
-                            case ArgumentType.C: r = 0x1; break;
-                            case ArgumentType.D: r = 0x2; break;
-                            case ArgumentType.E: r = 0x3; break;
-                            case ArgumentType.H: r = 0x4; break;
-                            case ArgumentType.L: r = 0x5; break;
-                            case ArgumentType.Indirection:
-                                if(left.base.type == ArgumentType.HL)
-                                {
-                                    r = 0x6;
-                                }
-                                else
-                                {
-                                    error("indirected operand on left-hand side of '@' is not supported (only '[hl] @ ...' is valid)", stmt.right.location);
-                                    return [];
-                                }
-                                break;
-                            case ArgumentType.A: r = 0x7; break;
-                            default:
+                        case ArgumentType.A: break;
+                        case ArgumentType.B: break;
+                        case ArgumentType.C: break;
+                        case ArgumentType.D: break;
+                        case ArgumentType.E: break;
+                        case ArgumentType.H: break;
+                        case ArgumentType.L: break;
+                        case ArgumentType.Indirection:
+                            if(left.base.type != ArgumentType.HL)
+                            {
+                                error("indirected operand on left-hand side of '@' is not supported (only '[hl] @ ...' is valid)", stmt.right.location);
                                 return [];
-                        }
-                        return [0xCB, (0x40 + (0x08 * index) + r) & 0xFF];
+                            }
+                            break;
+                        default:
+                            error("unsupported operand on left-hand side of '@'", stmt.right.location);
+                            return [];
                     }
+                    return [0xCB, (0x40 + index * 8 + getRegisterIndex(left)) & 0xFF];
                 }
                 else
                 {
