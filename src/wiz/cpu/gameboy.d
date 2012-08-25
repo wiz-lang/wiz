@@ -15,6 +15,7 @@ private
         PositiveIndex,
         NegativeIndex,
         BitIndex,
+        Not,
         Swap,
         Pop,
         A,
@@ -180,6 +181,10 @@ private
             {
                 return new Argument(ArgumentType.Swap, buildArgument(program, prefix.operand));
             }
+            if(prefix.type == parse.Token.Not)
+            {
+                return new Argument(ArgumentType.Not, buildArgument(program, prefix.operand));
+            }
         }
         else if(auto infix = cast(ast.Infix) root)
         {
@@ -248,7 +253,21 @@ class GameboyPlatform : Platform
     
     ubyte[] generateJump(compile.Program program, ast.Jump stmt)
     {
-        ubyte[] getJumpCode(uint address, ArgumentType type = ArgumentType.None, bool negated = false)
+        ubyte[] getRelJumpCode(uint address, ArgumentType type = ArgumentType.None, bool negated = false)
+        {
+            ubyte opcode;
+            switch(type)
+            {
+                case ArgumentType.Zero: opcode = negated ? 0x20 : 0x28; break;
+                case ArgumentType.Carry: opcode = negated ? 0x30 : 0x38; break;
+                case ArgumentType.None: opcode = 0x18; break;
+                default:
+                    assert(0);
+            }
+            return [opcode, address & 0xFF];
+        }
+
+        ubyte[] getAbsJumpCode(uint address, ArgumentType type = ArgumentType.None, bool negated = false)
         {
             ubyte opcode;
             switch(type)
@@ -260,6 +279,18 @@ class GameboyPlatform : Platform
                     assert(0);
             }
             return [opcode, address & 0xFF, (address >> 8) & 0xFF];
+        }
+
+        ubyte[] getJumpCode(bool far, uint address, ArgumentType type = ArgumentType.None, bool negated = false)
+        {
+            if(far)
+            {
+                return getAbsJumpCode(address, type, negated);
+            }
+            else
+            {
+                return getRelJumpCode(address, type, negated);
+            }
         }
 
         ubyte[] getCallCode(uint address, ArgumentType type = ArgumentType.None, bool negated = false)
@@ -288,6 +319,34 @@ class GameboyPlatform : Platform
             }
         }
 
+        bool resolveBranchFlags(string context, ast.JumpCondition cond, ref ArgumentType flag, ref bool negated)
+        {
+            final switch(cond.branch)
+            {
+                case parse.Branch.Equal:
+                    flag = ArgumentType.Zero;
+                    return true;
+                case parse.Branch.NotEqual:
+                    flag = ArgumentType.Zero;
+                    negated = false;
+                    return true;
+                case parse.Branch.Less:
+                    flag = ArgumentType.Carry;
+                    negated = false;
+                    return true;
+                case parse.Branch.GreaterEqual:
+                    flag = ArgumentType.Carry;
+                    return true;
+                case parse.Branch.Greater:
+                case parse.Branch.LessEqual:
+                    error(
+                        "comparision '" ~ parse.getBranchName(cond.branch)
+                        ~ "' unsupported in 'when' clause of " ~ context, cond.location
+                    );
+                    return false;
+            }
+        }
+
         switch(stmt.type)
         {
             case parse.Keyword.Goto:
@@ -304,30 +363,18 @@ class GameboyPlatform : Platform
                         }
                         if(stmt.condition is null)
                         {
-                            return getJumpCode(address);
+                            return getJumpCode(stmt.far, address);
                         }
                         else
                         {
                             auto cond = stmt.condition;
                             if(cond.attr is null)
                             {
-                                final switch(cond.branch)
+                                ArgumentType flag;
+                                bool negated;
+                                if(resolveBranchFlags("'goto'", cond, flag, negated))
                                 {
-                                    case parse.Branch.Equal:
-                                        return getJumpCode(address, ArgumentType.Zero, cond.negated);
-                                    case parse.Branch.NotEqual:
-                                        return getJumpCode(address, ArgumentType.Zero, !cond.negated);
-                                    case parse.Branch.Less:
-                                        return getJumpCode(address, ArgumentType.Carry, !cond.negated);
-                                    case parse.Branch.GreaterEqual:
-                                        return getJumpCode(address, ArgumentType.Carry, cond.negated);
-                                    case parse.Branch.Greater:
-                                    case parse.Branch.LessEqual:
-                                        error(
-                                            "comparision '" ~ parse.getBranchName(cond.branch)
-                                            ~ "' unsupported in 'when' clause of 'goto'", cond.location
-                                        );
-                                        return [];
+                                    return getJumpCode(stmt.far, address, flag, negated);
                                 }
                             }
                             else
@@ -340,7 +387,7 @@ class GameboyPlatform : Platform
                                     {
                                         case ArgumentType.Carry:
                                         case ArgumentType.Zero:
-                                            return getJumpCode(address, builtin.type, cond.negated);                                        
+                                            return getJumpCode(stmt.far, address, builtin.type, cond.negated);                                        
                                         default:
                                     }
                                 }
@@ -386,24 +433,13 @@ class GameboyPlatform : Platform
                             auto cond = stmt.condition;
                             if(cond.attr is null)
                             {
-                                final switch(cond.branch)
+                                ArgumentType flag;
+                                bool negated;
+                                if(resolveBranchFlags("'call'", cond, flag, negated))
                                 {
-                                    case parse.Branch.Equal:
-                                        return getCallCode(address, ArgumentType.Zero, cond.negated);
-                                    case parse.Branch.NotEqual:
-                                        return getCallCode(address, ArgumentType.Zero, !cond.negated);
-                                    case parse.Branch.Less:
-                                        return getCallCode(address, ArgumentType.Carry, !cond.negated);
-                                    case parse.Branch.GreaterEqual:
-                                        return getCallCode(address, ArgumentType.Carry, cond.negated);
-                                    case parse.Branch.Greater:
-                                    case parse.Branch.LessEqual:
-                                        error(
-                                            "comparision '" ~ parse.getBranchName(cond.branch)
-                                            ~ "' unsupported in 'when' clause of 'call'", cond.location
-                                        );
-                                        return [];
+                                    return getCallCode(address, ArgumentType.Zero, cond.negated);
                                 }
+                                return [];
                             }
                             else
                             {
@@ -726,7 +762,17 @@ class GameboyPlatform : Platform
                         return [];
                 }
             case ArgumentType.AF:
-                // 'af = pop' -> 'pop af'
+                if(auto load = buildArgument(program, src))
+                {
+                    switch(load.type)
+                    {
+                        case ArgumentType.Pop:
+                            // 'af = pop' -> 'pop af'
+                            return [0xF1];
+                        default:
+                    }
+                }
+                error("invalid assignment '=' to 'af'.", stmt.location);
                 return [];
             case ArgumentType.BC:
                 if(auto load = buildArgument(program, src))
@@ -735,7 +781,7 @@ class GameboyPlatform : Platform
                     {
                         case ArgumentType.Immediate:
                             // 'bc = n' -> 'ld bc, n'
-                            error("TODO: assignment of 'bc' to immediate", stmt.location);
+                            error("TODO: assignment of immediate to 'bc'", stmt.location);
                             return [];
                         case ArgumentType.Pop:
                             // 'bc = pop' -> 'pop bc'
@@ -752,7 +798,7 @@ class GameboyPlatform : Platform
                     {
                         case ArgumentType.Immediate:
                             // 'de = n' -> 'ld de, n'
-                            error("TODO: assignment of 'de' to immediate", stmt.location);
+                            error("TODO: assignment of immediate to 'de'", stmt.location);
                             return [];
                         case ArgumentType.Pop:
                             // 'de = pop' -> 'pop de'
@@ -770,7 +816,7 @@ class GameboyPlatform : Platform
                     {
                         case ArgumentType.Immediate:
                             // 'hl = n' -> 'ld hl, n'
-                            error("TODO: assignment of 'hl' to immediate", stmt.location);
+                            error("TODO: assignment of immediate to 'hl'", stmt.location);
                             return [];
                         case ArgumentType.Pop:
                             // 'hl = pop' -> 'pop hl'
@@ -787,7 +833,7 @@ class GameboyPlatform : Platform
                     {
                         case ArgumentType.Immediate:
                             // 'sp = n' -> 'ld sp, n'
-                            error("TODO: assignment of 'sp' to immediate", stmt.location);
+                            error("TODO: assignment of immediate to 'sp'", stmt.location);
                             return [];
                         case ArgumentType.HL:
                             // 'sp = hl' -> 'ld sp, hl'
@@ -840,6 +886,9 @@ class GameboyPlatform : Platform
             case ArgumentType.Immediate:
                 error("assignment '=' to immediate constant is invalid.", stmt.location);
                 return [];
+            case ArgumentType.Not:
+                error("assignment '=' to not expression '~' is invalid.", stmt.location);
+                return [];
             case ArgumentType.Swap:
                 error("assignment '=' to swap expression '<>' is invalid.", stmt.location);
                 return [];
@@ -852,7 +901,6 @@ class GameboyPlatform : Platform
             case ArgumentType.Carry:
                 if(auto load = buildArgument(program, src))
                 {
-                    // TODO: 'carry = carry ^ 1' -> 'ccf'
                     switch(load.type)
                     {
                         case ArgumentType.Immediate:
@@ -860,6 +908,14 @@ class GameboyPlatform : Platform
                             // 'carry = 0' -> 'scf; ccf'
                             error("TODO: assignment of 'carry' to immediate", stmt.location);
                             return [];
+                        case ArgumentType.Not:
+                            // 'carry = ~carry' -> 'ccf'
+                            load = load.base;
+                            if(load.type == ArgumentType.Carry)
+                            {
+                                return [0x0F];
+                            }
+                            break;
                         default:
                     }
                 }

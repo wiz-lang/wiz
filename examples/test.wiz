@@ -249,7 +249,7 @@ def handle_redraw: do
     hl = redraw_request
     a = [hl]
     compare a
-    if not zero then
+    if ~zero then
         call map_buf_data
     
         // Copy sprites.

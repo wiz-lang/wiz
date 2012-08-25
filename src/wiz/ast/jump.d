@@ -10,21 +10,21 @@ class Jump : Statement
     private Expression _destination;
     private JumpCondition _condition;
 
-    this(parse.Keyword type, compile.Location location)
+    this(parse.Keyword type, bool far, compile.Location location)
     {
         super(location);
         _type = type;
     }
 
-    this(parse.Keyword type, JumpCondition condition, compile.Location location)
+    this(parse.Keyword type, bool far, JumpCondition condition, compile.Location location)
     {
-        this(type, location);
+        this(type, far, location);
         _condition = condition;
     }
 
     this(parse.Keyword type, bool far, Expression destination, JumpCondition condition, compile.Location location)
     {
-        this(type, condition, location);
+        this(type, far, condition, location);
         _far = far;
         _destination = destination;
     }

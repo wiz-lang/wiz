@@ -698,16 +698,16 @@ class Parser
         auto location = scanner.getLocation();
 
         auto type = keyword;
+        bool far = false;
         nextToken(); // IDENTIFIER (keyword)
+        if(token == Token.Exclaim)
+        {
+            nextToken(); // '!'
+            far = true;
+        }
         switch(type)
         {
             case Keyword.Goto, Keyword.Call:
-                bool far = false;
-                if(token == Token.Exclaim)
-                {
-                    nextToken(); // '!'
-                    far = true;
-                }
                 auto destination = parseExpression();
                 ast.JumpCondition condition = null;
                 if(token == Token.Identifier && keyword == Keyword.When)
@@ -724,28 +724,28 @@ class Parser
                     nextToken(); // IDENTIFIER (keyword 'when')
                     condition = parseJumpCondition("'when'");
                 }
-                return new ast.Jump(type, condition, location);
+                return new ast.Jump(type, far, condition, location);
             case Keyword.While:
-                return new ast.Jump(type, parseJumpCondition("'while'"), location);
+                return new ast.Jump(type, far, parseJumpCondition("'while'"), location);
             case Keyword.Until:
-                return new ast.Jump(type, parseJumpCondition("'until'"), location);
+                return new ast.Jump(type, far, parseJumpCondition("'until'"), location);
             default:
-                return new ast.Jump(type, location);
+                return new ast.Jump(type, far, location);
         }
     }
     
     auto parseJumpCondition(string context)
     {
-        // jump_condition = 'not'* (IDENTIFIER | '~=' | '==' | '<' | '>' | '<=' | '>=')
+        // jump_condition = '~'* (IDENTIFIER | '~=' | '==' | '<' | '>' | '<=' | '>=')
         ast.JumpCondition condition = null;
         
-        // 'not'* (not isn't a keyword, but it has special meaning)
+        // '~'*
         bool negated = false;
-        while(keyword == Keyword.Not)
+        while(token == Token.Not)
         {
-            nextToken(); // IDENTIFIER (keyword 'not')
+            nextToken(); // '~'
             negated = !negated;
-            context = "'not'";
+            context = "'~'";
         }
         
         switch(token)
