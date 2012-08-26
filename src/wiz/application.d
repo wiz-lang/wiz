@@ -113,7 +113,7 @@ int run(string[] arguments)
 
     auto scanner = new wiz.parse.Scanner(std.stdio.File(input, "rb"), input);
     auto parser = new wiz.parse.Parser(scanner);
-    auto program = new wiz.compile.Program(new wiz.cpu.GameboyPlatform());
+    auto program = new wiz.compile.Program(new wiz.cpu.gameboy.GameboyPlatform());
 
     wiz.log(">> Building...");
     auto block = parser.parse();
