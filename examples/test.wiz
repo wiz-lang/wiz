@@ -36,7 +36,7 @@ def disable_display: do
     return
 end
 
-a = 100 + 30 + 300 + array + carry
+a = 100 + 30 + 300 + array
 
 [hl] = <>a
 
@@ -117,8 +117,10 @@ def main: do
     [map_width_shift] = LOG2_WIDTH via a
    
     // Load map.
+    let GB_VRAM_MAP_WIDTH = 32
+    let GB_VRAM_MAP_HEIGHT = 32
     [t0] = GB_VRAM_MAP_WIDTH / 2 via a
-    [t1] = GB_VRAM_MAP_HEIGHT via a
+    /*[t1] = GB_VRAM_MAP_HEIGHT via a
     bc = metatiles
     de = gb.ram.map
     hl = world1.map
@@ -190,7 +192,7 @@ def main: do
         // For instance, when it's busy loading compressed resources: That can take a while.
         //CALL_EVENT_SAFE step_event_lo, step_event_hi, step_event_bank
         call request_redraw
-    end
+    end*/
 end
 
 def stat: do
@@ -243,6 +245,11 @@ def request_redraw: do
 
     return
 end
+
+sp = sp - 100
+hl = bc // shorthand for hl = 0 + bc
+hl = sp - 100
+hl = sp + bc
 
 def handle_redraw: do
     // Should we redraw?

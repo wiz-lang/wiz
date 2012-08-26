@@ -60,10 +60,10 @@ sym.Definition resolveAttribute(Program program, ast.Attribute attribute)
     return def;
 }
 
-bool foldConstExpr(Program program, ast.Expression root, ref uint result, bool forbidUndefined = true)
+bool foldConstant(Program program, ast.Expression root, ref uint result, bool forbidUndefined = true)
 {
     ast.Expression constTail;
-    return tryFoldConstant(program, root, result, constTail, true, forbidUndefined);
+    return tryFoldConstant(program, root, result, constTail, true, forbidUndefined) && constTail == root;
 }
 
 bool tryFoldConstant(Program program, ast.Expression root, ref uint result, ref ast.Expression constTail, bool mustFold, bool forbidUndefined)
@@ -71,6 +71,7 @@ bool tryFoldConstant(Program program, ast.Expression root, ref uint result, ref 
     uint[ast.Expression] values;
     bool[ast.Expression] completeness;
     bool mustFoldRoot = mustFold;
+    bool badAttr = false;
 
     uint depth = 0;
 
@@ -78,8 +79,7 @@ bool tryFoldConstant(Program program, ast.Expression root, ref uint result, ref 
     {
         values[node] = value;
         completeness[node] = complete;
-
-        if(depth == 0)
+        if(depth == 0 && complete)
         {
             constTail = node;
         }
@@ -92,15 +92,25 @@ bool tryFoldConstant(Program program, ast.Expression root, ref uint result, ref 
             auto first = e.operands[0];
             if((first in values) is null)
             {
+                if(depth == 0)
+                {
+                    constTail = null;
+                }
                 return;
             }
+
             uint a = values[first];
+            updateValue(e, a, false);
 
             foreach(i, type; e.types)
-            {                
+            {
                 auto operand = e.operands[i + 1];
                 if((operand in values) is null)
                 {
+                    if(depth == 0)
+                    {
+                        constTail = e.operands[i];
+                    }
                     return;
                 }
                 uint b = values[operand];
@@ -201,7 +211,7 @@ bool tryFoldConstant(Program program, ast.Expression root, ref uint result, ref 
                         return;
                 }
 
-                updateValue(e, a, i == e.types.length);
+                updateValue(e, a, i == e.types.length - 1);
             }
         },
 
@@ -290,10 +300,15 @@ bool tryFoldConstant(Program program, ast.Expression root, ref uint result, ref 
         (ast.Attribute a)
         {
             auto def = resolveAttribute(program, a);
+            if(!def)
+            {
+                badAttr = true;
+                return;
+            }
             if(auto constdef = cast(sym.ConstDef) def)
             {
                 uint v;
-                if(foldConstExpr(program, (cast(ast.ConstDecl) constdef.decl).value, v))
+                if(foldConstant(program, (cast(ast.ConstDecl) constdef.decl).value, v))
                 {
                     updateValue(a, v);
                     return;
@@ -331,23 +346,23 @@ bool tryFoldConstant(Program program, ast.Expression root, ref uint result, ref 
     );
 
     result = values.get(root, 0);
-    if(completeness.get(root, false))
+    if(!completeness.get(root, false) && mustFold)
     {
-        return true;
-    }
-    else    
-    {
-        if(mustFold)
-        {
-            error("expression could not be resolved as a constant", root.location);
-        }
+        error("expression could not be resolved as a constant", root.location);
+        constTail = null;
         return false;
     }
+    if(badAttr)
+    {
+        constTail = null;
+        return false;
+    }
+    return true;
 }
 
 bool foldStorage(Program program, ast.Storage s, ref uint result)
 {
-    if(foldConstExpr(program, s.size, result))
+    if(foldConstant(program, s.size, result))
     {
         switch(s.type)
         {
@@ -406,7 +421,7 @@ auto createRelocationHandler(Program program)
     {
         enum description = "'in' statement";
         uint address;
-        if(stmt.dest is null || foldConstExpr(program, stmt.dest, address))
+        if(stmt.dest is null || foldConstant(program, stmt.dest, address))
         {
             auto def = program.environment.get!(sym.BankDef)(stmt.mangledName);
             if(def is null)
@@ -502,7 +517,7 @@ void aggregate(Program program, ast.Node root)
         (ast.BankDecl decl)
         {
             uint size;
-            if(foldConstExpr(program, decl.size, size))
+            if(foldConstant(program, decl.size, size))
             {
                 foreach(i, name; decl.names)
                 {

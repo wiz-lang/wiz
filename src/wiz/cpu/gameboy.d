@@ -416,7 +416,7 @@ class GameboyPlatform : Platform
                 {
                     case ArgumentType.Immediate:
                         uint address;
-                        compile.foldConstExpr(program, argument.immediate, address);
+                        compile.foldConstant(program, argument.immediate, address);
                         if(stmt.condition is null)
                         {
                             return getJumpCode(stmt.far, address);
@@ -478,7 +478,7 @@ class GameboyPlatform : Platform
                 {
                     case ArgumentType.Immediate:
                         uint address;
-                        compile.foldConstExpr(program, argument.immediate, address);
+                        compile.foldConstant(program, argument.immediate, address);
                         if(stmt.condition is null)
                         {
                             return getCallCode(address);
@@ -605,12 +605,14 @@ class GameboyPlatform : Platform
                     // 'inc dest'
                     switch(dest.type)
                     {
-                        case ArgumentType.B: return [0x04];
-                        case ArgumentType.C: return [0x0C];
-                        case ArgumentType.D: return [0x14];
-                        case ArgumentType.E: return [0x1C];
-                        case ArgumentType.H: return [0x24];
-                        case ArgumentType.L: return [0x2C];
+                        case ArgumentType.A:
+                        case ArgumentType.B:
+                        case ArgumentType.C:
+                        case ArgumentType.D:
+                        case ArgumentType.E:
+                        case ArgumentType.H:
+                        case ArgumentType.L:
+                            return [(0x05 + getRegisterIndex(dest) * 0x08) & 0xFF];
                         case ArgumentType.Indirection:
                             if(dest.base.type == ArgumentType.HL)
                             {
@@ -621,11 +623,11 @@ class GameboyPlatform : Platform
                                 error("'++' on indirected operand is not supported (only '[hl]++' is valid)", stmt.dest.location);
                                 return [];
                             }
-                        case ArgumentType.A: return [0x3C];
-                        case ArgumentType.BC: return [0x03];
-                        case ArgumentType.DE: return [0x13];
-                        case ArgumentType.HL: return [0x23];
-                        case ArgumentType.SP: return [0x33];
+                        case ArgumentType.BC:
+                        case ArgumentType.DE:
+                        case ArgumentType.HL:
+                        case ArgumentType.SP:
+                            return [(0x03 + getPairIndex(dest) * 0x10) & 0xFF];
                         default:
                             error("unsupported operand of '++'", stmt.dest.location);
                             return [];
@@ -634,12 +636,14 @@ class GameboyPlatform : Platform
                     // 'dec dest'
                     switch(dest.type)
                     {
-                        case ArgumentType.B: return [0x05];
-                        case ArgumentType.C: return [0x0D];
-                        case ArgumentType.D: return [0x15];
-                        case ArgumentType.E: return [0x1D];
-                        case ArgumentType.H: return [0x25];
-                        case ArgumentType.L: return [0x2D];
+                        case ArgumentType.A:
+                        case ArgumentType.B:
+                        case ArgumentType.C:
+                        case ArgumentType.D:
+                        case ArgumentType.E:
+                        case ArgumentType.H:
+                        case ArgumentType.L:
+                            return [(0x05 + getRegisterIndex(dest) * 0x08) & 0xFF];
                         case ArgumentType.Indirection:
                             if(dest.base.type == ArgumentType.HL)
                             {
@@ -650,11 +654,11 @@ class GameboyPlatform : Platform
                                 error("'--' on indirected operand is not supported (only '[hl]--' is valid)", stmt.dest.location);
                                 return [];
                             }
-                        case ArgumentType.A: return [0x3D];
-                        case ArgumentType.BC: return [0x0B];
-                        case ArgumentType.DE: return [0x1B];
-                        case ArgumentType.HL: return [0x2B];
-                        case ArgumentType.SP: return [0x3B];
+                        case ArgumentType.BC:
+                        case ArgumentType.DE:
+                        case ArgumentType.HL:
+                        case ArgumentType.SP:
+                            return [(0x0B + getPairIndex(dest) * 0x10) & 0xFF];
                         default:
                             error("unsupported operand of '--'", stmt.dest.location);
                             return [];
@@ -690,70 +694,441 @@ class GameboyPlatform : Platform
         {
             uint result;
             ast.Expression constTail;
-            bool folded = compile.tryFoldConstant(program, infix, result, constTail, false, true);
-            if(folded)
+            if(!compile.tryFoldConstant(program, infix, result, constTail, false, true))
             {
-                return generateLoad(program, stmt, dest, src);
+                return [];
+            }
+            ast.Expression loadsrc = null;
+            if(constTail is null)
+            {
+                loadsrc = infix.operands[0];
             }
             else
             {
-                ast.Expression load = null;
-                if(constTail is null)
-                {
-                    load = infix.operands[0];
-                }
-                else
-                {
-                    load = new ast.Number(parse.Token.Integer, result, constTail.location);
-                }
-                ubyte[] code = generateLoad(program, stmt, dest, load);
-                bool found = constTail is null;
-                foreach(i, type; infix.types)
-                {                
-                    auto operand = infix.operands[i + 1];
-                    if(operand is constTail)
-                    {
-                        found = true;
-                    }
-                    else if(found)
-                    {
-                        // TODO: This code will be gigantic.
-                        // a:
-                        //      + (add), - (sub), +# (adc), -# (sbc),
-                        //      & (and), | (or), ^ (xor),
-                        //      <<< (sla), <<- (sla), >>> (srl) >>- (sra)
-                        //      <<< (rla), <<<# (rlca), >>> (rra), >>># (rrca).
-                        // r / [hl]:
-                        //      <<< (sla), <<- (sla), >>> (srl) >>- (sra)
-                        //      <<< (rl), <<<# (rlc), >>> (rr), >>># (rrc).
-                        // hl:
-                        //      + (add)
-                        // carry:
-                        //      ^ (ccf)
-                        switch(dest.type)
-                        {
-                            case ArgumentType.A:
-                                switch(type)
-                                {
-                                    default:
-                                }
-                                break;
-                            case ArgumentType.B:
-                            case ArgumentType.C:
-                            case ArgumentType.D:
-                            case ArgumentType.E:
-                            case ArgumentType.Indirection:
-                                break;
-                            case ArgumentType.HL:
-                                break;
-                            case ArgumentType.Carry:
-                                break;
-                            default:
-                        }
-                    }
-                }
-                return code;
+                loadsrc = new ast.Number(parse.Token.Integer, result, constTail.location);
             }
+            ubyte[] code = generateLoad(program, stmt, dest, loadsrc);
+            bool found = constTail is null || constTail is infix.operands[0];
+            foreach(i, type; infix.types)
+            {                
+                auto node = infix.operands[i + 1];
+                if(node is constTail)
+                {
+                    found = true;
+                }
+                else if(found)
+                {
+                    auto operand = buildArgument(program, node);
+                    if(operand is null)
+                    {
+                        return [];
+                    }
+                    // TODO: This code will be gigantic.
+                    // a:
+                    //      + (add), - (sub), +# (adc), -# (sbc),
+                    //      & (and), | (or), ^ (xor),
+                    //      <<< (sla), <<- (sla), >>> (srl) >>- (sra)
+                    //      <<< (rla), <<<# (rlca), >>> (rra), >>># (rrca).
+                    // r / [hl]:
+                    //      <<< (sla), <<- (sla), >>> (srl) >>- (sra)
+                    //      <<< (rl), <<<# (rlc), >>> (rr), >>># (rrc).
+                    // hl:
+                    //      + (add)
+                    // carry:
+                    //      ^ (ccf)
+                    switch(dest.type)
+                    {
+                        case ArgumentType.A:
+                            switch(type)
+                            {
+                                case parse.Infix.Add, parse.Infix.AddC,
+                                    parse.Infix.Sub, parse.Infix.SubC,
+                                    parse.Infix.And, parse.Infix.Xor, parse.Infix.Or:
+                                    ubyte operatorIndex = 0;
+                                    switch(type)
+                                    {
+                                        case parse.Infix.Add: operatorIndex = 0; break;
+                                        case parse.Infix.AddC: operatorIndex = 1; break;
+                                        case parse.Infix.Sub: operatorIndex = 2; break;
+                                        case parse.Infix.SubC: operatorIndex = 3; break;
+                                        case parse.Infix.And: operatorIndex = 4; break;
+                                        case parse.Infix.Xor: operatorIndex = 5; break;
+                                        case parse.Infix.Or: operatorIndex = 6; break;
+                                        default: assert(0);
+                                    }
+                                    switch(operand.type)
+                                    {
+                                        case ArgumentType.Immediate:
+                                            uint value;
+                                            compile.foldConstant(program, operand.immediate, value);
+                                            code ~= [(0xC6 + operatorIndex * 0x08) & 0xFF, value & 0xFF];
+                                            break;
+                                        case ArgumentType.A:
+                                        case ArgumentType.B:
+                                        case ArgumentType.C:
+                                        case ArgumentType.D:
+                                        case ArgumentType.E:
+                                        case ArgumentType.H:
+                                        case ArgumentType.L:
+                                            code ~= [(0x80 + operatorIndex * 0x08 + getRegisterIndex(operand)) & 0xFF];
+                                            break;
+                                        case ArgumentType.Indirection:
+                                            switch(operand.base.type)
+                                            {
+                                                // 'r = [hl]' -> 'ld r, [hl]'
+                                                case ArgumentType.HL:
+                                                    code ~= [(0x80 + operatorIndex * 0x08 + getRegisterIndex(operand)) & 0xFF];
+                                                    break;
+                                                default:
+                                                    error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'a'.", node.location);
+                                                    return [];
+                                            }
+                                            break;
+                                        default:
+                                            error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'a'.", node.location);
+                                            return [];
+                                    }
+                                    break;
+                                case parse.Infix.ShiftL:
+                                case parse.Infix.ShiftR:
+                                case parse.Infix.ArithShiftL:
+                                case parse.Infix.ArithShiftR:
+                                    ubyte operatorIndex = 0;
+                                    switch(type)
+                                    {
+                                        case parse.Infix.ArithShiftL: operatorIndex = 0; break;
+                                        case parse.Infix.ArithShiftR: operatorIndex = 1; break;
+                                        case parse.Infix.ShiftL: operatorIndex = 0; break; // Logical shl == arith shl
+                                        case parse.Infix.ShiftR: operatorIndex = 3; break;
+                                        default: assert(0);
+                                    }
+                                    switch(operand.type)
+                                    {
+                                        case ArgumentType.Immediate:
+                                            uint value;
+                                            compile.foldConstant(program, operand.immediate, value);
+                                            if(value > 7)
+                                            {
+                                                error(
+                                                    "invalid shift amount of " ~ std.conv.to!string(value)
+                                                    ~ " given to " ~ parse.getInfixName(type)
+                                                    ~ " in assignment '=' to 'a'. Should be in range 0..7.",
+                                                    node.location
+                                                );
+                                                return [];
+                                            }
+                                            while(value--)
+                                            {
+                                                code ~= [0xCB, (0x27 + operatorIndex * 0x08) & 0xFF];
+                                            }
+                                            break;
+                                        default:
+                                            error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'a'.", node.location);
+                                            return [];
+                                    }
+                                    break;
+                                case parse.Infix.RotateL:
+                                case parse.Infix.RotateR:
+                                case parse.Infix.RotateLC:
+                                case parse.Infix.RotateRC:
+                                    ubyte operatorIndex = 0;
+                                    switch(type)
+                                    {
+                                        case parse.Infix.RotateLC: operatorIndex = 0; break;
+                                        case parse.Infix.RotateRC: operatorIndex = 1; break;
+                                        case parse.Infix.RotateL: operatorIndex = 2; break;
+                                        case parse.Infix.RotateR: operatorIndex = 3; break;
+                                        default: assert(0);
+                                    }
+                                    switch(operand.type)
+                                    {
+                                        case ArgumentType.Immediate:
+                                            uint value;
+                                            compile.foldConstant(program, operand.immediate, value);
+                                            if(value > 7)
+                                            {
+                                                error(
+                                                    "invalid shift amount of " ~ std.conv.to!string(value)
+                                                    ~ " given to " ~ parse.getInfixName(type)
+                                                    ~ " in assignment '=' to 'a'. Should be in range 0..7.",
+                                                    node.location
+                                                );
+                                                return [];
+                                            }
+                                            while(value--)
+                                            {
+                                                code ~= [(0x07 + operatorIndex * 0x08) & 0xFF];
+                                            }
+                                            break;
+                                        default:
+                                            error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'a'.", node.location);
+                                            return [];
+                                    }
+                                    break;
+                                default:
+                                    error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to 'a'.", node.location);
+                                    return [];
+                            }
+                            break;
+                        case ArgumentType.B:
+                        case ArgumentType.C:
+                        case ArgumentType.D:
+                        case ArgumentType.E:
+                        case ArgumentType.H:
+                        case ArgumentType.L:
+                            switch(type)
+                            {
+                                case parse.Infix.RotateLC:
+                                case parse.Infix.RotateRC:
+                                case parse.Infix.RotateL:
+                                case parse.Infix.RotateR:
+                                case parse.Infix.ShiftL:
+                                case parse.Infix.ShiftR:
+                                case parse.Infix.ArithShiftL:
+                                case parse.Infix.ArithShiftR:
+                                    ubyte operatorIndex = 0;
+                                    switch(type)
+                                    {
+                                        case parse.Infix.RotateLC: operatorIndex = 0; break;
+                                        case parse.Infix.RotateRC: operatorIndex = 1; break;
+                                        case parse.Infix.RotateL: operatorIndex = 2; break;
+                                        case parse.Infix.RotateR: operatorIndex = 3; break;
+                                        case parse.Infix.ArithShiftL: operatorIndex = 4; break;
+                                        case parse.Infix.ArithShiftR: operatorIndex = 5; break;
+                                        case parse.Infix.ShiftL: operatorIndex = 4; break; // Logical shl == arith shl
+                                        case parse.Infix.ShiftR: operatorIndex = 7; break;
+                                        default: assert(0);
+                                    }
+                                    switch(operand.type)
+                                    {
+                                        case ArgumentType.Immediate:
+                                            uint value;
+                                            compile.foldConstant(program, operand.immediate, value);
+                                            if(value > 7)
+                                            {
+                                                error(
+                                                    "invalid shift amount of " ~ std.conv.to!string(value)
+                                                    ~ " given to " ~ parse.getInfixName(type)
+                                                    ~ " in assignment '=' to register. Should be in range 0..7.",
+                                                    node.location
+                                                );
+                                                return [];
+                                            }
+                                            while(value--)
+                                            {
+                                                code ~= [0xCB, (operatorIndex * 0x08 + getRegisterIndex(dest)) & 0xFF];
+                                            }
+                                            break;
+                                        default:
+                                            error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'a'.", node.location);
+                                            return [];
+                                    }
+                                    break;
+                                default:
+                                    error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to register.", node.location);
+                                    return [];
+                            }
+                            break;
+                        case ArgumentType.Indirection:
+                            switch(dest.base.type)
+                            {
+                                // 'r = [hl]' -> 'ld r, [hl]'
+                                case ArgumentType.HL:
+                                    switch(type)
+                                    {
+                                        case parse.Infix.RotateLC:
+                                        case parse.Infix.RotateRC:
+                                        case parse.Infix.RotateL:
+                                        case parse.Infix.RotateR:
+                                        case parse.Infix.ShiftL:
+                                        case parse.Infix.ShiftR:
+                                        case parse.Infix.ArithShiftL:
+                                        case parse.Infix.ArithShiftR:
+                                            ubyte operatorIndex = 0;
+                                            switch(type)
+                                            {
+                                                case parse.Infix.RotateLC: operatorIndex = 0; break;
+                                                case parse.Infix.RotateRC: operatorIndex = 1; break;
+                                                case parse.Infix.RotateL: operatorIndex = 2; break;
+                                                case parse.Infix.RotateR: operatorIndex = 3; break;
+                                                case parse.Infix.ArithShiftL: operatorIndex = 4; break;
+                                                case parse.Infix.ArithShiftR: operatorIndex = 5; break;
+                                                case parse.Infix.ShiftL: operatorIndex = 4; break; // Logical shl == arith shl
+                                                case parse.Infix.ShiftR: operatorIndex = 7; break;
+                                                default: assert(0);
+                                            }
+                                            switch(operand.type)
+                                            {
+                                                case ArgumentType.Immediate:
+                                                    uint value;
+                                                    compile.foldConstant(program, operand.immediate, value);
+                                                    if(value > 7)
+                                                    {
+                                                        error(
+                                                            "invalid shift amount of " ~ std.conv.to!string(value)
+                                                            ~ " given to " ~ parse.getInfixName(type)
+                                                            ~ " in assignment '=' to '[hl]'. Should be in range 0..7.",
+                                                            node.location
+                                                        );
+                                                        return [];
+                                                    }
+                                                    while(value--)
+                                                    {
+                                                        code ~= [0xCB, (operatorIndex * 0x08 + getRegisterIndex(dest)) & 0xFF];
+                                                    }
+                                                    break;
+                                                default:
+                                                    error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to '[hl]'.", node.location);
+                                                    return [];
+                                            }
+                                        default:
+                                            error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to '[hl]'.", node.location);
+                                            return [];
+                                    }
+                                    break;
+                                default:
+                                    error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to indirected term.", node.location);
+                                    return [];
+                            }
+                            break;
+                        case ArgumentType.HL:
+                            switch(type)
+                            {
+                                case parse.Infix.Add:
+                                    switch(operand.type)
+                                    {
+                                        case ArgumentType.Immediate:
+                                            auto load = buildArgument(program, loadsrc);
+                                            if(i != 0 || load is null)
+                                            {
+                                                error("invalid addition of constant '+' in assignment '=' to 'hl' (only allowed form is directly after 'hl = sp + ...')", node.location);
+                                            }
+                                            else
+                                            {
+                                                uint value;
+                                                compile.foldConstant(program, operand.immediate, value);
+                                                if(value > 127)
+                                                {
+                                                    error(
+                                                        "invalid offset of +" ~ std.conv.to!string(value)
+                                                        ~ " used as addition '+'"
+                                                        ~ " in assignment '=' to 'hl = sp + ...', should be in range -128..127",
+                                                        node.location
+                                                    );
+                                                    return [];
+                                                }
+                                                // Monkey patch 'hl = sp + 00'
+                                                code[code.length - 1] = value & 0xFF;
+                                            }
+                                            break;
+                                        case ArgumentType.BC:
+                                        case ArgumentType.DE:
+                                        case ArgumentType.HL:
+                                        case ArgumentType.SP:
+                                            code ~= [(0x09 + getPairIndex(operand) * 0x10) & 0xFF];
+                                            break;
+                                        default:
+                                            error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'hl'.", node.location);
+                                            return [];
+                                    }
+                                    break;
+                                case parse.Infix.Sub:
+                                    switch(operand.type)
+                                    {
+                                        case ArgumentType.Immediate:
+                                            auto load = buildArgument(program, loadsrc);
+                                            if(i != 0 || load is null)
+                                            {
+                                                error("invalid subtraction '-' of constant in assignment '=' to 'hl' (only allowed form is directly after 'hl = sp - ...')", node.location);
+                                            }
+                                            else
+                                            {
+                                                uint value;
+                                                compile.foldConstant(program, operand.immediate, value);
+                                                if(value > 128)
+                                                {
+                                                    error(
+                                                        "invalid offset of -" ~ std.conv.to!string(value)
+                                                        ~ " used as addition '-'"
+                                                        ~ " in assignment '=' to 'hl = sp - ...', should be in range -128..127",
+                                                        node.location
+                                                    );
+                                                    return [];
+                                                }
+                                                // Monkey patch 'hl = sp + 00'
+                                                code[code.length - 1] = (~value + 1) & 0xFF;
+                                            }
+                                            break;
+                                        default:
+                                            error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'hl'.", node.location);
+                                            return [];
+                                    }
+                                    break;
+                                default:
+                                    error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to 'hl'.", node.location);
+                                    return [];
+                            }
+                            break;
+                        case ArgumentType.SP:
+                            switch(type)
+                            {
+                                case parse.Infix.Add:
+                                    switch(operand.type)
+                                    {
+                                        case ArgumentType.Immediate:
+                                            uint value;
+                                            compile.foldConstant(program, operand.immediate, value);
+                                            if(value > 127)
+                                            {
+                                                error(
+                                                    "invalid offset of +" ~ std.conv.to!string(value)
+                                                    ~ " used as addition '+'"
+                                                    ~ " in assignment '=' to 'sp', should be in range -128..127",
+                                                    node.location
+                                                );
+                                                return [];
+                                            }
+                                            code ~= [0xE8, value & 0xFF];
+                                        default:
+                                            error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'sp'.", node.location);
+                                            return [];
+                                    }
+                                    break;
+                                case parse.Infix.Sub:
+                                    switch(operand.type)
+                                    {
+                                        case ArgumentType.Immediate:
+                                            uint value;
+                                            compile.foldConstant(program, operand.immediate, value);
+                                            if(value > 128)
+                                            {
+                                                error(
+                                                    "invalid offset of -" ~ std.conv.to!string(value)
+                                                    ~ " used as subtraction '-'"
+                                                    ~ " in assignment '=' to 'sp', should be in range -128..127",
+                                                    node.location
+                                                );
+                                                return [];
+                                            }
+                                            code ~= [0xE8, (~value + 1) & 0xFF];
+                                            break;
+                                        default:
+                                            error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'sp'.", node.location);
+                                            return [];
+                                    }
+                                    break;
+                                default:
+                                    error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to 'sp'.", node.location);
+                                    return [];
+                            }
+                            break;
+                        case ArgumentType.Carry:
+                            break;
+                        default:
+                    }
+                }
+            }
+            return code;
         }
         else
         {
@@ -805,7 +1180,7 @@ class GameboyPlatform : Platform
                         // 'a = n' -> 'ld a, n'
                         case ArgumentType.Immediate:
                             uint value;
-                            compile.foldConstExpr(program, load.immediate, value);
+                            compile.foldConstant(program, load.immediate, value);
                             code ~= [0x3E, value & 0xFF];
                             break;
                         // 'a = a' -> (nothing)
@@ -825,7 +1200,7 @@ class GameboyPlatform : Platform
                             {
                                 case ArgumentType.Immediate:
                                     uint value;
-                                    compile.foldConstExpr(program, load.base.immediate, value);
+                                    compile.foldConstant(program, load.base.immediate, value);
                                     // 'a = [0xFFnn]' -> 'ldh a, [nn]'
                                     if((value & 0xFF00) == 0xFF00)
                                     {
@@ -864,7 +1239,7 @@ class GameboyPlatform : Platform
                             break;
                         case ArgumentType.PositiveIndex:
                             uint value;
-                            compile.foldConstExpr(program, load.immediate, value);
+                            compile.foldConstant(program, load.immediate, value);
 
                             if(value != 0xFF00 || load.base.type != ArgumentType.C)
                             {
@@ -907,8 +1282,8 @@ class GameboyPlatform : Platform
                         // 'r = n' -> 'ld r, n'
                         case ArgumentType.Immediate:
                             uint value;
-                            compile.foldConstExpr(program, load.immediate, value);
-                            code ~= [(0x06 + destIndex * 8) & 0xFF, value & 0xFF];
+                            compile.foldConstant(program, load.immediate, value);
+                            code ~= [(0x06 + destIndex * 0x08) & 0xFF, value & 0xFF];
                             break;
                         // 'r = r' -> (nothing)
                         // 'r = r2' -> 'ld r, r2'
@@ -922,7 +1297,7 @@ class GameboyPlatform : Platform
                             ubyte sourceIndex = getRegisterIndex(load);
                             if(sourceIndex != destIndex)
                             {
-                                code ~= [(0x40 + destIndex * 8 + sourceIndex) & 0xFF];
+                                code ~= [(0x40 + destIndex * 0x08 + sourceIndex) & 0xFF];
                             }
                             break;
                         case ArgumentType.Indirection:
@@ -931,7 +1306,7 @@ class GameboyPlatform : Platform
                                 // 'r = [hl]' -> 'ld r, [hl]'
                                 case ArgumentType.HL:
                                     ubyte sourceIndex = getRegisterIndex(load);
-                                    code ~= [(0x40 + destIndex * 8 + sourceIndex) & 0xFF];
+                                    code ~= [(0x40 + destIndex * 0x08 + sourceIndex) & 0xFF];
                                     break;
                                 default: return invalidAssignment("register");
                             }
@@ -949,7 +1324,7 @@ class GameboyPlatform : Platform
                             if(load.type == ArgumentType.A)
                             {
                                 uint value;
-                                compile.foldConstExpr(program, dest.base.immediate, value);
+                                compile.foldConstant(program, dest.base.immediate, value);
                                 // '[0xFFnn] = a' -> 'ldh [nn], a'
                                 if((value & 0xFF00) == 0xFF00)
                                 {
@@ -1016,8 +1391,8 @@ class GameboyPlatform : Platform
                                 // '[hl] = n' -> 'ld [hl], n'
                                 case ArgumentType.Immediate:
                                     uint value;
-                                    compile.foldConstExpr(program, load.immediate, value);
-                                    code ~= [(0x06 + destIndex * 8) & 0xFF, value & 0xFF];
+                                    compile.foldConstant(program, load.immediate, value);
+                                    code ~= [(0x06 + destIndex * 0x08) & 0xFF, value & 0xFF];
                                     break;
                                 // '[hl] = r' -> 'ld [hl], r'
                                 case ArgumentType.A: 
@@ -1030,7 +1405,7 @@ class GameboyPlatform : Platform
                                     ubyte sourceIndex = getRegisterIndex(load);
                                     if(sourceIndex != destIndex)
                                     {
-                                        code ~= [(0x40 + destIndex * 8 + sourceIndex) & 0xFF];
+                                        code ~= [(0x40 + destIndex * 0x08 + sourceIndex) & 0xFF];
                                     }
                                     break;
                                 case ArgumentType.Indirection:
@@ -1081,12 +1456,36 @@ class GameboyPlatform : Platform
                         // 'rr = n' -> 'ld rr, n'
                         case ArgumentType.Immediate:
                             uint value;
-                            compile.foldConstExpr(program, load.immediate, value);
-                            code ~= [(0x01 + destIndex * 16) & 0xFF, value & 0xFF, (value >> 8) & 0xFF];
+                            compile.foldConstant(program, load.immediate, value);
+                            code ~= [(0x01 + destIndex * 0x10) & 0xFF, value & 0xFF, (value >> 8) & 0xFF];
                             break;
                         // 'rr = pop' -> 'pop rr'
                         case ArgumentType.Pop:
-                            code ~= [(0xC1 + destIndex * 16) & 0xFF];
+                            code ~= [(0xC1 + destIndex * 0x10) & 0xFF];
+                            break;
+                        case ArgumentType.BC:
+                        case ArgumentType.DE:
+                        case ArgumentType.HL:
+                            if(dest.type != load.type)
+                            {
+                                if(dest.type == ArgumentType.HL)
+                                {
+                                    switch(load.type)
+                                    {
+                                        // 'hl = rr' -> 'ld hl, 0x0000; add hl, rr'
+                                        case ArgumentType.BC:
+                                        case ArgumentType.DE:
+                                        case ArgumentType.SP:
+                                            code ~= [0x21, 0x00, 0x00, (0x09 + getPairIndex(dest) * 0x10) & 0xFF];
+                                            break;
+                                        default: assert(0);
+                                    }
+                                }
+                                else 
+                                {
+                                    return invalidAssignment("register pair");
+                                }
+                            }
                             break;
                         case ArgumentType.SP:
                             if(dest.type == ArgumentType.HL)
@@ -1113,9 +1512,11 @@ class GameboyPlatform : Platform
                         // 'sp = n' -> 'ld sp, n'
                         case ArgumentType.Immediate:
                             uint value;
-                            compile.foldConstExpr(program, load.immediate, value);
-                            code ~= [(0x01 + getPairIndex(dest) * 16) & 0xFF, value & 0xFF, (value >> 8) & 0xFF];
+                            compile.foldConstant(program, load.immediate, value);
+                            code ~= [(0x01 + getPairIndex(dest) * 0x10) & 0xFF, value & 0xFF, (value >> 8) & 0xFF];
                             break;
+                        // sp = sp -> (none)
+                        case ArgumentType.SP: break;
                         // 'sp = hl' -> 'ld sp, hl'
                         case ArgumentType.HL:
                             code ~= [0xF9];
@@ -1155,7 +1556,7 @@ class GameboyPlatform : Platform
                 break;
             case ArgumentType.PositiveIndex:
                 uint value;
-                compile.foldConstExpr(program, dest.immediate, value);
+                compile.foldConstant(program, dest.immediate, value);
 
                 if(value != 0xFF00 || dest.base.type != ArgumentType.C)
                 {
@@ -1180,7 +1581,7 @@ class GameboyPlatform : Platform
                 return [];
             case ArgumentType.BitIndex:
                 uint index;
-                compile.foldConstExpr(program, dest.immediate, index);
+                compile.foldConstant(program, dest.immediate, index);
                 if(index > 7)
                 {
                     error("right-hand side of '@' must be in the range 0..7.", dest.immediate.location);
@@ -1214,14 +1615,14 @@ class GameboyPlatform : Platform
                         // 'r@i = 1' -> 'set r, i'
                         case ArgumentType.Immediate:
                             uint value;
-                            compile.foldConstExpr(program, load.immediate, value);
+                            compile.foldConstant(program, load.immediate, value);
                             if(value == 0)
                             {
-                                code ~= [0xCB, (0x80 + index * 8 + getRegisterIndex(dest)) & 0xFF];
+                                code ~= [0xCB, (0x80 + index * 0x08 + getRegisterIndex(dest)) & 0xFF];
                             }
                             else if(value == 1)
                             {
-                                code ~= [0xCB, (0xC0 + index * 8 + getRegisterIndex(dest)) & 0xFF];
+                                code ~= [0xCB, (0xC0 + index * 0x08 + getRegisterIndex(dest)) & 0xFF];
                             }
                             else
                             {
@@ -1242,7 +1643,7 @@ class GameboyPlatform : Platform
                         // 'interrupt = 1' -> 'ei'
                         case ArgumentType.Immediate:
                             uint value;
-                            compile.foldConstExpr(program, load.immediate, value);
+                            compile.foldConstant(program, load.immediate, value);
                             if(value == 0)
                             {
                                 code ~= [0xF3];
@@ -1294,7 +1695,7 @@ class GameboyPlatform : Platform
                     {
                         case ArgumentType.Immediate:
                             uint value;
-                            if(compile.foldConstExpr(program, load.immediate, value))
+                            if(compile.foldConstant(program, load.immediate, value))
                             {
                                 // 'carry = 0' -> 'scf; ccf'    
                                 if(value == 0)
@@ -1347,12 +1748,7 @@ class GameboyPlatform : Platform
                     {
                         case ArgumentType.Immediate:
                             uint value;
-                            if(!compile.foldConstExpr(program, right.immediate, value))
-                            {
-                                // For now, sub a placeholder expression.
-                                // At a later pass, we will ensure that the address is resolvable.
-                                value = 0xFACE;
-                            }
+                            compile.foldConstant(program, right.immediate, value);
                             return [0xFE, value & 0xFF];
                         case ArgumentType.B:
                         case ArgumentType.C:
@@ -1382,7 +1778,7 @@ class GameboyPlatform : Platform
                 if(right is null)
                 {
                     uint index;
-                    compile.foldConstExpr(program, left.immediate, index);
+                    compile.foldConstant(program, left.immediate, index);
                     if(index > 7)
                     {
                         error("right-hand side of '@' must be in the range 0..7.", left.immediate.location);
@@ -1408,7 +1804,7 @@ class GameboyPlatform : Platform
                             error("unsupported operand on left-hand side of '@'", stmt.right.location);
                             return [];
                     }
-                    return [0xCB, (0x40 + index * 8 + getRegisterIndex(left)) & 0xFF];
+                    return [0xCB, (0x40 + index * 0x08 + getRegisterIndex(left)) & 0xFF];
                 }
                 else
                 {
