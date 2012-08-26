@@ -115,6 +115,78 @@ private
         assert(0);
     }
 
+    bool foldBit(compile.Program program, ast.Expression root, ref uint result, bool forbidUndefined)
+    {
+        if(compile.foldConstant(program, root, result, forbidUndefined))
+        {
+            if(result > 7)
+            {
+                error(
+                    std.string.format(
+                        "value %s is outside of representable bit range 0..1", result
+                    ), root.location
+                );
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    bool foldBitIndex(compile.Program program, ast.Expression root, ref uint result, bool forbidUndefined)
+    {
+        if(compile.foldConstant(program, root, result, forbidUndefined))
+        {
+            if(result > 7)
+            {
+                error(
+                    std.string.format(
+                        "value %s is outside of representable bitwise index bounds 0..7", result
+                    ), root.location
+                );
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    bool foldByte(compile.Program program, ast.Expression root, ref uint result, bool forbidUndefined)
+    {
+        if(compile.foldConstant(program, root, result, forbidUndefined))
+        {
+            if(result > 255)
+            {
+                error(
+                    std.string.format(
+                        "value %s is outside of representable 8-bit range 0..255", result
+                    ), root.location
+                );
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    bool foldWord(compile.Program program, ast.Expression root, ref uint result, bool forbidUndefined)
+    {
+        if(compile.foldConstant(program, root, result, forbidUndefined))
+        {
+            if(result > 65535)
+            {
+                error(
+                    std.string.format(
+                        "value %s is outside of representable 16-bit range 0..65535", result
+                    ), root.location
+                );
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
     Argument buildIndirection(compile.Program program, ast.Expression root)
     {
         if(auto attr = cast(ast.Attribute) root)
@@ -321,7 +393,25 @@ class GameboyPlatform : Platform
                 default:
                     assert(0);
             }
-            return [opcode, address & 0xFF];
+            enum description = "'goto'";
+            auto bank = program.checkBank(description, stmt.location);
+            uint pc = bank.checkAddress(description, stmt.location);
+            if(address < pc)
+            {
+                if(pc - address < 128)
+                {
+                    // TODO YELL AT THEM
+                }
+                return [opcode, (~(pc - address) + 1) & 0xFF];
+            }
+            else
+            {
+                if(address - pc < 127)
+                {
+                    // TODO YELL AT THEM
+                }
+                return [opcode, (address - pc) & 0xFF];
+            }
         }
 
         ubyte[] getAbsJumpCode(uint address, ArgumentType type = ArgumentType.None, bool negated = false)
@@ -416,7 +506,7 @@ class GameboyPlatform : Platform
                 {
                     case ArgumentType.Immediate:
                         uint address;
-                        compile.foldConstant(program, argument.immediate, address);
+                        foldWord(program, argument.immediate, address, true);
                         if(stmt.condition is null)
                         {
                             return getJumpCode(stmt.far, address);
@@ -478,7 +568,7 @@ class GameboyPlatform : Platform
                 {
                     case ArgumentType.Immediate:
                         uint address;
-                        compile.foldConstant(program, argument.immediate, address);
+                        foldWord(program, argument.immediate, address, true);
                         if(stmt.condition is null)
                         {
                             return getCallCode(address);
@@ -760,7 +850,7 @@ class GameboyPlatform : Platform
                                     {
                                         case ArgumentType.Immediate:
                                             uint value;
-                                            compile.foldConstant(program, operand.immediate, value);
+                                            foldByte(program, operand.immediate, value, true);
                                             code ~= [(0xC6 + operatorIndex * 0x08) & 0xFF, value & 0xFF];
                                             break;
                                         case ArgumentType.A:
@@ -806,15 +896,8 @@ class GameboyPlatform : Platform
                                     {
                                         case ArgumentType.Immediate:
                                             uint value;
-                                            compile.foldConstant(program, operand.immediate, value);
-                                            if(value > 7)
+                                            if(!foldBitIndex(program, operand.immediate, value, true))
                                             {
-                                                error(
-                                                    "invalid shift amount of " ~ std.conv.to!string(value)
-                                                    ~ " given to " ~ parse.getInfixName(type)
-                                                    ~ " in assignment '=' to 'a'. Should be in range 0..7.",
-                                                    node.location
-                                                );
                                                 return [];
                                             }
                                             while(value--)
@@ -844,15 +927,8 @@ class GameboyPlatform : Platform
                                     {
                                         case ArgumentType.Immediate:
                                             uint value;
-                                            compile.foldConstant(program, operand.immediate, value);
-                                            if(value > 7)
+                                            if(!foldBitIndex(program, operand.immediate, value, true))
                                             {
-                                                error(
-                                                    "invalid shift amount of " ~ std.conv.to!string(value)
-                                                    ~ " given to " ~ parse.getInfixName(type)
-                                                    ~ " in assignment '=' to 'a'. Should be in range 0..7.",
-                                                    node.location
-                                                );
                                                 return [];
                                             }
                                             while(value--)
@@ -903,15 +979,8 @@ class GameboyPlatform : Platform
                                     {
                                         case ArgumentType.Immediate:
                                             uint value;
-                                            compile.foldConstant(program, operand.immediate, value);
-                                            if(value > 7)
+                                            if(!foldBitIndex(program, operand.immediate, value, true))
                                             {
-                                                error(
-                                                    "invalid shift amount of " ~ std.conv.to!string(value)
-                                                    ~ " given to " ~ parse.getInfixName(type)
-                                                    ~ " in assignment '=' to register. Should be in range 0..7.",
-                                                    node.location
-                                                );
                                                 return [];
                                             }
                                             while(value--)
@@ -961,15 +1030,8 @@ class GameboyPlatform : Platform
                                             {
                                                 case ArgumentType.Immediate:
                                                     uint value;
-                                                    compile.foldConstant(program, operand.immediate, value);
-                                                    if(value > 7)
+                                                    if(!foldBitIndex(program, operand.immediate, value, true))
                                                     {
-                                                        error(
-                                                            "invalid shift amount of " ~ std.conv.to!string(value)
-                                                            ~ " given to " ~ parse.getInfixName(type)
-                                                            ~ " in assignment '=' to '[hl]'. Should be in range 0..7.",
-                                                            node.location
-                                                        );
                                                         return [];
                                                     }
                                                     while(value--)
@@ -1006,7 +1068,7 @@ class GameboyPlatform : Platform
                                             else
                                             {
                                                 uint value;
-                                                compile.foldConstant(program, operand.immediate, value);
+                                                compile.foldConstant(program, operand.immediate, value, true);
                                                 if(value > 127)
                                                 {
                                                     error(
@@ -1044,7 +1106,7 @@ class GameboyPlatform : Platform
                                             else
                                             {
                                                 uint value;
-                                                compile.foldConstant(program, operand.immediate, value);
+                                                compile.foldConstant(program, operand.immediate, value, true);
                                                 if(value > 128)
                                                 {
                                                     error(
@@ -1077,7 +1139,7 @@ class GameboyPlatform : Platform
                                     {
                                         case ArgumentType.Immediate:
                                             uint value;
-                                            compile.foldConstant(program, operand.immediate, value);
+                                            compile.foldConstant(program, operand.immediate, value, true);
                                             if(value > 127)
                                             {
                                                 error(
@@ -1099,7 +1161,7 @@ class GameboyPlatform : Platform
                                     {
                                         case ArgumentType.Immediate:
                                             uint value;
-                                            compile.foldConstant(program, operand.immediate, value);
+                                            compile.foldConstant(program, operand.immediate, value, true);
                                             if(value > 128)
                                             {
                                                 error(
@@ -1180,7 +1242,7 @@ class GameboyPlatform : Platform
                         // 'a = n' -> 'ld a, n'
                         case ArgumentType.Immediate:
                             uint value;
-                            compile.foldConstant(program, load.immediate, value);
+                            foldByte(program, load.immediate, value, true);
                             code ~= [0x3E, value & 0xFF];
                             break;
                         // 'a = a' -> (nothing)
@@ -1200,7 +1262,7 @@ class GameboyPlatform : Platform
                             {
                                 case ArgumentType.Immediate:
                                     uint value;
-                                    compile.foldConstant(program, load.base.immediate, value);
+                                    foldWord(program, load.base.immediate, value, true);
                                     // 'a = [0xFFnn]' -> 'ldh a, [nn]'
                                     if((value & 0xFF00) == 0xFF00)
                                     {
@@ -1239,7 +1301,7 @@ class GameboyPlatform : Platform
                             break;
                         case ArgumentType.PositiveIndex:
                             uint value;
-                            compile.foldConstant(program, load.immediate, value);
+                            foldWord(program, load.immediate, value, true);
 
                             if(value != 0xFF00 || load.base.type != ArgumentType.C)
                             {
@@ -1282,7 +1344,7 @@ class GameboyPlatform : Platform
                         // 'r = n' -> 'ld r, n'
                         case ArgumentType.Immediate:
                             uint value;
-                            compile.foldConstant(program, load.immediate, value);
+                            foldByte(program, load.immediate, value, true);
                             code ~= [(0x06 + destIndex * 0x08) & 0xFF, value & 0xFF];
                             break;
                         // 'r = r' -> (nothing)
@@ -1324,7 +1386,7 @@ class GameboyPlatform : Platform
                             if(load.type == ArgumentType.A)
                             {
                                 uint value;
-                                compile.foldConstant(program, dest.base.immediate, value);
+                                foldWord(program, dest.base.immediate, value, true);
                                 // '[0xFFnn] = a' -> 'ldh [nn], a'
                                 if((value & 0xFF00) == 0xFF00)
                                 {
@@ -1391,7 +1453,7 @@ class GameboyPlatform : Platform
                                 // '[hl] = n' -> 'ld [hl], n'
                                 case ArgumentType.Immediate:
                                     uint value;
-                                    compile.foldConstant(program, load.immediate, value);
+                                    foldByte(program, load.immediate, value, true);
                                     code ~= [(0x06 + destIndex * 0x08) & 0xFF, value & 0xFF];
                                     break;
                                 // '[hl] = r' -> 'ld [hl], r'
@@ -1456,7 +1518,7 @@ class GameboyPlatform : Platform
                         // 'rr = n' -> 'ld rr, n'
                         case ArgumentType.Immediate:
                             uint value;
-                            compile.foldConstant(program, load.immediate, value);
+                            foldWord(program, load.immediate, value, true);
                             code ~= [(0x01 + destIndex * 0x10) & 0xFF, value & 0xFF, (value >> 8) & 0xFF];
                             break;
                         // 'rr = pop' -> 'pop rr'
@@ -1512,7 +1574,7 @@ class GameboyPlatform : Platform
                         // 'sp = n' -> 'ld sp, n'
                         case ArgumentType.Immediate:
                             uint value;
-                            compile.foldConstant(program, load.immediate, value);
+                            foldWord(program, load.immediate, value, true);
                             code ~= [(0x01 + getPairIndex(dest) * 0x10) & 0xFF, value & 0xFF, (value >> 8) & 0xFF];
                             break;
                         // sp = sp -> (none)
@@ -1556,7 +1618,7 @@ class GameboyPlatform : Platform
                 break;
             case ArgumentType.PositiveIndex:
                 uint value;
-                compile.foldConstant(program, dest.immediate, value);
+                foldWord(program, dest.immediate, value, true);
 
                 if(value != 0xFF00 || dest.base.type != ArgumentType.C)
                 {
@@ -1581,8 +1643,7 @@ class GameboyPlatform : Platform
                 return [];
             case ArgumentType.BitIndex:
                 uint index;
-                compile.foldConstant(program, dest.immediate, index);
-                if(index > 7)
+                if(!foldBitIndex(program, dest.immediate, index, true))
                 {
                     error("right-hand side of '@' must be in the range 0..7.", dest.immediate.location);
                 }
@@ -1615,7 +1676,10 @@ class GameboyPlatform : Platform
                         // 'r@i = 1' -> 'set r, i'
                         case ArgumentType.Immediate:
                             uint value;
-                            compile.foldConstant(program, load.immediate, value);
+                            if(!foldBit(program, load.immediate, value, true))
+                            {
+                                return [];
+                            }
                             if(value == 0)
                             {
                                 code ~= [0xCB, (0x80 + index * 0x08 + getRegisterIndex(dest)) & 0xFF];
@@ -1623,10 +1687,6 @@ class GameboyPlatform : Platform
                             else if(value == 1)
                             {
                                 code ~= [0xCB, (0xC0 + index * 0x08 + getRegisterIndex(dest)) & 0xFF];
-                            }
-                            else
-                            {
-                                return invalidAssignment("bit-indexed register (immediate must be 0 or 1, not " ~ std.conv.to!string(value) ~ ")");
                             }
                             break;
                         default:
@@ -1643,7 +1703,10 @@ class GameboyPlatform : Platform
                         // 'interrupt = 1' -> 'ei'
                         case ArgumentType.Immediate:
                             uint value;
-                            compile.foldConstant(program, load.immediate, value);
+                            if(!foldBit(program, load.immediate, value, true))
+                            {
+                                return [];
+                            }
                             if(value == 0)
                             {
                                 code ~= [0xF3];
@@ -1651,10 +1714,6 @@ class GameboyPlatform : Platform
                             else if(value == 1)
                             {
                                 code ~= [0xFB];
-                            }
-                            else
-                            {
-                                return invalidAssignment("'interrupt' (immediate must be 0 or 1, not " ~ std.conv.to!string(value) ~ ")");
                             }
                             break;
                         default:
@@ -1695,23 +1754,19 @@ class GameboyPlatform : Platform
                     {
                         case ArgumentType.Immediate:
                             uint value;
-                            if(compile.foldConstant(program, load.immediate, value))
+                            if(!foldBit(program, load.immediate, value, true))
                             {
-                                // 'carry = 0' -> 'scf; ccf'    
-                                if(value == 0)
-                                {
-                                    code ~= [0x37, 0x3F];
-                                    
-                                }
-                                // 'carry = 1' -> 'scf'
-                                else if(value == 1)
-                                {
-                                    code ~= [0x37];
-                                }
-                                else
-                                {
-                                    return invalidAssignment("'carry' (immediate must be 0 or 1, not " ~ std.conv.to!string(value) ~ ")");
-                                }
+                                return [];
+                            }
+                            // 'carry = 0' -> 'scf; ccf'    
+                            if(value == 0)
+                            {
+                                code ~= [0x37, 0x3F];
+                            }
+                            // 'carry = 1' -> 'scf'
+                            else if(value == 1)
+                            {
+                                code ~= [0x37];
                             }
                             break;
                         case ArgumentType.Carry:
@@ -1748,7 +1803,7 @@ class GameboyPlatform : Platform
                     {
                         case ArgumentType.Immediate:
                             uint value;
-                            compile.foldConstant(program, right.immediate, value);
+                            foldWord(program, right.immediate, value, true);
                             return [0xFE, value & 0xFF];
                         case ArgumentType.B:
                         case ArgumentType.C:
@@ -1778,10 +1833,9 @@ class GameboyPlatform : Platform
                 if(right is null)
                 {
                     uint index;
-                    compile.foldConstant(program, left.immediate, index);
-                    if(index > 7)
+                    if(!foldBitIndex(program, left.immediate, index, true))
                     {
-                        error("right-hand side of '@' must be in the range 0..7.", left.immediate.location);
+                        return [];
                     }
                     left = left.base;
                     switch(left.type)

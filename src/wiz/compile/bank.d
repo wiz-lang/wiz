@@ -110,45 +110,18 @@ class Bank
             }
         }
 
-        void writeByte(uint value, compile.Location location)
+        void writePhysical(ubyte[] items, compile.Location location)
         {
-            if(position >= capacity)
+            if(position + items.length > capacity)
             {
                 error("attempt to write outside of bank's reserved space.", location, true);
             }
-            else if(value > 255)
-            {
-                error(
-                    std.string.format(
-                        "value %s is outside of representable 8-bit range 0..255", value
-                    ), location
-                );
-            }
             else
             {
-                data[position++] = value & 0xFF;
-            }
-        }
-      
-        void writeWord(uint value, compile.Location location)
-        {
-            if(position >= capacity)
-            {
-                error("attempt to write outside of bank's reserved space.", location, true);
-            }
-            else if(value > 65535)
-            {
-                error(
-                    std.string.format(
-                        "value %s is outside of representable 16-bit range 0..65535", value
-                    ), location
-                );
-            }
-            else
-            {
-                // Write word in little-endian order.
-                data[position++] = value & 0xFF;
-                data[position++] = (value >> 8) & 0xFF;
+                foreach(item; items)
+                {
+                    data[position++] = item & 0xFF;
+                }
             }
         }
 

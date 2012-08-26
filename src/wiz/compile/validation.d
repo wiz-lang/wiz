@@ -60,7 +60,7 @@ sym.Definition resolveAttribute(Program program, ast.Attribute attribute)
     return def;
 }
 
-bool foldConstant(Program program, ast.Expression root, ref uint result, bool forbidUndefined = true)
+bool foldConstant(Program program, ast.Expression root, ref uint result, bool forbidUndefined)
 {
     ast.Expression constTail;
     return tryFoldConstant(program, root, result, constTail, true, forbidUndefined) && constTail == root;
@@ -308,7 +308,7 @@ bool tryFoldConstant(Program program, ast.Expression root, ref uint result, ref 
             if(auto constdef = cast(sym.ConstDef) def)
             {
                 uint v;
-                if(foldConstant(program, (cast(ast.ConstDecl) constdef.decl).value, v))
+                if(foldConstant(program, (cast(ast.ConstDecl) constdef.decl).value, v, true))
                 {
                     updateValue(a, v);
                     return;
@@ -362,7 +362,7 @@ bool tryFoldConstant(Program program, ast.Expression root, ref uint result, ref 
 
 bool foldStorage(Program program, ast.Storage s, ref uint result)
 {
-    if(foldConstant(program, s.size, result))
+    if(foldConstant(program, s.size, result, true))
     {
         switch(s.type)
         {
@@ -421,7 +421,7 @@ auto createRelocationHandler(Program program)
     {
         enum description = "'in' statement";
         uint address;
-        if(stmt.dest is null || foldConstant(program, stmt.dest, address))
+        if(stmt.dest is null || foldConstant(program, stmt.dest, address, true))
         {
             auto def = program.environment.get!(sym.BankDef)(stmt.mangledName);
             if(def is null)
@@ -517,7 +517,7 @@ void aggregate(Program program, ast.Node root)
         (ast.BankDecl decl)
         {
             uint size;
-            if(foldConstant(program, decl.size, size))
+            if(foldConstant(program, decl.size, size, true))
             {
                 foreach(i, name; decl.names)
                 {
