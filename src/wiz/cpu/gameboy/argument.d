@@ -81,9 +81,9 @@ class Builtin : sym.Definition
     }
 }
 
-ubyte getRegisterIndex(Argument dest)
+ubyte getRegisterIndex(Argument reg)
 {
-    switch(dest.type)
+    switch(reg.type)
     {
         case ArgumentType.B: return 0x0; break;
         case ArgumentType.C: return 0x1; break;
@@ -92,7 +92,7 @@ ubyte getRegisterIndex(Argument dest)
         case ArgumentType.H: return 0x4; break;
         case ArgumentType.L: return 0x5; break;
         case ArgumentType.Indirection:
-            if(dest.base.type == ArgumentType.HL)
+            if(reg.base.type == ArgumentType.HL)
             {
                 return 0x6;
             }
@@ -103,9 +103,9 @@ ubyte getRegisterIndex(Argument dest)
     assert(0);
 }
 
-ubyte getPairIndex(Argument dest)
+ubyte getPairIndex(Argument pair)
 {
-    switch(dest.type)
+    switch(pair.type)
     {
         case ArgumentType.BC: return 0x0; break;
         case ArgumentType.DE: return 0x1; break;
@@ -116,76 +116,14 @@ ubyte getPairIndex(Argument dest)
     assert(0);
 }
 
-bool foldBit(compile.Program program, ast.Expression root, ref uint result, bool forbidUndefined)
+ubyte getFlagIndex(ArgumentType flagType, bool negated)
 {
-    if(compile.foldConstant(program, root, result, forbidUndefined))
+    switch(flagType)
     {
-        if(result > 7)
-        {
-            error(
-                std.string.format(
-                    "value %s is outside of representable bit range 0..1", result
-                ), root.location
-            );
-            return false;
-        }
-        return true;
+        case ArgumentType.Zero: return negated ? 0x0 : 0x1; break;
+        case ArgumentType.Carry: return negated ? 0x2 : 0x3; break;
+        default: assert(0);
     }
-    return false;
-}
-
-bool foldBitIndex(compile.Program program, ast.Expression root, ref uint result, bool forbidUndefined)
-{
-    if(compile.foldConstant(program, root, result, forbidUndefined))
-    {
-        if(result > 7)
-        {
-            error(
-                std.string.format(
-                    "value %s is outside of representable bitwise index bounds 0..7", result
-                ), root.location
-            );
-            return false;
-        }
-        return true;
-    }
-    return false;
-}
-
-bool foldByte(compile.Program program, ast.Expression root, ref uint result, bool forbidUndefined)
-{
-    if(compile.foldConstant(program, root, result, forbidUndefined))
-    {
-        if(result > 255)
-        {
-            error(
-                std.string.format(
-                    "value %s is outside of representable 8-bit range 0..255", result
-                ), root.location
-            );
-            return false;
-        }
-        return true;
-    }
-    return false;
-}
-
-bool foldWord(compile.Program program, ast.Expression root, ref uint result, bool forbidUndefined)
-{
-    if(compile.foldConstant(program, root, result, forbidUndefined))
-    {
-        if(result > 65535)
-        {
-            error(
-                std.string.format(
-                    "value %s is outside of representable 16-bit range 0..65535", result
-                ), root.location
-            );
-            return false;
-        }
-        return true;
-    }
-    return false;
 }
 
 Argument buildIndirection(compile.Program program, ast.Expression root)

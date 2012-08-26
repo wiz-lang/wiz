@@ -60,12 +60,6 @@ sym.Definition resolveAttribute(Program program, ast.Attribute attribute)
     return def;
 }
 
-bool foldConstant(Program program, ast.Expression root, ref uint result, bool forbidUndefined)
-{
-    ast.Expression constTail;
-    return tryFoldConstant(program, root, result, constTail, true, forbidUndefined) && constTail == root;
-}
-
 bool tryFoldConstant(Program program, ast.Expression root, ref uint result, ref ast.Expression constTail, bool mustFold, bool forbidUndefined)
 {
     uint[ast.Expression] values;
@@ -358,6 +352,99 @@ bool tryFoldConstant(Program program, ast.Expression root, ref uint result, ref 
         return false;
     }
     return true;
+}
+
+bool foldConstant(Program program, ast.Expression root, ref uint result, bool forbidUndefined)
+{
+    ast.Expression constTail;
+    return tryFoldConstant(program, root, result, constTail, true, forbidUndefined) && constTail == root;
+}
+
+bool foldBoundedNumber(compile.Program program, ast.Expression root, string type, uint limit, ref uint result, bool forbidUndefined)
+{
+    if(compile.foldConstant(program, root, result, forbidUndefined))
+    {
+        if(result > limit)
+        {
+            error(
+                std.string.format(
+                    "value %s is outside of representable %s range 0..%s", result, type, limit
+                ), root.location
+            );
+            return false;
+        }
+        return true;
+    }
+    return false;
+}
+
+bool foldBit(compile.Program program, ast.Expression root, ref uint result, bool forbidUndefined)
+{
+    return foldBoundedNumber(program, root, "bit", 1, result, forbidUndefined);
+}
+
+bool foldBitIndex(compile.Program program, ast.Expression root, ref uint result, bool forbidUndefined)
+{
+    return foldBoundedNumber(program, root, "bitwise index", 1, result, forbidUndefined);
+}
+
+bool foldByte(compile.Program program, ast.Expression root, ref uint result, bool forbidUndefined)
+{
+    return foldBoundedNumber(program, root, "8-bit", 255, result, forbidUndefined);
+}
+
+bool foldWord(compile.Program program, ast.Expression root, ref uint result, bool forbidUndefined)
+{
+    return foldBoundedNumber(program, root, "8-bit", 65535, result, forbidUndefined);
+}
+
+bool foldSignedByte(compile.Program program, ast.Expression root, bool negative, ref uint result, bool forbidUndefined)
+{
+    if(foldWord(program, root, result, forbidUndefined))
+    {
+        if(!negative && result < 127)
+        {
+            return true;
+        }
+        else if(negative && result < 128)
+        {
+            result = ~result + 1;
+            return true;
+        }
+        else
+        {
+            error(
+                std.string.format(
+                    "value %s%s is outside of representable signed 8-bit range -128..127.", negative ? "-" : "", result
+                ), root.location
+            );
+        }
+    }
+    return false;
+}
+
+bool foldRelativeByte(compile.Program program, ast.Expression root, string description, string help, uint origin, ref uint result, bool forbidUndefined)
+{
+    if(foldWord(program, root, result, forbidUndefined))
+    {
+        int offset = cast(int) result - cast(int) origin;
+        if(offset >= -128 && offset <= 127)
+        {
+            result = cast(ubyte) offset;
+            return true;
+        }
+        else
+        {
+            error(
+                std.string.format(
+                    description ~ " is outside of representable signed 8-bit range -128..127. "
+                    ~ help ~ " (from = %s, to = %s, (from - to) = %s)",
+                    origin, result, offset
+                ), root.location
+            );
+        }
+    }
+    return false;
 }
 
 bool foldStorage(Program program, ast.Storage s, ref uint result)
