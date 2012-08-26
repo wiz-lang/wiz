@@ -62,17 +62,30 @@ sym.Definition resolveAttribute(Program program, ast.Attribute attribute)
 
 bool foldConstExpr(Program program, ast.Expression root, ref uint result, bool forbidUndefined = true)
 {
-    ast.Expression  _;
-    return partiallyFoldConstExpr(program, root, result, _, true, forbidUndefined);
+    ast.Expression constTail;
+    return tryFoldConstant(program, root, result, constTail, true, forbidUndefined);
 }
 
-bool partiallyFoldConstExpr(Program program, ast.Expression root, ref uint result, ref ast.Expression lastConst, bool mustFold, bool forbidUndefined)
+bool tryFoldConstant(Program program, ast.Expression root, ref uint result, ref ast.Expression constTail, bool mustFold, bool forbidUndefined)
 {
     uint[ast.Expression] values;
-    bool constant = true;
+    bool[ast.Expression] completeness;
     bool mustFoldRoot = mustFold;
+
     uint depth = 0;
 
+    void updateValue(ast.Expression node, uint value, bool complete=true)
+    {
+        values[node] = value;
+        completeness[node] = complete;
+
+        if(depth == 0)
+        {
+            constTail = node;
+        }
+    }
+
+    constTail = null;
     traverse(root,
         (ast.Infix e)
         {
@@ -98,6 +111,7 @@ bool partiallyFoldConstExpr(Program program, ast.Expression root, ref uint resul
                         if(a + ast.Expression.Max < b)
                         {
                             error("addition yields result which will overflow outside of 0..65535.", operand.location);
+                            return;
                         }
                         else
                         {
@@ -108,6 +122,7 @@ bool partiallyFoldConstExpr(Program program, ast.Expression root, ref uint resul
                         if(a < b)
                         {
                             error("subtraction yields result which will overflow outside of 0..65535.", operand.location);
+                            return;
                         }
                         else
                         {
@@ -118,6 +133,7 @@ bool partiallyFoldConstExpr(Program program, ast.Expression root, ref uint resul
                         if(a > ast.Expression.Max / b)
                         {
                             error("multiplication yields result which will overflow outside of 0..65535.", operand.location);
+                            return;
                         }
                         else
                         {
@@ -128,6 +144,7 @@ bool partiallyFoldConstExpr(Program program, ast.Expression root, ref uint resul
                         if(a == 0)
                         {
                             error("division by zero is undefined.", operand.location);
+                            return;
                         }
                         else
                         {
@@ -138,6 +155,7 @@ bool partiallyFoldConstExpr(Program program, ast.Expression root, ref uint resul
                         if(a == 0)
                         {
                             error("modulo by zero is undefined.", operand.location);
+                            return;
                         }
                         else
                         {
@@ -149,6 +167,7 @@ bool partiallyFoldConstExpr(Program program, ast.Expression root, ref uint resul
                         if(b > 16 || (b > 0 && (a & ~(1 << (16 - b))) != 0))
                         {
                             error("logical shift left yields result which will overflow outside of 0..65535.", operand.location);
+                            return;
                         }
                         else
                         {
@@ -175,18 +194,14 @@ bool partiallyFoldConstExpr(Program program, ast.Expression root, ref uint resul
                         parse.Infix.RotateL, parse.Infix.RotateR,
                         parse.Infix.RotateLC, parse.Infix.RotateRC,
                         parse.Infix.Colon:
-                        constant = false;
                         if(mustFold)
                         {
                             error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in constant expression", operand.location);
                         }
                         return;
                 }
-                if(constant)
-                {
-                    values[e] = a;
-                    lastConst = e;
-                }
+
+                updateValue(e, a, i == e.types.length);
             }
         },
 
@@ -198,6 +213,10 @@ bool partiallyFoldConstExpr(Program program, ast.Expression root, ref uint resul
                 {
                     depth++;
                     mustFold = true;
+                }
+                else if(e.type == parse.Prefix.Indirection)
+                {
+                    depth++;
                 }
             }
             else
@@ -213,11 +232,17 @@ bool partiallyFoldConstExpr(Program program, ast.Expression root, ref uint resul
                             mustFold = mustFoldRoot;
                         }
                         break;
-                    case parse.Prefix.Not, parse.Prefix.Indirection:
-                        constant = false;
+                    case parse.Prefix.Not:
                         if(mustFold)
                         {
                             error("prefix operator " ~ parse.getPrefixName(e.type) ~ " cannot be used in constant expression", e.location);
+                        }
+                        return;
+                    case parse.Prefix.Indirection:
+                        depth--;
+                        if(mustFold)
+                        {
+                            error("indirection operator cannot be used in constant expression", e.location);
                         }
                         return;
                 }
@@ -230,16 +255,16 @@ bool partiallyFoldConstExpr(Program program, ast.Expression root, ref uint resul
                 final switch(e.type)
                 {
                     case parse.Prefix.Low:
-                        values[e] = r & 0xFF;
+                        updateValue(e, r & 0xFF);
                         break;
                     case parse.Prefix.High:
-                        values[e] = (r >> 8) & 0xFF;
+                        updateValue(e, (r >> 8) & 0xFF);
                         break;
                     case parse.Prefix.Swap:
-                        values[e] = ((r & 0x0F0F) << 4) | ((r & 0xF0F0) >> 4);
+                        updateValue(e, ((r & 0x0F0F) << 4) | ((r & 0xF0F0) >> 4));
                         break;
                     case parse.Prefix.Grouping:
-                        values[e] = r;
+                        updateValue(e, r);
                         break;
                     case parse.Prefix.Not, parse.Prefix.Indirection:
                         break;
@@ -255,7 +280,6 @@ bool partiallyFoldConstExpr(Program program, ast.Expression root, ref uint resul
             }
             else
             {
-                constant = false;
                 if(mustFold)
                 {
                     error("postfix operator " ~ parse.getPostfixName(e.type) ~ " cannot be used in constant expression", e.location);
@@ -271,24 +295,16 @@ bool partiallyFoldConstExpr(Program program, ast.Expression root, ref uint resul
                 uint v;
                 if(foldConstExpr(program, (cast(ast.ConstDecl) constdef.decl).value, v))
                 {
-                    if(constant)
-                    {
-                        lastConst = a;
-                    }
-                    values[a] = v;
+                    updateValue(a, v);
                     return;
                 }
             }
-            else if(auto vardef = cast(sym.LabelDef) def)
+            else if(auto vardef = cast(sym.VarDef) def)
             {
                 uint v;
                 if(vardef.hasAddress)
                 {
-                    if(constant)
-                    {
-                        lastConst = a;
-                    }
-                    values[a] = vardef.address;
+                    updateValue(a, vardef.address);
                     return;
                 }
             }
@@ -297,16 +313,11 @@ bool partiallyFoldConstExpr(Program program, ast.Expression root, ref uint resul
                 uint v;
                 if(labeldef.hasAddress)
                 {
-                    if(constant)
-                    {
-                        lastConst = a;
-                    }
-                    values[a] = labeldef.address;
+                    updateValue(a, labeldef.address);
                     return;
                 }
             }
 
-            constant = false;
             if(def && mustFold && forbidUndefined)
             {
                 error("'" ~ a.fullName() ~ "' was declared, but could not be evaluated.", root.location);
@@ -315,27 +326,22 @@ bool partiallyFoldConstExpr(Program program, ast.Expression root, ref uint resul
 
         (ast.Number n)
         {
-            if(constant)
-            {
-                lastConst = n;
-            }
-            values[n] = n.value;
+            updateValue(n, n.value);
         },
     );
 
-    auto resolution = (root in values);
-    if(resolution is null)
+    result = values.get(root, 0);
+    if(completeness.get(root, false))
+    {
+        return true;
+    }
+    else    
     {
         if(mustFold)
         {
             error("expression could not be resolved as a constant", root.location);
         }
         return false;
-    }
-    else
-    {
-        result = *resolution;
-        return true;
     }
 }
 

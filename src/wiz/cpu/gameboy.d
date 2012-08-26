@@ -686,25 +686,79 @@ class GameboyPlatform : Platform
         }
 
         // TODO: fold constant left part of src expressions.
-        auto load = src;
-        if(auto infix = cast(ast.Infix) load)
+        if(auto infix = cast(ast.Infix) src)
         {
-            load = infix.operands[0];
+            uint result;
+            ast.Expression constTail;
+            bool folded = compile.tryFoldConstant(program, infix, result, constTail, false, true);
+            if(folded)
+            {
+                return generateLoad(program, stmt, dest, src);
+            }
+            else
+            {
+                ast.Expression load = null;
+                if(constTail is null)
+                {
+                    load = infix.operands[0];
+                }
+                else
+                {
+                    load = new ast.Number(parse.Token.Integer, result, constTail.location);
+                }
+                ubyte[] code = generateLoad(program, stmt, dest, load);
+                bool found = constTail is null;
+                foreach(i, type; infix.types)
+                {                
+                    auto operand = infix.operands[i + 1];
+                    if(operand is constTail)
+                    {
+                        found = true;
+                    }
+                    else if(found)
+                    {
+                        // TODO: This code will be gigantic.
+                        // a:
+                        //      + (add), - (sub), +# (adc), -# (sbc),
+                        //      & (and), | (or), ^ (xor),
+                        //      <<< (sla), <<- (sla), >>> (srl) >>- (sra)
+                        //      <<< (rla), <<<# (rlca), >>> (rra), >>># (rrca).
+                        // r / [hl]:
+                        //      <<< (sla), <<- (sla), >>> (srl) >>- (sra)
+                        //      <<< (rl), <<<# (rlc), >>> (rr), >>># (rrc).
+                        // hl:
+                        //      + (add)
+                        // carry:
+                        //      ^ (ccf)
+                        switch(dest.type)
+                        {
+                            case ArgumentType.A:
+                                switch(type)
+                                {
+                                    default:
+                                }
+                                break;
+                            case ArgumentType.B:
+                            case ArgumentType.C:
+                            case ArgumentType.D:
+                            case ArgumentType.E:
+                            case ArgumentType.Indirection:
+                                break;
+                            case ArgumentType.HL:
+                                break;
+                            case ArgumentType.Carry:
+                                break;
+                            default:
+                        }
+                    }
+                }
+                return code;
+            }
         }
-        ubyte[] code = generateLoad(program, stmt, dest, load);
-
-        // TODO: This code will be gigantic.
-        // a:
-        //      + (add), - (sub), +# (adc), -# (sbc),
-        //      & (and), | (or), ^ (xor),
-        //      <<< (sla), <<- (sla), >>> (srl) >>- (sra)
-        //      <<< (rla), <<<# (rlca), >>> (rra), >>># (rrca).
-        // r / [hl]:
-        //      <<< (sla), <<- (sla), >>> (srl) >>- (sra)
-        //      <<< (rl), <<<# (rlc), >>> (rr), >>># (rrc).
-        // carry:
-        //      ^ (ccf)
-        return code;
+        else
+        {
+            return generateLoad(program, stmt, dest, src);
+        }
     }
 
     ubyte[] generateLoad(compile.Program program, ast.Assignment stmt, Argument dest, ast.Expression src)

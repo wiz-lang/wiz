@@ -29,12 +29,14 @@ let stack_top = 0x300
 
 def disable_display: do
     repeat
-        a = [gb.lcd.stat] & STAT_MODE_MASK
+        a = [gb.lcd.stat] & gb.lcd.STAT_MODE_MASK
         compare a to gb.lcd.STAT_MODE_VBLANK
     while ~= end
     [gb.lcd.ctrl] = 0 via a
     return
 end
+
+a = 100 + 30 + 300 + array + carry
 
 [hl] = <>a
 
