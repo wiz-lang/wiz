@@ -39,6 +39,7 @@ end
 hl = 100 + 30 + 300 + array
 
 [hl] = <>a
+hl = sp + 100 + 1
 
 def memset: do
     c++; b++

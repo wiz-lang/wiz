@@ -21,16 +21,15 @@ class GameboyPlatform : Platform
         return .generateJump(program, stmt);
     }
 
-    ubyte[] generateAssignment(compile.Program program, ast.Assignment stmt)
-    {
-        return .generateAssignment(program, stmt);
-    }
-
     ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
     {
         return .generateComparison(program, stmt);
     }
 
+    ubyte[] generateAssignment(compile.Program program, ast.Assignment stmt)
+    {
+        return .generateAssignment(program, stmt);
+    }
 }
 
 
@@ -265,12 +264,16 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
             }
             return [];
         case parse.Keyword.Break:
+            // TODO
             return [];
         case parse.Keyword.Continue:
+            // TODO
             return [];
         case parse.Keyword.While:
+            // TODO
             return [];
         case parse.Keyword.Until:
+            // TODO
             return [];
         case parse.Keyword.Resume: return ensureUnconditional(stmt, "'resume'", [0xD9]);
         case parse.Keyword.Abort: return ensureUnconditional(stmt,  "'abort'",[0x40]);
@@ -282,92 +285,153 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
     }
 }
 
+ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
+{
+    auto left = buildArgument(program, stmt.left);
+    auto right = stmt.right ? buildArgument(program, stmt.right) : null;
+    switch(left.type)
+    {
+        case ArgumentType.A:
+            if(right is null)
+            {
+                // 'compare a' -> 'or a'
+                return [0xB7];
+            }
+            else
+            {
+                // 'compare a to expr' -> 'cp a, expr'
+                switch(right.type)
+                {
+                    case ArgumentType.Immediate:
+                        uint value;
+                        compile.foldWord(program, right.immediate, value, true);
+                        return [0xFE, value & 0xFF];
+                    case ArgumentType.B:
+                    case ArgumentType.C:
+                    case ArgumentType.D:
+                    case ArgumentType.E:
+                    case ArgumentType.H:
+                    case ArgumentType.L:
+                        return [(0xB8 + getRegisterIndex(left)) & 0xFF];
+                    case ArgumentType.Indirection:
+                        if(right.base.type == ArgumentType.HL)
+                        {
+                            return [0xBE];
+                        }
+                        else
+                        {
+                            error("indirected operand in 'to' is not supported (only 'compare a to [hl]' is valid)", stmt.right.location);
+                            return [];
+                        }
+                    case ArgumentType.A: return [0xBF];
+                    default:
+                        error("unsupported operand in 'to' clause of 'compare a to ...'", stmt.right.location);
+                        return [];
+                }
+            }
+        case ArgumentType.BitIndex:
+            // 'compare r@i' -> 'bit r, i'
+            if(right is null)
+            {
+                uint index;
+                if(!compile.foldBitIndex(program, left.immediate, index, true))
+                {
+                    return [];
+                }
+                left = left.base;
+                switch(left.type)
+                {
+                    case ArgumentType.A: break;
+                    case ArgumentType.B: break;
+                    case ArgumentType.C: break;
+                    case ArgumentType.D: break;
+                    case ArgumentType.E: break;
+                    case ArgumentType.H: break;
+                    case ArgumentType.L: break;
+                    case ArgumentType.Indirection:
+                        if(left.base.type != ArgumentType.HL)
+                        {
+                            error("indirected operand on left-hand side of '@' is not supported (only '[hl] @ ...' is valid)", stmt.right.location);
+                            return [];
+                        }
+                        break;
+                    default:
+                        error("unsupported operand on left-hand side of '@'", stmt.right.location);
+                        return [];
+                }
+                return [0xCB, (0x40 + index * 0x08 + getRegisterIndex(left)) & 0xFF];
+            }
+            else
+            {
+                error("'to' clause is unsupported for 'compare ... @ ...'", stmt.right.location);
+                return [];
+            }
+        default:
+            return [];
+    }
+}
+
 ubyte[] generateAssignment(compile.Program program, ast.Assignment stmt)
 {
-    auto dest = buildArgument(program, stmt.dest);
     if(stmt.src is null)
     {
-        final switch(stmt.postfix)
-        {
-            case parse.Postfix.Inc:
-                // 'inc dest'
-                switch(dest.type)
-                {
-                    case ArgumentType.A:
-                    case ArgumentType.B:
-                    case ArgumentType.C:
-                    case ArgumentType.D:
-                    case ArgumentType.E:
-                    case ArgumentType.H:
-                    case ArgumentType.L:
-                        return [(0x05 + getRegisterIndex(dest) * 0x08) & 0xFF];
-                    case ArgumentType.Indirection:
-                        if(dest.base.type == ArgumentType.HL)
-                        {
-                            return [0x34];
-                        }
-                        else
-                        {
-                            error("'++' on indirected operand is not supported (only '[hl]++' is valid)", stmt.dest.location);
-                            return [];
-                        }
-                    case ArgumentType.BC:
-                    case ArgumentType.DE:
-                    case ArgumentType.HL:
-                    case ArgumentType.SP:
-                        return [(0x03 + getPairIndex(dest) * 0x10) & 0xFF];
-                    default:
-                        error("unsupported operand of '++'", stmt.dest.location);
-                        return [];
-                }
-            case parse.Postfix.Dec:
-                // 'dec dest'
-                switch(dest.type)
-                {
-                    case ArgumentType.A:
-                    case ArgumentType.B:
-                    case ArgumentType.C:
-                    case ArgumentType.D:
-                    case ArgumentType.E:
-                    case ArgumentType.H:
-                    case ArgumentType.L:
-                        return [(0x05 + getRegisterIndex(dest) * 0x08) & 0xFF];
-                    case ArgumentType.Indirection:
-                        if(dest.base.type == ArgumentType.HL)
-                        {
-                            return [0x35];
-                        }
-                        else
-                        {
-                            error("'--' on indirected operand is not supported (only '[hl]--' is valid)", stmt.dest.location);
-                            return [];
-                        }
-                    case ArgumentType.BC:
-                    case ArgumentType.DE:
-                    case ArgumentType.HL:
-                    case ArgumentType.SP:
-                        return [(0x0B + getPairIndex(dest) * 0x10) & 0xFF];
-                    default:
-                        error("unsupported operand of '--'", stmt.dest.location);
-                        return [];
-                }
-        }
+        return generatePostfix(program, stmt);
     }
     else
     {
+        auto dest = buildArgument(program, stmt.dest);
         if(stmt.intermediary)
         {
             auto intermediary = buildArgument(program, stmt.intermediary);
             return // 'x = y via z' -> 'z = y; x = z'
                 generateCalculation(program, stmt, intermediary, stmt.src)
-                ~ generateLoad(program, stmt, dest, stmt.intermediary);
+                ~ generateCalculation(program, stmt, dest, stmt.intermediary);
         }
         else
         {
             return generateCalculation(program, stmt, dest, stmt.src);
         }
     }
-    return [];
+}
+
+ubyte[] generatePostfix(compile.Program program, ast.Assignment stmt)
+{
+    auto dest = buildArgument(program, stmt.dest);
+    ubyte operatorIndex = 0;
+    final switch(stmt.postfix)
+    {
+        case parse.Postfix.Inc: operatorIndex = 0; break;
+        case parse.Postfix.Dec: operatorIndex = 1; break;
+    }
+    switch(dest.type)
+    {
+        case ArgumentType.A:
+        case ArgumentType.B:
+        case ArgumentType.C:
+        case ArgumentType.D:
+        case ArgumentType.E:
+        case ArgumentType.H:
+        case ArgumentType.L:
+            return [(0x04 + operatorIndex + getRegisterIndex(dest) * 0x10) & 0xFF];
+        case ArgumentType.Indirection:
+            if(dest.base.type == ArgumentType.HL)
+            {
+                return [(0x04 + operatorIndex + getRegisterIndex(dest) * 0x10) & 0xFF];
+            }
+            else
+            {
+                error("'--' on indirected operand is not supported (only '[hl]--' is valid)", stmt.dest.location);
+                return [];
+            }
+        case ArgumentType.BC:
+        case ArgumentType.DE:
+        case ArgumentType.HL:
+        case ArgumentType.SP:
+            return [(0x03 + (operatorIndex * 0x08) + getPairIndex(dest) * 0x10) & 0xFF];
+        default:
+            error("unsupported operand of '--'", stmt.dest.location);
+            return [];
+    }
 }
 
 ubyte[] generateCalculation(compile.Program program, ast.Assignment stmt, Argument dest, ast.Expression src)
@@ -377,7 +441,6 @@ ubyte[] generateCalculation(compile.Program program, ast.Assignment stmt, Argume
         return [];
     }
 
-    // TODO: fold constant left part of src expressions.
     if(auto infix = cast(ast.Infix) src)
     {
         uint result;
@@ -411,381 +474,7 @@ ubyte[] generateCalculation(compile.Program program, ast.Assignment stmt, Argume
                 {
                     return [];
                 }
-                // TODO: This code will be gigantic.
-                // a:
-                //      + (add), - (sub), +# (adc), -# (sbc),
-                //      & (and), | (or), ^ (xor),
-                //      <<< (sla), <<- (sla), >>> (srl) >>- (sra)
-                //      <<< (rla), <<<# (rlca), >>> (rra), >>># (rrca).
-                // r / [hl]:
-                //      <<< (sla), <<- (sla), >>> (srl) >>- (sra)
-                //      <<< (rl), <<<# (rlc), >>> (rr), >>># (rrc).
-                // hl:
-                //      + (add)
-                // carry:
-                //      ^ (ccf)
-                switch(dest.type)
-                {
-                    case ArgumentType.A:
-                        switch(type)
-                        {
-                            case parse.Infix.Add, parse.Infix.AddC,
-                                parse.Infix.Sub, parse.Infix.SubC,
-                                parse.Infix.And, parse.Infix.Xor, parse.Infix.Or:
-                                ubyte operatorIndex = 0;
-                                switch(type)
-                                {
-                                    case parse.Infix.Add: operatorIndex = 0; break;
-                                    case parse.Infix.AddC: operatorIndex = 1; break;
-                                    case parse.Infix.Sub: operatorIndex = 2; break;
-                                    case parse.Infix.SubC: operatorIndex = 3; break;
-                                    case parse.Infix.And: operatorIndex = 4; break;
-                                    case parse.Infix.Xor: operatorIndex = 5; break;
-                                    case parse.Infix.Or: operatorIndex = 6; break;
-                                    default: assert(0);
-                                }
-                                switch(operand.type)
-                                {
-                                    case ArgumentType.Immediate:
-                                        uint value;
-                                        compile.foldByte(program, operand.immediate, value, true);
-                                        code ~= [(0xC6 + operatorIndex * 0x08) & 0xFF, value & 0xFF];
-                                        break;
-                                    case ArgumentType.A:
-                                    case ArgumentType.B:
-                                    case ArgumentType.C:
-                                    case ArgumentType.D:
-                                    case ArgumentType.E:
-                                    case ArgumentType.H:
-                                    case ArgumentType.L:
-                                        code ~= [(0x80 + operatorIndex * 0x08 + getRegisterIndex(operand)) & 0xFF];
-                                        break;
-                                    case ArgumentType.Indirection:
-                                        switch(operand.base.type)
-                                        {
-                                            // 'r = [hl]' -> 'ld r, [hl]'
-                                            case ArgumentType.HL:
-                                                code ~= [(0x80 + operatorIndex * 0x08 + getRegisterIndex(operand)) & 0xFF];
-                                                break;
-                                            default:
-                                                error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'a'.", node.location);
-                                                return [];
-                                        }
-                                        break;
-                                    default:
-                                        error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'a'.", node.location);
-                                        return [];
-                                }
-                                break;
-                            case parse.Infix.ShiftL:
-                            case parse.Infix.ShiftR:
-                            case parse.Infix.ArithShiftL:
-                            case parse.Infix.ArithShiftR:
-                                ubyte operatorIndex = 0;
-                                switch(type)
-                                {
-                                    case parse.Infix.ArithShiftL: operatorIndex = 0; break;
-                                    case parse.Infix.ArithShiftR: operatorIndex = 1; break;
-                                    case parse.Infix.ShiftL: operatorIndex = 0; break; // Logical shl == arith shl
-                                    case parse.Infix.ShiftR: operatorIndex = 3; break;
-                                    default: assert(0);
-                                }
-                                switch(operand.type)
-                                {
-                                    case ArgumentType.Immediate:
-                                        uint value;
-                                        if(!compile.foldBitIndex(program, operand.immediate, value, true))
-                                        {
-                                            return [];
-                                        }
-                                        while(value--)
-                                        {
-                                            code ~= [0xCB, (0x27 + operatorIndex * 0x08) & 0xFF];
-                                        }
-                                        break;
-                                    default:
-                                        error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'a'.", node.location);
-                                        return [];
-                                }
-                                break;
-                            case parse.Infix.RotateL:
-                            case parse.Infix.RotateR:
-                            case parse.Infix.RotateLC:
-                            case parse.Infix.RotateRC:
-                                ubyte operatorIndex = 0;
-                                switch(type)
-                                {
-                                    case parse.Infix.RotateLC: operatorIndex = 0; break;
-                                    case parse.Infix.RotateRC: operatorIndex = 1; break;
-                                    case parse.Infix.RotateL: operatorIndex = 2; break;
-                                    case parse.Infix.RotateR: operatorIndex = 3; break;
-                                    default: assert(0);
-                                }
-                                switch(operand.type)
-                                {
-                                    case ArgumentType.Immediate:
-                                        uint value;
-                                        if(!compile.foldBitIndex(program, operand.immediate, value, true))
-                                        {
-                                            return [];
-                                        }
-                                        while(value--)
-                                        {
-                                            code ~= [(0x07 + operatorIndex * 0x08) & 0xFF];
-                                        }
-                                        break;
-                                    default:
-                                        error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'a'.", node.location);
-                                        return [];
-                                }
-                                break;
-                            default:
-                                error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to 'a'.", node.location);
-                                return [];
-                        }
-                        break;
-                    case ArgumentType.B:
-                    case ArgumentType.C:
-                    case ArgumentType.D:
-                    case ArgumentType.E:
-                    case ArgumentType.H:
-                    case ArgumentType.L:
-                        switch(type)
-                        {
-                            case parse.Infix.RotateLC:
-                            case parse.Infix.RotateRC:
-                            case parse.Infix.RotateL:
-                            case parse.Infix.RotateR:
-                            case parse.Infix.ShiftL:
-                            case parse.Infix.ShiftR:
-                            case parse.Infix.ArithShiftL:
-                            case parse.Infix.ArithShiftR:
-                                ubyte operatorIndex = 0;
-                                switch(type)
-                                {
-                                    case parse.Infix.RotateLC: operatorIndex = 0; break;
-                                    case parse.Infix.RotateRC: operatorIndex = 1; break;
-                                    case parse.Infix.RotateL: operatorIndex = 2; break;
-                                    case parse.Infix.RotateR: operatorIndex = 3; break;
-                                    case parse.Infix.ArithShiftL: operatorIndex = 4; break;
-                                    case parse.Infix.ArithShiftR: operatorIndex = 5; break;
-                                    case parse.Infix.ShiftL: operatorIndex = 4; break; // Logical shl == arith shl
-                                    case parse.Infix.ShiftR: operatorIndex = 7; break;
-                                    default: assert(0);
-                                }
-                                switch(operand.type)
-                                {
-                                    case ArgumentType.Immediate:
-                                        uint value;
-                                        if(!compile.foldBitIndex(program, operand.immediate, value, true))
-                                        {
-                                            return [];
-                                        }
-                                        while(value--)
-                                        {
-                                            code ~= [0xCB, (operatorIndex * 0x08 + getRegisterIndex(dest)) & 0xFF];
-                                        }
-                                        break;
-                                    default:
-                                        error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'a'.", node.location);
-                                        return [];
-                                }
-                                break;
-                            default:
-                                error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to register.", node.location);
-                                return [];
-                        }
-                        break;
-                    case ArgumentType.Indirection:
-                        switch(dest.base.type)
-                        {
-                            // 'r = [hl]' -> 'ld r, [hl]'
-                            case ArgumentType.HL:
-                                switch(type)
-                                {
-                                    case parse.Infix.RotateLC:
-                                    case parse.Infix.RotateRC:
-                                    case parse.Infix.RotateL:
-                                    case parse.Infix.RotateR:
-                                    case parse.Infix.ShiftL:
-                                    case parse.Infix.ShiftR:
-                                    case parse.Infix.ArithShiftL:
-                                    case parse.Infix.ArithShiftR:
-                                        ubyte operatorIndex = 0;
-                                        switch(type)
-                                        {
-                                            case parse.Infix.RotateLC: operatorIndex = 0; break;
-                                            case parse.Infix.RotateRC: operatorIndex = 1; break;
-                                            case parse.Infix.RotateL: operatorIndex = 2; break;
-                                            case parse.Infix.RotateR: operatorIndex = 3; break;
-                                            case parse.Infix.ArithShiftL: operatorIndex = 4; break;
-                                            case parse.Infix.ArithShiftR: operatorIndex = 5; break;
-                                            case parse.Infix.ShiftL: operatorIndex = 4; break; // Logical shl == arith shl
-                                            case parse.Infix.ShiftR: operatorIndex = 7; break;
-                                            default: assert(0);
-                                        }
-                                        switch(operand.type)
-                                        {
-                                            case ArgumentType.Immediate:
-                                                uint value;
-                                                if(!compile.foldBitIndex(program, operand.immediate, value, true))
-                                                {
-                                                    return [];
-                                                }
-                                                while(value--)
-                                                {
-                                                    code ~= [0xCB, (operatorIndex * 0x08 + getRegisterIndex(dest)) & 0xFF];
-                                                }
-                                                break;
-                                            default:
-                                                error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to '[hl]'.", node.location);
-                                                return [];
-                                        }
-                                    default:
-                                        error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to '[hl]'.", node.location);
-                                        return [];
-                                }
-                                break;
-                            default:
-                                error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to indirected term.", node.location);
-                                return [];
-                        }
-                        break;
-                    case ArgumentType.HL:
-                        switch(type)
-                        {
-                            case parse.Infix.Add:
-                                switch(operand.type)
-                                {
-                                    case ArgumentType.Immediate:
-                                        auto load = buildArgument(program, loadsrc);
-                                        if(i != 0 || load is null)
-                                        {
-                                            error("invalid addition of constant '+' in assignment '=' to 'hl' (only allowed form is directly after 'hl = sp + ...')", node.location);
-                                        }
-                                        else
-                                        {
-                                            uint value;
-                                            compile.foldConstant(program, operand.immediate, value, true);
-                                            if(value > 127)
-                                            {
-                                                error(
-                                                    "invalid offset of +" ~ std.conv.to!string(value)
-                                                    ~ " used as addition '+'"
-                                                    ~ " in assignment '=' to 'hl = sp + ...', should be in range -128..127",
-                                                    node.location
-                                                );
-                                                return [];
-                                            }
-                                            // Monkey patch 'hl = sp + 00'
-                                            code[code.length - 1] = value & 0xFF;
-                                        }
-                                        break;
-                                    case ArgumentType.BC:
-                                    case ArgumentType.DE:
-                                    case ArgumentType.HL:
-                                    case ArgumentType.SP:
-                                        code ~= [(0x09 + getPairIndex(operand) * 0x10) & 0xFF];
-                                        break;
-                                    default:
-                                        error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'hl'.", node.location);
-                                        return [];
-                                }
-                                break;
-                            case parse.Infix.Sub:
-                                switch(operand.type)
-                                {
-                                    case ArgumentType.Immediate:
-                                        auto load = buildArgument(program, loadsrc);
-                                        if(i != 0 || load is null)
-                                        {
-                                            error("invalid subtraction '-' of constant in assignment '=' to 'hl' (only allowed form is directly after 'hl = sp - ...')", node.location);
-                                        }
-                                        else
-                                        {
-                                            uint value;
-                                            compile.foldConstant(program, operand.immediate, value, true);
-                                            if(value > 128)
-                                            {
-                                                error(
-                                                    "invalid offset of -" ~ std.conv.to!string(value)
-                                                    ~ " used as addition '-'"
-                                                    ~ " in assignment '=' to 'hl = sp - ...', should be in range -128..127",
-                                                    node.location
-                                                );
-                                                return [];
-                                            }
-                                            // Monkey patch 'hl = sp + 00'
-                                            code[code.length - 1] = (~value + 1) & 0xFF;
-                                        }
-                                        break;
-                                    default:
-                                        error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'hl'.", node.location);
-                                        return [];
-                                }
-                                break;
-                            default:
-                                error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to 'hl'.", node.location);
-                                return [];
-                        }
-                        break;
-                    case ArgumentType.SP:
-                        switch(type)
-                        {
-                            case parse.Infix.Add:
-                                switch(operand.type)
-                                {
-                                    case ArgumentType.Immediate:
-                                        uint value;
-                                        compile.foldConstant(program, operand.immediate, value, true);
-                                        if(value > 127)
-                                        {
-                                            error(
-                                                "invalid offset of +" ~ std.conv.to!string(value)
-                                                ~ " used as addition '+'"
-                                                ~ " in assignment '=' to 'sp', should be in range -128..127",
-                                                node.location
-                                            );
-                                            return [];
-                                        }
-                                        code ~= [0xE8, value & 0xFF];
-                                    default:
-                                        error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'sp'.", node.location);
-                                        return [];
-                                }
-                                break;
-                            case parse.Infix.Sub:
-                                switch(operand.type)
-                                {
-                                    case ArgumentType.Immediate:
-                                        uint value;
-                                        compile.foldConstant(program, operand.immediate, value, true);
-                                        if(value > 128)
-                                        {
-                                            error(
-                                                "invalid offset of -" ~ std.conv.to!string(value)
-                                                ~ " used as subtraction '-'"
-                                                ~ " in assignment '=' to 'sp', should be in range -128..127",
-                                                node.location
-                                            );
-                                            return [];
-                                        }
-                                        code ~= [0xE8, (~value + 1) & 0xFF];
-                                        break;
-                                    default:
-                                        error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'sp'.", node.location);
-                                        return [];
-                                }
-                                break;
-                            default:
-                                error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to 'sp'.", node.location);
-                                return [];
-                        }
-                        break;
-                    case ArgumentType.Carry:
-                        break;
-                    default:
-                }
+                generateModification(program, i, type, node, dest, operand, loadsrc, code);
             }
         }
         return code;
@@ -793,6 +482,296 @@ ubyte[] generateCalculation(compile.Program program, ast.Assignment stmt, Argume
     else
     {
         return generateLoad(program, stmt, dest, src);
+    }
+}
+
+void generateModification(compile.Program program, uint i, parse.Infix type, ast.Expression node, Argument dest, Argument operand, ast.Expression loadsrc, ubyte[] code)
+{
+    switch(dest.type)
+    {
+        case ArgumentType.A:
+            switch(type)
+            {
+                case parse.Infix.Add, parse.Infix.AddC,
+                    parse.Infix.Sub, parse.Infix.SubC,
+                    parse.Infix.And, parse.Infix.Xor, parse.Infix.Or:
+                    code ~= generateAccumulatorArithmetic(program, type, node, dest, operand);
+                    return;
+                case parse.Infix.ShiftL:
+                case parse.Infix.ShiftR:
+                case parse.Infix.ArithShiftL:
+                case parse.Infix.ArithShiftR:
+                    code ~= generateRegisterShift(program, type, node, dest, operand);
+                    return;
+                case parse.Infix.RotateL:
+                case parse.Infix.RotateR:
+                case parse.Infix.RotateLC:
+                case parse.Infix.RotateRC:
+                    code ~= generateAccumulatorShift(program, type, node, dest, operand);
+                    return;
+                default:
+                    error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to 'a'.", node.location);
+                    return;
+            }
+        case ArgumentType.B:
+        case ArgumentType.C:
+        case ArgumentType.D:
+        case ArgumentType.E:
+        case ArgumentType.H:
+        case ArgumentType.L:
+            switch(type)
+            {
+                case parse.Infix.RotateLC:
+                case parse.Infix.RotateRC:
+                case parse.Infix.RotateL:
+                case parse.Infix.RotateR:
+                case parse.Infix.ShiftL:
+                case parse.Infix.ShiftR:
+                case parse.Infix.ArithShiftL:
+                case parse.Infix.ArithShiftR:
+                    code ~= generateRegisterShift(program, type, node, dest, operand);
+                    return;
+                default:
+                    error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to register.", node.location);
+                    return;
+            }
+        case ArgumentType.Indirection:
+            switch(dest.base.type)
+            {
+                // 'r = [hl]' -> 'ld r, [hl]'
+                case ArgumentType.HL:
+                    switch(type)
+                    {
+                        case parse.Infix.RotateLC:
+                        case parse.Infix.RotateRC:
+                        case parse.Infix.RotateL:
+                        case parse.Infix.RotateR:
+                        case parse.Infix.ShiftL:
+                        case parse.Infix.ShiftR:
+                        case parse.Infix.ArithShiftL:
+                        case parse.Infix.ArithShiftR:
+                            code ~= generateRegisterShift(program, type, node, dest, operand);
+                            return;
+                        default:
+                            error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to '[hl]'.", node.location);
+                            return;
+                    }
+                    return;
+                default:
+                    error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to indirected term.", node.location);
+                    return;
+            }
+        case ArgumentType.HL:
+            switch(type)
+            {
+                case parse.Infix.Add:
+                    if(i != 0 || !patchStackPointerLoadOffset(program, type, node, dest, operand, loadsrc, code))
+                    {
+                        if(operand.type == ArgumentType.Immediate)
+                        {
+                            error("invalid use of constant operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'hl'. (only allowed form is directly after 'hl = sp + ...')", node.location);
+                        }
+                        else
+                        {
+                            code ~= generateHighLowArithmetic(program, type, node, dest, operand);
+                        }
+                    }
+                    return;
+                case parse.Infix.Sub:
+                    if(i != 0 || !patchStackPointerLoadOffset(program, type, node, dest, operand, loadsrc, code))
+                    {
+                        error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to 'hl' (except in 'hl = sp - ...'.", node.location);
+                    }
+                    return;
+                default:
+                    error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to 'hl'.", node.location);
+                    return;
+            }
+        case ArgumentType.SP:
+            switch(type)
+            {
+                case parse.Infix.Add:
+                case parse.Infix.Sub:
+                    code ~= generateStackPointerArithmetic(program, type, node, dest, operand);
+                    return;
+                default:
+                    error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to 'sp'.", node.location);
+                    return;
+            }
+        case ArgumentType.Carry:
+            switch(type)
+            {
+                case parse.Infix.Xor: // TODO
+                default:
+                    error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to 'carry'.", node.location);
+                    return;
+            }
+            return;
+        default:
+            error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in this assignment '='.", node.location);
+            return;
+    }
+}
+
+ubyte[] generateAccumulatorArithmetic(compile.Program program, parse.Infix type, ast.Expression node, Argument dest, Argument operand)
+{
+    auto operatorIndex = cast(ubyte) [
+        parse.Infix.Add: 0,
+        parse.Infix.AddC: 1,
+        parse.Infix.Sub: 2,
+        parse.Infix.SubC: 3,
+        parse.Infix.And: 4,
+        parse.Infix.Xor: 5,
+        parse.Infix.Or: 6,
+    ][type];
+    switch(operand.type)
+    {
+        case ArgumentType.Immediate:
+            uint value;
+            compile.foldByte(program, operand.immediate, value, true);
+            return [(0xC6 + operatorIndex * 0x08) & 0xFF, value & 0xFF];
+        case ArgumentType.A:
+        case ArgumentType.B:
+        case ArgumentType.C:
+        case ArgumentType.D:
+        case ArgumentType.E:
+        case ArgumentType.H:
+        case ArgumentType.L:
+            return [(0x80 + operatorIndex * 0x08 + getRegisterIndex(operand)) & 0xFF];
+        case ArgumentType.Indirection:
+            switch(operand.base.type)
+            {
+                // 'r = [hl]' -> 'ld r, [hl]'
+                case ArgumentType.HL:
+                    return [(0x80 + operatorIndex * 0x08 + getRegisterIndex(operand)) & 0xFF];
+                    break;
+                default:
+                    error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'a'.", node.location);
+                    return [];
+            }
+            break;
+        default:
+            error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'a'.", node.location);
+            return [];
+    }
+}
+
+
+ubyte[] generateHighLowArithmetic(compile.Program program, parse.Infix type, ast.Expression node, Argument dest, Argument operand)
+{
+    switch(operand.type)
+    {
+        case ArgumentType.BC:
+        case ArgumentType.DE:
+        case ArgumentType.HL:
+        case ArgumentType.SP:
+            return [(0x09 + getPairIndex(operand) * 0x10) & 0xFF];
+            break;
+        default:
+            error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'hl'.", node.location);
+            return [];
+    }
+}
+
+bool patchStackPointerLoadOffset(compile.Program program, parse.Infix type, ast.Expression node, Argument dest, Argument operand, ast.Expression loadsrc, ubyte[] code)
+{
+    switch(type)
+    {
+        case parse.Infix.Add: break;
+        case parse.Infix.Sub: break;
+        default: return false;
+    }
+    switch(operand.type)
+    {
+        case ArgumentType.Immediate:
+            auto load = buildArgument(program, loadsrc);
+            if(load is null || load.type != ArgumentType.SP)
+            {
+                error("invalid use of constant operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'hl'. (only allowed form is directly after 'hl = sp + ...')", node.location);
+                return true;
+            }
+
+            uint value;
+            compile.foldSignedByte(program, operand.immediate, type == parse.Infix.Sub, value, true);
+            // Monkey patch 'hl = sp + 00'
+            code[code.length - 1] = value & 0xFF;
+            return true;
+        default:
+            return false;
+    }
+}
+
+ubyte[] generateStackPointerArithmetic(compile.Program program, parse.Infix type, ast.Expression node, Argument dest, Argument operand)
+{
+    switch(operand.type)
+    {
+        case ArgumentType.Immediate:
+            uint value;
+            compile.foldSignedByte(program, operand.immediate, type == parse.Infix.Sub, value, true);
+            return [0xE8, value & 0xFF];
+        default:
+            error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'sp'.", node.location);
+            return [];
+    }
+}
+
+ubyte[] generateAccumulatorShift(compile.Program program, parse.Infix type, ast.Expression node, Argument dest, Argument operand)
+{
+    auto operatorIndex = cast(ubyte) [
+        parse.Infix.RotateLC: 0,
+        parse.Infix.RotateRC: 1,
+        parse.Infix.RotateL: 2,
+        parse.Infix.RotateR: 3,
+    ][type];
+    switch(operand.type)
+    {
+        case ArgumentType.Immediate:
+            uint value;
+            if(!compile.foldBitIndex(program, operand.immediate, value, true))
+            {
+                return [];
+            }
+            ubyte[] code;
+            while(value--)
+            {
+                code ~= [(0x07 + operatorIndex * 0x08) & 0xFF];
+            }
+            return code;
+        default:
+            error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'a'.", node.location);
+            return [];
+    }
+}
+
+ubyte[] generateRegisterShift(compile.Program program, parse.Infix type, ast.Expression node, Argument dest, Argument operand)
+{
+    auto operatorIndex = cast(ubyte) [
+        parse.Infix.RotateLC: 0,
+        parse.Infix.RotateRC: 1,
+        parse.Infix.RotateL: 2,
+        parse.Infix.RotateR: 3,
+        parse.Infix.ArithShiftL: 4,
+        parse.Infix.ArithShiftR: 5,
+        parse.Infix.ShiftL: 4, // Logical shl == arith shl
+        parse.Infix.ShiftL: 7,
+    ][type];
+    switch(operand.type)
+    {
+        case ArgumentType.Immediate:
+            uint value;
+            if(!compile.foldBitIndex(program, operand.immediate, value, true))
+            {
+                return [];
+            }
+            ubyte[] code;
+            while(value--)
+            {
+                code ~= [0xCB, (operatorIndex * 0x08 + getRegisterIndex(dest)) & 0xFF];
+            }
+            return code;
+        default:
+            error("invalid operand to " ~ parse.getInfixName(type) ~ " in assignment '=' to 'a'.", node.location);
+            return [];
     }
 }
 
@@ -1380,90 +1359,4 @@ ubyte[] generateLoad(compile.Program program, ast.Assignment stmt, Argument dest
             return [];
     }
     return std.array.join(code.reverse);
-}
-
-ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
-{
-    auto left = buildArgument(program, stmt.left);
-    auto right = stmt.right ? buildArgument(program, stmt.right) : null;
-    switch(left.type)
-    {
-        case ArgumentType.A:
-            if(right is null)
-            {
-                // 'compare a' -> 'or a'
-                return [0xB7];
-            }
-            else
-            {
-                // 'compare a to expr' -> 'cp a, expr'
-                switch(right.type)
-                {
-                    case ArgumentType.Immediate:
-                        uint value;
-                        compile.foldWord(program, right.immediate, value, true);
-                        return [0xFE, value & 0xFF];
-                    case ArgumentType.B:
-                    case ArgumentType.C:
-                    case ArgumentType.D:
-                    case ArgumentType.E:
-                    case ArgumentType.H:
-                    case ArgumentType.L:
-                        return [(0xB8 + getRegisterIndex(left)) & 0xFF];
-                    case ArgumentType.Indirection:
-                        if(right.base.type == ArgumentType.HL)
-                        {
-                            return [0xBE];
-                        }
-                        else
-                        {
-                            error("indirected operand in 'to' is not supported (only 'compare a to [hl]' is valid)", stmt.right.location);
-                            return [];
-                        }
-                    case ArgumentType.A: return [0xBF];
-                    default:
-                        error("unsupported operand in 'to' clause of 'compare a to ...'", stmt.right.location);
-                        return [];
-                }
-            }
-        case ArgumentType.BitIndex:
-            // 'compare r@i' -> 'bit r, i'
-            if(right is null)
-            {
-                uint index;
-                if(!compile.foldBitIndex(program, left.immediate, index, true))
-                {
-                    return [];
-                }
-                left = left.base;
-                switch(left.type)
-                {
-                    case ArgumentType.A: break;
-                    case ArgumentType.B: break;
-                    case ArgumentType.C: break;
-                    case ArgumentType.D: break;
-                    case ArgumentType.E: break;
-                    case ArgumentType.H: break;
-                    case ArgumentType.L: break;
-                    case ArgumentType.Indirection:
-                        if(left.base.type != ArgumentType.HL)
-                        {
-                            error("indirected operand on left-hand side of '@' is not supported (only '[hl] @ ...' is valid)", stmt.right.location);
-                            return [];
-                        }
-                        break;
-                    default:
-                        error("unsupported operand on left-hand side of '@'", stmt.right.location);
-                        return [];
-                }
-                return [0xCB, (0x40 + index * 0x08 + getRegisterIndex(left)) & 0xFF];
-            }
-            else
-            {
-                error("'to' clause is unsupported for 'compare ... @ ...'", stmt.right.location);
-                return [];
-            }
-        default:
-            return [];
-    }
 }
