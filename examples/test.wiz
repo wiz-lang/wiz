@@ -82,6 +82,9 @@ def main: do
         bc--
     end
 
+hl = hl + [100:c] + [hl++]
+a@1 = b
+
     call disable_display
     // Save d into hardware_type, now that RAM is clear.
     [hardware_type] = d via a

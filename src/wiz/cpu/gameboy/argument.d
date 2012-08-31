@@ -69,6 +69,96 @@ class Argument
         this.immediate = immediate;
         this.base = base;
     }
+
+    string toString()
+    {
+        return toString(true);
+    }
+
+    string toString(bool quoted)
+    {
+        static string wrap(string s, bool quoted)
+        {
+            return quoted ? "'" ~ s ~ "'" : s;
+        }
+        final switch(type)
+        {
+            case ArgumentType.None: return "???";
+            case ArgumentType.Immediate: return "immediate";
+            case ArgumentType.Indirection: return wrap("[" ~ base.toString(false) ~ "]", quoted);
+            case ArgumentType.IndirectionInc: return wrap("[" ~ base.toString(false) ~ "++]", quoted);
+            case ArgumentType.IndirectionDec: return wrap("[" ~ base.toString(false) ~ "--]", quoted);
+            case ArgumentType.PositiveIndex: return wrap("[index:" ~ base.toString(false) ~ "]", quoted);
+            case ArgumentType.NegativeIndex: return wrap("[-index:" ~ base.toString(false) ~ "]", quoted);
+            case ArgumentType.BitIndex: return wrap(base.toString(false) ~ "@bit", quoted);
+            case ArgumentType.Not: return wrap("~" ~ base.toString(false), quoted);
+            case ArgumentType.Negated: return wrap("-" ~ base.toString(false), quoted);
+            case ArgumentType.Swap: return wrap("<>" ~ base.toString(false), quoted);
+            case ArgumentType.Pop: return wrap("pop", quoted);
+            case ArgumentType.A: return wrap("a", quoted);
+            case ArgumentType.B: return wrap("b", quoted);
+            case ArgumentType.C: return wrap("c", quoted);
+            case ArgumentType.D: return wrap("d", quoted);
+            case ArgumentType.E: return wrap("e", quoted);
+            case ArgumentType.F: return wrap("f", quoted);
+            case ArgumentType.H: return wrap("h", quoted);
+            case ArgumentType.L: return wrap("l", quoted);
+            case ArgumentType.AF: return wrap("af", quoted);
+            case ArgumentType.BC: return wrap("bc", quoted);
+            case ArgumentType.DE: return wrap("de", quoted);
+            case ArgumentType.HL: return wrap("hl", quoted);
+            case ArgumentType.SP: return wrap("sp", quoted);
+            case ArgumentType.Carry: return wrap("carry", quoted);
+            case ArgumentType.Zero: return wrap("zero", quoted);
+            case ArgumentType.Interrupt: return wrap("interrupt", quoted);
+        }
+    }
+
+    ubyte getRegisterIndex()
+    {
+        switch(type)
+        {
+            case ArgumentType.B: return 0x0; break;
+            case ArgumentType.C: return 0x1; break;
+            case ArgumentType.D: return 0x2; break;
+            case ArgumentType.E: return 0x3; break;
+            case ArgumentType.H: return 0x4; break;
+            case ArgumentType.L: return 0x5; break;
+            case ArgumentType.Indirection:
+                if(base.type == ArgumentType.HL)
+                {
+                    return 0x6;
+                }
+                break;
+            case ArgumentType.A: return 0x7; break;
+            default:
+        }
+        assert(0);
+    }
+
+    ubyte getPairIndex()
+    {
+        switch(type)
+        {
+            case ArgumentType.BC: return 0x0; break;
+            case ArgumentType.DE: return 0x1; break;
+            case ArgumentType.HL: return 0x2; break;
+            case ArgumentType.SP: return 0x3; break;
+            case ArgumentType.AF: return 0x3; break;
+            default:
+        }
+        assert(0);
+    }
+
+    ubyte getFlagIndex(bool negated)
+    {
+        switch(type)
+        {
+            case ArgumentType.Zero: return negated ? 0x0 : 0x1; break;
+            case ArgumentType.Carry: return negated ? 0x2 : 0x3; break;
+            default: assert(0);
+        }
+    }
 }
 
 class Builtin : sym.Definition
@@ -79,52 +169,6 @@ class Builtin : sym.Definition
     {
         super(new ast.BuiltinDecl());
         this.type = type;
-    }
-}
-
-ubyte getRegisterIndex(Argument reg)
-{
-    switch(reg.type)
-    {
-        case ArgumentType.B: return 0x0; break;
-        case ArgumentType.C: return 0x1; break;
-        case ArgumentType.D: return 0x2; break;
-        case ArgumentType.E: return 0x3; break;
-        case ArgumentType.H: return 0x4; break;
-        case ArgumentType.L: return 0x5; break;
-        case ArgumentType.Indirection:
-            if(reg.base.type == ArgumentType.HL)
-            {
-                return 0x6;
-            }
-            break;
-        case ArgumentType.A: return 0x7; break;
-        default:
-    }
-    assert(0);
-}
-
-ubyte getPairIndex(Argument pair)
-{
-    switch(pair.type)
-    {
-        case ArgumentType.BC: return 0x0; break;
-        case ArgumentType.DE: return 0x1; break;
-        case ArgumentType.HL: return 0x2; break;
-        case ArgumentType.SP: return 0x3; break;
-        case ArgumentType.AF: return 0x3; break;
-        default:
-    }
-    assert(0);
-}
-
-ubyte getFlagIndex(ArgumentType flagType, bool negated)
-{
-    switch(flagType)
-    {
-        case ArgumentType.Zero: return negated ? 0x0 : 0x1; break;
-        case ArgumentType.Carry: return negated ? 0x2 : 0x3; break;
-        default: assert(0);
     }
 }
 
