@@ -375,7 +375,7 @@ ubyte[] generateAssignment(compile.Program program, ast.Assignment stmt)
 {
     if(stmt.src is null)
     {
-        return generatePostfix(program, stmt);
+        return generatePostfixAssignment(program, stmt);
     }
     else
     {
@@ -384,25 +384,28 @@ ubyte[] generateAssignment(compile.Program program, ast.Assignment stmt)
         {
             auto intermediary = buildArgument(program, stmt.intermediary);
             return // 'x = y via z' -> 'z = y; x = z'
-                generateCalculation(program, stmt, intermediary, stmt.src)
-                ~ generateCalculation(program, stmt, dest, stmt.intermediary);
+                generateCalculatedAssignment(program, stmt, intermediary, stmt.src)
+                ~ generateCalculatedAssignment(program, stmt, dest, stmt.intermediary);
         }
         else
         {
-            return generateCalculation(program, stmt, dest, stmt.src);
+            return generateCalculatedAssignment(program, stmt, dest, stmt.src);
         }
     }
 }
 
-ubyte[] generatePostfix(compile.Program program, ast.Assignment stmt)
+ubyte[] generatePostfixAssignment(compile.Program program, ast.Assignment stmt)
 {
     auto dest = buildArgument(program, stmt.dest);
-    ubyte operatorIndex = 0;
-    final switch(stmt.postfix)
-    {
-        case parse.Postfix.Inc: operatorIndex = 0; break;
-        case parse.Postfix.Dec: operatorIndex = 1; break;
-    }
+    auto operatorIndex = [
+        parse.Postfix.Inc: 0,
+        parse.Postfix.Dec: 1
+    ][stmt.postfix];
+    auto operatorName = [
+        parse.Postfix.Inc: "'++'",
+        parse.Postfix.Dec: "'--'"
+    ][stmt.postfix];
+
     switch(dest.type)
     {
         case ArgumentType.A:
@@ -420,7 +423,7 @@ ubyte[] generatePostfix(compile.Program program, ast.Assignment stmt)
             }
             else
             {
-                error("'--' on indirected operand is not supported (only '[hl]--' is valid)", stmt.dest.location);
+                error(stmt.dest.toString() ~ " cannot be operand of " ~ operatorName, stmt.dest.location);
                 return [];
             }
         case ArgumentType.BC:
@@ -429,12 +432,12 @@ ubyte[] generatePostfix(compile.Program program, ast.Assignment stmt)
         case ArgumentType.SP:
             return [(0x03 + (operatorIndex * 0x08) + dest.getPairIndex() * 0x10) & 0xFF];
         default:
-            error("unsupported operand of '--'", stmt.dest.location);
+            error(stmt.dest.toString() ~ " cannot be operand of " ~ operatorName, stmt.dest.location);
             return [];
     }
 }
 
-ubyte[] generateCalculation(compile.Program program, ast.Assignment stmt, Argument dest, ast.Expression src)
+ubyte[] generateCalculatedAssignment(compile.Program program, ast.Assignment stmt, Argument dest, ast.Expression src)
 {
     if(dest is null)
     {
@@ -478,7 +481,7 @@ ubyte[] generateCalculation(compile.Program program, ast.Assignment stmt, Argume
                 {
                     continue;
                 }
-                code ~= generateModification(program, type, node, dest, operand, loadsrc);
+                code ~= getModify(program, type, node, dest, operand, loadsrc);
             }
         }
         return code;
@@ -532,7 +535,7 @@ ubyte[] operandError(parse.Infix type, Argument dest, Argument operand, compile.
     return [];
 }
 
-ubyte[] generateModification(compile.Program program, parse.Infix type, ast.Expression node, Argument dest, Argument operand, ast.Expression loadsrc)
+ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node, Argument dest, Argument operand, ast.Expression loadsrc)
 {
     switch(dest.type)
     {

@@ -924,9 +924,9 @@ class Parser
     {
         // assignment = assignable_term ('=' expression ('via' term)? | postfix_token)
         auto location = scanner.getLocation();
+        auto dest = parseAssignableTerm(); // term
         auto op = token;
         auto opText = text;
-        auto dest = parseAssignableTerm(); // term
         if(token == Token.Set)
         {
             nextToken(); // =
@@ -955,7 +955,7 @@ class Parser
             }
             else
             {
-                reject("an assignment operator like '=', '++', '--' or '<>'");
+                reject("an assignment operator like '=', '++', or '--'");
             }
             skipAssignment(true);
             return null;
