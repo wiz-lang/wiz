@@ -130,6 +130,7 @@ enum Branch
 enum Prefix
 {
     Not = Token.Not,
+    Sub = Token.Sub,
     Low = Token.Less,
     High = Token.Greater,
     Swap = Token.Swap,

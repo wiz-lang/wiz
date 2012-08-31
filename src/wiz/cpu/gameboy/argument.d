@@ -19,6 +19,7 @@ enum ArgumentType
     NegativeIndex,
     BitIndex,
     Not,
+    Negated,
     Swap,
     Pop,
     A,
@@ -111,6 +112,7 @@ ubyte getPairIndex(Argument pair)
         case ArgumentType.DE: return 0x1; break;
         case ArgumentType.HL: return 0x2; break;
         case ArgumentType.SP: return 0x3; break;
+        case ArgumentType.AF: return 0x3; break;
         default:
     }
     assert(0);
@@ -248,6 +250,10 @@ Argument buildArgument(compile.Program program, ast.Expression root)
         if(prefix.type == parse.Token.Not)
         {
             return new Argument(ArgumentType.Not, buildArgument(program, prefix.operand));
+        }
+        if(prefix.type == parse.Token.Sub)
+        {
+            return new Argument(ArgumentType.Negated, buildArgument(program, prefix.operand));
         }
     }
     else if(auto infix = cast(ast.Infix) root)

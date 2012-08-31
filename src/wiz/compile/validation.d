@@ -236,7 +236,7 @@ bool tryFoldConstant(Program program, ast.Expression root, ref uint result, ref 
                             mustFold = mustFoldRoot;
                         }
                         break;
-                    case parse.Prefix.Not:
+                    case parse.Prefix.Not, parse.Prefix.Sub:
                         if(mustFold)
                         {
                             error("prefix operator " ~ parse.getPrefixName(e.type) ~ " cannot be used in constant expression", e.location);
@@ -270,7 +270,7 @@ bool tryFoldConstant(Program program, ast.Expression root, ref uint result, ref 
                     case parse.Prefix.Grouping:
                         updateValue(e, r);
                         break;
-                    case parse.Prefix.Not, parse.Prefix.Indirection:
+                    case parse.Prefix.Not, parse.Prefix.Indirection, parse.Prefix.Sub:
                         break;
                 }
             }

@@ -328,6 +328,7 @@ class Scanner
                         switch(c)
                         {
                             case '>': state = State.GreaterGreater; break;
+                            case '<': position++; return Token.Swap;
                             case '=': position++; return Token.GreaterEqual;
                             default: return Token.Greater;
                         }
