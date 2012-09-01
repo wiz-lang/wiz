@@ -1,0 +1,80 @@
+include '../gameboy.wiz'
+include 'layout.wiz'
+include 'ram.wiz'
+include 'boot.wiz'
+include 'video.wiz'
+
+package hardware
+    def detect: do
+        hl = hardware.type
+        [hl] = hardware.GB
+        compare a to 0x11
+        if == then
+            [hl] = hardware.GBC
+            compare b@0
+            if ~zero then
+                [hl] = hardware.GBA
+            end
+        end
+        return
+    end
+end
+
+def main: do
+    interrupt = 0
+    hl = stack.top
+    sp = hl
+    
+    call hardware.detect
+    call video.loadlib
+
+    //call video.disable
+    //[gb.scroll.y] = 0 via a
+    //[gb.window.y] = 0 via a
+    [scroll_direction] = 0 via a
+
+    [gb.interrupt.enable] = gb.interrupt.VBLANK via a
+    interrupt = 1
+    loop
+        call video.flush
+    end
+end
+
+def draw: do
+    a = [scroll_direction]
+    compare a
+    if zero then
+        [gb.scroll.x] = [gb.scroll.x] - 3 via a
+        [gb.scroll.y] = [gb.scroll.y] + 1 via a
+        compare a to 32
+        if >= then
+            [scroll_direction] = [scroll_direction] ^ 1 via a
+        end
+    else
+        [gb.scroll.x] = [gb.scroll.x] - 3 via a
+        [gb.scroll.y] = [gb.scroll.y] - 1 via a
+        compare a to 255
+        if >= then
+            [scroll_direction] = [scroll_direction] ^ 1 via a
+        end
+    end
+
+    call video.acknowledge
+    hl = pop
+    de = pop
+    bc = pop
+    af = pop
+    resume
+end
+
+def stub: do
+    hl = pop
+    de = pop
+    bc = pop
+    af = pop
+    resume
+end
+let stat = stub
+let timer = stub
+let serial = stub
+let joypad = stub

@@ -7,6 +7,7 @@ class Data : Statement
 {
     private Storage _storage;
     private Expression[] _items;
+    public ubyte[] data;
 
     this(Storage storage, Expression[] items, compile.Location location)
     {

@@ -107,4 +107,15 @@ class Program
             _environment = null;
         }
     }
+
+    ubyte[] save()
+    {
+        ubyte[] buffer;
+        foreach(bank; banks)
+        {
+            bank.dump(buffer);
+        }
+        platform.patch(buffer);
+        return buffer;
+    }
 }

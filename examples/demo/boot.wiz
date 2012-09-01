@@ -1,114 +1,81 @@
 package boot
-    in main, 0x0000:
-        def rst_00: return; return; return; return; return; return; return; return;
-        def rst_08: return; return; return; return; return; return; return; return;
-        def rst_10: return; return; return; return; return; return; return; return;
-        def rst_18: return; return; return; return; return; return; return; return;
-        def rst_20: return; return; return; return; return; return; return; return;
-        def rst_28: return; return; return; return; return; return; return; return;
-        def rst_30: return; return; return; return; return; return; return; return;
-        def rst_38: return; return; return; return; return; return; return; return;
+    let user_draw = draw
+    let user_stat = stat
+    let user_timer = timer
+    let user_serial = serial
+    let user_joypad = joypad
+    let user_main = main
 
-        // Vertical Blank handler.
-        def vblank_interrupt: do
-            nop
+    in main, 0x0000: do
+        byte * 64: 0xC9
+
+        def draw: do
             push af
             push bc
             push de
             push hl
-            goto! draw
+            goto! user_draw
+            nop
         end
 
-        // Stat handler.
-        def stat_interrupt: do
+        def stat: do
             push af
             push bc
             push de
             push hl
-            goto! stat
+            goto! user_stat
             nop
         end
-        def timer_interrupt: resume; resume; resume; resume; resume; resume; resume; resume;
-        def serial_interrupt: resume; resume; resume; resume; resume; resume; resume; resume;
-        def joypad_interrupt: resume; resume; resume; resume; resume; resume; resume; resume;
 
-    in main, 0x0100:
-        // Gameboy Color compatibility flag.
-        let GBC_UNSUPPORTED = 0x00
-        let GBC_COMPATIBLE = 0x80
-        let GBC_EXCLUSIVE = 0xC0
-        // Super Gameboy compatibility flag.
-        let SGB_UNSUPPORTED = 0x00
-        let SGB_SUPPORTED = 0x80
-        // Cartridge type.
-        let CART_ROM = 0x00
-        let CART_MBC1 = 0x01
-        let CART_MBC1_RAM = 0x02
-        let CART_MBC1_RAM_BATTERY = 0x03
-        let CART_MBC2 = 0x05
-        let CART_MBC2_BATTERY = 0x06
-        let CART_ROM_RAM = 0x08
-        let CART_ROM_RAM_BATTERY = 0x09
-        let CART_MMM01 = 0x0B
-        let CART_MMM01_RAM = 0x0C
-        let CART_MMM01_RAM_BATTERY = 0x0D
-        let CART_MBC3_TIMER_BATTERY = 0x0F
-        let CART_MBC3_TIMER_RAM_BATTERY = 0x10
-        let CART_MBC3 = 0x11
-        let CART_MBC3_RAM = 0x12
-        let CART_MBC3_RAM_BATTERY = 0x13
-        let CART_MBC4 = 0x15
-        let CART_MBC4_RAM = 0x16
-        let CART_MBC4_RAM_BATTERY = 0x17
-        let CART_MBC5 = 0x19
-        let CART_MBC5_RAM = 0x1A
-        let CART_MBC5_RAM_BATTERY = 0x1B
-        let CART_MBC5_RUMBLE = 0x1C
-        let CART_MBC5_RUMBLE_RAM = 0x1D
-        let CART_MBC5_RUMBLE_RAM_BATTERY = 0x1E
-        let CART_POCKET_CAMERA = 0xFC
-        let CART_BANDAI_TAMA5 = 0xFD
-        let CART_HUC3 = 0xFE
-        let CART_HUC1_RAM_BATTERY = 0xFF
-        // Rom sizes.
-        let ROM_32K = 0x00
-        let ROM_64K = 0x01
-        let ROM_128K = 0x02
-        let ROM_256K = 0x03
-        let ROM_512K = 0x04
-        let ROM_1024K = 0x05
-        let ROM_2048K = 0x06
-        let ROM_4096K = 0x07
-        let ROM_1152K = 0x52
-        let ROM_1280K = 0x53
-        let ROM_1536K = 0x54
-        // Ram sizes.
-        let RAM_NONE = 0x00
-        let RAM_2K = 0x01
-        let RAM_8K = 0x02
-        let RAM_32K = 0x03
-        // Destination code.
-        let DESTINATION_JAPAN = 0x00
-        let DESTINATION_INTERNATIONAL = 0x01
-
-        def entry: do
+        def timer: do
+            push af
+            push bc
+            push de
+            push hl
+            goto! user_timer
             nop
-            goto! main
         end
+
+        def serial: do
+            push af
+            push bc
+            push de
+            push hl
+            goto! user_serial
+            nop
+        end
+
+        def joypad: do
+            push af
+            push bc
+            push de
+            push hl
+            goto! user_joypad
+            nop
+        end
+    end
+    in main, 0x0100: do
+        def main: do
+            goto! user_main
+            nop
+        end
+
         def logo: byte * 48:
             0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B, 0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D,
             0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E, 0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99,
             0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC, 0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E
-        def title: byte * 11: "DUNGEON"
-        def manufacturer: byte * 4: "BOT"
-        def gbc: byte * 1: GBC_COMPATIBLE
+        def title: byte * 11: "DUNGEON", 0
+        def manufacturer: byte * 4: "BOT", 0
+        def gbc: byte * 1: gb.boot.GBC_UNSUPPORTED
         def licensee: byte * 2: "OK"
-        def sgb: byte * 1: SGB_UNSUPPORTED
-        def cart: byte * 1: CART_ROM
-        def rom: byte * 1: ROM_32K
-        def ram: byte * 1: RAM_8K
-        def destination: byte * 1: DESTINATION_INTERNATIONAL
+        def sgb: byte * 1: gb.boot.SGB_UNSUPPORTED
+        def cart: byte * 1: gb.boot.CART_ROM
+        def rom: byte * 1: gb.boot.ROM_32K
+        def ram: byte * 1: gb.boot.RAM_8K
+        def destination: byte * 1: gb.boot.DEST_INTERNATIONAL
         def old_licensee: byte * 1: 0x33
         def version: byte * 1: 0x00
-        def checksum: byte * 2: 0x00
+        def header_checksum: byte * 1: 0xFF
+        def global_checksum: word * 1: 0xFACE
+    end
 end

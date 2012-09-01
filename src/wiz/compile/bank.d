@@ -176,4 +176,12 @@ class Bank
                 initialized = true;
             }
         }
+
+        void dump(ref ubyte[] buffer)
+        {
+            if(physical)
+            {
+                buffer ~= data;
+            }
+        }
 }

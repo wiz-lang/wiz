@@ -121,10 +121,10 @@ int run(string[] arguments)
   
     try
     {
-/*      std.stdio.File file = std.stdio.File(output, "wb");
-        wiz.log(">> Saving ROM...");
-        program.save(file);
-        file.close();*/
+        auto file = std.stdio.File(output, "wb");
+        wiz.log(">> Writing ROM...");
+        file.rawWrite(program.save());
+        file.close();
     }
     catch(Exception e)
     {

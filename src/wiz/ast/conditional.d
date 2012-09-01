@@ -60,8 +60,12 @@ class Conditional : Statement
                 new LabelDecl("$end", location)
             ], location);
         }
+
+        // Now that we've exanded, remove original statements
+        action = null;
+        alternative = null;
     }
 
-    mixin compile.BranchAcceptor!(_block);
+    mixin compile.BranchAcceptor!(action, alternative, _block);
     mixin helper.Accessor!(_block);
 }

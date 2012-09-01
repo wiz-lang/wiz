@@ -1,4 +1,4 @@
-module wiz.compile.validation;
+module wiz.compile.compilation;
 
 import wiz.lib;
 import wiz.compile.lib;
@@ -55,11 +55,11 @@ sym.Definition resolveAttribute(Program program, ast.Attribute attribute)
     return def;
 }
 
-bool tryFoldConstant(Program program, ast.Expression root, bool mustFold, ref uint result, ref ast.Expression constTail)
+bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden, bool finalized, ref uint result, ref ast.Expression constTail)
 {
     uint[ast.Expression] values;
     bool[ast.Expression] completeness;
-    bool mustFoldRoot = mustFold;
+    bool runtimeRootForbidden = runtimeForbidden;
     bool badAttr = false;
     uint depth = 0;
 
@@ -192,7 +192,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool mustFold, ref ui
                         parse.Infix.RotateL, parse.Infix.RotateR,
                         parse.Infix.RotateLC, parse.Infix.RotateRC,
                         parse.Infix.Colon:
-                        if(mustFold)
+                        if(runtimeForbidden)
                         {
                             error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in constant expression", operand.location);
                         }
@@ -210,7 +210,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool mustFold, ref ui
                 if(e.type == parse.Prefix.Grouping)
                 {
                     depth++;
-                    mustFold = true;
+                    runtimeForbidden = false;
                 }
                 else if(e.type == parse.Prefix.Indirection)
                 {
@@ -227,18 +227,18 @@ bool tryFoldConstant(Program program, ast.Expression root, bool mustFold, ref ui
                         depth--;
                         if(depth == 0)
                         {
-                            mustFold = mustFoldRoot;
+                            runtimeForbidden = runtimeRootForbidden;
                         }
                         break;
                     case parse.Prefix.Not, parse.Prefix.Sub:
-                        if(mustFold)
+                        if(runtimeForbidden)
                         {
                             error("prefix operator " ~ parse.getPrefixName(e.type) ~ " cannot be used in constant expression", e.location);
                         }
                         return;
                     case parse.Prefix.Indirection:
                         depth--;
-                        if(mustFold)
+                        if(runtimeForbidden)
                         {
                             error("indirection operator cannot be used in constant expression", e.location);
                         }
@@ -278,7 +278,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool mustFold, ref ui
             }
             else
             {
-                if(mustFold)
+                if(runtimeForbidden)
                 {
                     error("postfix operator " ~ parse.getPostfixName(e.type) ~ " cannot be used in constant expression", e.location);
                 }
@@ -324,7 +324,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool mustFold, ref ui
                 }
             }
 
-            if(def && mustFold)
+            if(def && finalized)
             {
                 error("'" ~ a.fullName() ~ "' was declared, but could not be evaluated.", a.location);
             }
@@ -342,7 +342,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool mustFold, ref ui
     );
 
     result = values.get(root, 0);
-    if(!completeness.get(root, false) && mustFold)
+    if(!completeness.get(root, false) && runtimeForbidden && finalized)
     {
         error("expression could not be resolved as a constant", root.location);
         constTail = null;
@@ -356,15 +356,15 @@ bool tryFoldConstant(Program program, ast.Expression root, bool mustFold, ref ui
     return true;
 }
 
-bool foldConstant(Program program, ast.Expression root, bool mustFold, ref uint result)
+bool foldConstant(Program program, ast.Expression root, bool finalized, ref uint result)
 {
     ast.Expression constTail;
-    return tryFoldConstant(program, root, mustFold, result, constTail) && constTail == root;
+    return tryFoldConstant(program, root, true, finalized, result, constTail) && constTail == root;
 }
 
-bool foldBoundedNumber(compile.Program program, ast.Expression root, string type, uint limit, bool mustFold, ref uint result)
+bool foldBoundedNumber(compile.Program program, ast.Expression root, string type, uint limit, bool finalized, ref uint result)
 {
-    if(compile.foldConstant(program, root, mustFold, result))
+    if(compile.foldConstant(program, root, finalized, result))
     {
         if(result > limit)
         {
@@ -380,29 +380,29 @@ bool foldBoundedNumber(compile.Program program, ast.Expression root, string type
     return false;
 }
 
-bool foldBit(compile.Program program, ast.Expression root, bool mustFold, ref uint result)
+bool foldBit(compile.Program program, ast.Expression root, bool finalized, ref uint result)
 {
-    return foldBoundedNumber(program, root, "bit", 1, mustFold, result);
+    return foldBoundedNumber(program, root, "bit", 1, finalized, result);
 }
 
-bool foldBitIndex(compile.Program program, ast.Expression root, bool mustFold, ref uint result)
+bool foldBitIndex(compile.Program program, ast.Expression root, bool finalized, ref uint result)
 {
-    return foldBoundedNumber(program, root, "bitwise index", 1, mustFold, result);
+    return foldBoundedNumber(program, root, "bitwise index", 1, finalized, result);
 }
 
-bool foldByte(compile.Program program, ast.Expression root, bool mustFold, ref uint result)
+bool foldByte(compile.Program program, ast.Expression root, bool finalized, ref uint result)
 {
-    return foldBoundedNumber(program, root, "8-bit", 255, mustFold, result);
+    return foldBoundedNumber(program, root, "8-bit", 255, finalized, result);
 }
 
-bool foldWord(compile.Program program, ast.Expression root, bool mustFold, ref uint result)
+bool foldWord(compile.Program program, ast.Expression root, bool finalized, ref uint result)
 {
-    return foldBoundedNumber(program, root, "8-bit", 65535, mustFold, result);
+    return foldBoundedNumber(program, root, "16-bit", 65535, finalized, result);
 }
 
-bool foldSignedByte(compile.Program program, ast.Expression root, bool negative, bool mustFold, ref uint result)
+bool foldSignedByte(compile.Program program, ast.Expression root, bool negative, bool finalized, ref uint result)
 {
-    if(foldWord(program, root, mustFold, result))
+    if(foldWord(program, root, finalized, result))
     {
         if(!negative && result < 127)
         {
@@ -425,11 +425,16 @@ bool foldSignedByte(compile.Program program, ast.Expression root, bool negative,
     return false;
 }
 
-bool foldRelativeByte(compile.Program program, ast.Expression root, string description, string help, uint origin, bool mustFold, ref uint result)
+bool foldRelativeByte(compile.Program program, ast.Expression root, string description, string help, uint origin, bool finalized, ref uint result)
 {
-    if(foldWord(program, root, mustFold, result))
+    if(foldWord(program, root, finalized, result))
     {
+        std.stdio.writefln("%s: result: %s", root.location, result);
         int offset = cast(int) result - cast(int) origin;
+        if(program.finalized)
+        {
+            std.stdio.writefln("%s: result:0x%04X - origin:0x%04X = 0x%04X (%d)", root.location, result, origin, cast(ubyte) offset, offset);
+        }
         if(offset >= -128 && offset <= 127)
         {
             result = cast(ubyte) offset;
@@ -472,7 +477,7 @@ bool foldStorage(Program program, ast.Storage s, ref bool sizeless, ref uint uni
     return true;
 }
 
-ubyte[] foldDataExpression(Program program, ast.Expression root, uint unit, bool mustFold)
+ubyte[] foldDataExpression(Program program, ast.Expression root, uint unit, bool finalized)
 {
     switch(unit)
     {
@@ -484,12 +489,12 @@ ubyte[] foldDataExpression(Program program, ast.Expression root, uint unit, bool
             else
             {
                 uint result;
-                foldByte(program, root, mustFold, result);
+                foldByte(program, root, finalized, result);
                 return [result & 0xFF];
             }
         case 2:
             uint result;
-            foldWord(program, root, mustFold, result);
+            foldWord(program, root, finalized, result);
             return [result & 0xFF, (result >> 8) & 0xFF];
         default:
             assert(0);
@@ -565,7 +570,14 @@ auto createCommandHandler(Program program)
         auto description = parse.getKeywordName(stmt.type) ~ " statement";
         auto code = program.platform.generateCommand(program, stmt);
         auto bank = program.checkBank(description, stmt.location);
-        bank.reservePhysical(description, code.length, stmt.location);
+        if(program.finalized)
+        {
+            bank.writePhysical(code, stmt.location);
+        }
+        else
+        {
+            bank.reservePhysical(description, code.length, stmt.location);
+        }
     };
 }
 
@@ -576,7 +588,14 @@ auto createJumpHandler(Program program)
         auto description = parse.getKeywordName(stmt.type) ~ " statement";
         auto code = program.platform.generateJump(program, stmt);
         auto bank = program.checkBank(description, stmt.location);
-        bank.reservePhysical(description, code.length, stmt.location);
+        if(program.finalized)
+        {
+            bank.writePhysical(code, stmt.location);
+        }
+        else
+        {
+            bank.reservePhysical(description, code.length, stmt.location);
+        }
     };
 }
 
@@ -587,7 +606,14 @@ auto createAssignmentHandler(Program program)
         enum description = "assignment";
         auto code = program.platform.generateAssignment(program, stmt);
         auto bank = program.checkBank(description, stmt.location);
-        bank.reservePhysical(description, code.length, stmt.location);
+        if(program.finalized)
+        {
+            bank.writePhysical(code, stmt.location);
+        }
+        else
+        {
+            bank.reservePhysical(description, code.length, stmt.location);
+        }
     };
 }
 
@@ -595,7 +621,17 @@ auto createComparisonHandler(Program program)
 {
     return(ast.Comparison stmt)
     {
+        enum description = "comparison";
         auto code = program.platform.generateComparison(program, stmt);
+        auto bank = program.checkBank(description, stmt.location);
+        if(program.finalized)
+        {
+            bank.writePhysical(code, stmt.location);
+        }
+        else
+        {
+            bank.reservePhysical(description, code.length, stmt.location);
+        }
     };
 }
 
@@ -758,14 +794,15 @@ void build(Program program, ast.Node root)
             try
             {
                 std.stdio.File file = std.stdio.File(stmt.filename, "rb");
-                file.seek(0, std.stdio.SEEK_SET);
-                ulong start = file.tell();
+                file.seek(0);
+                auto start = cast(uint) file.tell();
                 file.seek(0, std.stdio.SEEK_END);
-                ulong end = file.tell();
-                file.close();
+                auto end = cast(uint) file.tell();
                 
-                stmt.size = cast(uint) (end - start);
-                stmt.hasSize = true;
+                stmt.data = new ubyte[end - start];
+                file.seek(0);
+                file.rawRead(stmt.data);
+                file.close();
             }
             catch(std.stdio.Exception e)
             {
@@ -773,7 +810,7 @@ void build(Program program, ast.Node root)
             }
             
             auto bank = program.checkBank(description, stmt.location);
-            bank.reservePhysical(description, stmt.size, stmt.location);
+            bank.reservePhysical(description, stmt.data.length, stmt.location);
         },
 
         (ast.Data stmt)
@@ -808,13 +845,14 @@ void build(Program program, ast.Node root)
                 }
                 auto bank = program.checkBank(description, stmt.location);
                 bank.reservePhysical(description, data.length, stmt.location);
+                stmt.data = data;
             }
         }
     );
     verify();
 
     program.finalized = true;
-    /*program.rewind();
+    program.rewind();
     root.traverse(
         createBlockHandler(program),
         createRelocationHandler(program),
@@ -829,6 +867,7 @@ void build(Program program, ast.Node root)
             auto bank = program.checkBank(description, decl.location);
             auto def = program.environment.get!(sym.LabelDef)(decl.name);
             auto addr = bank.checkAddress(description, decl.location);
+            std.stdio.writefln("%s: def %s: 0x%04X", decl.location, decl.name, def.address);
             if(!def.hasAddress)
             {
                 error("what the hell. label was never given address!", decl.location, true);
@@ -838,7 +877,7 @@ void build(Program program, ast.Node root)
                 error(
                     std.string.format(
                         "what the hell. inconsistency in label positions detected"
-                        ~ " (was %s instruction selection pass, %s on code-gen pass)",
+                        ~ " (was 0x%04X instruction selection pass, 0x%04X on code-gen pass)",
                         addr, def.address
                     ), decl.location, true
                 );
@@ -848,74 +887,16 @@ void build(Program program, ast.Node root)
         (ast.Embed stmt)
         {
             enum description = "'embed' statement";
-
-            if(std.file.exists(stmt.filename))
-            {
-                if(std.file.isDir(stmt.filename))
-                {
-                    error("attempt to embed directory '" ~ stmt.filename ~ "'", stmt.location, true);
-                }
-            }
-            else
-            {
-                error("could not embed file '" ~ stmt.filename ~ "'", stmt.location, true);
-            }
-        
-            try
-            {
-                std.stdio.File file = std.stdio.File(stmt.filename, "rb");
-                file.seek(0, std.stdio.SEEK_SET);
-                ulong start = file.tell();
-                file.seek(0, std.stdio.SEEK_END);
-                ulong end = file.tell();
-                file.close();
-                
-                stmt.size = cast(uint) (end - start);
-                stmt.hasSize = true;
-            }
-            catch(std.stdio.Exception e)
-            {
-                error("could not embed file '" ~ stmt.filename ~ "' (" ~ e.toString ~ ")", stmt.location, true);
-            }
-            
             auto bank = program.checkBank(description, stmt.location);
-            bank.reservePhysical(description, stmt.size, stmt.location);
+            bank.writePhysical(stmt.data, stmt.location);
         },
 
         (ast.Data stmt)
         {
             enum description = "inline data";
-            bool sizeless;
-            uint unit, total;
-            if(foldStorage(program, stmt.storage, sizeless, unit, total))
-            {
-                ubyte[] data;
-                assert(stmt.items.length > 0);
-                foreach(item; stmt.items)
-                {
-                    data ~= foldDataExpression(program, item, unit, program.finalized);
-                }
-                if(!sizeless)
-                {
-                    if(data.length < total)
-                    {
-                        // Fill unused section with final byte of data.
-                        data ~= std.array.array(std.range.repeat(data[data.length - 1], total - data.length));
-                    }
-                    else if(data.length > total)
-                    {
-                        error(
-                            std.string.format(
-                                "%s is an %s-byte sequence, which is %s byte(s) over the declared %s-byte limit",
-                                description, data.length, data.length - total, total
-                            ), stmt.location
-                        );
-                    }
-                }
-                auto bank = program.checkBank(description, stmt.location);
-                bank.reservePhysical(description, data.length, stmt.location);
-            }
+            auto bank = program.checkBank(description, stmt.location);
+            bank.writePhysical(stmt.data, stmt.location);
         }
-    );*/
+    );
 }
 

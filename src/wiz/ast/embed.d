@@ -6,8 +6,7 @@ import wiz.ast.lib;
 class Embed : Statement
 {
     private string _filename;
-    public bool hasSize;
-    public uint size;
+    public ubyte[] data;
 
     this(string filename, compile.Location location)
     {

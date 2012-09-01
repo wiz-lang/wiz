@@ -17,3 +17,5 @@ in ram, 0xC000:
             var redraw : byte
         end
     end
+
+    var scroll_direction : byte

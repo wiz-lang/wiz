@@ -1,9 +1,19 @@
 package video
-    def disable: do
+    def loadlib: do
+        [video.request.redraw] = 0 via a
+        return
+    end
+
+    def wait: do
         loop
             a = [gb.lcd.stat] & gb.lcd.STAT_MODE_MASK
             compare a to gb.lcd.STAT_MODE_VBLANK
         until == end
+        return
+    end
+
+    def disable: do
+        call video.wait
         [gb.lcd.stat] = 0 via a
         return
     end

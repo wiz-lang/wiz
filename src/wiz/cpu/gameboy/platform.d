@@ -30,8 +30,27 @@ class GameboyPlatform : Platform
     {
         return .generateAssignment(program, stmt);
     }
-}
 
+    void patch(ref ubyte[] buffer)
+    {
+        ubyte headersum;
+        ushort globalsum;
+        foreach(i; 0x134 .. 0x14D)
+        {
+            headersum = (headersum - buffer[i] - 1) & 0xFF;
+        }
+        buffer[0x14D] = headersum;
+        foreach(i; 0 .. buffer.length)
+        {
+            if(i != 0x14E && i != 0x14F)
+            {
+                globalsum += buffer[i];
+            }
+        }
+        buffer[0x14E] = (globalsum >> 8) & 0xFF;
+        buffer[0x14F] = globalsum & 0xFF;
+    }
+}
 
 Platform.BuiltinTable builtins()
 {
@@ -95,10 +114,10 @@ bool resolveJumpCondition(compile.Program program, ast.Jump stmt, ref ubyte inde
                 break;
             case parse.Branch.Less:
                 flag = new Argument(ArgumentType.Carry);
-                negated = !negated;
                 break;
             case parse.Branch.GreaterEqual:
                 flag = new Argument(ArgumentType.Carry);
+                negated = !negated;
                 break;
             case parse.Branch.Greater:
             case parse.Branch.LessEqual:
@@ -165,9 +184,9 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
             switch(argument.type)
             {
                 case ArgumentType.Immediate:
-                    uint address;
                     if(stmt.far)
                     {
+                        uint address;
                         compile.foldWord(program, argument.immediate, program.finalized, address);
                         if(stmt.condition)
                         {
@@ -187,23 +206,23 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
                         enum description = "relative jump";
                         auto bank = program.checkBank(description, stmt.location);
                         uint pc = bank.checkAddress(description, stmt.location);
-                        uint result;
+                        uint offset;
                         compile.foldRelativeByte(program, stmt.destination,
                             "relative jump distance",
                             "rewrite the branch, shorten the gaps in your code, or add a '!' far indicator.",
-                            pc, program.finalized, result
+                            pc + 2, program.finalized, offset
                         );
                         if(stmt.condition)
                         {
                             ubyte index;
                             if(resolveJumpCondition(program, stmt, index))
                             {
-                                return [(0x20 + index * 0x08) & 0xFF, address & 0xFF, (address >> 8) & 0xFF];
+                                return [(0x20 + index * 0x08) & 0xFF, offset & 0xFF];
                             }
                         }
                         else
                         {
-                            return [0x18, address & 0xFF];
+                            return [0x18, offset & 0xFF];
                         }
                     }
                     return [];
@@ -415,11 +434,11 @@ ubyte[] generatePostfixAssignment(compile.Program program, ast.Assignment stmt)
         case ArgumentType.E:
         case ArgumentType.H:
         case ArgumentType.L:
-            return [(0x04 + operatorIndex + dest.getRegisterIndex() * 0x10) & 0xFF];
+            return [(0x04 + operatorIndex + dest.getRegisterIndex() * 0x08) & 0xFF];
         case ArgumentType.Indirection:
             if(dest.base.type == ArgumentType.HL)
             {
-                return [(0x04 + operatorIndex + dest.getRegisterIndex() * 0x10) & 0xFF];
+                return [(0x04 + operatorIndex + dest.getRegisterIndex() * 0x08) & 0xFF];
             }
             else
             {
@@ -448,7 +467,7 @@ ubyte[] generateCalculatedAssignment(compile.Program program, ast.Assignment stm
     {
         uint result;
         ast.Expression constTail;
-        if(!compile.tryFoldConstant(program, infix, program.finalized, result, constTail))
+        if(!compile.tryFoldConstant(program, infix, false, program.finalized, result, constTail))
         {
             return [];
         }
@@ -481,7 +500,7 @@ ubyte[] generateCalculatedAssignment(compile.Program program, ast.Assignment stm
                 {
                     continue;
                 }
-                code ~= getModify(program, type, node, dest, operand, loadsrc);
+                code ~= getModify(program, type, node, dest, operand);
             }
         }
         return code;
@@ -535,7 +554,7 @@ ubyte[] operandError(parse.Infix type, Argument dest, Argument operand, compile.
     return [];
 }
 
-ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node, Argument dest, Argument operand, ast.Expression loadsrc)
+ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node, Argument dest, Argument operand)
 {
     switch(dest.type)
     {
@@ -769,97 +788,7 @@ ubyte[] getRegisterShift(compile.Program program, parse.Infix type, ast.Expressi
     }
 }
 
-ubyte[] getRegisterLoadImmediate(compile.Program program, ast.Assignment stmt, Argument dest, Argument load)
-{
-    uint value;
-    compile.foldByte(program, load.immediate, program.finalized, value);
-    return [(0x06 + dest.getRegisterIndex() * 0x08) & 0xFF, value & 0xFF];
-}
 
-ubyte[] getRegisterLoadRegister(compile.Program program, ast.Assignment stmt, Argument dest, Argument load)
-{
-    // ld r, r2, where r != r2 (we treat load self as empty code)
-    if(dest.getRegisterIndex() != load.getRegisterIndex())
-    {
-        return [(0x40 + dest.getRegisterIndex() * 0x08 + load.getRegisterIndex()) & 0xFF];
-    }
-    return [];
-}
-
-ubyte[] getPairLoadImmediate(compile.Program program, ast.Assignment stmt, Argument dest, Argument load)
-{
-    uint value;
-    compile.foldWord(program, load.immediate, program.finalized, value);
-    return [(0x01 + dest.getPairIndex() * 0x10) & 0xFF, value & 0xFF, (value >> 8) & 0xFF];
-}
-
-ubyte[] getPairLoadPop(compile.Program program, ast.Assignment stmt, Argument dest)
-{
-    return [(0xC1 + dest.getPairIndex() * 0x10) & 0xFF];
-}
-
-ubyte[] getHighLowLoadPair(compile.Program program, ast.Assignment stmt, Argument load)
-{
-    return [0x21, 0x00, 0x00, (0x09 + load.getPairIndex() * 0x10) & 0xFF];
-}
-
-ubyte[] getAccumulatorLoadIndirectImmediate(compile.Program program, ast.Assignment stmt, Argument load)
-{
-    uint value;
-    compile.foldWord(program, load.base.immediate, program.finalized, value);
-    // 'a = [0xFFnn]' -> 'ldh a, [nn]'
-    if((value & 0xFF00) == 0xFF00)
-    {
-        return [0xF0, value & 0xFF];
-    }
-    // 'a = [nnnn]' -> 'ld a, [nnnn]'
-    else
-    {
-        return [0xFA, value & 0xFF, (value >> 8) & 0xFF];
-    }
-}
-
-ubyte[] getIndirectImmediateLoadAccumulator(compile.Program program, ast.Assignment stmt, Argument dest)
-{
-    uint value;
-    compile.foldWord(program, dest.base.immediate, program.finalized, value);
-    // '[0xFFnn] = a' -> 'ldh [nn], a'
-    if((value & 0xFF00) == 0xFF00)
-    {
-        return [0xF0, value & 0xFF];
-    }
-    // '[nnnn] = a' -> 'ld [nnnn], a'
-    else
-    {
-        return [0xFA, value & 0xFF, (value >> 8) & 0xFF];
-    }
-}
-
-ubyte[] getAccumulatorLoadIndirectPair(compile.Program program, ast.Assignment stmt, Argument load)
-{
-    return [(0x0A + load.getPairIndex() * 0x10) & 0xFF];
-}
-
-ubyte[] getIndirectPairLoadAccumulator(compile.Program program, ast.Assignment stmt, Argument dest)
-{
-    return [(0x02 + dest.getPairIndex() * 0x10) & 0xFF];
-}
-
-ubyte[] getAccumulatorLoadIndirectIncrement(compile.Program program, ast.Assignment stmt, Argument load)
-{
-    return [cast(ubyte) [
-        ArgumentType.IndirectionInc: 0x2A,
-        ArgumentType.IndirectionDec: 0x3A,
-    ][load.type]];
-}
-
-ubyte[] getIndirectIncrementLoadAccumulator(compile.Program program, ast.Assignment stmt, Argument dest)
-{
-    return [cast(ubyte) [
-        ArgumentType.IndirectionInc: 0x22,
-        ArgumentType.IndirectionDec: 0x32,
-    ][dest.type]];
-}
 
 ubyte[] invalidAssignmentDestError(Argument dest, compile.Location location)
 {
@@ -1280,5 +1209,96 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
         case ArgumentType.None:
             assert(0);
     }
-    //return [];
+}
+
+ubyte[] getRegisterLoadImmediate(compile.Program program, ast.Assignment stmt, Argument dest, Argument load)
+{
+    uint value;
+    compile.foldByte(program, load.immediate, program.finalized, value);
+    return [(0x06 + dest.getRegisterIndex() * 0x08) & 0xFF, value & 0xFF];
+}
+
+ubyte[] getRegisterLoadRegister(compile.Program program, ast.Assignment stmt, Argument dest, Argument load)
+{
+    // ld r, r2, where r != r2 (we treat load self as empty code)
+    if(dest.getRegisterIndex() != load.getRegisterIndex())
+    {
+        return [(0x40 + dest.getRegisterIndex() * 0x08 + load.getRegisterIndex()) & 0xFF];
+    }
+    return [];
+}
+
+ubyte[] getPairLoadImmediate(compile.Program program, ast.Assignment stmt, Argument dest, Argument load)
+{
+    uint value;
+    compile.foldWord(program, load.immediate, program.finalized, value);
+    return [(0x01 + dest.getPairIndex() * 0x10) & 0xFF, value & 0xFF, (value >> 8) & 0xFF];
+}
+
+ubyte[] getPairLoadPop(compile.Program program, ast.Assignment stmt, Argument dest)
+{
+    return [(0xC1 + dest.getPairIndex() * 0x10) & 0xFF];
+}
+
+ubyte[] getHighLowLoadPair(compile.Program program, ast.Assignment stmt, Argument load)
+{
+    return [0x21, 0x00, 0x00, (0x09 + load.getPairIndex() * 0x10) & 0xFF];
+}
+
+ubyte[] getAccumulatorLoadIndirectImmediate(compile.Program program, ast.Assignment stmt, Argument load)
+{
+    uint value;
+    compile.foldWord(program, load.base.immediate, program.finalized, value);
+    // 'a = [0xFFnn]' -> 'ldh a, [nn]'
+    if((value & 0xFF00) == 0xFF00)
+    {
+        return [0xF0, value & 0xFF];
+    }
+    // 'a = [nnnn]' -> 'ld a, [nnnn]'
+    else
+    {
+        return [0xFA, value & 0xFF, (value >> 8) & 0xFF];
+    }
+}
+
+ubyte[] getIndirectImmediateLoadAccumulator(compile.Program program, ast.Assignment stmt, Argument dest)
+{
+    uint value;
+    compile.foldWord(program, dest.base.immediate, program.finalized, value);
+    // '[0xFFnn] = a' -> 'ldh [nn], a'
+    if((value & 0xFF00) == 0xFF00)
+    {
+        return [0xE0, value & 0xFF];
+    }
+    // '[nnnn] = a' -> 'ld [nnnn], a'
+    else
+    {
+        return [0xEA, value & 0xFF, (value >> 8) & 0xFF];
+    }
+}
+
+ubyte[] getAccumulatorLoadIndirectPair(compile.Program program, ast.Assignment stmt, Argument load)
+{
+    return [(0x0A + load.getPairIndex() * 0x10) & 0xFF];
+}
+
+ubyte[] getIndirectPairLoadAccumulator(compile.Program program, ast.Assignment stmt, Argument dest)
+{
+    return [(0x02 + dest.getPairIndex() * 0x10) & 0xFF];
+}
+
+ubyte[] getAccumulatorLoadIndirectIncrement(compile.Program program, ast.Assignment stmt, Argument load)
+{
+    return [cast(ubyte) [
+        ArgumentType.IndirectionInc: 0x2A,
+        ArgumentType.IndirectionDec: 0x3A,
+    ][load.type]];
+}
+
+ubyte[] getIndirectIncrementLoadAccumulator(compile.Program program, ast.Assignment stmt, Argument dest)
+{
+    return [cast(ubyte) [
+        ArgumentType.IndirectionInc: 0x22,
+        ArgumentType.IndirectionDec: 0x32,
+    ][dest.type]];
 }
