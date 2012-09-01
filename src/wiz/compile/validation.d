@@ -704,13 +704,11 @@ void aggregate(Program program, ast.Node root)
                 if(std.file.isDir(stmt.filename))
                 {
                     error("attempt to embed directory '" ~ stmt.filename ~ "'", stmt.location, true);
-                    return;
                 }
             }
             else
             {
                 error("could not embed file '" ~ stmt.filename ~ "'", stmt.location, true);
-                return;
             }
         
             try
@@ -728,7 +726,6 @@ void aggregate(Program program, ast.Node root)
             catch(std.stdio.Exception e)
             {
                 error("could not embed file '" ~ stmt.filename ~ "' (" ~ e.toString ~ ")", stmt.location, true);
-                return;
             }
             
             auto bank = program.checkBank(description, stmt.location);
