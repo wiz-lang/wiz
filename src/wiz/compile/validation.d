@@ -328,8 +328,13 @@ bool tryFoldConstant(Program program, ast.Expression root, bool mustFold, ref ui
 
             if(def && mustFold)
             {
-                error("'" ~ a.fullName() ~ "' was declared, but could not be evaluated.", root.location);
+                error("'" ~ a.fullName() ~ "' was declared, but could not be evaluated.", a.location);
             }
+        },
+
+        (ast.String s)
+        {
+            error("string literal is not allowed here", s.location);
         },
 
         (ast.Number n)
@@ -446,20 +451,51 @@ bool foldRelativeByte(compile.Program program, ast.Expression root, string descr
     return false;
 }
 
-bool foldStorage(Program program, ast.Storage s, ref uint result)
+bool foldStorage(Program program, ast.Storage s, ref bool sizeless, ref uint unit, ref uint total)
 {
-    if(foldConstant(program, s.size, true, result))
+    sizeless = false;
+    if(s.size is null)
     {
-        switch(s.type)
-        {
-            case parse.Keyword.Byte: break;
-            case parse.Keyword.Word: result *= 2; break;
-            default:
-                error("Unsupported storage type " ~ parse.getKeywordName(s.type), s.location);
-        }
-        return true;
+        sizeless = true;
+        total = 1;
     }
-    return false;
+    else if(!foldConstant(program, s.size, true, total))
+    {
+        return false;
+    }
+    switch(s.type)
+    {
+        case parse.Keyword.Byte: unit = 1; break;
+        case parse.Keyword.Word: unit = 2; break;
+        default:
+            error("Unsupported storage type " ~ parse.getKeywordName(s.type), s.location);
+    }
+    total *= unit;
+    return true;
+}
+
+ubyte[] foldDataExpression(Program program, ast.Expression root, uint unit, bool mustFold)
+{
+    switch(unit)
+    {
+        case 1:
+            if(auto str = cast(ast.String) root)
+            {
+                return cast(ubyte[]) str.value;
+            }
+            else
+            {
+                uint result;
+                foldByte(program, root, mustFold, result);
+                return [result & 0xFF];
+            }
+        case 2:
+            uint result;
+            foldWord(program, root, mustFold, result);
+            return [result & 0xFF, (result >> 8) & 0xFF];
+        default:
+            assert(0);
+    }
 }
 
 auto createBlockHandler(Program program)
@@ -624,8 +660,9 @@ void aggregate(Program program, ast.Node root)
         (ast.VarDecl decl)
         {
             enum description = "variable declaration";
-            uint size;
-            if(foldStorage(program, decl.storage, size))
+            bool sizeless;
+            uint unit, total;
+            if(foldStorage(program, decl.storage, sizeless, unit, total))
             {
                 auto bank = program.checkBank(description, decl.location);
                 foreach(i, name; decl.names)
@@ -633,7 +670,7 @@ void aggregate(Program program, ast.Node root)
                     auto def = program.environment.get!(sym.VarDef)(name);
                     def.hasAddress = true;
                     def.address = bank.checkAddress(description, decl.location);
-                    bank.reserveVirtual(description, size, decl.location);
+                    bank.reserveVirtual(description, total, decl.location);
                 }
             }
         },
@@ -657,6 +694,81 @@ void aggregate(Program program, ast.Node root)
             def.hasAddress = true;
             def.address = bank.checkAddress(description, decl.location);
         },
+
+        (ast.Embed stmt)
+        {
+            enum description = "'embed' statement";
+
+            if(std.file.exists(stmt.filename))
+            {
+                if(std.file.isDir(stmt.filename))
+                {
+                    error("attempt to embed directory '" ~ stmt.filename ~ "'", stmt.location, true);
+                    return;
+                }
+            }
+            else
+            {
+                error("could not embed file '" ~ stmt.filename ~ "'", stmt.location, true);
+                return;
+            }
+        
+            try
+            {
+                std.stdio.File file = std.stdio.File(stmt.filename, "rb");
+                file.seek(0, std.stdio.SEEK_SET);
+                ulong start = file.tell();
+                file.seek(0, std.stdio.SEEK_END);
+                ulong end = file.tell();
+                file.close();
+                
+                stmt.size = cast(uint) (end - start);
+                stmt.hasSize = true;
+            }
+            catch(std.stdio.Exception e)
+            {
+                error("could not embed file '" ~ stmt.filename ~ "' (" ~ e.toString ~ ")", stmt.location, true);
+                return;
+            }
+            
+            auto bank = program.checkBank(description, stmt.location);
+            bank.reservePhysical(description, stmt.size, stmt.location);
+        },
+
+        (ast.Data stmt)
+        {
+            enum description = "inline data";
+            bool sizeless;
+            uint unit, total;
+            if(foldStorage(program, stmt.storage, sizeless, unit, total))
+            {
+                ubyte[] data;
+                assert(stmt.items.length > 0);
+                foreach(item; stmt.items)
+                {
+                    data ~= foldDataExpression(program, item, unit, program.finalized);
+                }
+                if(!sizeless)
+                {
+                    if(data.length < total)
+                    {
+                        // Fill unused section with final byte of data.
+                        data ~= std.array.array(std.range.repeat(data[data.length - 1], total - data.length));
+                    }
+                    else if(data.length > total)
+                    {
+                        error(
+                            std.string.format(
+                                "%s is an %s-byte sequence, which is %s byte(s) over the declared %s-byte limit",
+                                description, data.length, data.length - total, total
+                            ), stmt.location
+                        );
+                    }
+                }
+                auto bank = program.checkBank(description, stmt.location);
+                bank.reservePhysical(description, data.length, stmt.location);
+            }
+        }
     );
     verify();
 

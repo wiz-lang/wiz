@@ -8,6 +8,7 @@ bank ram : ram * 4096
 
 in ram, 0x4000:
     var array : byte * 16
+    var test: byte
 
 in main, 0x0000:
 
@@ -275,5 +276,8 @@ def handle_redraw: do
 
     return
 end
+
+byte * 8: "Player name"
+embed 'test.chr'
 
 //include "code/resources.z80"

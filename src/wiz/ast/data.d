@@ -6,9 +6,9 @@ import wiz.ast.lib;
 class Data : Statement
 {
     private Storage _storage;
-    private DataItem[] _items;
+    private Expression[] _items;
 
-    this(Storage storage, DataItem[] items, compile.Location location)
+    this(Storage storage, Expression[] items, compile.Location location)
     {
         super(location);
         _storage = storage;
@@ -16,18 +16,5 @@ class Data : Statement
     }
 
     mixin compile.BranchAcceptor!(_storage, _items);
-}
-
-class DataItem : Node
-{
-    private Expression _value;
-
-    this(Expression value, compile.Location location)
-    {
-        super(location);
-        _value = value;
-    }
-
-    mixin compile.BranchAcceptor!(_value);
-    mixin helper.Accessor!(_value);
+    mixin helper.Accessor!(_storage, _items);
 }

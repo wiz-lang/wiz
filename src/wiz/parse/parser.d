@@ -663,13 +663,13 @@ class Parser
         auto storage = parseStorage();
         consume(Token.Colon); // :
         
-        ast.DataItem[] items;
+        ast.Expression[] items;
 
         // item (',' item)*
         while(true)
         {
             ast.Expression expr = parseExpression(); // expression
-            items ~= new ast.DataItem(expr, expr.location);
+            items ~= expr;
             // (',' item)*
             if(token == Token.Comma)
             {
