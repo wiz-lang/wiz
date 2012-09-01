@@ -295,8 +295,11 @@ bool tryFoldConstant(Program program, ast.Expression root, bool mustFold, ref ui
             }
             if(auto constdef = cast(sym.ConstDef) def)
             {
+                program.enterEnvironment(constdef.decl, constdef.environment);
                 uint v;
-                if(foldConstant(program, (cast(ast.ConstDecl) constdef.decl).value, program.finalized, v))
+                bool folded = foldConstant(program, (cast(ast.ConstDecl) constdef.decl).value, program.finalized, v);
+                program.leaveEnvironment();
+                if(folded)
                 {
                     updateValue(a, v);
                     return;
@@ -649,7 +652,7 @@ void build(Program program, ast.Node root)
 
         (ast.ConstDecl decl)
         {
-            program.environment.put(decl.name, new sym.ConstDef(decl));
+            program.environment.put(decl.name, new sym.ConstDef(decl, program.environment));
         },
 
         (ast.BankDecl decl)
@@ -811,7 +814,108 @@ void build(Program program, ast.Node root)
     verify();
 
     program.finalized = true;
-    // TODO: Final codegen pass.
+    /*program.rewind();
+    root.traverse(
+        createBlockHandler(program),
+        createRelocationHandler(program),
+        createCommandHandler(program),
+        createJumpHandler(program),
+        createAssignmentHandler(program),
+        createComparisonHandler(program),
 
+        (ast.LabelDecl decl)
+        {
+            enum description = "label declaration";
+            auto bank = program.checkBank(description, decl.location);
+            auto def = program.environment.get!(sym.LabelDef)(decl.name);
+            auto addr = bank.checkAddress(description, decl.location);
+            if(!def.hasAddress)
+            {
+                error("what the hell. label was never given address!", decl.location, true);
+            }
+            if(addr != def.address)
+            {
+                error(
+                    std.string.format(
+                        "what the hell. inconsistency in label positions detected"
+                        ~ " (was %s instruction selection pass, %s on code-gen pass)",
+                        addr, def.address
+                    ), decl.location, true
+                );
+            }
+        },
+
+        (ast.Embed stmt)
+        {
+            enum description = "'embed' statement";
+
+            if(std.file.exists(stmt.filename))
+            {
+                if(std.file.isDir(stmt.filename))
+                {
+                    error("attempt to embed directory '" ~ stmt.filename ~ "'", stmt.location, true);
+                }
+            }
+            else
+            {
+                error("could not embed file '" ~ stmt.filename ~ "'", stmt.location, true);
+            }
+        
+            try
+            {
+                std.stdio.File file = std.stdio.File(stmt.filename, "rb");
+                file.seek(0, std.stdio.SEEK_SET);
+                ulong start = file.tell();
+                file.seek(0, std.stdio.SEEK_END);
+                ulong end = file.tell();
+                file.close();
+                
+                stmt.size = cast(uint) (end - start);
+                stmt.hasSize = true;
+            }
+            catch(std.stdio.Exception e)
+            {
+                error("could not embed file '" ~ stmt.filename ~ "' (" ~ e.toString ~ ")", stmt.location, true);
+            }
+            
+            auto bank = program.checkBank(description, stmt.location);
+            bank.reservePhysical(description, stmt.size, stmt.location);
+        },
+
+        (ast.Data stmt)
+        {
+            enum description = "inline data";
+            bool sizeless;
+            uint unit, total;
+            if(foldStorage(program, stmt.storage, sizeless, unit, total))
+            {
+                ubyte[] data;
+                assert(stmt.items.length > 0);
+                foreach(item; stmt.items)
+                {
+                    data ~= foldDataExpression(program, item, unit, program.finalized);
+                }
+                if(!sizeless)
+                {
+                    if(data.length < total)
+                    {
+                        // Fill unused section with final byte of data.
+                        data ~= std.array.array(std.range.repeat(data[data.length - 1], total - data.length));
+                    }
+                    else if(data.length > total)
+                    {
+                        error(
+                            std.string.format(
+                                "%s is an %s-byte sequence, which is %s byte(s) over the declared %s-byte limit",
+                                description, data.length, data.length - total, total
+                            ), stmt.location
+                        );
+                    }
+                }
+                auto bank = program.checkBank(description, stmt.location);
+                bank.reservePhysical(description, data.length, stmt.location);
+            }
+        }
+    );*/
 }
 

@@ -1,0 +1,32 @@
+package video
+    def disable: do
+        loop
+            a = [gb.lcd.stat] & gb.lcd.STAT_MODE_MASK
+            compare a to gb.lcd.STAT_MODE_VBLANK
+        until == end
+        [gb.lcd.stat] = 0 via a
+        return
+    end
+
+    def flush: do
+        hl = video.request.redraw
+        [hl]++
+        loop
+            sleep
+            a = [hl]
+            compare a
+        until zero end
+        return
+    end
+
+    def acknowledge: do
+        a = [video.request.redraw]
+        compare a
+        if ~zero then
+            // TODO: Redraw things
+            hl = video.request.redraw
+            [hl]--
+        end
+        return
+    end
+end

@@ -18,10 +18,13 @@ class Loop : Statement
     void expand()
     {
         bool tailConditional = false;
-        // 'while' or 'until' as last statement of loop? Remove unconditional jump.
-        if(auto tail = cast(Jump) block.statements[block.statements.length - 1])
+        if(block.statements.length > 0)
         {
-            tailConditional = tail.type == parse.Keyword.While || tail.type == parse.Keyword.Until;
+            // 'while' or 'until' as last statement of loop? Remove unconditional jump.
+            if(auto tail = cast(Jump) block.statements[block.statements.length - 1])
+            {
+                tailConditional = tail.type == parse.Keyword.While || tail.type == parse.Keyword.Until;
+            }
         }
 
         // def $loop:

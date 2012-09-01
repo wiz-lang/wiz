@@ -5,8 +5,10 @@ import wiz.sym.lib;
 
 class ConstDef : Definition
 {
-    this(ast.Node decl)
+    compile.Environment environment;
+    this(ast.Node decl, compile.Environment environment)
     {
         super(decl);
+        this.environment = environment;
     }
 }
