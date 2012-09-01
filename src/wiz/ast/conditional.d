@@ -5,19 +5,63 @@ import wiz.ast.lib;
 
 class Conditional : Statement
 {
-    private JumpCondition _trigger;
-    private bool _far;
-    private Statement _action;
+    private JumpCondition trigger;
+    private bool far;
+    private Statement action;
     public Statement alternative;
+
+    private Block _block;
 
     this(JumpCondition trigger, bool far, Statement action, compile.Location location)
     {
         super(location);
-        _trigger = trigger;
-        _far = far;
-        _action = action;
+        this.trigger = trigger;
+        this.far = far;
+        this.action = action;
     }
 
-    mixin compile.BranchAcceptor!(_trigger, _action, alternative);
-    mixin helper.Accessor!(_trigger, _far, _action);
+    void expand()
+    {
+        Statement[] statements;
+        if(alternative is null)
+        {
+            _block = new Block([
+                // goto $end when ~trigger
+                new Jump(parse.Keyword.Goto, far,
+                    new Attribute(["$end"], location),
+                    new JumpCondition(true, trigger), location
+                ),
+                //   action
+                action,
+                // def $end:
+                new LabelDecl("$end", location)
+            ], location);
+        }
+        else
+        {
+            _block = new Block([
+                // goto $else when ~trigger
+                new Jump(parse.Keyword.Goto, far,
+                    new Attribute(["$else"], location),
+                    new JumpCondition(true, trigger), location
+                ),
+                //   action
+                action,
+                //   goto $end
+                new Jump(parse.Keyword.Goto, far,
+                    new Attribute(["$end"], location),
+                    null, location
+                ),
+                // def $else:
+                new LabelDecl("$else", location),
+                //   alternative
+                alternative,
+                // def $end:
+                new LabelDecl("$end", location)
+            ], location);
+        }
+    }
+
+    mixin compile.BranchAcceptor!(_block);
+    mixin helper.Accessor!(_block);
 }

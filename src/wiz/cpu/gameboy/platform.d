@@ -74,7 +74,7 @@ ubyte[] generateCommand(compile.Program program, ast.Command stmt)
     }
 }
 
-bool resolveJumpCondition(compile.Program program, ast.Jump stmt, string context, ref ubyte index)
+bool resolveJumpCondition(compile.Program program, ast.Jump stmt, ref ubyte index)
 {
     Argument flag;
     auto cond = stmt.condition;
@@ -103,8 +103,8 @@ bool resolveJumpCondition(compile.Program program, ast.Jump stmt, string context
             case parse.Branch.Greater:
             case parse.Branch.LessEqual:
                 error(
-                    "comparision '" ~ parse.getBranchName(cond.branch)
-                    ~ "' unsupported in 'when' clause of " ~ context, cond.location
+                    "comparision " ~ parse.getBranchName(cond.branch)
+                    ~ " unsupported in 'when' clause", cond.location
                 );
                 return false;
         }
@@ -133,7 +133,7 @@ bool resolveJumpCondition(compile.Program program, ast.Jump stmt, string context
     {
         error(
             "unrecognized condition '" ~ attr.fullName()
-            ~ "' used in 'when' clause of " ~ context, cond.location
+            ~ "' used in 'when' clause", cond.location
         );
         return false;
     }
@@ -172,7 +172,7 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
                         if(stmt.condition)
                         {
                             ubyte index;
-                            if(resolveJumpCondition(program, stmt, "'goto!'", index))
+                            if(resolveJumpCondition(program, stmt, index))
                             {
                                 return [(0xC2 + index * 0x08) & 0xFF, address & 0xFF, (address >> 8) & 0xFF];
                             }
@@ -196,7 +196,7 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
                         if(stmt.condition)
                         {
                             ubyte index;
-                            if(resolveJumpCondition(program, stmt, "'goto'", index))
+                            if(resolveJumpCondition(program, stmt, index))
                             {
                                 return [(0x20 + index * 0x08) & 0xFF, address & 0xFF, (address >> 8) & 0xFF];
                             }
@@ -235,7 +235,7 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
                     if(stmt.condition)
                     {
                         ubyte index;
-                        if(resolveJumpCondition(program, stmt, "'call'", index))
+                        if(resolveJumpCondition(program, stmt, index))
                         {
                             return [(0xC4 + index * 0x08) & 0xFF, address & 0xFF, (address >> 8) & 0xFF];
                         }
@@ -253,7 +253,7 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
             if(stmt.condition)
             {
                 ubyte index;
-                if(resolveJumpCondition(program, stmt, "'return'", index))
+                if(resolveJumpCondition(program, stmt, index))
                 {
                     return [(0xC0 + index * 0x08) & 0xFF];
                 }
@@ -276,8 +276,8 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
             // TODO
             return [];
         case parse.Keyword.Resume: return ensureUnconditional(stmt, "'resume'", [0xD9]);
-        case parse.Keyword.Abort: return ensureUnconditional(stmt,  "'abort'",[0x40]);
-        case parse.Keyword.Sleep: return ensureUnconditional(stmt,  "'sleep'",[0x76]);
+        case parse.Keyword.Abort: return ensureUnconditional(stmt,  "'abort'", [0x40]);
+        case parse.Keyword.Sleep: return ensureUnconditional(stmt,  "'sleep'", [0x76]);
         case parse.Keyword.Suspend: return ensureUnconditional(stmt,  "'suspend'", [0x10, 0x00]);
         case parse.Keyword.Nop: return ensureUnconditional(stmt, "'nop'", [0x00]);
         default:

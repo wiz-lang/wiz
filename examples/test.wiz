@@ -29,7 +29,7 @@ include "code/item_menu.z80"*/
 let stack_top = 0x300
 
 def disable_display: do
-    repeat
+    loop
         a = [gb.lcd.stat] & gb.lcd.STAT_MODE_MASK
         compare a to gb.lcd.STAT_MODE_VBLANK
     while ~= end
@@ -48,7 +48,7 @@ def label:
 
 def memset: do
     c++; b++
-    repeat
+    loop
         c--
         if zero then
             b--
@@ -79,7 +79,7 @@ def main: do
     // Clear WRAM.
     hl = 0xC000
     bc = 0x2000
-    repeat
+    loop
         a = b | c
     until zero
         [hl++] = 0 via a
@@ -126,7 +126,7 @@ def main: do
     let GB_VRAM_MAP_WIDTH = 32
     let GB_VRAM_MAP_HEIGHT = 32
     [t0] = GB_VRAM_MAP_WIDTH / 2 via a
-    /*[t1] = GB_VRAM_MAP_HEIGHT via a
+    [t1] = GB_VRAM_MAP_HEIGHT via a
     bc = metatiles
     de = gb.ram.map
     hl = world1.map
@@ -192,13 +192,13 @@ def main: do
     // Prepare the map loop.
     call map_start
     
-    repeat!
+    loop!
         // The main game loop.
         // Usually runs once per frame, but it may take longer than that.
         // For instance, when it's busy loading compressed resources: That can take a while.
         //CALL_EVENT_SAFE step_event_lo, step_event_hi, step_event_bank
         call request_redraw
-    end*/
+    end
 end
 
 def stat: do
@@ -223,7 +223,7 @@ def draw: do
     if < then
         hl = timer_steps
         c = 4
-        repeat
+        loop
             [hl] = [hl] + 1 via a
             compare a to 60
         until ~=
@@ -243,10 +243,11 @@ def request_redraw: do
     hl = redraw_request
     [hl] = 1 via a
 
-    repeat
+    loop
         sleep
         a = [hl]
         compare a
+        break when <=
     until zero end
 
     return
@@ -273,7 +274,6 @@ def handle_redraw: do
         hl = redraw_request
         [hl] = 0 via a
     end
-
     return
 end
 

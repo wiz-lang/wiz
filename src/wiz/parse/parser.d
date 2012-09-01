@@ -254,7 +254,7 @@ class Parser
                         return parseJump();
                     case Keyword.If:
                         return parseConditional();
-                    case Keyword.Repeat:
+                    case Keyword.Loop:
                         return parseLoop();
                     case Keyword.Compare:
                         return parseComparison();
@@ -850,9 +850,9 @@ class Parser
     
     auto parseLoop()
     {
-        // loop = 'repeat' statement* 'end'
+        // loop = 'loop' statement* 'end'
         auto location = scanner.getLocation();
-        nextToken(); // IDENTIFIER (keyword 'repeat')
+        nextToken(); // IDENTIFIER (keyword 'loop')
         bool far = false;
         if(token == Token.Exclaim)
         {

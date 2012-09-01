@@ -5,11 +5,6 @@ import wiz.compile.lib;
 
 static import std.stdio;
 
-void build(Program program, ast.Node root)
-{
-    aggregate(program, root);
-}
-
 sym.Definition resolveAttribute(Program program, ast.Attribute attribute)
 {
     sym.Definition prev, def;
@@ -601,8 +596,54 @@ auto createComparisonHandler(Program program)
     };
 }
 
-void aggregate(Program program, ast.Node root)
+void build(Program program, ast.Node root)
 {
+    uint depth = 0;
+    root.traverse(
+        (ast.Conditional cond)
+        {
+            cond.expand();
+        },
+
+        (ast.Loop loop)
+        {
+            loop.expand();
+        },
+    );
+
+    root.traverse(
+        (Visitor.Pass pass, ast.Loop loop)
+        {
+            if(pass == Visitor.Pass.Before)
+            {
+                depth++;
+            }
+            else
+            {
+                depth--;
+            }
+        },
+
+        (ast.Jump jump)
+        {
+            switch(jump.type)
+            {
+                case parse.Keyword.While, parse.Keyword.Until,
+                    parse.Keyword.Break, parse.Keyword.Continue:
+                    if(depth == 0)
+                    {
+                        error("'" ~ parse.getKeywordName(jump.type) ~ "' used outside of a 'loop'.", jump.location);
+                    }
+                    else
+                    {
+                        jump.expand();
+                    }
+                    break;
+                default:
+            }
+        }
+    );
+
     root.traverse(
         createBlockHandler(program),
 
