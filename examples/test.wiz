@@ -40,7 +40,10 @@ a = -10
 hl = 100 + 30 + 300 + array
 
 [hl] = ><a
-//hl = sp + 100 + 1
+hl = sp + 100
+
+a = label // 'must fold' false for instruction selection pass, true for finalized pass.
+def label:
 
 def memset: do
     c++; b++
@@ -81,9 +84,6 @@ def main: do
         [hl++] = 0 via a
         bc--
     end
-
-hl = hl + [100:c] + [hl++]
-a@1 = b
 
     call disable_display
     // Save d into hardware_type, now that RAM is clear.

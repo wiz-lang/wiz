@@ -60,13 +60,12 @@ sym.Definition resolveAttribute(Program program, ast.Attribute attribute)
     return def;
 }
 
-bool tryFoldConstant(Program program, ast.Expression root, ref uint result, ref ast.Expression constTail, bool mustFold, bool forbidUndefined)
+bool tryFoldConstant(Program program, ast.Expression root, bool mustFold, ref uint result, ref ast.Expression constTail)
 {
     uint[ast.Expression] values;
     bool[ast.Expression] completeness;
     bool mustFoldRoot = mustFold;
     bool badAttr = false;
-
     uint depth = 0;
 
     void updateValue(ast.Expression node, uint value, bool complete=true)
@@ -302,7 +301,7 @@ bool tryFoldConstant(Program program, ast.Expression root, ref uint result, ref 
             if(auto constdef = cast(sym.ConstDef) def)
             {
                 uint v;
-                if(foldConstant(program, (cast(ast.ConstDecl) constdef.decl).value, v, true))
+                if(foldConstant(program, (cast(ast.ConstDecl) constdef.decl).value, program.finalized, v))
                 {
                     updateValue(a, v);
                     return;
@@ -327,7 +326,7 @@ bool tryFoldConstant(Program program, ast.Expression root, ref uint result, ref 
                 }
             }
 
-            if(def && mustFold && forbidUndefined)
+            if(def && mustFold)
             {
                 error("'" ~ a.fullName() ~ "' was declared, but could not be evaluated.", root.location);
             }
@@ -354,15 +353,15 @@ bool tryFoldConstant(Program program, ast.Expression root, ref uint result, ref 
     return true;
 }
 
-bool foldConstant(Program program, ast.Expression root, ref uint result, bool forbidUndefined)
+bool foldConstant(Program program, ast.Expression root, bool mustFold, ref uint result)
 {
     ast.Expression constTail;
-    return tryFoldConstant(program, root, result, constTail, true, forbidUndefined) && constTail == root;
+    return tryFoldConstant(program, root, mustFold, result, constTail) && constTail == root;
 }
 
-bool foldBoundedNumber(compile.Program program, ast.Expression root, string type, uint limit, ref uint result, bool forbidUndefined)
+bool foldBoundedNumber(compile.Program program, ast.Expression root, string type, uint limit, bool mustFold, ref uint result)
 {
-    if(compile.foldConstant(program, root, result, forbidUndefined))
+    if(compile.foldConstant(program, root, mustFold, result))
     {
         if(result > limit)
         {
@@ -378,29 +377,29 @@ bool foldBoundedNumber(compile.Program program, ast.Expression root, string type
     return false;
 }
 
-bool foldBit(compile.Program program, ast.Expression root, ref uint result, bool forbidUndefined)
+bool foldBit(compile.Program program, ast.Expression root, bool mustFold, ref uint result)
 {
-    return foldBoundedNumber(program, root, "bit", 1, result, forbidUndefined);
+    return foldBoundedNumber(program, root, "bit", 1, mustFold, result);
 }
 
-bool foldBitIndex(compile.Program program, ast.Expression root, ref uint result, bool forbidUndefined)
+bool foldBitIndex(compile.Program program, ast.Expression root, bool mustFold, ref uint result)
 {
-    return foldBoundedNumber(program, root, "bitwise index", 1, result, forbidUndefined);
+    return foldBoundedNumber(program, root, "bitwise index", 1, mustFold, result);
 }
 
-bool foldByte(compile.Program program, ast.Expression root, ref uint result, bool forbidUndefined)
+bool foldByte(compile.Program program, ast.Expression root, bool mustFold, ref uint result)
 {
-    return foldBoundedNumber(program, root, "8-bit", 255, result, forbidUndefined);
+    return foldBoundedNumber(program, root, "8-bit", 255, mustFold, result);
 }
 
-bool foldWord(compile.Program program, ast.Expression root, ref uint result, bool forbidUndefined)
+bool foldWord(compile.Program program, ast.Expression root, bool mustFold, ref uint result)
 {
-    return foldBoundedNumber(program, root, "8-bit", 65535, result, forbidUndefined);
+    return foldBoundedNumber(program, root, "8-bit", 65535, mustFold, result);
 }
 
-bool foldSignedByte(compile.Program program, ast.Expression root, bool negative, ref uint result, bool forbidUndefined)
+bool foldSignedByte(compile.Program program, ast.Expression root, bool negative, bool mustFold, ref uint result)
 {
-    if(foldWord(program, root, result, forbidUndefined))
+    if(foldWord(program, root, mustFold, result))
     {
         if(!negative && result < 127)
         {
@@ -423,9 +422,9 @@ bool foldSignedByte(compile.Program program, ast.Expression root, bool negative,
     return false;
 }
 
-bool foldRelativeByte(compile.Program program, ast.Expression root, string description, string help, uint origin, ref uint result, bool forbidUndefined)
+bool foldRelativeByte(compile.Program program, ast.Expression root, string description, string help, uint origin, bool mustFold, ref uint result)
 {
-    if(foldWord(program, root, result, forbidUndefined))
+    if(foldWord(program, root, mustFold, result))
     {
         int offset = cast(int) result - cast(int) origin;
         if(offset >= -128 && offset <= 127)
@@ -449,7 +448,7 @@ bool foldRelativeByte(compile.Program program, ast.Expression root, string descr
 
 bool foldStorage(Program program, ast.Storage s, ref uint result)
 {
-    if(foldConstant(program, s.size, result, true))
+    if(foldConstant(program, s.size, true, result))
     {
         switch(s.type)
         {
@@ -508,7 +507,7 @@ auto createRelocationHandler(Program program)
     {
         enum description = "'in' statement";
         uint address;
-        if(stmt.dest is null || foldConstant(program, stmt.dest, address, true))
+        if(stmt.dest is null || foldConstant(program, stmt.dest, program.finalized, address))
         {
             auto def = program.environment.get!(sym.BankDef)(stmt.mangledName);
             if(def is null)
@@ -604,7 +603,7 @@ void aggregate(Program program, ast.Node root)
         (ast.BankDecl decl)
         {
             uint size;
-            if(foldConstant(program, decl.size, size, true))
+            if(foldConstant(program, decl.size, true, size))
             {
                 foreach(i, name; decl.names)
                 {
@@ -660,6 +659,9 @@ void aggregate(Program program, ast.Node root)
         },
     );
     verify();
+
+    program.finalized = true;
+    // TODO: Final codegen pass.
 
 }
 

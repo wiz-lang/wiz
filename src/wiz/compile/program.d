@@ -11,6 +11,7 @@ class Program
     private Bank[] banks;
     private Environment[ast.Node] nodeEnvironments;
     private Environment[] environmentStack;
+    bool finalized;
 
     cpu.Platform platform;
         

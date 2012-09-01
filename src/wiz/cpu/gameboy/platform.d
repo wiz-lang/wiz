@@ -168,7 +168,7 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
                     uint address;
                     if(stmt.far)
                     {
-                        compile.foldWord(program, argument.immediate, address, true);
+                        compile.foldWord(program, argument.immediate, program.finalized, address);
                         if(stmt.condition)
                         {
                             ubyte index;
@@ -191,7 +191,7 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
                         compile.foldRelativeByte(program, stmt.destination,
                             "relative jump distance",
                             "rewrite the branch, shorten the gaps in your code, or add a '!' far indicator.",
-                            pc, result, true
+                            pc, program.finalized, result
                         );
                         if(stmt.condition)
                         {
@@ -231,7 +231,7 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
             {
                 case ArgumentType.Immediate:
                     uint address;
-                    compile.foldWord(program, argument.immediate, address, true);
+                    compile.foldWord(program, argument.immediate, program.finalized, address);
                     if(stmt.condition)
                     {
                         ubyte index;
@@ -304,7 +304,7 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                 {
                     case ArgumentType.Immediate:
                         uint value;
-                        compile.foldWord(program, right.immediate, value, true);
+                        compile.foldWord(program, right.immediate, program.finalized, value);
                         return [0xFE, value & 0xFF];
                     case ArgumentType.B:
                     case ArgumentType.C:
@@ -334,7 +334,7 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
             if(right is null)
             {
                 uint index;
-                if(!compile.foldBitIndex(program, left.immediate, index, true))
+                if(!compile.foldBitIndex(program, left.immediate, program.finalized, index))
                 {
                     return [];
                 }
@@ -448,7 +448,7 @@ ubyte[] generateCalculatedAssignment(compile.Program program, ast.Assignment stm
     {
         uint result;
         ast.Expression constTail;
-        if(!compile.tryFoldConstant(program, infix, result, constTail, false, true))
+        if(!compile.tryFoldConstant(program, infix, program.finalized, result, constTail))
         {
             return [];
         }
@@ -514,7 +514,7 @@ bool patchStackPointerLoadOffset(compile.Program program, parse.Infix type, ast.
             }
 
             uint value;
-            compile.foldSignedByte(program, operand.immediate, type == parse.Infix.Sub, value, true);
+            compile.foldSignedByte(program, operand.immediate, type == parse.Infix.Sub, program.finalized, value);
             // Monkey patch 'hl = sp + 00'
             code[code.length - 1] = value & 0xFF;
             return true;
@@ -656,7 +656,7 @@ ubyte[] getAccumulatorArithmetic(compile.Program program, parse.Infix type, ast.
     {
         case ArgumentType.Immediate:
             uint value;
-            compile.foldByte(program, operand.immediate, value, true);
+            compile.foldByte(program, operand.immediate, program.finalized, value);
             return [(0xC6 + operatorIndex * 0x08) & 0xFF, value & 0xFF];
         case ArgumentType.A:
         case ArgumentType.B:
@@ -704,7 +704,7 @@ ubyte[] getStackPointerArithmetic(compile.Program program, parse.Infix type, ast
     {
         case ArgumentType.Immediate:
             uint value;
-            compile.foldSignedByte(program, operand.immediate, type == parse.Infix.Sub, value, true);
+            compile.foldSignedByte(program, operand.immediate, type == parse.Infix.Sub, program.finalized, value);
             return [0xE8, value & 0xFF];
         default:
             return operandError(type, dest, operand, node.location);
@@ -723,7 +723,7 @@ ubyte[] getAccumulatorShift(compile.Program program, parse.Infix type, ast.Expre
     {
         case ArgumentType.Immediate:
             uint value;
-            if(!compile.foldBitIndex(program, operand.immediate, value, true))
+            if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
             {
                 return [];
             }
@@ -754,7 +754,7 @@ ubyte[] getRegisterShift(compile.Program program, parse.Infix type, ast.Expressi
     {
         case ArgumentType.Immediate:
             uint value;
-            if(!compile.foldBitIndex(program, operand.immediate, value, true))
+            if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
             {
                 return [];
             }
@@ -772,7 +772,7 @@ ubyte[] getRegisterShift(compile.Program program, parse.Infix type, ast.Expressi
 ubyte[] getRegisterLoadImmediate(compile.Program program, ast.Assignment stmt, Argument dest, Argument load)
 {
     uint value;
-    compile.foldByte(program, load.immediate, value, true);
+    compile.foldByte(program, load.immediate, program.finalized, value);
     return [(0x06 + dest.getRegisterIndex() * 0x08) & 0xFF, value & 0xFF];
 }
 
@@ -789,7 +789,7 @@ ubyte[] getRegisterLoadRegister(compile.Program program, ast.Assignment stmt, Ar
 ubyte[] getPairLoadImmediate(compile.Program program, ast.Assignment stmt, Argument dest, Argument load)
 {
     uint value;
-    compile.foldWord(program, load.immediate, value, true);
+    compile.foldWord(program, load.immediate, program.finalized, value);
     return [(0x01 + dest.getPairIndex() * 0x10) & 0xFF, value & 0xFF, (value >> 8) & 0xFF];
 }
 
@@ -806,7 +806,7 @@ ubyte[] getHighLowLoadPair(compile.Program program, ast.Assignment stmt, Argumen
 ubyte[] getAccumulatorLoadIndirectImmediate(compile.Program program, ast.Assignment stmt, Argument load)
 {
     uint value;
-    compile.foldWord(program, load.base.immediate, value, true);
+    compile.foldWord(program, load.base.immediate, program.finalized, value);
     // 'a = [0xFFnn]' -> 'ldh a, [nn]'
     if((value & 0xFF00) == 0xFF00)
     {
@@ -822,7 +822,7 @@ ubyte[] getAccumulatorLoadIndirectImmediate(compile.Program program, ast.Assignm
 ubyte[] getIndirectImmediateLoadAccumulator(compile.Program program, ast.Assignment stmt, Argument dest)
 {
     uint value;
-    compile.foldWord(program, dest.base.immediate, value, true);
+    compile.foldWord(program, dest.base.immediate, program.finalized, value);
     // '[0xFFnn] = a' -> 'ldh [nn], a'
     if((value & 0xFF00) == 0xFF00)
     {
@@ -981,7 +981,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
                     }
                 case ArgumentType.PositiveIndex:
                     uint value;
-                    compile.foldWord(program, load.immediate, value, true);
+                    compile.foldWord(program, load.immediate, program.finalized, value);
 
                     if(value != 0xFF00 || load.base.type != ArgumentType.C)
                     {
@@ -1160,7 +1160,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
             }
         case ArgumentType.PositiveIndex:
             uint value;
-            compile.foldWord(program, dest.immediate, value, true);
+            compile.foldWord(program, dest.immediate, program.finalized, value);
 
             if(value != 0xFF00 || dest.base.type != ArgumentType.C)
             {
@@ -1177,7 +1177,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
             }
         case ArgumentType.BitIndex:
             uint index;
-            if(!compile.foldBitIndex(program, dest.immediate, index, true))
+            if(!compile.foldBitIndex(program, dest.immediate, program.finalized, index))
             {
                 return [];
             }
@@ -1205,7 +1205,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
                 // 'r@i = 1' -> 'set r, i'
                 case ArgumentType.Immediate:
                     uint value;
-                    if(!compile.foldBit(program, load.immediate, value, true))
+                    if(!compile.foldBit(program, load.immediate, program.finalized, value))
                     {
                         return [];
                     }
@@ -1227,7 +1227,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
                 // 'interrupt = 1' -> 'ei'
                 case ArgumentType.Immediate:
                     uint value;
-                    if(!compile.foldBit(program, load.immediate, value, true))
+                    if(!compile.foldBit(program, load.immediate, program.finalized, value))
                     {
                         return [];
                     }
@@ -1256,7 +1256,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
             {
                 case ArgumentType.Immediate:
                     uint value;
-                    if(!compile.foldBit(program, load.immediate, value, true))
+                    if(!compile.foldBit(program, load.immediate, program.finalized, value))
                     {
                         return [];
                     }
