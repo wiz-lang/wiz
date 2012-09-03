@@ -2,7 +2,27 @@ include '../gameboy.wiz'
 include 'layout.wiz'
 include 'ram.wiz'
 include 'boot.wiz'
+include 'joy.wiz'
 include 'video.wiz'
+include 'player.wiz'
+
+// Fills a range in memory with a specified byte value. (Inline version)
+// Dirty: bc, hl
+// Arguments:
+//      hl = destination
+//      a = value
+//      bc = count
+def memset: do
+    c++
+    b++
+    goto start
+def repeat:
+    [hl++] = a
+def start:
+    c--; goto repeat when ~zero
+    b--; goto repeat when ~zero
+    return
+end
 
 package hardware
     def detect: do
@@ -26,40 +46,102 @@ def main: do
     sp = hl
     
     call hardware.detect
-    call video.loadlib
+    call joy.init
+    call video.init
+    call player.init
 
-    //call video.disable
-    //[gb.scroll.y] = 0 via a
-    //[gb.window.y] = 0 via a
-    [scroll_direction] = 0 via a
+    call video.disable
+    [gb.scroll.y] = 0 via a
+    [gb.window.y] = 0 via a
+    [gb.mono.palette.bg] = 0b11100100 via a
 
-    [gb.interrupt.enable] = gb.interrupt.VBLANK via a
+    hl = gb.ram.tile
+    a = 0b11111111
+    bc = 16
+    call memset
+    a = 0b10101010
+    bc = 16
+    call memset
+    a = 0b10001000
+    bc = 16
+    call memset 
+    a = 0b00000000
+    bc = 16
+    call memset
+    hl = gb.ram.map + 32
+    a = 0x03
+    bc = 1024 - 64
+    call memset
+    hl = gb.ram.map
+    a = 0x00
+    bc = 20
+    call memset
+    hl = gb.ram.map + (32 * 17)
+    bc = 20
+    call memset
+    hl = gb.ram.map + 32
+    bc = 32
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    hl = gb.ram.map + 32 + 19
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+    [hl] = a; hl = hl + bc
+
+    [gb.lcd.ctrl] = gb.lcd.CTRL_ON | gb.lcd.CTRL_TILESET2 | gb.lcd.CTRL_BG_ON via a
+    [gb.lcd.stat] = gb.lcd.STAT_SCANLINE_ENABLE via a
+    [gb.interrupt.enable] = gb.interrupt.VBLANK | gb.interrupt.STAT via a
     interrupt = 1
     loop
+        call joy.check
+        call player.update
         call video.flush
     end
 end
 
 def draw: do
-    a = [scroll_direction]
-    compare a
-    if zero then
-        [gb.scroll.x] = [gb.scroll.x] - 3 via a
-        [gb.scroll.y] = [gb.scroll.y] + 1 via a
-        compare a to 32
-        if >= then
-            [scroll_direction] = [scroll_direction] ^ 1 via a
-        end
-    else
-        [gb.scroll.x] = [gb.scroll.x] - 3 via a
-        [gb.scroll.y] = [gb.scroll.y] - 1 via a
-        compare a to 255
-        if >= then
-            [scroll_direction] = [scroll_direction] ^ 1 via a
-        end
-    end
-
     call video.acknowledge
+    hl = pop
+    de = pop
+    bc = pop
+    af = pop
+    resume
+end
+
+def stat: do
+    loop
+        a = [gb.lcd.stat] & gb.lcd.STAT_MODE_MASK
+        compare a to gb.lcd.STAT_MODE_HBLANK
+    until == end
     hl = pop
     de = pop
     bc = pop
@@ -74,7 +156,6 @@ def stub: do
     af = pop
     resume
 end
-let stat = stub
 let timer = stub
 let serial = stub
 let joypad = stub

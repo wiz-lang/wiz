@@ -196,9 +196,12 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
                         {
                             error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in constant expression", operand.location);
                         }
+                        if(depth == 0)
+                        {
+                            constTail = e.operands[i];
+                        }
                         return;
                 }
-
                 updateValue(e, a, i == e.types.length - 1);
             }
         },
@@ -324,7 +327,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
                 }
             }
 
-            if(def && finalized)
+            if(def && runtimeForbidden && finalized)
             {
                 error("'" ~ a.fullName() ~ "' was declared, but could not be evaluated.", a.location);
             }
@@ -387,7 +390,7 @@ bool foldBit(compile.Program program, ast.Expression root, bool finalized, ref u
 
 bool foldBitIndex(compile.Program program, ast.Expression root, bool finalized, ref uint result)
 {
-    return foldBoundedNumber(program, root, "bitwise index", 1, finalized, result);
+    return foldBoundedNumber(program, root, "bitwise index", 7, finalized, result);
 }
 
 bool foldByte(compile.Program program, ast.Expression root, bool finalized, ref uint result)
@@ -429,12 +432,7 @@ bool foldRelativeByte(compile.Program program, ast.Expression root, string descr
 {
     if(foldWord(program, root, finalized, result))
     {
-        std.stdio.writefln("%s: result: %s", root.location, result);
         int offset = cast(int) result - cast(int) origin;
-        if(program.finalized)
-        {
-            std.stdio.writefln("%s: result:0x%04X - origin:0x%04X = 0x%04X (%d)", root.location, result, origin, cast(ubyte) offset, offset);
-        }
         if(offset >= -128 && offset <= 127)
         {
             result = cast(ubyte) offset;
@@ -867,7 +865,6 @@ void build(Program program, ast.Node root)
             auto bank = program.checkBank(description, decl.location);
             auto def = program.environment.get!(sym.LabelDef)(decl.name);
             auto addr = bank.checkAddress(description, decl.location);
-            std.stdio.writefln("%s: def %s: 0x%04X", decl.location, decl.name, def.address);
             if(!def.hasAddress)
             {
                 error("what the hell. label was never given address!", decl.location, true);
@@ -898,5 +895,6 @@ void build(Program program, ast.Node root)
             bank.writePhysical(stmt.data, stmt.location);
         }
     );
+    verify();
 }
 

@@ -483,7 +483,7 @@ ubyte[] generateCalculatedAssignment(compile.Program program, ast.Assignment stm
         ubyte[] code = getLoad(program, stmt, dest, loadsrc);
         bool found = constTail is null || constTail is infix.operands[0];
         foreach(i, type; infix.types)
-        {                
+        {
             auto node = infix.operands[i + 1];
             if(node is constTail)
             {
@@ -767,7 +767,7 @@ ubyte[] getRegisterShift(compile.Program program, parse.Infix type, ast.Expressi
         parse.Infix.ArithShiftL: 4,
         parse.Infix.ArithShiftR: 5,
         parse.Infix.ShiftL: 4, // Logical shl == arith shl
-        parse.Infix.ShiftL: 7,
+        parse.Infix.ShiftR: 7,
     ][type];
     switch(operand.type)
     {
@@ -877,6 +877,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
                 // 'a = r' -> 'ld a, r'
                 case ArgumentType.A:
                 case ArgumentType.B:
+                case ArgumentType.C:
                 case ArgumentType.D:
                 case ArgumentType.E:
                 case ArgumentType.H:

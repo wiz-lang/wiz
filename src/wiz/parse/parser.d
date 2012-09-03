@@ -258,7 +258,6 @@ class Parser
                         return parseLoop();
                     case Keyword.Compare:
                         return parseComparison();
-                    case Keyword.Bit:
                     case Keyword.Push:
                         return parseCommand();
                     case Keyword.None:

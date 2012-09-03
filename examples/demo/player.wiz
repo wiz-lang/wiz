@@ -1,0 +1,150 @@
+package player
+    def init: do
+        [head] = 8 via a
+        [tail] = 0 via a
+        [x] = 8 via a
+        [y] = 7 via a
+        [dir] = direction.DOWN via a
+        call fill_snake
+        [x] = 8 via a
+        [y] = 8 via a
+        goto! update_coordinates
+    end
+
+    def check_controls: do
+        c = [joy.pressed] via a
+        d = [dir] via a
+        compare c@joy.bit.LEFT
+        if ~zero then
+            compare a to direction.RIGHT
+            if ~= then
+                d = direction.LEFT
+            end
+        end
+        compare c@joy.bit.RIGHT
+        if ~zero then
+            compare a to direction.LEFT
+            if ~= then
+                d = direction.RIGHT
+            end
+        end
+        compare c@joy.bit.UP
+        if ~zero then
+            compare a to direction.DOWN
+            if ~= then
+                d = direction.UP
+            end
+        end
+        compare c@joy.bit.DOWN
+        if ~zero then
+            compare a to direction.UP
+            if ~= then
+                d = direction.DOWN
+            end
+        end
+        [dir] = d via a
+        return
+    end
+
+    def update: do
+        call check_controls
+
+        hl = next_step
+        [hl]--
+        if zero then
+            a = [dir]
+            compare a to direction.LEFT; goto move_left when ==
+            compare a to direction.RIGHT; goto move_right when ==
+            compare a to direction.UP; goto move_up when ==
+            compare a to direction.DOWN; goto move_down when ==
+            def move_left: do
+                [x] = [x] - 1 & 0x1F via a
+                goto done
+            end
+            def move_right: do
+                [x] = [x] + 1 & 0x1F via a
+                goto done
+            end
+            def move_up: do
+                [y] = [y] - 1 & 0x1F via a
+                goto done
+            end
+            def move_down: do
+                [y] = [y] + 1 & 0x1F via a
+                goto done
+            end
+            def done: do
+                call update_coordinates
+                call check_lose
+            end
+        end
+        return
+    end
+
+    def fill_snake: do
+        hl = gb.ram.map
+        e = [x] via a; d = 0
+        c = [y] via a; b = 0
+        c = c << 1; b = b <<< 1
+        c = c << 1; b = b <<< 1
+        c = c << 1; b = b <<< 1
+        c = c << 1; b = b <<< 1
+        c = c << 1; b = b <<< 1
+        hl = hl + bc + de
+        e = l
+        d = h
+
+        hl = parts
+        loop
+            [hl++] = e via a
+            [hl++] = d via a
+            bc++
+            a = c
+            compare a to MAX_LENGTH
+            if == then
+                return
+            end
+        end
+    end
+
+    def check_lose: do
+        l = [player.head] << 1 + <player.parts via a
+        h = >player.parts +# 0 via a
+        // hl = [hl]
+        a = [hl++]
+        h = [hl]
+        l = a
+        // Check the tile under the head.
+        a = [hl]
+        if zero then
+            call video.disable
+        end
+        return
+    end
+
+    def update_coordinates: do
+        [head] = [head] + 1 & (MAX_LENGTH - 1) via a
+        [tail] = [tail] + 1 & (MAX_LENGTH - 1) via a
+
+        hl = gb.ram.map
+        e = [x] via a; d = 0
+        c = [y] via a; b = 0
+        c = c << 1; b = b <<< 1
+        c = c << 1; b = b <<< 1
+        c = c << 1; b = b <<< 1
+        c = c << 1; b = b <<< 1
+        c = c << 1; b = b <<< 1
+        hl = hl + bc + de
+        c = l
+        b = h
+
+        e = [head] << 1 via a
+        hl = parts + de
+        [hl++] = c via a
+        [hl++] = b via a
+
+        hl = next_step; [hl] = 16
+        hl = video.request.move_snake; [hl] = 1
+        return
+    end
+end

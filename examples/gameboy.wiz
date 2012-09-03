@@ -96,7 +96,7 @@ package gb
 
     package ram
         let tile = 0x8000
-        let map1 = 0x9800
+        let map = 0x9800
         let map2 = 0x9C00
         let obj = 0x8000
         let wave = 0xFF30
@@ -317,19 +317,38 @@ package gb
         let TOGGLE_TONE = 0x01
     end
 
-    let joy = 0xFF00
-    let JOY_SELECT_BUTTONS = 0x20
-    let JOY_SELECT_DIRECTIONS = 0x10
-    let JOY_INPUT_MASK = 0x0F
-    // These bits are 0 when the appropriate button is pressed.
-    let JOY_DOWN = 0x08
-    let JOY_UP = 0x04
-    let JOY_LEFT = 0x02
-    let JOY_RIGHT = 0x01
-    let JOY_START = 0x08
-    let JOY_SELECT = 0x04
-    let JOY_B = 0x02
-    let JOY_A = 0x01
+    package joy
+        let ctrl = 0xFF00
+
+        package select
+            let DIRECTIONS = 0x20
+            let BUTTONS = 0x10
+        end
+
+        // These bits are 0 when the appropriate button is pressed.
+        package bit
+            let DOWN = 3
+            let UP = 2
+            let LEFT = 1
+            let RIGHT = 0
+            let START = 3
+            let SELECT = 2
+            let B = 1
+            let A = 0
+        end
+
+        package mask
+            let ALL = 0x0F
+            let DOWN = 1 << bit.DOWN
+            let UP = 1 << bit.UP
+            let LEFT = 1 << bit.LEFT
+            let RIGHT = 1 << bit.RIGHT
+            let START = 1 << bit.START
+            let SELECT = 1 << bit.SELECT
+            let B = 1 << bit.B
+            let A = 1 << bit.A
+        end
+    end
 
     package link
         let data = 0xFF01

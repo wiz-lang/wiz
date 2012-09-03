@@ -1,0 +1,44 @@
+package joy
+    def init: do
+        [joy.unpress] = 0 via a
+        [joy.unpress] = 0 via a
+        return
+    end
+
+    def check: do
+        // Read up/down/left/right.
+        [gb.joy.ctrl] = gb.joy.select.DIRECTIONS via a
+        // Read twice are to prevent bounce.
+        a = [gb.joy.ctrl]
+        a = [gb.joy.ctrl]
+        // a = 0000dulr
+        a = ~a & 0xF
+        // a = dulr0000
+        a = <>a
+        // controls = a
+        c = a
+
+        // Read A/B/Select/Start
+        [gb.joy.ctrl] = gb.joy.select.BUTTONS via a
+        // Read 6 times to prevent bounce.
+        a = [gb.joy.ctrl]
+        a = [gb.joy.ctrl]
+        a = [gb.joy.ctrl]
+        a = [gb.joy.ctrl]
+        a = [gb.joy.ctrl]
+        a = [gb.joy.ctrl]
+        // a = dulrssba
+        a = ~a & 0xF | c
+        // controls = a
+        c = a
+        
+        // Remove unpress flag for controls no longer being held.
+        // unpress = unpress & controls
+        [joy.unpress] = [joy.unpress] & c via a
+        // Only keep controls that don't have the unpress flag set.
+        [joy.pressed] = ~a & c via a
+        // Reset the joypad port.
+        [gb.joy.ctrl] = gb.joy.select.DIRECTIONS | gb.joy.select.BUTTONS via a
+        return
+    end
+end
