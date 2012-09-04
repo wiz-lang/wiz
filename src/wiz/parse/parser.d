@@ -244,6 +244,8 @@ class Parser
                         return parseEnumDecl();
                     case Keyword.Var:
                         return parseVarDecl();
+                    case Keyword.Inline:
+                        return parseInlineDecl();
                     case Keyword.Byte, Keyword.Word:
                         return parseData();
                     case Keyword.Goto, Keyword.Call,
@@ -256,6 +258,8 @@ class Parser
                         return parseConditional();
                     case Keyword.Loop:
                         return parseLoop();
+                    case Keyword.Unroll:
+                        return parseUnroll();
                     case Keyword.Compare:
                         return parseComparison();
                     case Keyword.Push:
@@ -653,6 +657,26 @@ class Parser
         auto storage = parseStorage();
         return new ast.VarDecl(names, storage, location);
     }
+
+    auto parseInlineDecl()
+    {
+        // inline = 'inline' IDENTIFIER ':' statement
+        auto location = scanner.getLocation();
+
+        string name;
+
+        nextToken(); // IDENTIFIER (keyword 'inline')
+        if(checkIdentifier())
+        {
+            name = text;
+        }
+        nextToken(); // IDENTIFIER
+        consume(Token.Colon);
+
+        auto stmt = parseStatement(); // statement
+
+        return new ast.InlineDecl(name, stmt, location);   
+    }
     
     auto parseData()
     {
@@ -861,6 +885,18 @@ class Parser
         auto block = new ast.Block(parseCompound(), location); // statement*
         nextToken(); // IDENTIFIER (keyword 'end')
         return new ast.Loop(block, far, location);
+    }
+
+    auto parseUnroll()
+    {
+        // unroll = 'unroll' '*' expression ':' statement
+        auto location = scanner.getLocation();
+        nextToken(); // IDENTIFIER (keyword 'unroll')
+        consume(Token.Mul); // '*'
+        auto repetitions = parseExpression();
+        consume(Token.Colon); // ':'
+        auto stmt = parseStatement(); // statement
+        return new ast.Unroll(repetitions, stmt, location);
     }
 
     auto parseComparison()

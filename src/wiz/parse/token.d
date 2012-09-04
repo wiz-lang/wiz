@@ -211,6 +211,8 @@ enum Keyword
     Break,
     Continue,
     Abort,
+    Inline,
+    Unroll,
 };
 
 private Keyword[string] keywords;
@@ -259,6 +261,8 @@ static this()
         "break": Keyword.Break,
         "continue": Keyword.Continue,
         "abort": Keyword.Abort,
+        "inline": Keyword.Inline,
+        "unroll": Keyword.Unroll,
     ];
     
     foreach(name, keyword; keywords)

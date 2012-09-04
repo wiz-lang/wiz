@@ -6,7 +6,7 @@ include 'joy.wiz'
 include 'video.wiz'
 include 'player.wiz'
 
-// Fills a range in memory with a specified byte value. (Inline version)
+// Fills a range in memory with a specified byte value.
 // Dirty: bc, hl
 // Arguments:
 //      hl = destination
@@ -22,6 +22,17 @@ def start:
     c--; goto repeat when ~zero
     b--; goto repeat when ~zero
     return
+end
+
+inline memset_inline: do
+    c++
+    b++
+    goto start
+def repeat:
+    [hl++] = a
+def start:
+    c--; goto repeat when ~zero
+    b--; goto repeat when ~zero
 end
 
 package hardware
@@ -81,6 +92,7 @@ def main: do
     call memset
     hl = gb.ram.map + 32
     bc = 32
+    unroll * 16: do [hl] = a; hl = hl + bc end
     [hl] = a; hl = hl + bc
     [hl] = a; hl = hl + bc
     [hl] = a; hl = hl + bc
