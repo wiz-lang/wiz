@@ -14,31 +14,20 @@ package player
     def check_controls: do
         c = [joy.pressed] via a
         d = [dir] via a
-        compare c@joy.bit.LEFT
-        if ~zero then
-            compare a to direction.RIGHT
-            if ~= then
+        if compare c@joy.bit.LEFT is ~zero then
+            if compare a to direction.RIGHT is ~= then
                 d = direction.LEFT
             end
-        end
-        compare c@joy.bit.RIGHT
-        if ~zero then
-            compare a to direction.LEFT
-            if ~= then
+        elseif compare c@joy.bit.RIGHT is ~zero then
+            if compare a to direction.LEFT is ~= then
                 d = direction.RIGHT
             end
-        end
-        compare c@joy.bit.UP
-        if ~zero then
-            compare a to direction.DOWN
-            if ~= then
+        elseif compare c@joy.bit.UP is ~zero then
+            if compare a to direction.DOWN is ~= then
                 d = direction.UP
             end
-        end
-        compare c@joy.bit.DOWN
-        if ~zero then
-            compare a to direction.UP
-            if ~= then
+        elseif compare c@joy.bit.DOWN is ~zero then
+            if compare a to direction.UP is ~= then
                 d = direction.DOWN
             end
         end
@@ -50,33 +39,18 @@ package player
         call check_controls
 
         hl = next_step
-        [hl]--
-        if zero then
+        if [hl]-- is zero then
             a = [dir]
-            compare a to direction.LEFT; goto move_left when ==
-            compare a to direction.RIGHT; goto move_right when ==
-            compare a to direction.UP; goto move_up when ==
-            compare a to direction.DOWN; goto move_down when ==
-            def move_left: do
+            if compare a to direction.LEFT is == then
                 [x] = [x] - 1 & 0x1F via a
-                goto done
-            end
-            def move_right: do
+            elseif compare a to direction.RIGHT is == then
                 [x] = [x] + 1 & 0x1F via a
-                goto done
-            end
-            def move_up: do
+            elseif compare a to direction.UP is == then
                 [y] = [y] - 1 & 0x1F via a
-                goto done
-            end
-            def move_down: do
+            elseif compare a to direction.DOWN is == then
                 [y] = [y] + 1 & 0x1F via a
-                goto done
             end
-            def done: do
-                call update_coordinates
-                call check_lose
-            end
+            call update_coordinates
         end
         return
     end
@@ -100,26 +74,10 @@ package player
             [hl++] = d via a
             bc++
             a = c
-            compare a to MAX_LENGTH
-            if == then
+            if compare a to MAX_LENGTH is == then
                 return
             end
         end
-    end
-
-    def check_lose: do
-        l = [player.head] << 1 + <player.parts via a
-        h = >player.parts +# 0 via a
-        // hl = [hl]
-        a = [hl++]
-        h = [hl]
-        l = a
-        // Check the tile under the head.
-        a = [hl]
-        if zero then
-            call video.disable
-        end
-        return
     end
 
     def update_coordinates: do

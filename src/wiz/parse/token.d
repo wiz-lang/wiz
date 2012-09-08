@@ -100,7 +100,7 @@ private string[] tokenNames = [
     "'>'",
     "'<='",
     "'>='",
-    "'!='",
+    "'~='",
     "'=='",
     "'<>'",
     "'<<'",
@@ -213,6 +213,7 @@ enum Keyword
     Abort,
     Inline,
     Unroll,
+    Is,
 };
 
 private Keyword[string] keywords;
@@ -263,6 +264,7 @@ static this()
         "abort": Keyword.Abort,
         "inline": Keyword.Inline,
         "unroll": Keyword.Unroll,
+        "is": Keyword.Is,
     ];
     
     foreach(name, keyword; keywords)

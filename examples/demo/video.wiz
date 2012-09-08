@@ -32,10 +32,10 @@ package video
     def acknowledge: do
         a = [video.request.redraw]
         compare a
-        if ~zero then
+        if is ~zero then
             a = [video.request.move_snake]
             compare a
-            if ~zero then
+            if is ~zero then
                 l = [player.tail] << 1 + <player.parts via a
                 h = >player.parts +# 0 via a
                 // hl = [hl]
@@ -53,8 +53,7 @@ package video
                 l = a
                 // Check the tile under the head.
                 a = [hl]
-                compare a
-                if == then
+                if compare a is zero then
                     call video.disable
                 else
                     // Reposition head.

@@ -179,8 +179,33 @@ class Parser
             }
         }
     }
+
+    ast.Statement[] parseConditionalPrelude()
+    {
+        // preconditional_compound = statement* 'is'
+        ast.Statement[] statements;
+        while(true)
+        {
+            if(token == Token.EndOfFile)
+            {
+                reject("'is'");
+            }
+            if(keyword == Keyword.Is)
+            {
+                return statements;
+            }
+            if(keyword == Keyword.End || keyword == Keyword.Else || keyword == Keyword.ElseIf || keyword == Keyword.Include)
+            {
+                reject("'is'");
+            }
+            if(auto statement = parseStatement())
+            {
+                statements ~= statement;
+            }
+        }
+    }
     
-    ast.Statement[] parseConditionalCompound()
+    ast.Statement[] parseConditionalBlock()
     {
         // conditional_compound = statement* ('else' | 'elseif' | 'end')
         ast.Statement[] statements;
@@ -793,8 +818,8 @@ class Parser
     
     auto parseConditional()
     {
-        // condition = 'if' condition 'then' statement*
-        //      ('elseif' condition 'then' statement*)*
+        // condition = 'if' statement* 'is' condition 'then' statement*
+        //      ('elseif' statement* 'is' condition 'then' statement*)*
         //      ('else' statement)? 'end'
         ast.Conditional first = null;
         ast.Conditional statement = null;
@@ -812,7 +837,18 @@ class Parser
                 far = true;
             }
             
-            auto condition = parseJumpCondition("'if'");
+            auto prelude = new ast.Block(parseConditionalPrelude(), location); // statement*
+
+            if(keyword == Keyword.Is)
+            {
+                nextToken(); // IDENTIFIER (keyword 'is')
+            }
+            else
+            {
+                reject("'then'");
+            }
+
+            auto condition = parseJumpCondition("'is'"); // condition
             
             if(keyword == Keyword.Then)
             {
@@ -823,12 +859,11 @@ class Parser
                 reject("'then'");
             }
             
-            // statement*
-            auto block = new ast.Block(parseConditionalCompound(), location);
+            auto block = new ast.Block(parseConditionalBlock(), location); // statement*
             
-            // Construct if statement, which is either static or runtime depending on argument before 'then'.
+            // Construct if statement/
             auto previous = statement;
-            statement = new ast.Conditional(condition, far, block, location);
+            statement = new ast.Conditional(condition, far, prelude, block, location);
 
             // If this is an 'elseif', join to previous 'if'/'elseif'.
             if(previous)
@@ -846,7 +881,7 @@ class Parser
         {
             auto location = scanner.getLocation();
             nextToken(); // IDENTIFIER (keyword 'else')
-            statement.alternative = new ast.Block(parseConditionalCompound(), location); // statement*
+            statement.alternative = new ast.Block(parseConditionalBlock(), location); // statement*
         }
         switch(keyword)
         {

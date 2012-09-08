@@ -7,16 +7,18 @@ class Conditional : Statement
 {
     private JumpCondition trigger;
     private bool far;
+    private Statement prelude;
     private Statement action;
     public Statement alternative;
 
     private Block _block;
 
-    this(JumpCondition trigger, bool far, Statement action, compile.Location location)
+    this(JumpCondition trigger, bool far, Statement prelude, Statement action, compile.Location location)
     {
         super(location);
         this.trigger = trigger;
         this.far = far;
+        this.prelude = prelude;
         this.action = action;
     }
 
@@ -26,12 +28,14 @@ class Conditional : Statement
         if(alternative is null)
         {
             _block = new Block([
+                // prelude
+                prelude,
                 // goto $end when ~trigger
                 new Jump(parse.Keyword.Goto, far,
                     new Attribute(["$end"], location),
                     new JumpCondition(true, trigger), location
                 ),
-                //   action
+                // action
                 action,
                 // def $end:
                 new LabelDecl("$end", location)
@@ -40,14 +44,16 @@ class Conditional : Statement
         else
         {
             _block = new Block([
+                // prelude
+                prelude,
                 // goto $else when ~trigger
                 new Jump(parse.Keyword.Goto, far,
                     new Attribute(["$else"], location),
                     new JumpCondition(true, trigger), location
                 ),
-                //   action
+                // action
                 action,
-                //   goto $end
+                // goto $end
                 new Jump(parse.Keyword.Goto, far,
                     new Attribute(["$end"], location),
                     null, location

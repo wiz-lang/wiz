@@ -39,11 +39,9 @@ package hardware
     def detect: do
         hl = hardware.type
         [hl] = hardware.GB
-        compare a to 0x11
-        if == then
+        if compare a to 0x11 is == then
             [hl] = hardware.GBC
-            compare b@0
-            if ~zero then
+            if compare b@0 is ~zero then
                 [hl] = hardware.GBA
             end
         end
