@@ -88,45 +88,15 @@ func main do
     call memset
     hl = gb.ram.map + 32
     bc = 32
-    /*unroll 16 do 
+    unroll 17 do 
         [hl] = a
         hl = hl + bc
-    end*/ // TODO.
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
+    end
     hl = gb.ram.map + 32 + 19
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
-    [hl] = a; hl = hl + bc
+    unroll 17 do 
+        [hl] = a
+        hl = hl + bc
+    end
 
     [gb.lcd.ctrl] = gb.lcd.CTRL_ON | gb.lcd.CTRL_TILESET2 | gb.lcd.CTRL_BG_ON via a
     [gb.lcd.stat] = gb.lcd.STAT_SCANLINE_ENABLE via a

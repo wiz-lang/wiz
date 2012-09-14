@@ -17,27 +17,9 @@ class Program
         
     this(cpu.Platform platform)
     {
-        this.platform = platform;
-
-        auto builtins = platform.builtins();
-        auto env = new Environment();
-        auto pkg = new sym.PackageDef(new ast.BuiltinDecl(), new Environment(env));
-        
-        foreach(name, builtin; builtins)
-        {
-            env.put(name, builtin);
-        }
-        env.put("builtin", pkg);
-
-        env = pkg.environment;
-        foreach(name, builtin; builtins)
-        {
-            env.put(name, builtin);
-        }
-
         bank = null;
-        _environment = env;
-        environmentStack ~= env;
+        this.platform = platform;
+        clearEnvironment();
     }
 
     mixin helper.Accessor!(_environment);
@@ -72,6 +54,29 @@ class Program
     void switchBank(Bank b)
     {
         bank = b;
+    }
+
+    void clearEnvironment()
+    {
+        auto builtins = platform.builtins();
+        auto env = new Environment();
+        auto pkg = new sym.PackageDef(new ast.BuiltinDecl(), new Environment(env));
+        
+        foreach(name, builtin; builtins)
+        {
+            env.put(name, builtin);
+        }
+        env.put("builtin", pkg);
+
+        env = pkg.environment;
+        foreach(name, builtin; builtins)
+        {
+            env.put(name, builtin);
+        }
+
+        _environment = env;
+        nodeEnvironments.clear();
+        environmentStack = [env];
     }
 
     void enterEnvironment(ast.Node node, Environment e = null)

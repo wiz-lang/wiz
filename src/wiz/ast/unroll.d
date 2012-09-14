@@ -15,6 +15,16 @@ class Unroll : Statement
         _block = block;
     }
 
-    mixin compile.BranchAcceptor!(_repetitions);
+    void expand(uint times)
+    {
+        Statement[] code;
+        foreach(i; 0 .. times)
+        {
+            code ~= _block;
+        }
+        _block = new Block(code, location);
+    }
+
+    mixin compile.BranchAcceptor!(_block);
     mixin helper.Accessor!(_repetitions, _block);
 }

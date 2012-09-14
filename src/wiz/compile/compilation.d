@@ -642,6 +642,13 @@ void build(Program program, ast.Node root)
 {
     uint depth = 0;
     root.traverse(
+        createBlockHandler(program),
+
+        (ast.ConstDecl decl)
+        {
+            program.environment.put(decl.name, new sym.ConstDef(decl, program.environment));
+        },
+
         (ast.Conditional cond)
         {
             cond.expand();
@@ -656,7 +663,18 @@ void build(Program program, ast.Node root)
         {
             func.expand();
         },
+
+        (ast.Unroll unroll)
+        {
+            uint times;
+            if(foldConstant(program, unroll.repetitions, true, times))
+            {
+                unroll.expand(times);
+            }
+        },
     );
+
+    program.clearEnvironment();
 
     root.traverse(
         (Visitor.Pass pass, ast.Loop loop)
