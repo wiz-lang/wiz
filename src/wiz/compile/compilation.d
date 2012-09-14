@@ -646,6 +646,11 @@ void build(Program program, ast.Node root)
         {
             loop.expand();
         },
+
+        (ast.FuncDecl func)
+        {
+            func.expand();
+        },
     );
 
     root.traverse(

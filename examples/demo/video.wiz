@@ -1,24 +1,21 @@
-package video
-    def init: do
+package video do
+    func init do
         [video.request.redraw] = 0 via a
-        return
     end
 
-    def wait: do
+    func wait do
         loop
             a = [gb.lcd.stat] & gb.lcd.STAT_MODE_MASK
             compare a to gb.lcd.STAT_MODE_VBLANK
         until == end
-        return
     end
 
-    def disable: do
+    func disable do
         call video.wait
         [gb.lcd.ctrl] = 0 via a
-        return
     end
 
-    def flush: do
+    func flush do
         hl = video.request.redraw
         [hl]++
         loop
@@ -26,10 +23,9 @@ package video
             a = [hl]
             compare a
         until zero end
-        return
     end
 
-    def acknowledge: do
+    func acknowledge do
         a = [video.request.redraw]
         compare a
         if is ~zero then
@@ -66,6 +62,5 @@ package video
             hl = video.request.redraw
             [hl]--
         end
-        return
     end
 end

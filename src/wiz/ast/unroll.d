@@ -6,15 +6,15 @@ import wiz.ast.lib;
 class Unroll : Statement
 {
     private Expression _repetitions;
-    private Statement _stmt;
+    private Block _block;
 
-    this(Expression repetitions, Statement stmt, compile.Location location)
+    this(Expression repetitions, Block block, compile.Location location)
     {
         super(location);
         _repetitions = repetitions;
-        _stmt = stmt;
+        _block = block;
     }
 
     mixin compile.BranchAcceptor!(_repetitions);
-    mixin helper.Accessor!(_repetitions, _stmt);
+    mixin helper.Accessor!(_repetitions, _block);
 }

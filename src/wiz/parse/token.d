@@ -214,6 +214,8 @@ enum Keyword
     Inline,
     Unroll,
     Is,
+    Func,
+    Task,
 };
 
 private Keyword[string] keywords;
@@ -265,6 +267,8 @@ static this()
         "inline": Keyword.Inline,
         "unroll": Keyword.Unroll,
         "is": Keyword.Is,
+        "func": Keyword.Func,
+        "task": Keyword.Task,
     ];
     
     foreach(name, keyword; keywords)

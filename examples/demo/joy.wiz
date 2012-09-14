@@ -1,11 +1,10 @@
-package joy
-    def init: do
+package joy do
+    func init do
         [joy.unpress] = 0 via a
         [joy.unpress] = 0 via a
-        return
     end
 
-    def check: do
+    func check do
         // Read up/down/left/right.
         [gb.joy.ctrl] = gb.joy.select.DIRECTIONS via a
         // Read twice are to prevent bounce.
@@ -39,6 +38,5 @@ package joy
         [joy.pressed] = ~a & c via a
         // Reset the joypad port.
         [gb.joy.ctrl] = gb.joy.select.DIRECTIONS | gb.joy.select.BUTTONS via a
-        return
     end
 end

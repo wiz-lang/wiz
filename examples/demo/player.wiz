@@ -1,5 +1,5 @@
-package player
-    def init: do
+package player do
+    func init do
         [head] = 8 via a
         [tail] = 0 via a
         [x] = 8 via a
@@ -8,10 +8,10 @@ package player
         call fill_snake
         [x] = 8 via a
         [y] = 8 via a
-        goto! update_coordinates
+        call update_coordinates
     end
 
-    def check_controls: do
+    func check_controls do
         c = [joy.pressed] via a
         d = [dir] via a
         if compare c@joy.bit.LEFT is ~zero then
@@ -32,10 +32,9 @@ package player
             end
         end
         [dir] = d via a
-        return
     end
 
-    def update: do
+    func update do
         call check_controls
 
         hl = next_step
@@ -52,10 +51,9 @@ package player
             end
             call update_coordinates
         end
-        return
     end
 
-    def fill_snake: do
+    func fill_snake do
         hl = gb.ram.map
         e = [x] via a; d = 0
         c = [y] via a; b = 0
@@ -74,13 +72,11 @@ package player
             [hl++] = d via a
             bc++
             a = c
-            if compare a to MAX_LENGTH is == then
-                return
-            end
-        end
+            compare a to MAX_LENGTH
+        until == end
     end
 
-    def update_coordinates: do
+    func update_coordinates do
         [head] = [head] + 1 & (MAX_LENGTH - 1) via a
         [tail] = [tail] + 1 & (MAX_LENGTH - 1) via a
 
@@ -103,6 +99,5 @@ package player
 
         hl = next_step; [hl] = 16
         hl = video.request.move_snake; [hl] = 1
-        return
     end
 end

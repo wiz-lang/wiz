@@ -1,4 +1,4 @@
-package boot
+package boot do
     let user_draw = draw
     let user_stat = stat
     let user_timer = timer

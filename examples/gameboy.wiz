@@ -1,5 +1,5 @@
-package gb
-    package boot
+package gb do
+    package boot do
         // Gameboy Color compatibility flag.
         let GBC_UNSUPPORTED = 0x00
         let GBC_COMPATIBLE = 0x80
@@ -64,7 +64,7 @@ package gb
         let DEST_INTERNATIONAL = 0x01
     end
 
-    package lcd
+    package lcd do
         let ctrl = 0xFF40
         let CTRL_ON = 0x80
         let CTRL_WIN_MAP2 = 0x40
@@ -94,7 +94,7 @@ package gb
         let dma = 0xFF46
     end
 
-    package ram
+    package ram do
         let tile = 0x8000
         let map = 0x9800
         let map2 = 0x9C00
@@ -102,23 +102,25 @@ package gb
         let wave = 0xFF30
     end
 
-    package scroll // Wraps coordinates.
-        let y = 0xFF42 // 0..255, automatically wraps.
-        let x = 0xFF43 // 0..255, automatically wraps.
+    package scroll do
+        // Wrapped coordinates.
+        let y = 0xFF42 // 0..255
+        let x = 0xFF43 // 0..255
     end
 
-    package scanline
+    package scanline do
         let current = 0xFF44 // curent = 0 .. 153, where 144..153 indicates vblank 
         let trigger = 0xFF45
     end
 
-    package window // Unwrapped coordinates.
+    package window do
+        // Unwrapped coordinates.
         let y = 0xFF4A // y = 0..143
         let x = 0xFF4B // x - 7 = 0 .. 166 -- x < 7 is weird. So is fully-offscren x.
     end
 
-    package mono
-        package palette
+    package mono do
+        package palette do
             let bg = 0xFF47
             let obj1 = 0xFF48
             let obj2 = 0xFF49
@@ -134,14 +136,14 @@ package gb
         end
     end
 
-    package color
-        package palette
-            package bg
+    package color do
+        package palette do
+            package bg do
                 let index = 0xFF68
                 let data = 0xFF69
             end
 
-            package obj
+            package obj do
                 let index = 0xFF6A
                 let data = 0xFF6B
             end
@@ -158,7 +160,7 @@ package gb
             let DATA_RED_MASK = 0x001F
         end
 
-        package select
+        package select do
             let vram = 0xFF4F
             let VRAM_BANK_0 = 0x00
             let VRAM_BANK_1 = 0x01
@@ -181,13 +183,13 @@ package gb
         let INFRARED_READ_ENABLE = 0xC0
         let INFRARED_READ_DISABLE = 0x00
 
-        package dma
-            package source
+        package dma do
+            package source do
                 let high = 0xFF51
                 let low = 0xFF52
             end
 
-            package dest
+            package dest do
                 let high = 0xFF53
                 let low = 0xFF54
             end
@@ -200,8 +202,8 @@ package gb
         end
     end
 
-    package audio
-        package tone
+    package audio do
+        package tone do
             let sweep = 0xFF10
             let SWEEP_TIME_MASK = 0x70
             let SWEEP_DIRECTION_INC = 0x00
@@ -218,7 +220,7 @@ package gb
             let ENVELOPE_DIRECTION_DEC = 0x00
             let ENVELOPE_SWEEP_MASK = 0x07
 
-            package frequency
+            package frequency do
                 let low = 0xFF13
 
                 let high = 0xFF14
@@ -228,7 +230,7 @@ package gb
             end
         end
 
-        package tone2
+        package tone2 do
             let pattern = 0xFF16
             let PATTERN_DUTY_MASK = 0xC0
             let PATTERN_LENGTH_MASK = 0x1F
@@ -239,7 +241,7 @@ package gb
             let ENVELOPE_DIRECTION_DEC = 0x00
             let ENVELOPE_SWEEP_MASK = 0x07
 
-            package frequency
+            package frequency do
                 let low = 0xFF18
 
                 let high = 0xFF19
@@ -249,7 +251,7 @@ package gb
             end
         end
 
-        package wave
+        package wave do
             let toggle = 0xFF1A
             let TOGGLE_ENABLE = 0x80
             let TOGGLE_DISABLE = 0x00
@@ -262,7 +264,7 @@ package gb
             let VOLUME_50 = 0x40
             let VOLUME_25 = 0x60
 
-            package frequency
+            package frequency do
                 let low = 0xFF1D
 
                 let high = 0xFF1E
@@ -272,7 +274,7 @@ package gb
             end
         end
 
-        package noise
+        package noise do
             let length = 0xFF20
             let LENGTH_MASH = 0x1F
 
@@ -317,16 +319,16 @@ package gb
         let TOGGLE_TONE = 0x01
     end
 
-    package joy
+    package joy do
         let ctrl = 0xFF00
 
-        package select
+        package select do
             let DIRECTIONS = 0x20
             let BUTTONS = 0x10
         end
 
         // These bits are 0 when the appropriate button is pressed.
-        package bit
+        package bit do
             let DOWN = 3
             let UP = 2
             let LEFT = 1
@@ -337,7 +339,7 @@ package gb
             let A = 0
         end
 
-        package mask
+        package mask do
             let ALL = 0x0F
             let DOWN = 1 << bit.DOWN
             let UP = 1 << bit.UP
@@ -350,7 +352,7 @@ package gb
         end
     end
 
-    package link
+    package link do
         let data = 0xFF01
 
         let ctrl = 0xFF02
@@ -362,7 +364,7 @@ package gb
         let CTRL_CLOCK_EXTERNAL = 0x00
     end
 
-    package timer
+    package timer do
         let divider = 0xFF04
         let counter = 0xFF05
         let modulo = 0xFF06
@@ -376,7 +378,7 @@ package gb
         let CTRL_CLOCK_16384 = 0x03        
     end
 
-    package interrupt
+    package interrupt do
         let enable = 0xFFFF
         let flag = 0xFF0F
 

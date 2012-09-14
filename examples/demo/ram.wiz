@@ -1,26 +1,26 @@
 in ram, 0xC000:
-    package stack
+    package stack do
         let SIZE = 256
         var stack : byte * SIZE
         let top = stack + SIZE - 1
     end
 
-    package hardware
+    package hardware do
         let GB = 0
         let GBC = 1
         let GBA = 2
         var type : byte
     end
 
-    package video
-        package request
+    package video do
+        package request do
             var redraw : byte
             var move_snake : byte
         end
     end
 
-    package joy
-        package bit
+    package joy do
+        package bit do
             let A = 0
             let B = 1
             let SELECT = 2
@@ -31,7 +31,7 @@ in ram, 0xC000:
             let DOWN = 7
         end
 
-        package mask
+        package mask do
             let A = 1 << bit.A
             let B = 1 << bit.B
             let SELECT = 1 << bit.SELECT
@@ -46,14 +46,14 @@ in ram, 0xC000:
         var pressed : byte
     end
 
-    package direction
+    package direction do
         let LEFT = 0
         let RIGHT = 1
         let UP = 2
         let DOWN = 3
     end
 
-    package player
+    package player do
         let SIZE = 0
 
         var dir : byte

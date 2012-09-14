@@ -12,19 +12,7 @@ include 'player.wiz'
 //      hl = destination
 //      a = value
 //      bc = count
-def memset: do
-    c++
-    b++
-    goto start
-def repeat:
-    [hl++] = a
-def start:
-    c--; goto repeat when ~zero
-    b--; goto repeat when ~zero
-    return
-end
-
-inline memset_inline: do
+func memset do
     c++
     b++
     goto start
@@ -35,8 +23,19 @@ def start:
     b--; goto repeat when ~zero
 end
 
-package hardware
-    def detect: do
+inline func memset_inline do
+    c++
+    b++
+    goto start
+def repeat:
+    [hl++] = a
+def start:
+    c--; goto repeat when ~zero
+    b--; goto repeat when ~zero
+end
+
+package hardware do
+    func detect do
         hl = hardware.type
         [hl] = hardware.GB
         if compare a to 0x11 is == then
@@ -45,11 +44,10 @@ package hardware
                 [hl] = hardware.GBA
             end
         end
-        return
     end
 end
 
-def main: do
+func main do
     interrupt = 0
     hl = stack.top
     sp = hl
@@ -90,7 +88,10 @@ def main: do
     call memset
     hl = gb.ram.map + 32
     bc = 32
-    unroll * 16: do [hl] = a; hl = hl + bc end
+    /*unroll 16 do 
+        [hl] = a
+        hl = hl + bc
+    end*/ // TODO.
     [hl] = a; hl = hl + bc
     [hl] = a; hl = hl + bc
     [hl] = a; hl = hl + bc
@@ -138,16 +139,15 @@ def main: do
     end
 end
 
-def draw: do
+task draw do
     call video.acknowledge
     hl = pop
     de = pop
     bc = pop
     af = pop
-    resume
 end
 
-def stat: do
+task stat do
     loop
         a = [gb.lcd.stat] & gb.lcd.STAT_MODE_MASK
         compare a to gb.lcd.STAT_MODE_HBLANK
@@ -156,15 +156,13 @@ def stat: do
     de = pop
     bc = pop
     af = pop
-    resume
 end
 
-def stub: do
+task stub do
     hl = pop
     de = pop
     bc = pop
     af = pop
-    resume
 end
 let timer = stub
 let serial = stub

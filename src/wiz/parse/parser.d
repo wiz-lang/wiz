@@ -269,8 +269,10 @@ class Parser
                         return parseEnumDecl();
                     case Keyword.Var:
                         return parseVarDecl();
+                    case Keyword.Func, Keyword.Task:
+                        return parseFuncDecl();
                     case Keyword.Inline:
-                        return parseInlineDecl();
+                        return parseInline();
                     case Keyword.Byte, Keyword.Word:
                         return parseData();
                     case Keyword.Goto, Keyword.Call,
@@ -446,6 +448,15 @@ class Parser
                     name = text;
                 }
                 nextToken(); // IDENTIFIER
+                if(keyword == Keyword.Do)
+                {
+                    nextToken(); // IDENTIFIER (keyword 'do')
+                }
+                else
+                {
+                    reject("'do'");
+                }
+
                 auto statements = parseCompound(); // compound statement
                 nextToken(); // IDENTIFIER (keyword 'end')
                 return new ast.Block(name, statements, location);
@@ -683,7 +694,37 @@ class Parser
         return new ast.VarDecl(names, storage, location);
     }
 
-    auto parseInlineDecl()
+    auto parseFuncDecl()
+    {
+        // func = 'func' IDENTIFIER 'do' statement* 'end'
+        auto location = scanner.getLocation();
+
+        string name;
+        Keyword type = keyword;
+
+        nextToken(); // IDENTIFIER (keyword 'func')
+
+        if(checkIdentifier())
+        {
+            name = text;
+        }
+        nextToken(); // IDENTIFIER
+
+        if(keyword == Keyword.Do)
+        {
+            nextToken(); // IDENTIFIER (keyword 'do')
+        }
+        else
+        {
+            reject("'do'");
+        }
+        auto block = new ast.Block(parseCompound(), location); // statement*
+        nextToken(); // IDENTIFIER (keyword 'end')
+
+        return new ast.FuncDecl(type, name, block, location);   
+    }
+
+    ast.Statement parseInline()
     {
         // inline = 'inline' IDENTIFIER ':' statement
         auto location = scanner.getLocation();
@@ -691,16 +732,17 @@ class Parser
         string name;
 
         nextToken(); // IDENTIFIER (keyword 'inline')
-        if(checkIdentifier())
+        if(keyword == Keyword.Func)
         {
-            name = text;
+            auto func = parseFuncDecl();
+            func.inlined = true;
+            return func;
         }
-        nextToken(); // IDENTIFIER
-        consume(Token.Colon);
-
-        auto stmt = parseStatement(); // statement
-
-        return new ast.InlineDecl(name, stmt, location);   
+        else
+        {
+            reject("'func'");
+            return null;
+        }
     }
     
     auto parseData()
@@ -845,7 +887,7 @@ class Parser
             }
             else
             {
-                reject("'then'");
+                reject("'is'");
             }
 
             auto condition = parseJumpCondition("'is'"); // condition
@@ -927,11 +969,20 @@ class Parser
         // unroll = 'unroll' '*' expression ':' statement
         auto location = scanner.getLocation();
         nextToken(); // IDENTIFIER (keyword 'unroll')
-        consume(Token.Mul); // '*'
         auto repetitions = parseExpression();
-        consume(Token.Colon); // ':'
-        auto stmt = parseStatement(); // statement
-        return new ast.Unroll(repetitions, stmt, location);
+
+        if(keyword == Keyword.Do)
+        {
+            nextToken(); // IDENTIFIER (keyword 'do')
+        }
+        else
+        {
+            reject("'do'");
+        }
+        auto block = new ast.Block(parseCompound(), location); // statement*
+        nextToken(); // IDENTIFIER (keyword 'end')
+
+        return new ast.Unroll(repetitions, block, location);
     }
 
     auto parseComparison()
