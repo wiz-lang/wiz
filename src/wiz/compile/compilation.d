@@ -393,6 +393,11 @@ bool foldBitIndex(compile.Program program, ast.Expression root, bool finalized, 
     return foldBoundedNumber(program, root, "bitwise index", 7, finalized, result);
 }
 
+bool foldWordBitIndex(compile.Program program, ast.Expression root, bool finalized, ref uint result)
+{
+    return foldBoundedNumber(program, root, "bitwise index", 15, finalized, result);
+}
+
 bool foldByte(compile.Program program, ast.Expression root, bool finalized, ref uint result)
 {
     return foldBoundedNumber(program, root, "8-bit", 255, finalized, result);

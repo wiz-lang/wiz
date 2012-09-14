@@ -620,6 +620,16 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                 default:
                     return operatorError(type, dest, node.location);
             }
+        case ArgumentType.BC:
+        case ArgumentType.DE:
+            switch(type)
+            {
+                case parse.Infix.ShiftL:
+                case parse.Infix.ShiftR:
+                    return getPairShift(program, type, node, dest, operand);
+                default:
+                    return operatorError(type, dest, node.location);
+            }
         case ArgumentType.HL:
             switch(type)
             {
@@ -634,6 +644,9 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                     }
                 case parse.Infix.Sub:
                     return operatorError(type, dest, node.location);
+                case parse.Infix.ShiftL:
+                case parse.Infix.ShiftR:
+                    return getPairShift(program, type, node, dest, operand);
                 default:
                     return operatorError(type, dest, node.location);
             }
@@ -757,9 +770,9 @@ ubyte[] getAccumulatorShift(compile.Program program, parse.Infix type, ast.Expre
     }
 }
 
-ubyte[] getRegisterShift(compile.Program program, parse.Infix type, ast.Expression node, Argument dest, Argument operand)
+auto getRegisterShiftIndex(parse.Infix type)
 {
-    auto operatorIndex = cast(ubyte) [
+    return cast(ubyte) [
         parse.Infix.RotateLC: 0,
         parse.Infix.RotateRC: 1,
         parse.Infix.RotateL: 2,
@@ -769,6 +782,11 @@ ubyte[] getRegisterShift(compile.Program program, parse.Infix type, ast.Expressi
         parse.Infix.ShiftL: 4, // Logical shl == arith shl
         parse.Infix.ShiftR: 7,
     ][type];
+}
+
+ubyte[] getRegisterShift(compile.Program program, parse.Infix type, ast.Expression node, Argument dest, Argument operand)
+{
+    auto operatorIndex = getRegisterShiftIndex(type);
     switch(operand.type)
     {
         case ArgumentType.Immediate:
@@ -788,7 +806,40 @@ ubyte[] getRegisterShift(compile.Program program, parse.Infix type, ast.Expressi
     }
 }
 
-
+ubyte[] getPairShift(compile.Program program, parse.Infix type, ast.Expression node, Argument dest, Argument operand)
+{
+    auto shift = [
+        parse.Infix.ShiftL: cast(ubyte[]) [
+            // sla l
+            0xCB, (getRegisterShiftIndex(parse.Infix.ShiftL) * 0x08 + dest.getPairLowIndex()) & 0xFF,
+            // rl h
+            0xCB, (getRegisterShiftIndex(parse.Infix.RotateL) * 0x08 + dest.getPairHighIndex()) & 0xFF,
+        ],
+        parse.Infix.ShiftR: cast(ubyte[]) [
+            // sra h
+            0xCB, (getRegisterShiftIndex(parse.Infix.ShiftR) * 0x08 + dest.getPairHighIndex()) & 0xFF,
+            // rr l
+            0xCB, (getRegisterShiftIndex(parse.Infix.RotateR) * 0x08 + dest.getPairLowIndex()) & 0xFF,
+        ],
+    ][type];
+    switch(operand.type)
+    {
+        case ArgumentType.Immediate:
+            uint value;
+            if(!compile.foldWordBitIndex(program, operand.immediate, program.finalized, value))
+            {
+                return [];
+            }
+            ubyte[] code;
+            while(value--)
+            {
+                code ~= shift;
+            }
+            return code;
+        default:
+            return operandError(type, dest, operand, node.location);
+    }
+}
 
 ubyte[] invalidAssignmentDestError(Argument dest, compile.Location location)
 {

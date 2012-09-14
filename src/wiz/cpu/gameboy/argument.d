@@ -150,6 +150,31 @@ class Argument
         assert(0);
     }
 
+
+    ubyte getPairLowIndex()
+    {
+        switch(type)
+        {
+            case ArgumentType.BC: return 0x1; break;
+            case ArgumentType.DE: return 0x3; break;
+            case ArgumentType.HL: return 0x5; break;
+            default:
+        }
+        assert(0);
+    }
+
+    ubyte getPairHighIndex()
+    {
+        switch(type)
+        {
+            case ArgumentType.BC: return 0x0; break;
+            case ArgumentType.DE: return 0x2; break;
+            case ArgumentType.HL: return 0x4; break;
+            default:
+        }
+        assert(0);
+    }
+
     ubyte getFlagIndex(bool negated)
     {
         switch(type)

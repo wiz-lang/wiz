@@ -57,11 +57,7 @@ package player do
         hl = gb.ram.map
         e = [x] via a; d = 0
         c = [y] via a; b = 0
-        c = c << 1; b = b <<< 1
-        c = c << 1; b = b <<< 1
-        c = c << 1; b = b <<< 1
-        c = c << 1; b = b <<< 1
-        c = c << 1; b = b <<< 1
+        bc = bc << 5
         hl = hl + bc + de
         e = l
         d = h
@@ -83,11 +79,7 @@ package player do
         hl = gb.ram.map
         e = [x] via a; d = 0
         c = [y] via a; b = 0
-        c = c << 1; b = b <<< 1
-        c = c << 1; b = b <<< 1
-        c = c << 1; b = b <<< 1
-        c = c << 1; b = b <<< 1
-        c = c << 1; b = b <<< 1
+        bc = bc << 5
         hl = hl + bc + de
         c = l
         b = h
