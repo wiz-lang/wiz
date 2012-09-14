@@ -726,7 +726,7 @@ class Parser
 
     ast.Statement parseInline()
     {
-        // inline = 'inline' IDENTIFIER ':' statement
+        // inline = 'inline' func | call
         auto location = scanner.getLocation();
 
         string name;
@@ -737,6 +737,24 @@ class Parser
             auto func = parseFuncDecl();
             func.inlined = true;
             return func;
+        }
+        else if(keyword == Keyword.Call)
+        {
+            bool far;
+            nextToken(); // IDENTIFIER (keyword)
+            if(token == Token.Exclaim)
+            {
+                nextToken(); // '!'
+                far = true;
+            }
+            auto destination = parseExpression();
+            ast.JumpCondition condition = null;
+            if(token == Token.Identifier && keyword == Keyword.When)
+            {
+                nextToken(); // IDENTIFIER (keyword 'when')
+                condition = parseJumpCondition("'when'");
+            }
+            return new ast.Jump(Keyword.Inline, far, destination, condition, location);
         }
         else
         {
@@ -806,7 +824,6 @@ class Parser
                     condition = parseJumpCondition("'when'");
                 }
                 return new ast.Jump(type, far, destination, condition, location);
-                break;
             case Keyword.Return, Keyword.Resume, Keyword.Break, Keyword.Continue:
                 ast.JumpCondition condition = null;
                 if(token == Token.Identifier && keyword == Keyword.When)

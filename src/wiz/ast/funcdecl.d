@@ -9,6 +9,7 @@ class FuncDecl : Statement
 
     parse.Keyword _type;
     private string _name;
+    private Block _inner;
     private Statement[] _statements;
 
     private Block block;
@@ -18,31 +19,34 @@ class FuncDecl : Statement
         super(location);
         _type = type;
         _name = name;
-        this.block = block;
+        _inner = block;
+        this.block = _inner;
     }
 
     void expand()
     {
-        // def name:
-        _statements ~= new LabelDecl(name, location);
-        //     block
-        _statements ~= block;
-        //     return
-        switch(type)
+        if(!inlined)
         {
-            case parse.Keyword.Func:
-                _statements ~= new Jump(parse.Keyword.Return, false, location);
-                break;
-            case parse.Keyword.Task:
-                _statements ~= new Jump(parse.Keyword.Resume, false, location);
-                break;
-            default:
-                assert(0);
+            // def name:
+            _statements ~= new LabelDecl(name, location);
+            //     block
+            _statements ~= block;
+            //     return
+            switch(type)
+            {
+                case parse.Keyword.Func:
+                    _statements ~= new Jump(parse.Keyword.Return, false, location);
+                    break;
+                case parse.Keyword.Task:
+                    _statements ~= new Jump(parse.Keyword.Resume, false, location);
+                    break;
+                default:
+                    assert(0);
+            }
         }
-
         block = null;
     }
 
     mixin compile.BranchAcceptor!(block, _statements);
-    mixin helper.Accessor!(_type, _name, _statements);
+    mixin helper.Accessor!(_type, _name, _statements, _inner);
 }

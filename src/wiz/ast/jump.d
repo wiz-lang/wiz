@@ -10,6 +10,8 @@ class Jump : Statement
     private Expression _destination;
     private JumpCondition _condition;
 
+    private Statement inlineCode;
+
     this(parse.Keyword type, bool far, compile.Location location)
     {
         super(location);
@@ -51,7 +53,12 @@ class Jump : Statement
         }
     }
 
-    mixin compile.BranchAcceptor!(_destination, _condition);
+    void expand(Statement inlineCode)
+    {
+        this.inlineCode = inlineCode;
+    }
+
+    mixin compile.BranchAcceptor!(_destination, _condition, inlineCode);
     mixin helper.Accessor!(_type, _far, _destination, _condition);
 }
 

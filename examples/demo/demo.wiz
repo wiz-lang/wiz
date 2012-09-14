@@ -35,7 +35,7 @@ def start:
 end
 
 package hardware do
-    func detect do
+    inline func detect do
         hl = hardware.type
         [hl] = hardware.GB
         if compare a to 0x11 is == then
@@ -52,7 +52,7 @@ func main do
     hl = stack.top
     sp = hl
     
-    call hardware.detect
+    inline call hardware.detect
     call joy.init
     call video.init
     call player.init
@@ -109,12 +109,16 @@ func main do
     end
 end
 
-task draw do
-    call video.acknowledge
+inline func stack_cleanup do
     hl = pop
     de = pop
     bc = pop
-    af = pop
+    af = pop    
+end
+
+task draw do
+    call video.acknowledge
+    inline call stack_cleanup
 end
 
 task stat do
@@ -122,17 +126,11 @@ task stat do
         a = [gb.lcd.stat] & gb.lcd.STAT_MODE_MASK
         compare a to gb.lcd.STAT_MODE_HBLANK
     until == end
-    hl = pop
-    de = pop
-    bc = pop
-    af = pop
+    inline call stack_cleanup
 end
 
 task stub do
-    hl = pop
-    de = pop
-    bc = pop
-    af = pop
+    inline call stack_cleanup
 end
 let timer = stub
 let serial = stub

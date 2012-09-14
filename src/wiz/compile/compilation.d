@@ -588,6 +588,10 @@ auto createJumpHandler(Program program)
 {
     return(ast.Jump stmt)
     {
+        if(stmt.type == parse.Keyword.Inline)
+        {
+            return;
+        }
         auto description = parse.getKeywordName(stmt.type) ~ " statement";
         auto code = program.platform.generateJump(program, stmt);
         auto bank = program.checkBank(description, stmt.location);
@@ -659,9 +663,10 @@ void build(Program program, ast.Node root)
             loop.expand();
         },
 
-        (ast.FuncDecl func)
+        (ast.FuncDecl decl)
         {
-            func.expand();
+            decl.expand();
+            program.environment.put(decl.name, new sym.FuncDef(decl));
         },
 
         (ast.Unroll unroll)
@@ -674,9 +679,9 @@ void build(Program program, ast.Node root)
         },
     );
 
-    program.clearEnvironment();
-
     root.traverse(
+        createBlockHandler(program),
+
         (Visitor.Pass pass, ast.Loop loop)
         {
             if(pass == Visitor.Pass.Before)
@@ -704,10 +709,47 @@ void build(Program program, ast.Node root)
                         jump.expand();
                     }
                     break;
+                case parse.Keyword.Call:
+                    if(auto a = cast(ast.Attribute) jump.destination)
+                    {
+                        auto def = resolveAttribute(program, a);
+                        if(auto funcdef = cast(sym.FuncDef) def)
+                        {
+                            if((cast(ast.FuncDecl) funcdef.decl).inlined)
+                            {
+                                error("call to inline function '" ~ a.fullName() ~ "' must be 'inline call'.", jump.location);
+                            }
+                        }
+                    }
+                    break;
+                case parse.Keyword.Inline:
+                    if(auto a = cast(ast.Attribute) jump.destination)
+                    {
+                        auto def = resolveAttribute(program, a);
+                        if(def)
+                        {
+                            if(auto funcdef = cast(sym.FuncDef) def)
+                            {
+                                jump.expand((cast(ast.FuncDecl) funcdef.decl).inner);
+                            }
+                            else
+                            {
+                                error("an inline call to a non-function really makes no sense.", jump.location);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        error("an inline call to a non-function really makes no sense.", jump.location);
+                    }
+                    break;
                 default:
             }
         }
     );
+
+    verify();
+    program.clearEnvironment();
 
     root.traverse(
         createBlockHandler(program),

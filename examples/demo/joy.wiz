@@ -1,7 +1,7 @@
 package joy do
     func init do
         [joy.unpress] = 0 via a
-        [joy.unpress] = 0 via a
+        [joy.pressed] = 0 via a
     end
 
     func check do
