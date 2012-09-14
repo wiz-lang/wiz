@@ -20,7 +20,7 @@ class Unroll : Statement
         Statement[] code;
         foreach(i; 0 .. times)
         {
-            code ~= _block;
+            code ~= new Block(_block.statements, location);
         }
         _block = new Block(code, location);
     }

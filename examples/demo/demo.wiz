@@ -23,17 +23,6 @@ def start:
     b--; goto repeat when ~zero
 end
 
-inline func memset_inline do
-    c++
-    b++
-    goto start
-def repeat:
-    [hl++] = a
-def start:
-    c--; goto repeat when ~zero
-    b--; goto repeat when ~zero
-end
-
 package hardware do
     inline func detect do
         hl = hardware.type
@@ -65,27 +54,27 @@ func main do
     hl = gb.ram.tile
     a = 0b11111111
     bc = 16
-    call memset
+    inline call memset
     a = 0b10101010
     bc = 16
-    call memset
+    inline call memset
     a = 0b10001000
     bc = 16
-    call memset 
+    inline call memset 
     a = 0b00000000
     bc = 16
-    call memset
+    inline call memset
     hl = gb.ram.map + 32
     a = 0x03
     bc = 1024 - 64
-    call memset
+    inline call memset
     hl = gb.ram.map
     a = 0x00
     bc = 20
-    call memset
+    inline call memset
     hl = gb.ram.map + (32 * 17)
     bc = 20
-    call memset
+    inline call memset
     hl = gb.ram.map + 32
     bc = 32
     unroll 17 do 
