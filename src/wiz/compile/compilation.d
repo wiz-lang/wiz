@@ -517,7 +517,7 @@ auto createBlockHandler(Program program)
             {
                 if(block.name)
                 {
-                    auto match = program.environment.get!(sym.PackageDef)(block.name);
+                    auto match = program.environment.get!(sym.PackageDef)(block.name, true);
                     if(match)
                     {
                         env = match.environment;
@@ -541,7 +541,7 @@ auto createBlockHandler(Program program)
             program.leaveEnvironment();
             if(block.name)
             {
-                auto match = program.environment.get!(sym.PackageDef)(block.name);
+                auto match = program.environment.get!(sym.PackageDef)(block.name, true);
                 if(match is null)
                 {
                     program.environment.put(block.name, new sym.PackageDef(block, pkg));

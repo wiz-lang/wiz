@@ -22,6 +22,10 @@ class Parser
     this(Scanner scanner)
     {
         this.scanner = scanner;
+
+        auto fn = std.path.dirName(scanner.getLocation().file)
+            ~ std.path.dirSeparator ~ std.path.baseName(scanner.getLocation().file);
+        included[fn] = true;
     }
     
     void nextToken()
@@ -113,6 +117,30 @@ class Parser
         return program;
     }
     
+    bool handleEndOfFile()
+    {
+        if(token == Token.EndOfFile)
+        {
+            if(includes.length == 0)
+            {
+                return true;
+            }
+            else
+            {
+                // Remove include guard.
+                included.remove(scanner.getLocation().file);
+                // Pop previous scanner off stack.
+                auto old = scanner;
+                scanner = std.array.back(includes);
+                std.array.popBack(includes);
+                // Ready a new token for the scanner.
+                nextToken();
+                return false;
+            }
+        }
+        return false;
+    }
+
     auto parseProgram()
     {
         // program = (include | statement)* EOF
@@ -120,31 +148,13 @@ class Parser
         ast.Statement[] statements;
         while(true)
         {
-            if(token == Token.EndOfFile)
+            if(handleEndOfFile())
             {
-                if(includes.length == 0)
-                {
-                    break;
-                }
-                else
-                {
-                    // Remove include guard.
-                    included.remove(scanner.getLocation().file);
-                    // Pop previous scanner off stack.
-                    auto old = scanner;
-                    scanner = std.array.back(includes);
-                    std.array.popBack(includes);
-                    // Ready a new token for the scanner.
-                    nextToken();
-                }
+                break;
             }
             if(keyword == Keyword.End || keyword == Keyword.Else || keyword == Keyword.ElseIf)
             {
                 reject();
-            }
-            if(keyword == Keyword.Include)
-            {
-                parseInclude();
             }
             if(auto statement = parseStatement())
             {
@@ -160,7 +170,7 @@ class Parser
         ast.Statement[] statements;
         while(true)
         {
-            if(token == Token.EndOfFile)
+            if(handleEndOfFile())
             {
                 reject("'end'");
                 return null;
@@ -169,7 +179,7 @@ class Parser
             {
                 return statements;
             }
-            if(keyword == Keyword.Else || keyword == Keyword.ElseIf || keyword == Keyword.Include)
+            if(keyword == Keyword.Else || keyword == Keyword.ElseIf)
             {
                 reject("'end'");
             }
@@ -186,15 +196,16 @@ class Parser
         ast.Statement[] statements;
         while(true)
         {
-            if(token == Token.EndOfFile)
+            if(handleEndOfFile())
             {
                 reject("'is'");
+                return null;
             }
             if(keyword == Keyword.Is)
             {
                 return statements;
             }
-            if(keyword == Keyword.End || keyword == Keyword.Else || keyword == Keyword.ElseIf || keyword == Keyword.Include)
+            if(keyword == Keyword.End || keyword == Keyword.Else || keyword == Keyword.ElseIf)
             {
                 reject("'is'");
             }
@@ -211,17 +222,14 @@ class Parser
         ast.Statement[] statements;
         while(true)
         {
-            if(token == Token.EndOfFile)
+            if(handleEndOfFile())
             {
                 reject("'end'");
+                return null;
             }
             if(keyword == Keyword.End || keyword == Keyword.Else || keyword == Keyword.ElseIf)
             {
                 return statements;
-            }
-            if(keyword == Keyword.Include)
-            {
-                reject("'end'");
             }
             if(auto statement = parseStatement())
             {
@@ -253,6 +261,9 @@ class Parser
             case Token.Identifier:
                 switch(keyword)
                 {
+                    case Keyword.Include:
+                        parseInclude();
+                        return null;
                     case Keyword.Embed:
                         return parseEmbed();
                     case Keyword.In:
