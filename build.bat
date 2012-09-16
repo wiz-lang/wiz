@@ -12,7 +12,7 @@ for %%j in (src\wiz src\wiz\ast src\wiz\cpu src\wiz\cpu\gameboy src\wiz\sym src\
 dmd %files% -Isrc -ofwiz -g -debug
 if %errorlevel% neq 0 call :exit 1
 :: Compile a test program.
-wiz examples/demo/demo.wiz
+wiz examples/gameboy/snake/demo.wiz
 if %errorlevel% neq 0 call :exit 1
 :: Success!
 call :exit 0
