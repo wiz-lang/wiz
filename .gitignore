@@ -1,6 +1,8 @@
 wiz.exe
 wiz.obj
 wiz.map
+*.gb
+*.gbc
 *.nes
 *.nes.deb
 *.sublime-workspace

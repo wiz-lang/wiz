@@ -1,4 +1,4 @@
-include '../gameboy.wiz'
+include '../common/gameboy.wiz'
 include 'layout.wiz'
 include 'ram.wiz'
 include 'boot.wiz'
