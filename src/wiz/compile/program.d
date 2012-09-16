@@ -47,6 +47,8 @@ class Program
 
     private NodeScope[ast.Node] scopes;
     private Environment[] environments;
+    private ast.Node[] inlines;
+    private bool[ast.Node] inlined;
     bool finalized;
 
     cpu.Platform platform;
@@ -163,6 +165,30 @@ class Program
             std.stdio.writefln("stack underflow", _environment);
             _environment = null;
         }
+    }
+
+    void enterInline(string context, ast.Node node)
+    {
+        auto match = inlined.get(node, false);
+        if(match)
+        {
+            error("recursive cycle detected in " ~ context ~ ":", node.location, false, true);
+            foreach(i, item; inlines)
+            {
+                log(std.string.format("%s - stack entry #%d", item.location, i));
+            }
+            error("infinite recursion is unrecoverable", node.location, true);
+            abort();
+        }
+
+        inlined[node] = true;
+        inlines ~= node;
+    }
+
+    void leaveInline()
+    {
+        inlined[std.array.back(inlines)] = false;
+        std.array.popBack(inlines);
     }
 
     ubyte[] save()

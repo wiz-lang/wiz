@@ -298,10 +298,12 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
             }
             if(auto constdef = cast(sym.ConstDef) def)
             {
+                program.enterInline("constant '" ~ a.fullName() ~ "'", a);
                 program.enterEnvironment(constdef.environment);
                 uint v;
                 bool folded = foldConstant(program, (cast(ast.ConstDecl) constdef.decl).value, program.finalized, v);
                 program.leaveEnvironment();
+                program.leaveInline();
                 if(folded)
                 {
                     updateValue(a, v);
@@ -590,24 +592,56 @@ auto createCommandHandler(Program program)
     };
 }
 
-auto createJumpHandler(Program program)
+auto createInlineCallValidator(Program program)
 {
-    return(ast.Jump stmt)
+    return(Visitor.Pass pass, ast.Jump stmt)
     {
-        if(stmt.type == parse.Keyword.Inline)
+        if(pass == Visitor.Pass.Before)
         {
-            return;
-        }
-        auto description = parse.getKeywordName(stmt.type) ~ " statement";
-        auto code = program.platform.generateJump(program, stmt);
-        auto bank = program.checkBank(description, stmt.location);
-        if(program.finalized)
-        {
-            bank.writePhysical(code, stmt.location);
+            if(stmt.type == parse.Keyword.Inline)
+            {
+                program.enterInline("'inline call'", stmt);
+            }
         }
         else
         {
-            bank.reservePhysical(description, code.length, stmt.location);
+            if(stmt.type == parse.Keyword.Inline)
+            {
+                program.leaveInline();
+            }
+        }
+    };
+}
+
+auto createJumpHandler(Program program)
+{
+    return(Visitor.Pass pass, ast.Jump stmt)
+    {
+        if(pass == Visitor.Pass.Before)
+        {
+            if(stmt.type == parse.Keyword.Inline)
+            {
+                program.enterInline("'inline call'", stmt);
+            }
+        }
+        else
+        {
+            if(stmt.type == parse.Keyword.Inline)
+            {
+                program.leaveInline();
+                return;
+            }
+            auto description = parse.getKeywordName(stmt.type) ~ " statement";
+            auto code = program.platform.generateJump(program, stmt);
+            auto bank = program.checkBank(description, stmt.location);
+            if(program.finalized)
+            {
+                bank.writePhysical(code, stmt.location);
+            }
+            else
+            {
+                bank.reservePhysical(description, code.length, stmt.location);
+            }
         }
     };
 }
@@ -650,7 +684,6 @@ auto createComparisonHandler(Program program)
 
 void build(Program program, ast.Node root)
 {
-    uint depth = 0;
     program.rewind();
     root.traverse(
         createBlockHandler(program),
@@ -686,6 +719,7 @@ void build(Program program, ast.Node root)
         },
     );
 
+    uint depth = 0;
     program.rewind();
     root.traverse(
         createBlockHandler(program),
@@ -736,7 +770,6 @@ void build(Program program, ast.Node root)
                         auto def = resolveAttribute(program, a);
                         if(def)
                         {
-                            std.stdio.writeln(jump.location.toString() ~ ": " ~ a.fullName() ~ " IS INLINED");
                             if(auto funcdef = cast(sym.FuncDef) def)
                             {
                                 jump.expand((cast(ast.FuncDecl) funcdef.decl).inner);
@@ -763,6 +796,7 @@ void build(Program program, ast.Node root)
     program.rewind();
     root.traverse(
         createBlockHandler(program),
+        createInlineCallValidator(program),
 
         (ast.ConstDecl decl)
         {

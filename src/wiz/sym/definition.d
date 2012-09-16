@@ -6,6 +6,7 @@ import wiz.sym.lib;
 class Definition
 {
     ast.Node decl;
+    bool visited;
 
     this(ast.Node decl)
     {
