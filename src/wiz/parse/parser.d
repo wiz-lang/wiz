@@ -749,10 +749,16 @@ class Parser
             func.inlined = true;
             return func;
         }
+        else if(keyword == Keyword.Task)
+        {
+            auto func = parseFuncDecl();
+            error("'inline task' is not a valid construct, try 'inline func' instead.", location);
+            return null;
+        }
         else if(keyword == Keyword.Call)
         {
             bool far;
-            nextToken(); // IDENTIFIER (keyword)
+            nextToken(); // IDENTIFIER (keyword 'call')
             if(token == Token.Exclaim)
             {
                 nextToken(); // '!'

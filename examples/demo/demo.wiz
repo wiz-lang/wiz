@@ -13,8 +13,7 @@ include 'player.wiz'
 //      a = value
 //      bc = count
 func memset do
-    c++
-    b++
+    c++; b++
     goto start
 def repeat:
     [hl++] = a
@@ -46,35 +45,37 @@ func main do
     call video.init
     call player.init
 
+    // Turn off the screen.
     call video.disable
-    [gb.scroll.y] = 0 via a
-    [gb.window.y] = 0 via a
+
+    // Set up a simple black-to-white 4-color palette.
     [gb.mono.palette.bg] = 0b11100100 via a
 
+    // Fill in some very crappy striped tile patterns.
     hl = gb.ram.tile
-    a = 0b11111111
-    bc = 16
+    a = 0b11111111; bc = 16
     inline call memset
-    a = 0b10101010
-    bc = 16
+    a = 0b10101010; bc = 16
     inline call memset
-    a = 0b10001000
-    bc = 16
+    a = 0b10001000; bc = 16
     inline call memset
-    a = 0b00000000
-    bc = 16
+    a = 0b00000000; bc = 16
     inline call memset
+
+    // Clear screen.
     hl = gb.ram.map + 32
-    a = 0x03
-    bc = 1024 - 64
+    a = 0x03; bc = 1024 - 64
     inline call memset
+
+    // Draw horizontal walls.
     hl = gb.ram.map
-    a = 0x00
-    bc = 20
+    a = 0x00; bc = 20
     inline call memset
     hl = gb.ram.map + (32 * 17)
     bc = 20
     inline call memset
+
+    // Draw vertical walls.
     hl = gb.ram.map + 32
     bc = 32
     unroll 17 do 
@@ -87,10 +88,14 @@ func main do
         hl = hl + bc
     end
 
+    // Turn the screen back on, with backgrounds enabled using tileset 2.
     [gb.lcd.ctrl] = gb.lcd.CTRL_ON | gb.lcd.CTRL_TILESET2 | gb.lcd.CTRL_BG_ON via a
-    [gb.lcd.stat] = gb.lcd.STAT_SCANLINE_ENABLE via a
+
+    // Enable some basic interrupts.
     [gb.interrupt.enable] = gb.interrupt.VBLANK | gb.interrupt.STAT via a
+    [gb.lcd.stat] = gb.lcd.STAT_SCANLINE_ENABLE via a
     interrupt = 1
+
     loop
         call joy.check
         call player.update
@@ -121,6 +126,7 @@ end
 task stub do
     inline call stack_cleanup
 end
+
 let timer = stub
 let serial = stub
 let joypad = stub
