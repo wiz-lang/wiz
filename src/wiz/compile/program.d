@@ -3,21 +3,57 @@ module wiz.compile.program;
 import wiz.lib;
 import wiz.compile.lib;
 
+class NodeScope
+{
+    private Environment[] environments;
+    private size_t index;
+
+    this(Environment environment)
+    {
+        environments = [environment];
+        index = environments.length;
+    }
+
+    void rewind()
+    {
+        index = 0;
+    }
+
+    void add(Environment environment)
+    {
+        environments ~= environment;
+        index = environments.length;
+    }
+
+    Environment next()
+    {
+        if(index < environments.length)
+        {
+            return environments[index++];
+        }
+        else
+        {
+            return null;
+        }
+    }
+}
+
 class Program
 {
     private Environment _environment;
 
     private Bank bank;
     private Bank[] banks;
-    private Environment[ast.Node] nodeEnvironments;
-    private Environment[] environmentStack;
+
+    private NodeScope[ast.Node] scopes;
+    private Environment[] environments;
     bool finalized;
 
     cpu.Platform platform;
         
     this(cpu.Platform platform)
     {
-        bank = null;
+        this.bank = null;
         this.platform = platform;
         clearEnvironment();
     }
@@ -26,6 +62,10 @@ class Program
 
     void rewind()
     {
+        foreach(i, s; scopes)
+        {
+            s.rewind();
+        }
         foreach(i, b; banks)
         {
             b.rewind();
@@ -75,36 +115,48 @@ class Program
         }
 
         _environment = env;
-        nodeEnvironments.clear();
-        environmentStack = [env];
+        scopes = null;
+        environments = [env];
     }
 
-    void enterEnvironment(ast.Node node, Environment e = null)
+    void createNodeEnvironment(ast.Node node, Environment environment)
     {
-        Environment match = nodeEnvironments.get(node, null);
-        if(match is null)
+        NodeScope match = scopes.get(node, null);
+        if(match)
         {
-            if(e is null)
-            {
-                e = new Environment(_environment);
-            }
-            nodeEnvironments[node] = e;
+            match.add(environment);
         }
         else
         {
-            e = match;
+            scopes[node] = new NodeScope(environment);
         }
+    }
 
-        environmentStack ~= e;
+    Environment nextNodeEnvironment(ast.Node node)
+    {
+        NodeScope match = scopes.get(node, null);
+        if(match)
+        {
+            return match.next();
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    void enterEnvironment(Environment e)
+    {
+        environments ~= e;
         _environment = e;
     }
 
     void leaveEnvironment()
     {
-        std.array.popBack(environmentStack);
-        if(environmentStack.length > 0)
+        std.array.popBack(environments);
+        if(environments.length > 0)
         {
-            _environment = std.array.back(environmentStack);
+            _environment = std.array.back(environments);
         }
         else
         {

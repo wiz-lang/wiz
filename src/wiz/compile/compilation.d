@@ -298,7 +298,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
             }
             if(auto constdef = cast(sym.ConstDef) def)
             {
-                program.enterEnvironment(constdef.decl, constdef.environment);
+                program.enterEnvironment(constdef.environment);
                 uint v;
                 bool folded = foldConstant(program, (cast(ast.ConstDecl) constdef.decl).value, program.finalized, v);
                 program.leaveEnvironment();
@@ -510,22 +510,28 @@ auto createBlockHandler(Program program)
     {
         if(pass == Visitor.Pass.Before)
         {
-            if(block.name)
+            Environment env = program.nextNodeEnvironment(block);
+            if(env is null)
             {
-                auto match = program.environment.get!(sym.PackageDef)(block.name);
-                if(match !is null)
+                if(block.name)
                 {
-                    program.enterEnvironment(block, match.environment);
+                    auto match = program.environment.get!(sym.PackageDef)(block.name);
+                    if(match)
+                    {
+                        env = match.environment;
+                    }
+                    else
+                    {
+                        env = new Environment(program.environment);
+                    }
                 }
                 else
                 {
-                    program.enterEnvironment(block);
+                    env = new Environment(program.environment);
                 }
+                program.createNodeEnvironment(block, env);
             }
-            else
-            {
-                program.enterEnvironment(block);
-            }
+            program.enterEnvironment(env);
         }
         else
         {
@@ -645,6 +651,7 @@ auto createComparisonHandler(Program program)
 void build(Program program, ast.Node root)
 {
     uint depth = 0;
+    program.rewind();
     root.traverse(
         createBlockHandler(program),
 
@@ -679,6 +686,7 @@ void build(Program program, ast.Node root)
         },
     );
 
+    program.rewind();
     root.traverse(
         createBlockHandler(program),
 
@@ -728,6 +736,7 @@ void build(Program program, ast.Node root)
                         auto def = resolveAttribute(program, a);
                         if(def)
                         {
+                            std.stdio.writeln(jump.location.toString() ~ ": " ~ a.fullName() ~ " IS INLINED");
                             if(auto funcdef = cast(sym.FuncDef) def)
                             {
                                 jump.expand((cast(ast.FuncDecl) funcdef.decl).inner);
@@ -751,6 +760,7 @@ void build(Program program, ast.Node root)
     verify();
     program.clearEnvironment();
 
+    program.rewind();
     root.traverse(
         createBlockHandler(program),
 
@@ -781,6 +791,7 @@ void build(Program program, ast.Node root)
         },
     );
 
+    program.rewind();
     root.traverse(
         createBlockHandler(program),
 

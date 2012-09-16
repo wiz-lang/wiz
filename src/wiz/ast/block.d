@@ -10,7 +10,6 @@ class Block : Statement
 {
     private string _name;
     private Statement[] _statements;
-    //private compile.Environment environment;
 
     this(Statement[] statements, compile.Location location)
     {
