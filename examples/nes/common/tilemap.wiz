@@ -27,7 +27,7 @@ package tilemap do
         [ppu.mask] = a
         // Read PPU status to reset its state.
         a = [ppu.status]
-        
+
         // Now setup the PPU for copying tiles.
         [ppu.address] = [nametable_index] << 2 + >TILE_ADDRESS via a
         [ppu.address] = <TILE_ADDRESS via a
@@ -232,19 +232,19 @@ package tilemap do
             
             // Copy top-right tile
             y = [tile]; a = [[ptr]:y]
-            y: 0; [[dest]:y] = a
+            y = 0; [[dest]:y] = a
             [dest]++
             [ptr_hi]++
             
             // Copy bottom-left tile
-            y = [tile]; a: [[ptr]:y]
-            y: 0; [[dest]:y] = a
+            y = [tile]; a = [[ptr]:y]
+            y = 0; [[dest]:y] = a
             [dest]++
             [ptr_hi]++
             
             // Copy bottom-right tile
             y = [tile]; a = [[ptr]:y]
-            y: 0; [[dest]:y] = a
+            y = 0; [[dest]:y] = a
             [dest]++
             
             // Move ptr back to top-left again.
@@ -311,9 +311,6 @@ package tilemap do
             // Get the metatile index for this column, and put it into y.
             y = [[map]:y] via a
             // Get the attribute for this column and combine with the existing attribute.
-            // xxxxxxDD -> 000000DD
-            a: get @[ptr][y], and #3
-            // Get the attribute for this column and combine with the existing attribute.
             // Rotate 3 times, because rotation is 9-bit due using the carry.
             // This also why we unset the carry, so that we don't accidentally slip in a
             // 1 bit during the roatation.
@@ -321,7 +318,7 @@ package tilemap do
             carry = 0
             a = [[ptr]:y] & 3 >>> 3 | [combined_attr]
             // Write to destination.
-            y: 0; [[dest]:y] = a
+            y = 0; [[dest]:y] = a
             [dest]++
             
             // Advance the source by one row.
@@ -349,7 +346,7 @@ package tilemap do
         // xxxxxxBB -> 0000BBAA
         a = [[ptr]:y] & 3 << 2 | [combined_attr]        
         // Write to destination.
-        y: 0; [[dest]:y] = a
+        y = 0; [[dest]:y] = a
     end
     
     // Draws a scroll buffer's tiles offscreen. Should be called during NMI.
@@ -375,7 +372,7 @@ package tilemap do
     
         // Check if this is an even or odd column.
         a = a & 1
-        if ~zero then
+        if is ~zero then
             [src]++
         end
         
@@ -423,6 +420,6 @@ package tilemap do
             [camera_x_lo] = [camera_x_lo] + 8 via a
             y++
             compare y to 8
-        until = end
+        until == end
     end
 end

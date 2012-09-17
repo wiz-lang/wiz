@@ -920,96 +920,90 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
                         default:
                             return invalidAssignmentError(dest, load, stmt.location);
                     }
-                case ArgumentType.Indirection:
-                    switch(dest.base.base.type)
-                    {
-                        case ArgumentType.Index:
-                            auto index = dest.base.base;
-                            // 'a = [[addr:x]]' -> 'lda [addr, x]'
-                            if(index.base.type == ArgumentType.Immediate
-                            && index.secondary.type == ArgumentType.X)
-                            {
-                                uint address;
-                                compile.foldByte(program, index.base.immediate, program.finalized, address);
-                                if(load.type == ArgumentType.A)
-                                {
-                                    return [0x81, address & 0xFF];
-                                }
-                                else
-                                {
-                                    return invalidAssignmentError(dest, load, stmt.location);
-                                }
-                            }
-                            else
-                            {
-                                return invalidAssignmentDestError(dest, stmt.location);
-                            }
-                        default:
-                            return invalidAssignmentDestError(dest, stmt.location);
-                    }
                 case ArgumentType.Index:
                     auto index = dest.base;
-                    switch(index.base.type)
+                    // 'a = [[addr:x]]' -> 'lda [addr, x]'
+                    if(index.base.type == ArgumentType.Immediate
+                    && index.secondary.type == ArgumentType.X)
                     {
-                        case ArgumentType.Immediate:
-                            uint address;
-                            // 'a = [addr:x]' -> 'lda addr, x'
-                            if(index.secondary.type == ArgumentType.X)
-                            {
-                                switch(load.type)
-                                {
-                                    case ArgumentType.A:
-                                        compile.foldWord(program, index.base.immediate, program.finalized, address);
-                                        return address < 0xFF
-                                            ? [0x95, address & 0xFF]
-                                            : [0x9D, address & 0xFF, (address >> 8) & 0xFF];
-                                    case ArgumentType.Y:
-                                        compile.foldByte(program, index.base.immediate, program.finalized, address);
-                                        return [0x94, address & 0xFF];
-                                    default:
-                                        return invalidAssignmentError(dest, load, stmt.location);
-                                }
-                            }
-                            // 'a = [addr:y]' -> 'lda addr, y'
-                            else if(index.secondary.type == ArgumentType.Y)
-                            {
-                                switch(load.type)
-                                {
-                                    case ArgumentType.A:
-                                        compile.foldWord(program, index.base.immediate, program.finalized, address);
-                                        return [0x99, address & 0xFF];
-                                    case ArgumentType.Y:
-                                        compile.foldByte(program, index.base.immediate, program.finalized, address);
-                                        return [0x96, address & 0xFF];
-                                    default:
-                                        return invalidAssignmentError(dest, load, stmt.location);
-                                }
-                            }
-                            else
-                            {
-                                return invalidAssignmentDestError(dest, stmt.location);
-                            }
-                        case ArgumentType.Indirection:
-                            // 'a = [[addr]:y]' -> 'lda [addr], y'
-                            if(index.secondary.type == ArgumentType.Y)
-                            {
-                                uint address;
-                                compile.foldByte(program, index.base.immediate, program.finalized, address);
-                                if(load.type == ArgumentType.A)
-                                {
-                                    return [0x91, address & 0xFF];
-                                }
-                                else
-                                {
-                                    return invalidAssignmentError(dest, load, stmt.location);
-                                }
-                            }
-                            else
-                            {
-                                return invalidAssignmentDestError(dest, stmt.location);
-                            }
-                        default:
-                            return invalidAssignmentDestError(dest, stmt.location);
+                        uint address;
+                        compile.foldByte(program, index.base.immediate, program.finalized, address);
+                        if(load.type == ArgumentType.A)
+                        {
+                            return [0x81, address & 0xFF];
+                        }
+                        else
+                        {
+                            return invalidAssignmentError(dest, load, stmt.location);
+                        }
+                    }
+                    else
+                    {
+                        return invalidAssignmentDestError(dest, stmt.location);
+                    }
+                default:
+                    return invalidAssignmentDestError(dest, stmt.location);
+            }
+        case ArgumentType.Index:
+            switch(dest.base.type)
+            {
+                case ArgumentType.Immediate:
+                    uint address;
+                    // 'a = [addr:x]' -> 'lda addr, x'
+                    if(dest.secondary.type == ArgumentType.X)
+                    {
+                        switch(load.type)
+                        {
+                            case ArgumentType.A:
+                                compile.foldWord(program, dest.base.immediate, program.finalized, address);
+                                return address < 0xFF
+                                    ? [0x95, address & 0xFF]
+                                    : [0x9D, address & 0xFF, (address >> 8) & 0xFF];
+                            case ArgumentType.Y:
+                                compile.foldByte(program, dest.base.immediate, program.finalized, address);
+                                return [0x94, address & 0xFF];
+                            default:
+                                return invalidAssignmentError(dest, load, stmt.location);
+                        }
+                    }
+                    // 'a = [addr:y]' -> 'lda addr, y'
+                    else if(dest.secondary.type == ArgumentType.Y)
+                    {
+                        switch(load.type)
+                        {
+                            case ArgumentType.A:
+                                compile.foldWord(program, dest.base.immediate, program.finalized, address);
+                                return [0x99, address & 0xFF];
+                            case ArgumentType.Y:
+                                compile.foldByte(program, dest.base.immediate, program.finalized, address);
+                                return [0x96, address & 0xFF];
+                            default:
+                                return invalidAssignmentError(dest, load, stmt.location);
+                        }
+                    }
+                    else
+                    {
+                        return invalidAssignmentDestError(dest, stmt.location);
+                    }
+                case ArgumentType.Indirection:
+                    // 'a = [[addr]:y]' -> 'lda [addr], y'
+                    if(dest.base.base.type == ArgumentType.Immediate
+                    && dest.secondary.type == ArgumentType.Y)
+                    {
+                        uint address;
+                        compile.foldByte(program, dest.base.base.immediate, program.finalized, address);
+                        if(load.type == ArgumentType.A)
+                        {
+                            return [0x91, address & 0xFF];
+                        }
+                        else
+                        {
+                            return invalidAssignmentError(dest, load, stmt.location);
+                        }
+                    }
+                    else
+                    {
+                        return invalidAssignmentDestError(dest, stmt.location);
                     }
                 default:
                     return invalidAssignmentDestError(dest, stmt.location);
@@ -1091,7 +1085,6 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
             }
         case ArgumentType.Zero:
         case ArgumentType.Negative:
-        case ArgumentType.Index:
         case ArgumentType.Immediate:
         case ArgumentType.BitAnd:
         case ArgumentType.Not:

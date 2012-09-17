@@ -19,6 +19,9 @@ echo.
 wiz examples/nes/hello/hello.wiz -6502 -o examples/nes/hello/hello.nes
 if %errorlevel% neq 0 call :exit 1
 echo.
+:: Compile another test program.
+wiz examples/nes/scroller/scroller.wiz -6502 -o examples/nes/scroller/scroller.nes
+if %errorlevel% neq 0 call :exit 1
 :: Success!
 call :exit 0
 

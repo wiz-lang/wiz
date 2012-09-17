@@ -78,7 +78,7 @@ in prg, 0xC000:
         // Wait for the PPU to be ready to use, which takes 2 vertical blanks.
         loop
             loop
-                compare a & [ppu.status] // TODO
+                compare a & [ppu.status]
             until negative end
             x++
             compare x to 2 
