@@ -20,10 +20,29 @@ class Loop : Statement
         bool tailConditional = false;
         if(block.statements.length > 0)
         {
-            // 'while' or 'until' as last statement of loop? Remove unconditional jump.
+            // 'while' or 'until' as last statement of loop?
             if(auto tail = cast(Jump) block.statements[block.statements.length - 1])
             {
-                tailConditional = tail.type == parse.Keyword.While || tail.type == parse.Keyword.Until;
+                switch(tail.type)
+                {
+                    case parse.Keyword.While:
+                        // Tail 'while cond' -> 'continue when cond'.
+                        tailConditional = true;
+                        auto jump = new Jump(parse.Keyword.Continue, far,
+                            tail.condition, location
+                        );
+                        block.statements[block.statements.length - 1] = jump;
+                        break;
+                    case parse.Keyword.Until:
+                        // Tail 'until cond' -> 'continue when ~cond'.
+                        tailConditional = true;
+                        auto jump = new Jump(parse.Keyword.Continue, far,
+                            new JumpCondition(true, tail.condition), location
+                        );
+                        block.statements[block.statements.length - 1] = jump;
+                        break;
+                    default:
+                }
             }
         }
 
@@ -36,6 +55,7 @@ class Loop : Statement
         code ~= _block;
         if(!tailConditional)
         {
+            // Remove unconditional jump,
             code ~= new Jump(parse.Keyword.Goto, far,
                 new Attribute(["$loop"], location),
                 null, location

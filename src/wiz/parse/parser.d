@@ -1024,7 +1024,7 @@ class Parser
         // comparison = 'compare' expression ('to' expression)?
         auto location = scanner.getLocation();
         nextToken(); // IDENTIFIER (keyword 'compare')
-        auto term = parseAssignableTerm();
+        auto term = parseExpression();
         if(keyword == Keyword.To)
         {
             nextToken(); // IDENTIFIER (keyword 'to')

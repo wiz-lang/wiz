@@ -233,11 +233,11 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
                     }
                     else
                     {
-                        error("'goto hl' does not support 'when' clause", stmt.condition.location);
+                        error("'goto hl' does not support 'when' clause", stmt.destination.location);
                     }
                     return [];
                 default:
-                    error("unsupported argument to 'goto'", stmt.condition.location);
+                    error("unsupported argument to 'goto'", stmt.destination.location);
                     return [];
             }
         case parse.Keyword.Call:
@@ -265,7 +265,7 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
                     }
                     return [];
                 default:
-                    error("unsupported argument to 'call'", stmt.condition.location);
+                    error("unsupported argument to 'call'", stmt.destination.location);
                     return [];
             }
         case parse.Keyword.Return:
@@ -300,6 +300,7 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
         case parse.Keyword.Suspend: return ensureUnconditional(stmt,  "'suspend'", [0x10, 0x00]);
         case parse.Keyword.Nop: return ensureUnconditional(stmt, "'nop'", [0x00]);
         default:
+            error("instruction not supported", stmt.destination.location);
             return [];
     }
 }
@@ -308,6 +309,10 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
 {
     auto left = buildArgument(program, stmt.left);
     auto right = stmt.right ? buildArgument(program, stmt.right) : null;
+    if(left is null)
+    {
+        return [];
+    }
     switch(left.type)
     {
         case ArgumentType.A:
@@ -425,6 +430,10 @@ ubyte[] generatePostfixAssignment(compile.Program program, ast.Assignment stmt)
         parse.Postfix.Dec: "'--'"
     ][stmt.postfix];
 
+    if(dest is null)
+    {
+        return [];
+    }
     switch(dest.type)
     {
         case ArgumentType.A:
@@ -890,6 +899,10 @@ ubyte[] getPrefixLoad(compile.Program program, ast.Assignment stmt, Argument des
             {
                 return getPrefixLoad(program, stmt, dest, load.base) ~ cast(ubyte[])[0x2F];
             }
+            else if(dest.type == ArgumentType.Carry)
+            {
+                return getPrefixLoad(program, stmt, dest, load.base) ~ cast(ubyte[])[0x3F];
+            }
             else
             {
                 return invalidAssignmentError(dest, load, stmt.location);
@@ -900,10 +913,6 @@ ubyte[] getPrefixLoad(compile.Program program, ast.Assignment stmt, Argument des
             if(dest.type == ArgumentType.A)
             {
                 return getPrefixLoad(program, stmt, dest, load.base) ~ cast(ubyte[])[0x2F, 0x3C];
-            }
-            if(dest.type == ArgumentType.Not)
-            {
-                return getPrefixLoad(program, stmt, dest, load.base) ~ cast(ubyte[])[0x3F];
             }
             else
             {

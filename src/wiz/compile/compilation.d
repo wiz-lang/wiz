@@ -346,7 +346,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
         },
     );
 
-    result = values.get(root, 0);
+    result = values.get(root, 0xCACA);
     if(!completeness.get(root, false) && runtimeForbidden && finalized)
     {
         error("expression could not be resolved as a constant", root.location);

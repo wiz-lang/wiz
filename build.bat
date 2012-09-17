@@ -3,7 +3,7 @@
 :: A poor alternative to directory globbing.
 setlocal ENABLEDELAYEDEXPANSION
 set files=
-for %%j in (src\wiz src\wiz\ast src\wiz\cpu src\wiz\cpu\gameboy src\wiz\sym src\wiz\parse src\wiz\compile) do (
+for %%j in (src\wiz src\wiz\ast src\wiz\cpu src\wiz\cpu\gameboy src\wiz\cpu\mos6502 src\wiz\sym src\wiz\parse src\wiz\compile) do (
     set directory=%%j%
     for /f %%i in ('dir /b !directory!\*.d') do set "files=!files!!directory!\%%i "
 )
@@ -12,8 +12,13 @@ for %%j in (src\wiz src\wiz\ast src\wiz\cpu src\wiz\cpu\gameboy src\wiz\sym src\
 dmd %files% -Isrc -ofwiz -g -debug
 if %errorlevel% neq 0 call :exit 1
 :: Compile a test program.
-wiz examples/gameboy/snake/snake.wiz
+wiz examples/gameboy/snake/snake.wiz -gb -o examples/gameboy/snake/snake.gb
 if %errorlevel% neq 0 call :exit 1
+echo.
+:: Compile another test program.
+wiz examples/nes/hello/hello.wiz -6502 -o examples/nes/hello/hello.nes
+if %errorlevel% neq 0 call :exit 1
+echo.
 :: Success!
 call :exit 0
 

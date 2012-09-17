@@ -20,6 +20,7 @@ int run(string[] arguments)
     ArgumentState state = ArgumentState.Input;
     string input;
     string output;
+    string platform;
     
     wiz.notice("version " ~ wiz.VersionText);
     
@@ -37,13 +38,36 @@ int run(string[] arguments)
                     std.stdio.writeln("usage: " ~ wiz.ProgramName ~ " [... arg]");
                     std.stdio.writeln("  where args can can be one of:");
                     std.stdio.writeln("    input_filename");
-                    std.stdio.writeln("      (required) the name of the nel source file to compile");
+                    std.stdio.writeln("      the name of the source file to compile");
                     std.stdio.writeln("    -o output_filename");
-                    std.stdio.writeln("      the name of the .nes rom file to generate.");
-                    std.stdio.writeln("      (defaults to $input_filename + '.nes').");
+                    std.stdio.writeln("      the name of the rom file to generate.");
+                    std.stdio.writeln("    -gb");
+                    std.stdio.writeln("      generate GBZ80 code (Game Boy, Game Boy Color)");
+                    std.stdio.writeln("    -6502");
+                    std.stdio.writeln("      generate 6502 code (NES, C64, Atari, Apple, etc)");
                     std.stdio.writeln("    -h, --help");
                     std.stdio.writeln("      this helpful mesage");
                     return 1;
+                case "-gb":
+                    if(platform)
+                    {
+                        wiz.notice(std.string.format("platform already set to '%s'. skipping '%s'", platform, arg));
+                    }
+                    else
+                    {
+                        platform = arg;
+                    }
+                    break;
+                case "-6502":
+                    if(platform)
+                    {
+                        wiz.notice(std.string.format("platform already set to '%s'. skipping '%s'", platform, arg));
+                    }
+                    else
+                    {
+                        platform = arg;
+                    }
+                    break;
                 default:
                     wiz.notice(std.string.format("unknown command line option '%s'. ignoring...", arg));
                     break;
@@ -56,7 +80,7 @@ int run(string[] arguments)
                 default:
                 case ArgumentState.Input:
                     
-                    if(input != "")
+                    if(input)
                     {
                         wiz.notice(std.string.format("input file already set to '%s'. skipping '%s'", input, arg));
                     }
@@ -66,7 +90,7 @@ int run(string[] arguments)
                     }
                     break;
                 case ArgumentState.Output:
-                    if(output != "")
+                    if(output)
                     {
                         wiz.notice(std.string.format("output file already set to '%s'. skipping '%s'", output, arg));
                     }
@@ -85,10 +109,15 @@ int run(string[] arguments)
         wiz.notice("no input file given. type `" ~ wiz.ProgramName ~ " --help` to see program usage.");
         return 1;
     }
-    // Assume a default file of <<input_filename>>.gb
     if(!output)
     {
-        output = std.path.stripExtension(input) ~ ".gb";
+        wiz.notice("no output file given. type `" ~ wiz.ProgramName ~ " --help` to see program usage.");
+        return 1;
+    }
+    if(!platform)
+    {
+        wiz.notice("no platform given. type `" ~ wiz.ProgramName ~ " --help` to see program usage.");
+        return 1;
     }
     
     if(std.file.exists(input))
@@ -113,7 +142,18 @@ int run(string[] arguments)
 
     auto scanner = new wiz.parse.Scanner(std.stdio.File(input, "rb"), input);
     auto parser = new wiz.parse.Parser(scanner);
-    auto program = new wiz.compile.Program(new wiz.cpu.gameboy.GameboyPlatform());
+    wiz.compile.Program program;
+    switch(platform)
+    {
+        case "-gb":
+            program = new wiz.compile.Program(new wiz.cpu.gameboy.GameboyPlatform());
+            break;
+        case "-6502":
+            program = new wiz.compile.Program(new wiz.cpu.mos6502.Mos6502Platform());
+            break;
+        default:
+            assert(0);
+    }
 
     wiz.log(">> Building...");
     auto block = parser.parse();
