@@ -58,7 +58,7 @@ package tilemap do
 
                 // Get the column back, and increment.
                 // If we've done this 16 times, stop -- we've finished the row.
-                y = column; y++
+                y = [column]; y++
                 compare y to 16
             until zero end
             
@@ -75,7 +75,7 @@ package tilemap do
                 [ptr_hi]++
                 [ppu.data] = [[ptr]:y] via a
 
-                y = column; y++
+                y = [column]; y++
                 compare y to 16
             until zero end
             
@@ -407,7 +407,7 @@ package tilemap do
         else
             a = [camera_x_hi] & 1
         end
-        [camera_x_hi] = a << 2 + 0x23
+        [camera_x_hi] = a << 2 + 0x23 via a
         [camera_x_lo] = [camera_x_lo] >> 5 + 0xC0 via a
 
         a = [ppu.status]

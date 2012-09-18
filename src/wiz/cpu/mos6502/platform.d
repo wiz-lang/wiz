@@ -249,18 +249,6 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
                     error("unsupported argument to 'call'", stmt.destination.location);
                     return [];
             }
-        case parse.Keyword.Break:
-            // TODO
-            return [];
-        case parse.Keyword.Continue:
-            // TODO
-            return [];
-        case parse.Keyword.While:
-            // TODO
-            return [];
-        case parse.Keyword.Until:
-            // TODO
-            return [];
         case parse.Keyword.Return: return ensureUnconditional(stmt, "'return'", [0x60]);            
         case parse.Keyword.Resume: return ensureUnconditional(stmt, "'resume'", [0x40]);
         case parse.Keyword.Nop: return ensureUnconditional(stmt, "'nop'", [0xEA]);
@@ -270,6 +258,30 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
     }
 }
 
+ubyte[] comparisonMissingSecondaryError(Argument left, compile.Location location)
+{
+    error("'to' clause is required after " ~ left.toString() ~ " in 'compare' statement", location);
+    return [];
+}
+
+ubyte[] comparisonDisallowedSecondaryError(Argument left, compile.Location location)
+{
+    error("'to' clause is not allowed after " ~ left.toString() ~ " in 'compare' statement", location);
+    return [];
+}
+
+ubyte[] comparisonBadSecondaryError(Argument left, Argument right, compile.Location location)
+{
+    error("cannot compare " ~ left.toString() ~ " to " ~ right.toString() ~ " in 'compare' statement", location);
+    return [];
+}
+
+ubyte[] comparisonBadPrimaryError(Argument left, compile.Location location)
+{
+    error(left.toString() ~ " cannot be the primary term of a 'compare' statement.", location);
+    return [];
+}
+
 ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
 {
     auto left = buildArgument(program, stmt.left);
@@ -277,12 +289,7 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
     switch(left.type)
     {
         case ArgumentType.A:
-            if(right is null)
-            {
-                error("'to' clause is required after 'compare a'", stmt.right.location);
-                return [];
-            }
-            else
+            if(right)
             {
                 // 'compare a to expr' -> 'cmp a, expr'
                 switch(right.type)
@@ -300,81 +307,54 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                                 return address < 0xFF
                                     ? [0xC5, address & 0xFF]
                                     : [0xCD, address & 0xFF, (address >> 8) & 0xFF];
-                            case ArgumentType.Indirection:
-                                switch(right.base.base.type)
-                                {
-                                    case ArgumentType.Index:
-                                        auto index = right.base.base;
-                                        if(index.base.type == ArgumentType.Immediate
-                                        && index.secondary.type == ArgumentType.X)
-                                        {
-                                            uint address;
-                                            compile.foldByte(program, index.base.immediate, program.finalized, address);
-                                            return [0xC1, address & 0xFF];
-                                        }
-                                        else
-                                        {
-                                            error("unsupported operand in 'to' clause of 'compare a to ...'", stmt.right.location);
-                                            return [];
-                                        }
-                                    default:
-                                        error("unsupported operand in 'to' clause of 'compare a to ...'", stmt.right.location);
-                                        return [];
-                                }
                             case ArgumentType.Index:
-                                auto index = right.base;
-                                switch(index.base.type)
+                                if(right.base.base.type == ArgumentType.Immediate
+                                && right.base.secondary.type == ArgumentType.X)
                                 {
-                                    case ArgumentType.Immediate:                                        
-                                        uint address;
-                                        compile.foldWord(program, index.base.immediate, program.finalized, address);
-                                        if(index.secondary.type == ArgumentType.X)
-                                        {
-                                            return address < 0xFF
-                                                ? [0xD5, address & 0xFF]
-                                                : [0xDD, address & 0xFF, (address >> 8) & 0xFF];
-                                        }
-                                        else if(index.secondary.type == ArgumentType.Y)
-                                        {
-                                            return [0xD9, address & 0xFF, (address >> 8) & 0xFF];
-                                        }
-                                        else
-                                        {
-                                            error("unsupported operand in 'to' clause of 'compare a to ...'", stmt.right.location);
-                                            return [];
-                                        }
-                                    case ArgumentType.Indirection:
-                                        if(index.secondary.type == ArgumentType.Y)
-                                        {
-                                            uint address;
-                                            compile.foldByte(program, index.base.immediate, program.finalized, address);
-                                            return [0xD1, address & 0xFF];
-                                        }
-                                        else
-                                        {
-                                            error("unsupported operand in 'to' clause of 'compare a to ...'", stmt.right.location);
-                                            return [];
-                                        }
-                                    default:
-                                        error("unsupported operand in 'to' clause of 'compare a to ...'", stmt.right.location);
-                                        return [];
+                                    uint address;
+                                    compile.foldByte(program, right.base.base.immediate, program.finalized, address);
+                                    return [0xC1, address & 0xFF];
                                 }
+                                return comparisonBadSecondaryError(left, right, stmt.right.location);
                             default:
-                                error("unsupported operand in 'to' clause of 'compare a to ...'", stmt.right.location);
-                                return [];
+                                return comparisonBadSecondaryError(left, right, stmt.right.location);
+                        }
+                    case ArgumentType.Index:
+                        switch(right.base.type)
+                        {
+                            case ArgumentType.Immediate:                                        
+                                uint address;
+                                compile.foldWord(program, right.base.immediate, program.finalized, address);
+                                if(right.secondary.type == ArgumentType.X)
+                                {
+                                    return address < 0xFF
+                                        ? [0xD5, address & 0xFF]
+                                        : [0xDD, address & 0xFF, (address >> 8) & 0xFF];
+                                }
+                                if(right.secondary.type == ArgumentType.Y)
+                                {
+                                    return [0xD9, address & 0xFF, (address >> 8) & 0xFF];
+                                }
+                                return comparisonBadSecondaryError(left, right, stmt.right.location);
+                            case ArgumentType.Indirection:
+                                if(right.base.base.type == ArgumentType.Immediate
+                                && right.secondary.type == ArgumentType.Y)
+                                {
+                                    uint address;
+                                    compile.foldByte(program, right.base.base.immediate, program.finalized, address);
+                                    return [0xD1, address & 0xFF];
+                                }
+                                return comparisonBadSecondaryError(left, right, stmt.right.location);
+                            default:
+                                return comparisonBadSecondaryError(left, right, stmt.right.location);
                         }
                     default:
-                        error("unsupported operand in 'to' clause of 'compare a to ...'", stmt.right.location);
-                        return [];
+                        return comparisonBadSecondaryError(left, right, stmt.right.location);
                 }
             }
+            return comparisonMissingSecondaryError(left, stmt.left.location);
         case ArgumentType.X:
-            if(right is null)
-            {
-                error("'to' clause is required after 'compare x'", stmt.right.location);
-                return [];
-            }
-            else
+            if(right)
             {
                 // 'compare a to expr' -> 'cmp a, expr'
                 switch(right.type)
@@ -393,21 +373,15 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                                     ? [0xE4, address & 0xFF]
                                     : [0xEC, address & 0xFF, (address >> 8) & 0xFF];
                             default:
-                                error("unsupported operand in 'to' clause of 'compare x to ...'", stmt.right.location);
-                                return [];
+                                return comparisonBadSecondaryError(left, right, stmt.right.location);
                         }
                     default:
-                        error("unsupported operand in 'to' clause of 'compare x to ...'", stmt.right.location);
-                        return [];
+                        return comparisonBadSecondaryError(left, right, stmt.right.location);
                 }
             }
+            return comparisonMissingSecondaryError(left, stmt.left.location);
         case ArgumentType.Y:
-            if(right is null)
-            {
-                error("'to' clause is required after 'compare y'", stmt.right.location);
-                return [];
-            }
-            else
+            if(right)
             {
                 // 'compare a to expr' -> 'cmp a, expr'
                 switch(right.type)
@@ -426,14 +400,13 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                                     ? [0xC4, address & 0xFF]
                                     : [0xCC, address & 0xFF, (address >> 8) & 0xFF];
                             default:
-                                error("unsupported operand in 'to' clause of 'compare y to ...'", stmt.right.location);
-                                return [];
+                                return comparisonBadSecondaryError(left, right, stmt.right.location);
                         }
                     default:
-                        error("unsupported operand in 'to' clause of 'compare y to ...'", stmt.right.location);
-                        return [];
+                        return comparisonBadSecondaryError(left, right, stmt.right.location);
                 }
             }
+            return comparisonMissingSecondaryError(left, stmt.left.location);
         case ArgumentType.BitAnd:
             // 'compare a & [mem]' -> 'bit mem'
             if(right is null)
@@ -443,8 +416,7 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                     case ArgumentType.Indirection:
                         if(left.base.base.type != ArgumentType.Immediate)
                         {
-                            error("unsupported operand on right-hand side of '&'", stmt.right.location);
-                            return [];
+                            return comparisonBadPrimaryError(left, stmt.left.location);
                         }
                         uint address;
                         compile.foldWord(program, left.base.base.immediate, program.finalized, address);
@@ -452,17 +424,12 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                             ? [0x24, address & 0xFF]
                             : [0x2C, address & 0xFF, (address >> 8) & 0xFF];
                     default:
-                        error("unsupported operand on right-hand side of '&'", stmt.right.location);
-                        return [];
+                        return comparisonBadSecondaryError(left, right, stmt.right.location);
                 }
             }
-            else
-            {
-                error("'to' clause is unsupported for 'compare ... & ...'", stmt.right.location);
-                return [];
-            }
+            return comparisonDisallowedSecondaryError(left, stmt.right.location);
         default:
-            return [];
+            return comparisonBadPrimaryError(left, stmt.left.location);
     }
 }
 
@@ -489,13 +456,15 @@ ubyte[] generateAssignment(compile.Program program, ast.Assignment stmt)
     }
 }
 
+ubyte[] postfixOperandError(parse.Postfix type, Argument operand, compile.Location location)
+{
+    error(operand.toString() ~ " cannot be operand of " ~ parse.getPostfixName(type) ~ " operator.", location);
+    return [];
+}
+
 ubyte[] generatePostfixAssignment(compile.Program program, ast.Assignment stmt)
 {
     auto dest = buildArgument(program, stmt.dest);
-    auto operatorName = [
-        parse.Postfix.Inc: "'++'",
-        parse.Postfix.Dec: "'--'"
-    ][stmt.postfix];
     switch(dest.type)
     {
         case ArgumentType.A:
@@ -533,43 +502,35 @@ ubyte[] generatePostfixAssignment(compile.Program program, ast.Assignment stmt)
                                 ? [0xC6, address & 0xFF]
                                 : [0xCE, address & 0xFF, (address >> 8) & 0xFF];
                     }
-                case ArgumentType.Index:
-                    auto index = dest.base;
-                    switch(index.base.type)
-                    {
-                        case ArgumentType.Immediate:                                        
-                            uint address;
-                            compile.foldWord(program, index.base.immediate, program.finalized, address);
-                            if(index.secondary.type == ArgumentType.X)
-                            {
-                                final switch(stmt.postfix)
-                                {
-                                    case parse.Postfix.Inc:
-                                        return address < 0xFF
-                                            ? [0xF6, address & 0xFF]
-                                            : [0xFE, address & 0xFF, (address >> 8) & 0xFF];
-                                    case parse.Postfix.Dec:
-                                        return address < 0xFF
-                                            ? [0xD6, address & 0xFF]
-                                            : [0xDE, address & 0xFF, (address >> 8) & 0xFF];
-                                }
-                            }
-                            else
-                            {
-                                error("unsupported operand in 'to' clause of 'compare a to ...'", stmt.dest.location);
-                                return [];
-                            }
-                        default:
-                            error(dest.toString() ~ " cannot be operand of " ~ operatorName, stmt.dest.location);
-                            return [];
-                    }
                 default:
-                    error(dest.toString() ~ " cannot be operand of " ~ operatorName, stmt.dest.location);
-                    return [];
+                    return postfixOperandError(stmt.postfix, dest, stmt.dest.location);
+            }
+        case ArgumentType.Index:
+            switch(dest.base.type)
+            {
+                case ArgumentType.Immediate:                                        
+                    uint address;
+                    compile.foldWord(program, dest.base.immediate, program.finalized, address);
+                    if(dest.secondary.type == ArgumentType.X)
+                    {
+                        final switch(stmt.postfix)
+                        {
+                            case parse.Postfix.Inc:
+                                return address < 0xFF
+                                    ? [0xF6, address & 0xFF]
+                                    : [0xFE, address & 0xFF, (address >> 8) & 0xFF];
+                            case parse.Postfix.Dec:
+                                return address < 0xFF
+                                    ? [0xD6, address & 0xFF]
+                                    : [0xDE, address & 0xFF, (address >> 8) & 0xFF];
+                        }
+                    }
+                    return postfixOperandError(stmt.postfix, dest, stmt.dest.location);
+                default:
+                    return postfixOperandError(stmt.postfix, dest, stmt.dest.location);
             }
         default:
-            error(dest.toString() ~ " cannot be operand of " ~ operatorName, stmt.dest.location);
-            return [];
+            return postfixOperandError(stmt.postfix, dest, stmt.dest.location);
     }
 }
 
@@ -618,10 +579,7 @@ ubyte[] generateCalculatedAssignment(compile.Program program, ast.Assignment stm
         }
         return code;
     }
-    else
-    {
-        return getLoad(program, stmt, dest, src);
-    }
+    return getLoad(program, stmt, dest, src);
 }
 
 ubyte[] operatorError(parse.Infix type, Argument dest, compile.Location location)
@@ -640,8 +598,231 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
 {
     switch(dest.type)
     {
+        case ArgumentType.A:
+            switch(operand.type)
+            {
+                // 'a = imm' -> 'lda #imm'
+                case ArgumentType.Immediate:
+                    switch(type)
+                    {
+                        case parse.Infix.ShiftL:
+                            uint value;
+                            if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
+                            {
+                                return [];
+                            }
+                            ubyte[] code;
+                            while(value--)
+                            {
+                                code ~= [0x0A];
+                            }
+                            return code;
+                        case parse.Infix.ShiftR:
+                            uint value;
+                            if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
+                            {
+                                return [];
+                            }
+                            ubyte[] code;
+                            while(value--)
+                            {
+                                code ~= [0x4A];
+                            }
+                            return code;
+                        case parse.Infix.RotateL:
+                            uint value;
+                            if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
+                            {
+                                return [];
+                            }
+                            ubyte[] code;
+                            while(value--)
+                            {
+                                code ~= [0x2A];
+                            }
+                            return code;
+                        case parse.Infix.RotateR:
+                            uint value;
+                            if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
+                            {
+                                return [];
+                            }
+                            ubyte[] code;
+                            while(value--)
+                            {
+                                code ~= [0x6A];
+                            }
+                            return code;
+                        default:
+                    }
+                    uint value;
+                    compile.foldByte(program, operand.immediate, program.finalized, value);
+                    switch(type)
+                    {
+                        case parse.Infix.Or: return [0x09, value & 0xFF];
+                        case parse.Infix.And: return [0x29, value & 0xFF];
+                        case parse.Infix.Xor: return [0x49, value & 0xFF];
+                        case parse.Infix.Add: return [0x18, 0x69, value & 0xFF];
+                        case parse.Infix.Sub: return [0x38, 0xE9, value & 0xFF];
+                        case parse.Infix.AddC: return [0x69, value & 0xFF];
+                        case parse.Infix.SubC: return [0xE9, value & 0xFF];
+                        default:
+                            return operatorError(type, dest, node.location);
+                    }
+                case ArgumentType.Indirection:
+                    switch(operand.base.type)
+                    {
+                        // 'a = [addr]' -> 'lda addr'
+                        case ArgumentType.Immediate:
+                            uint address;
+                            compile.foldWord(program, operand.base.immediate, program.finalized, address);
+                            switch(type)
+                            {
+                                case parse.Infix.Or:
+                                    return address < 0xFF
+                                        ? [0x05, address & 0xFF]
+                                        : [0x0D, address & 0xFF, (address >> 8) & 0xFF];
+                                case parse.Infix.And:
+                                    return address < 0xFF
+                                        ? [0x25, address & 0xFF]
+                                        : [0x2D, address & 0xFF, (address >> 8) & 0xFF];
+                                case parse.Infix.Xor:
+                                    return address < 0xFF
+                                        ? [0x45, address & 0xFF]
+                                        : [0x4D, address & 0xFF, (address >> 8) & 0xFF];
+                                case parse.Infix.Add:
+                                    return address < 0xFF
+                                        ? [0x18, 0x65, address & 0xFF]
+                                        : [0x18, 0x6D, address & 0xFF, (address >> 8) & 0xFF];
+                                case parse.Infix.Sub:
+                                    return address < 0xFF
+                                        ? [0x38, 0xE5, address & 0xFF]
+                                        : [0x38, 0xED, address & 0xFF, (address >> 8) & 0xFF];
+                                case parse.Infix.AddC:
+                                    return address < 0xFF
+                                        ? [0x65, address & 0xFF]
+                                        : [0x6D, address & 0xFF, (address >> 8) & 0xFF];
+                                case parse.Infix.SubC:
+                                    return address < 0xFF
+                                        ? [0xE5, address & 0xFF]
+                                        : [0xED, address & 0xFF, (address >> 8) & 0xFF];
+                                default:
+                                    return operatorError(type, dest, node.location);
+                            }
+                        case ArgumentType.Index:
+                            auto index = operand.base;
+                            // 'a = [[addr:x]]' -> 'lda [addr, x]'
+                            if(index.base.type == ArgumentType.Immediate
+                            && index.secondary.type == ArgumentType.X)
+                            {
+                                uint address;
+                                compile.foldByte(program, index.base.immediate, program.finalized, address);
+                                switch(type)
+                                {
+                                    case parse.Infix.Or: return [0x01, address & 0xFF];
+                                    case parse.Infix.And: return [0x21, address & 0xFF];
+                                    case parse.Infix.Xor: return [0x41, address & 0xFF];
+                                    case parse.Infix.Add: return [0x18, 0x61, address & 0xFF];
+                                    case parse.Infix.Sub: return [0x38, 0xE1, address & 0xFF];
+                                    case parse.Infix.AddC: return [0x61, address & 0xFF];
+                                    case parse.Infix.SubC: return [0xE1, address & 0xFF];
+                                    default:
+                                        return operatorError(type, dest, node.location);
+                                }
+                            }
+                            return operandError(type, dest, operand, node.location);
+                        default:
+                            return operandError(type, dest, operand, node.location);
+                    }
+                case ArgumentType.Index:
+                    switch(operand.base.type)
+                    {
+                        case ArgumentType.Immediate:                                        
+                            uint address;
+                            compile.foldWord(program, operand.base.immediate, program.finalized, address);
+                            // 'a = [addr:x]' -> 'lda addr, x'
+                            if(operand.secondary.type == ArgumentType.X)
+                            {
+                                switch(type)
+                                {
+                                    case parse.Infix.Or:
+                                        return address < 0xFF
+                                            ? [0x15, address & 0xFF]
+                                            : [0x1D, address & 0xFF, (address >> 8) & 0xFF];
+                                    case parse.Infix.And:
+                                        return address < 0xFF
+                                            ? [0x35, address & 0xFF]
+                                            : [0x3D, address & 0xFF, (address >> 8) & 0xFF];
+                                    case parse.Infix.Xor:
+                                        return address < 0xFF
+                                            ? [0x35, address & 0xFF]
+                                            : [0x3D, address & 0xFF, (address >> 8) & 0xFF];
+                                    case parse.Infix.Add:
+                                        return address < 0xFF
+                                            ? [0x18, 0x75, address & 0xFF]
+                                            : [0x18, 0x7D, address & 0xFF, (address >> 8) & 0xFF];
+                                    case parse.Infix.Sub:
+                                        return address < 0xFF
+                                            ? [0x38, 0xF5, address & 0xFF]
+                                            : [0x38, 0xFD, address & 0xFF, (address >> 8) & 0xFF];
+                                    case parse.Infix.AddC:
+                                        return address < 0xFF
+                                            ? [0x75, address & 0xFF]
+                                            : [0x7D, address & 0xFF, (address >> 8) & 0xFF];
+                                    case parse.Infix.SubC:
+                                        return address < 0xFF
+                                            ? [0xF5, address & 0xFF]
+                                            : [0xFD, address & 0xFF, (address >> 8) & 0xFF];
+                                    default:
+                                        return operatorError(type, dest, node.location);
+                                }
+                            }
+                            // 'a = [load:y]' -> 'lda addr, y'
+                            if(operand.secondary.type == ArgumentType.Y)
+                            {
+                                switch(type)
+                                {
+                                    case parse.Infix.Or: return [0x19, address & 0xFF, (address >> 8) & 0xFF];
+                                    case parse.Infix.And: return [0x39, address & 0xFF, (address >> 8) & 0xFF];
+                                    case parse.Infix.Xor: return [0x59, address & 0xFF, (address >> 8) & 0xFF];
+                                    case parse.Infix.Add: return [0x18, 0x79, address & 0xFF, (address >> 8) & 0xFF];
+                                    case parse.Infix.Sub: return [0x38, 0xF9, address & 0xFF, (address >> 8) & 0xFF];
+                                    case parse.Infix.AddC: return [0x79, address & 0xFF, (address >> 8) & 0xFF];
+                                    case parse.Infix.SubC: return [0xF9, address & 0xFF, (address >> 8) & 0xFF];
+                                    default:
+                                        return operatorError(type, dest, node.location);
+                                }
+                            }
+                            return operandError(type, dest, operand, node.location);
+                        case ArgumentType.Indirection:
+                            // 'a = [[addr]:y]' -> 'lda [addr], y'
+                            if(operand.base.base.type == ArgumentType.Immediate
+                            && operand.secondary.type == ArgumentType.Y)
+                            {
+                                uint address;
+                                compile.foldByte(program, operand.base.base.immediate, program.finalized, address);
+                                switch(type)
+                                {
+                                    case parse.Infix.Or: return [0x11, address & 0xFF];
+                                    case parse.Infix.And: return [0x31, address & 0xFF];
+                                    case parse.Infix.Xor: return [0x51, address & 0xFF];
+                                    case parse.Infix.Add: return [0x18, 0x71, address & 0xFF];
+                                    case parse.Infix.Sub: return [0x38, 0xF1, address & 0xFF];
+                                    case parse.Infix.AddC: return [0x71, address & 0xFF];
+                                    case parse.Infix.SubC: return [0xF1, address & 0xFF];
+                                    default:
+                                        return operatorError(type, dest, node.location);
+                                }
+                            }
+                            return operandError(type, dest, operand, node.location);
+                        default:
+                            return operandError(type, dest, operand, node.location);
+                    }
+                default:
+                    return operandError(type, dest, operand, node.location);
+            }
         default:
-            return operatorError(type, dest, node.location);
+            return operandError(type, dest, operand, node.location);
     }
 }
 
@@ -663,10 +844,7 @@ ubyte[] getLoad(compile.Program program, ast.Assignment stmt, Argument dest, ast
     {
         return getPrefixLoad(program, stmt, dest, load);
     }
-    else
-    {
-        return [];
-    }
+    return [];
 }
 
 ubyte[] getPrefixLoad(compile.Program program, ast.Assignment stmt, Argument dest, Argument load)
@@ -679,20 +857,14 @@ ubyte[] getPrefixLoad(compile.Program program, ast.Assignment stmt, Argument des
             {
                 return getPrefixLoad(program, stmt, dest, load.base) ~ cast(ubyte[])[0x49, 0xFF];
             }
-            else
-            {
-                return invalidAssignmentError(dest, load, stmt.location);
-            }
+            return invalidAssignmentError(dest, load, stmt.location);
         // 'a = -a' -> 'eor a, #$FF; clc; adc a, #1'
         case ArgumentType.Negated:
             if(dest.type == ArgumentType.A)
             {
                 return getPrefixLoad(program, stmt, dest, load.base) ~ cast(ubyte[])[0x49, 0xFF, 0x18, 0x69, 0x01];
             }
-            else
-            {
-                return invalidAssignmentError(dest, load, stmt.location);
-            }
+            return invalidAssignmentError(dest, load, stmt.location);
         default:
             return getBaseLoad(program, stmt, dest, load);
     }
@@ -727,7 +899,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
                             compile.foldWord(program, load.base.immediate, program.finalized, address);
                             return address < 0xFF
                                 ? [0xA5, address & 0xFF]
-                                : [0xCD, address & 0xFF, (address >> 8) & 0xFF];
+                                : [0xAD, address & 0xFF, (address >> 8) & 0xFF];
                         case ArgumentType.Index:
                             auto index = load.base;
                             // 'a = [[addr:x]]' -> 'lda [addr, x]'
@@ -738,10 +910,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
                                 compile.foldByte(program, index.base.immediate, program.finalized, address);
                                 return [0xA1, address & 0xFF];
                             }
-                            else
-                            {
-                                return invalidAssignmentError(dest, load, stmt.location);
-                            }
+                            return invalidAssignmentError(dest, load, stmt.location);
                         default:
                             return invalidAssignmentError(dest, load, stmt.location);
                     }
@@ -759,14 +928,11 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
                                     : [0xBD, address & 0xFF, (address >> 8) & 0xFF];
                             }
                             // 'a = [load:y]' -> 'lda addr, y'
-                            else if(load.secondary.type == ArgumentType.Y)
+                            if(load.secondary.type == ArgumentType.Y)
                             {
                                 return [0xB9, address & 0xFF, (address >> 8) & 0xFF];
                             }
-                            else
-                            {
-                                return invalidAssignmentError(dest, load, stmt.location);
-                            }
+                            return invalidAssignmentError(dest, load, stmt.location);
                         case ArgumentType.Indirection:
                             // 'a = [[addr]:y]' -> 'lda [addr], y'
                             if(load.base.base.type == ArgumentType.Immediate
@@ -776,10 +942,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
                                 compile.foldByte(program, load.base.base.immediate, program.finalized, address);
                                 return [0xB1, address & 0xFF];
                             }
-                            else
-                            {
-                                return invalidAssignmentError(dest, load, stmt.location);
-                            }
+                            return invalidAssignmentError(dest, load, stmt.location);
                         default:
                             return invalidAssignmentError(dest, load, stmt.location);
                     }
@@ -824,10 +987,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
                                             ? [0xB6, address & 0xFF]
                                             : [0xBE, address & 0xFF, (address >> 8) & 0xFF];
                                     }
-                                    else
-                                    {
-                                        return invalidAssignmentError(dest, load, stmt.location);
-                                    }
+                                    return invalidAssignmentError(dest, load, stmt.location);
                                 default:
                                     return invalidAssignmentError(dest, load, stmt.location);
                             }
@@ -873,10 +1033,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
                                             ? [0xB4, address & 0xFF]
                                             : [0xBC, address & 0xFF, (address >> 8) & 0xFF];
                                     }
-                                    else
-                                    {
-                                        return invalidAssignmentError(dest, load, stmt.location);
-                                    }
+                                    return invalidAssignmentError(dest, load, stmt.location);
                                 default:
                                     return invalidAssignmentError(dest, load, stmt.location);
                             }
@@ -932,15 +1089,9 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
                         {
                             return [0x81, address & 0xFF];
                         }
-                        else
-                        {
-                            return invalidAssignmentError(dest, load, stmt.location);
-                        }
+                        return invalidAssignmentError(dest, load, stmt.location);
                     }
-                    else
-                    {
-                        return invalidAssignmentDestError(dest, stmt.location);
-                    }
+                    return invalidAssignmentDestError(dest, stmt.location);
                 default:
                     return invalidAssignmentDestError(dest, stmt.location);
             }
@@ -967,7 +1118,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
                         }
                     }
                     // 'a = [addr:y]' -> 'lda addr, y'
-                    else if(dest.secondary.type == ArgumentType.Y)
+                    if(dest.secondary.type == ArgumentType.Y)
                     {
                         switch(load.type)
                         {
@@ -981,10 +1132,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
                                 return invalidAssignmentError(dest, load, stmt.location);
                         }
                     }
-                    else
-                    {
-                        return invalidAssignmentDestError(dest, stmt.location);
-                    }
+                    return invalidAssignmentDestError(dest, stmt.location);
                 case ArgumentType.Indirection:
                     // 'a = [[addr]:y]' -> 'lda [addr], y'
                     if(dest.base.base.type == ArgumentType.Immediate
@@ -996,15 +1144,9 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
                         {
                             return [0x91, address & 0xFF];
                         }
-                        else
-                        {
-                            return invalidAssignmentError(dest, load, stmt.location);
-                        }
+                        return invalidAssignmentError(dest, load, stmt.location);
                     }
-                    else
-                    {
-                        return invalidAssignmentDestError(dest, stmt.location);
-                    }
+                    return invalidAssignmentDestError(dest, stmt.location);
                 default:
                     return invalidAssignmentDestError(dest, stmt.location);
             }
@@ -1037,11 +1179,8 @@ ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest,
                     {
                         return [0xB8];
                     }
-                    else
-                    {
-                        error("invalid assignment '=' of " ~ dest.toString() ~ " to non-zero value.", stmt.location);
-                        return [];
-                    }
+                    error("invalid assignment '=' of " ~ dest.toString() ~ " to non-zero value.", stmt.location);
+                    return [];
                 default:
                     return invalidAssignmentError(dest, load, stmt.location);
             }

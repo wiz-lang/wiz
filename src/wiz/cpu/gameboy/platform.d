@@ -281,19 +281,6 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
             {
                 return [0xC9];
             }
-            return [];
-        case parse.Keyword.Break:
-            // TODO
-            return [];
-        case parse.Keyword.Continue:
-            // TODO
-            return [];
-        case parse.Keyword.While:
-            // TODO
-            return [];
-        case parse.Keyword.Until:
-            // TODO
-            return [];
         case parse.Keyword.Resume: return ensureUnconditional(stmt, "'resume'", [0xD9]);
         case parse.Keyword.Abort: return ensureUnconditional(stmt,  "'abort'", [0x40]);
         case parse.Keyword.Sleep: return ensureUnconditional(stmt,  "'sleep'", [0x76]);
@@ -678,7 +665,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
             }
             return [];
         default:
-            return operatorError(type, dest, node.location);
+            return operandError(type, dest, operand, node.location);
     }
 }
 
