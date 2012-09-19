@@ -574,12 +574,12 @@ auto createRelocationHandler(Program program)
     };
 }
 
-auto createCommandHandler(Program program)
+auto createPushHandler(Program program)
 {
-    return(ast.Command stmt)
+    return(ast.Push stmt)
     {
-        auto description = parse.getKeywordName(stmt.type) ~ " statement";
-        auto code = program.platform.generateCommand(program, stmt);
+        auto description = "'push' statement";
+        auto code = program.platform.generatePush(program, stmt);
         auto bank = program.checkBank(description, stmt.location);
         if(program.finalized)
         {
@@ -874,7 +874,7 @@ void build(Program program, ast.Node root)
     root.traverse(
         createBlockHandler(program),
         createRelocationHandler(program),
-        createCommandHandler(program),
+        createPushHandler(program),
         createJumpHandler(program),
         createAssignmentHandler(program),
         createComparisonHandler(program),
@@ -969,7 +969,7 @@ void build(Program program, ast.Node root)
     root.traverse(
         createBlockHandler(program),
         createRelocationHandler(program),
-        createCommandHandler(program),
+        createPushHandler(program),
         createJumpHandler(program),
         createAssignmentHandler(program),
         createComparisonHandler(program),

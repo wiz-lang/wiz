@@ -302,8 +302,8 @@ in prg, 0xC000:
     
     task draw do
         push a
-        a = x; push a
-        a = y; push a
+        push x via a
+        push y via a
         a = [ppu.status]
         
         a = [redraw.request] & redraw.SPRITES
@@ -317,11 +317,11 @@ in prg, 0xC000:
         
         a = [redraw.request] & redraw.SCROLL_TILES
         if is ~zero then
-            a = [t0]; push a; [t0] = [camera.x_lo] via a
-            a = [t1]; push a; [t1] = [camera.x_hi] via a
-            a = [t2]; push a; [t2] = [camera.tile_buffer_lo] via a
-            a = [t3]; push a; [t3] = [camera.tile_buffer_hi] via a
-            a = [t4]; push a; [t4] = [camera.direction] via a
+            push [t0] via a; [t0] = [camera.x_lo] via a
+            push [t1] via a; [t1] = [camera.x_hi] via a
+            push [t2] via a; [t2] = [camera.tile_buffer_lo] via a
+            push [t3] via a; [t3] = [camera.tile_buffer_hi] via a
+            push [t4] via a; [t4] = [camera.direction] via a
             call tilemap.draw_tile_buffer
             
             [t0] = [camera.x_lo] via a
@@ -351,8 +351,8 @@ in prg, 0xC000:
     
     task scan do
         push a
-        a = x; push a
-        a = y; push a
+        push x via a
+        push y via a
         y = pop via a
         x = pop via a
         a = pop

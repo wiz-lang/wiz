@@ -13,9 +13,9 @@ class Mos6502Platform : Platform
         return .builtins();
     }
 
-    ubyte[] generateCommand(compile.Program program, ast.Command stmt)
+    ubyte[] generatePush(compile.Program program, ast.Push stmt)
     {
-        return .generateCommand(program, stmt);
+        return .generatePush(program, stmt);
     }
 
     ubyte[] generateJump(compile.Program program, ast.Jump stmt)
@@ -55,19 +55,26 @@ Platform.BuiltinTable builtins()
     ];
 }
 
-ubyte[] generateCommand(compile.Program program, ast.Command stmt)
+ubyte[] generatePush(compile.Program program, ast.Push stmt)
 {
-    switch(stmt.type)
+    Argument argument;
+    ubyte[] code;
+    if(stmt.intermediary)
     {
-        case parse.Keyword.Push:
-            auto argument = buildArgument(program, stmt.argument);
-            switch(argument.type)
-            {
-                case ArgumentType.A: return [0x48];
-                case ArgumentType.P: return [0x08];
-                default: return [];
-            }
+        argument = buildArgument(program, stmt.intermediary);
+        // 'push x via y' -> 'y = x; push y'
+        code ~= generateCalculatedAssignment(program, stmt, argument, stmt.src);
+    }
+    else
+    {
+        argument = buildArgument(program, stmt.src);
+    }
+    switch(argument.type)
+    {
+        case ArgumentType.A: return code ~ cast(ubyte[])[0x48];
+        case ArgumentType.P: return code ~ cast(ubyte[])[0x08];
         default:
+            error("cannot push operand " ~ argument.toString() ~ " in 'push' statement", stmt.src.location);
             return [];
     }
 }
@@ -534,7 +541,7 @@ ubyte[] generatePostfixAssignment(compile.Program program, ast.Assignment stmt)
     }
 }
 
-ubyte[] generateCalculatedAssignment(compile.Program program, ast.Assignment stmt, Argument dest, ast.Expression src)
+ubyte[] generateCalculatedAssignment(compile.Program program, ast.Statement stmt, Argument dest, ast.Expression src)
 {
     if(dest is null)
     {
@@ -838,7 +845,7 @@ ubyte[] invalidAssignmentError(Argument dest, Argument load, compile.Location lo
     return [];
 }
 
-ubyte[] getLoad(compile.Program program, ast.Assignment stmt, Argument dest, ast.Expression loadsrc)
+ubyte[] getLoad(compile.Program program, ast.Statement stmt, Argument dest, ast.Expression loadsrc)
 {
     if(auto load = buildArgument(program, loadsrc))
     {
@@ -847,7 +854,7 @@ ubyte[] getLoad(compile.Program program, ast.Assignment stmt, Argument dest, ast
     return [];
 }
 
-ubyte[] getPrefixLoad(compile.Program program, ast.Assignment stmt, Argument dest, Argument load)
+ubyte[] getPrefixLoad(compile.Program program, ast.Statement stmt, Argument dest, Argument load)
 {
     switch(load.type)
     {
@@ -870,7 +877,7 @@ ubyte[] getPrefixLoad(compile.Program program, ast.Assignment stmt, Argument des
     }
 }
 
-ubyte[] getBaseLoad(compile.Program program, ast.Assignment stmt, Argument dest, Argument load)
+ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, Argument load)
 {
     final switch(dest.type)
     {

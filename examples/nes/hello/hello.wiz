@@ -96,8 +96,8 @@ in prg, 0xC000:
     
     task draw do
         push a
-        a = x; push a
-        a = y; push a
+        push x via a
+        push y via a
         a = [ppu.status]
         [ppu.scroll] = 0 via a
         [ppu.scroll] = a
@@ -108,8 +108,8 @@ in prg, 0xC000:
     
     task scan do
         push a
-        a = x; push a
-        a = y; push a
+        push x via a
+        push y via a
         y = pop via a
         x = pop via a
         a = pop       

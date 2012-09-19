@@ -301,7 +301,7 @@ class Parser
                     case Keyword.Compare:
                         return parseComparison();
                     case Keyword.Push:
-                        return parseCommand();
+                        return parsePush();
                     case Keyword.None:
                         // Some unreserved identifier. Try and parse as a term in an assignment!
                         return parseAssignment();
@@ -1037,14 +1037,20 @@ class Parser
         }
     }
 
-    auto parseCommand()
+    auto parsePush()
     {
         // command = command_token expression
         auto location = scanner.getLocation();
         auto command = keyword;
         nextToken(); // IDENTIFIER (keyword)
         auto argument = parseExpression();
-        return new ast.Command(command, argument, location);
+        if(token == Token.Identifier && keyword == Keyword.Via)
+        {
+            nextToken(); // IDENTIFIER (keyword 'via')
+            auto intermediary = parseTerm(); // term
+            return new ast.Push(argument, intermediary, location);
+        }
+        return new ast.Push(argument, location);
     }
 
     void skipAssignment(bool leadingExpression)
