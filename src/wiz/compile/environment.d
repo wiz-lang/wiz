@@ -25,7 +25,7 @@ class Environment
     
     void put(string name, sym.Definition def)
     {
-        auto match = get!(sym.Definition)(name, true);
+        auto match = get(name, true);
         if(match)
         {
             error("redefinition of symbol '" ~ name ~ "'", def.decl.location, false, true);
@@ -37,7 +37,7 @@ class Environment
         }
     }
 
-    T get(T)(string name, bool shallow = false)
+    sym.Definition get(string name, bool shallow = false)
     {
         sym.Definition match = dictionary.get(name, null);
         if(match is null)
@@ -48,12 +48,16 @@ class Environment
             }
             else
             {
-                return parent.get!(T)(name, shallow);
+                return parent.get(name, shallow);
             }
         }
         else
         {
-            return cast(T) match;
+            while(cast(sym.AliasDef) match)
+            {
+                match = (cast(sym.AliasDef) match).definition;
+            }
+            return match;
         }
     }
 }

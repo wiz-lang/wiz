@@ -246,9 +246,10 @@ class Parser
         //      | block
         //      | bank
         //      | label
-        //      | constant
-        //      | enumeration
-        //      | variable
+        //      | let
+        //      | var
+        //      | func
+        //      | inline
         //      | data
         //      | jump
         //      | conditional
@@ -275,9 +276,7 @@ class Parser
                     case Keyword.Def:
                         return parseLabelDecl();
                     case Keyword.Let:
-                        return parseConstDecl();
-                    case Keyword.Enum:
-                        return parseEnumDecl();
+                        return parseLetDecl();
                     case Keyword.Var:
                         return parseVarDecl();
                     case Keyword.Func, Keyword.Task:
@@ -578,9 +577,9 @@ class Parser
         }
     }
     
-    auto parseConstDecl()
+    auto parseLetDecl()
     {
-        // constant = 'let' IDENTIFIER '=' expression
+        // let = 'let' IDENTIFIER '=' expression
         auto location = scanner.getLocation();
         
         string name;
@@ -595,79 +594,12 @@ class Parser
         nextToken(); // IDENTIFIER
         consume(Token.Set); // =
         value = parseExpression(); // expression
-        return new ast.ConstDecl(name, value, location);
-    }
-    
-    auto parseEnumDecl()
-    {
-        // enumeration = 'enum' ':' enum_item (',' enum_item)*
-        //      where enum_item = IDENTIFIER ('=' expression)?
-        auto enumLocation = scanner.getLocation();
-        auto constantLocation = enumLocation;
-        string name;
-        ast.Expression value;
-        uint offset;
-        ast.ConstDecl[] constants;
-        
-        nextToken(); // IDENTIFIER (keyword 'enum')
-        consume(Token.Colon); // :
-        
-        if(checkIdentifier())
-        {
-            name = text;
-        }
-        constantLocation = scanner.getLocation();
-        nextToken(); // IDENTIFIER
-        // ('=' expr)?
-        if(token == Token.Set)
-        {
-            consume(Token.Set); // =
-            value = parseExpression();
-        }
-        else
-        {
-            value = new ast.Number(Token.Integer, 0, constantLocation);
-        }
-
-        constants ~= new ast.ConstDecl(name, value, offset, constantLocation);
-        offset++;
-        
-        // (',' name ('=' expr)?)*
-        while(token == Token.Comma)
-        {
-            nextToken(); // ,
-            if(token == Token.Identifier)
-            {
-                if(checkIdentifier())
-                {
-                    name = text;
-                }
-                constantLocation = scanner.getLocation();
-                nextToken(); // IDENTIFIER
-                // ('=' expr)?
-                if(token == Token.Set)
-                {
-                    consume(Token.Set); // =
-                    value = parseExpression();
-                    offset = 0; // If we explicitly set a value, then we reset the enum expression offset.
-                }
-                
-                constants ~= new ast.ConstDecl(name, value, offset, constantLocation);
-                offset++;
-            }
-            else
-            {
-                reject("identifier after ',' in enum declaration");
-                break;
-            }
-        }
-        
-        return new ast.EnumDecl(constants, enumLocation);
+        return new ast.LetDecl(name, value, location);
     }
     
     auto parseVarDecl()
     {
-        // variable = 'var' IDENTIFIER (',' IDENTIFIER)*
+        // var = 'var' IDENTIFIER (',' IDENTIFIER)*
         //      ':' ('byte' | 'word') '*' expression
         auto location = scanner.getLocation();
         

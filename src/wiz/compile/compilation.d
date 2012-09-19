@@ -5,7 +5,7 @@ import wiz.compile.lib;
 
 static import std.stdio;
 
-sym.Definition resolveAttribute(Program program, ast.Attribute attribute)
+sym.Definition resolveAttribute(Program program, ast.Attribute attribute, bool quiet = false)
 {
     sym.Definition prev, def;
     string[] partialQualifiers;
@@ -17,7 +17,7 @@ sym.Definition resolveAttribute(Program program, ast.Attribute attribute)
         
         if(prev is null)
         {
-            def = env.get!(sym.Definition)(piece);
+            def = env.get(piece);
         }
         else
         {
@@ -30,7 +30,7 @@ sym.Definition resolveAttribute(Program program, ast.Attribute attribute)
             else
             {
                 env = pkg.environment;
-                def = env.get!(sym.Definition)(piece, true); // qualified lookup is shallow.
+                def = env.get(piece, true); // qualified lookup is shallow.
             }
         }
         
@@ -39,13 +39,16 @@ sym.Definition resolveAttribute(Program program, ast.Attribute attribute)
             string partiallyQualifiedName = std.string.join(partialQualifiers, ".");
             string fullyQualifiedName = attribute.fullName();
             
-            if(partiallyQualifiedName == fullyQualifiedName)
+            if(!quiet)
             {
-                error("reference to undeclared symbol '" ~ partiallyQualifiedName ~ "'", attribute.location);
-            }
-            else
-            {
-                error("reference to undeclared symbol '" ~ partiallyQualifiedName ~ "' (in '" ~ fullyQualifiedName ~ "')", attribute.location);
+                if(partiallyQualifiedName == fullyQualifiedName)
+                {
+                    error("reference to undeclared symbol '" ~ partiallyQualifiedName ~ "'", attribute.location);
+                }
+                else
+                {
+                    error("reference to undeclared symbol '" ~ partiallyQualifiedName ~ "' (in '" ~ fullyQualifiedName ~ "')", attribute.location);
+                }
             }
             return null;
         }
@@ -301,7 +304,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
                 program.enterInline("constant '" ~ a.fullName() ~ "'", a);
                 program.enterEnvironment(constdef.environment);
                 uint v;
-                bool folded = foldConstant(program, (cast(ast.ConstDecl) constdef.decl).value, program.finalized, v);
+                bool folded = foldConstant(program, (cast(ast.LetDecl) constdef.decl).value, program.finalized, v);
                 program.leaveEnvironment();
                 program.leaveInline();
                 if(folded)
@@ -517,8 +520,7 @@ auto createBlockHandler(Program program)
             {
                 if(block.name)
                 {
-                    auto match = program.environment.get!(sym.PackageDef)(block.name, true);
-                    if(match)
+                    if(auto match = cast(sym.PackageDef) program.environment.get(block.name, true))
                     {
                         env = match.environment;
                     }
@@ -541,8 +543,8 @@ auto createBlockHandler(Program program)
             program.leaveEnvironment();
             if(block.name)
             {
-                auto match = program.environment.get!(sym.PackageDef)(block.name, true);
-                if(match is null)
+                auto match = program.environment.get(block.name, true);
+                if(cast(sym.PackageDef) match is null)
                 {
                     program.environment.put(block.name, new sym.PackageDef(block, pkg));
                 }
@@ -559,16 +561,17 @@ auto createRelocationHandler(Program program)
         uint address;
         if(stmt.dest is null || foldConstant(program, stmt.dest, program.finalized, address))
         {
-            auto def = program.environment.get!(sym.BankDef)(stmt.mangledName);
-            if(def is null)
+            if(auto def = cast(sym.BankDef) program.environment.get(stmt.mangledName))
+            {
+                program.switchBank(def.bank);
+                if(stmt.dest !is null)
+                {
+                    def.bank.setAddress(description, address, stmt.location);
+                }
+            }
+            else
             {
                 error("unknown bank '" ~ stmt.name ~ "' referenced by " ~ description, stmt.location);
-                return;
-            }
-            program.switchBank(def.bank);
-            if(stmt.dest !is null)
-            {
-                def.bank.setAddress(description, address, stmt.location);
             }
         }
     };
@@ -688,7 +691,7 @@ void build(Program program, ast.Node root)
     root.traverse(
         createBlockHandler(program),
 
-        (ast.ConstDecl decl)
+        (ast.LetDecl decl)
         {
             program.environment.put(decl.name, new sym.ConstDef(decl, program.environment));
         },
@@ -791,16 +794,29 @@ void build(Program program, ast.Node root)
     );
 
     verify();
-    program.clearEnvironment();
 
+    program.clearEnvironment();
     program.rewind();
     root.traverse(
         createBlockHandler(program),
         createInlineCallValidator(program),
 
-        (ast.ConstDecl decl)
+        (ast.LetDecl decl)
         {
-            program.environment.put(decl.name, new sym.ConstDef(decl, program.environment));
+            bool aliasing = false;
+            if(auto attr = cast(ast.Attribute) decl.value)
+            {
+                auto def = compile.resolveAttribute(program, attr, true);
+                if(def)
+                {
+                    aliasing = true;
+                    program.environment.put(decl.name, new sym.AliasDef(decl, def));
+                }
+            }
+            if(!aliasing)
+            {
+                program.environment.put(decl.name, new sym.ConstDef(decl, program.environment));
+            }
         },
 
         (ast.BankDecl decl)
@@ -836,9 +852,11 @@ void build(Program program, ast.Node root)
             {
                 foreach(i, name; decl.names)
                 {
-                    auto def = program.environment.get!(sym.BankDef)(name);
-                    def.bank = new Bank(name, decl.type == "rom", size);
-                    program.addBank(def.bank);
+                    if(auto def = cast(sym.BankDef) program.environment.get(name))
+                    {
+                        def.bank = new Bank(name, decl.type == "rom", size);
+                        program.addBank(def.bank);
+                    }
                 }
             }
         }
@@ -860,10 +878,12 @@ void build(Program program, ast.Node root)
                 auto bank = program.checkBank(description, decl.location);
                 foreach(i, name; decl.names)
                 {
-                    auto def = program.environment.get!(sym.VarDef)(name);
-                    def.hasAddress = true;
-                    def.address = bank.checkAddress(description, decl.location);
-                    bank.reserveVirtual(description, total, decl.location);
+                    if(auto def = cast(sym.VarDef) program.environment.get(name))
+                    {
+                        def.hasAddress = true;
+                        def.address = bank.checkAddress(description, decl.location);
+                        bank.reserveVirtual(description, total, decl.location);
+                    }
                 }
             }
         },
@@ -883,9 +903,11 @@ void build(Program program, ast.Node root)
         {
             enum description = "label declaration";
             auto bank = program.checkBank(description, decl.location);
-            auto def = program.environment.get!(sym.LabelDef)(decl.name);
-            def.hasAddress = true;
-            def.address = bank.checkAddress(description, decl.location);
+            if(auto def = cast(sym.LabelDef) program.environment.get(decl.name))
+            {
+                def.hasAddress = true;
+                def.address = bank.checkAddress(description, decl.location);
+            }
         },
 
         (ast.Embed stmt)
@@ -978,21 +1000,23 @@ void build(Program program, ast.Node root)
         {
             enum description = "label declaration";
             auto bank = program.checkBank(description, decl.location);
-            auto def = program.environment.get!(sym.LabelDef)(decl.name);
-            auto addr = bank.checkAddress(description, decl.location);
-            if(!def.hasAddress)
+            if(auto def = cast(sym.LabelDef) program.environment.get(decl.name))
             {
-                error("what the hell. label was never given address!", decl.location, true);
-            }
-            if(addr != def.address)
-            {
-                error(
-                    std.string.format(
-                        "what the hell. inconsistency in label positions detected"
-                        ~ " (was 0x%04X instruction selection pass, 0x%04X on code-gen pass)",
-                        addr, def.address
-                    ), decl.location, true
-                );
+                auto addr = bank.checkAddress(description, decl.location);
+                if(!def.hasAddress)
+                {
+                    error("what the hell. label was never given address!", decl.location, true);
+                }
+                if(addr != def.address)
+                {
+                    error(
+                        std.string.format(
+                            "what the hell. inconsistency in label positions detected"
+                            ~ " (was 0x%04X instruction selection pass, 0x%04X on code-gen pass)",
+                            addr, def.address
+                        ), decl.location, true
+                    );
+                }
             }
         },
 

@@ -1,9 +1,9 @@
-module wiz.ast.constdecl;
+module wiz.ast.letdecl;
 
 import wiz.lib;
 import wiz.ast.lib;
 
-class ConstDecl : Statement
+class LetDecl : Statement
 {
     private string _name;
     private Expression _value;
