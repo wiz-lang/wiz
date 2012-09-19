@@ -205,7 +205,16 @@ Argument buildArgument(compile.Program program, ast.Expression root)
             return new Argument(ArgumentType.Negated, buildArgument(program, prefix.operand));
         }
     }
-    else if(auto infix = cast(ast.Infix) root)
+    else if(auto pop = cast(ast.Pop) root)
+    {
+        return new Argument(ArgumentType.Pop);
+    }
+    return new Argument(ArgumentType.Immediate, root);
+}
+
+Argument buildComparisonArgument(compile.Program program, ast.Expression root)
+{
+    if(auto infix = cast(ast.Infix) root)
     {
         if(infix.types[0] == parse.Token.And)
         {
@@ -226,9 +235,5 @@ Argument buildArgument(compile.Program program, ast.Expression root)
             }
         }
     }
-    else if(auto pop = cast(ast.Pop) root)
-    {
-        return new Argument(ArgumentType.Pop);
-    }
-    return new Argument(ArgumentType.Immediate, root);
+    return buildArgument(program, root);
 }

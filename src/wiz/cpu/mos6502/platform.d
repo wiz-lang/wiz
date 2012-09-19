@@ -291,7 +291,7 @@ ubyte[] comparisonBadPrimaryError(Argument left, compile.Location location)
 
 ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
 {
-    auto left = buildArgument(program, stmt.left);
+    auto left = buildComparisonArgument(program, stmt.left);
     auto right = stmt.right ? buildArgument(program, stmt.right) : null;
     switch(left.type)
     {
