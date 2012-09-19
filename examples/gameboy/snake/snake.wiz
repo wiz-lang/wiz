@@ -7,19 +7,22 @@ include 'video.wiz'
 include 'player.wiz'
 
 // Fills a range in memory with a specified byte value.
-// Dirty: bc, hl
-// Arguments:
-//      hl = destination
-//      a = value
-//      bc = count
 func memset do
-    c++; b++
+    // Arguments:
+    let dest = hl // inout
+    let value = a // in
+    let count = bc // inout
+    // Locals:
+    let count_l = c
+    let count_h = b
+
+    count_l++; count_h++
     goto start
 def repeat:
-    [hl++] = a
+    [dest++] = value
 def start:
-    c--; goto repeat when ~zero
-    b--; goto repeat when ~zero
+    count_l--; goto repeat when ~zero
+    count_h--; goto repeat when ~zero
 end
 
 package hardware do
@@ -51,41 +54,56 @@ func main do
     // Set up a simple black-to-white 4-color palette.
     [gb.mono.palette.bg] = 0b11100100 via a
 
-    // Fill in some very crappy striped tile patterns.
-    hl = gb.ram.tile
-    a = 0b11111111; bc = 16
-    inline call memset
-    a = 0b10101010; bc = 16
-    inline call memset
-    a = 0b10001000; bc = 16
-    inline call memset
-    a = 0b00000000; bc = 16
-    inline call memset
+    do
+        let dest = hl
+        let value = a
+        let count = bc
 
-    // Clear screen.
-    hl = gb.ram.map + 32
-    a = 0x03; bc = 1024 - 64
-    inline call memset
+        // Fill in some very crappy striped tile patterns.
+        dest = gb.ram.tile
+        value = 0b11111111; count = 16
+        inline call memset
+        value = 0b10101010; count = 16
+        inline call memset
+        value = 0b10001000; count = 16
+        inline call memset
+        value = 0b00000000; count = 16
+        inline call memset
 
-    // Draw horizontal walls.
-    hl = gb.ram.map
-    a = 0x00; bc = 20
-    inline call memset
-    hl = gb.ram.map + (32 * 17)
-    bc = 20
-    inline call memset
+        // Clear screen.
+        dest = gb.ram.map + 32
+        value = 0x03
+        count = 1024 - 64
+        inline call memset
+
+        // Draw horizontal walls.
+        dest = gb.ram.map
+        value = 0x00
+        count = 20
+        inline call memset
+
+        dest = gb.ram.map + (32 * 17)
+        count = 20
+        inline call memset
+    end
 
     // Draw vertical walls.
-    hl = gb.ram.map + 32
-    bc = 32
-    unroll 17 do 
-        [hl] = a
-        hl = hl + bc
-    end
-    hl = gb.ram.map + 32 + 19
-    unroll 17 do 
-        [hl] = a
-        hl = hl + bc
+    do
+        let dest = hl
+        let step = bc
+
+        dest = gb.ram.map + 32
+        step = 32
+        unroll 17 do 
+            [dest] = a
+            dest = dest + step
+        end
+        
+        dest = gb.ram.map + 32 + 19
+        unroll 17 do 
+            [dest] = a
+            dest = dest + step
+        end
     end
 
     // Turn the screen back on, with backgrounds enabled using tileset 2.
