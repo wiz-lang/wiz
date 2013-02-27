@@ -28,16 +28,16 @@ class Loop : Statement
                     case parse.Keyword.While:
                         // Tail 'while cond' -> 'continue when cond'.
                         tailConditional = true;
-                        auto jump = new Jump(parse.Keyword.Continue, far,
-                            tail.condition, location
+                        auto jump = new Jump(parse.Keyword.Continue, far || tail.far,
+                            tail.condition, tail.location
                         );
                         block.statements[block.statements.length - 1] = jump;
                         break;
                     case parse.Keyword.Until:
                         // Tail 'until cond' -> 'continue when ~cond'.
                         tailConditional = true;
-                        auto jump = new Jump(parse.Keyword.Continue, far,
-                            new JumpCondition(true, tail.condition), location
+                        auto jump = new Jump(parse.Keyword.Continue, far || tail.far,
+                            new JumpCondition(true, tail.condition), tail.location
                         );
                         block.statements[block.statements.length - 1] = jump;
                         break;

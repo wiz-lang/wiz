@@ -63,15 +63,21 @@ class Argument
         {
             return quoted ? "'" ~ s ~ "'" : s;
         }
+
+        static string emit(Argument arg)
+        {
+            return arg ? arg.toString(false) : "<error>";
+        }
+
         final switch(type)
         {
             case ArgumentType.None: return "???";
             case ArgumentType.Immediate: return "immediate";
-            case ArgumentType.Indirection: return wrap("[" ~ base.toString(false) ~ "]", quoted);
-            case ArgumentType.Index: return wrap("[" ~ base.toString(false) ~ ":" ~ secondary.toString(false) ~ "]", quoted);
-            case ArgumentType.BitAnd: return wrap("a & " ~ base.toString(false), quoted);
-            case ArgumentType.Not: return wrap("~" ~ base.toString(false), quoted);
-            case ArgumentType.Negated: return wrap("-" ~ base.toString(false), quoted);
+            case ArgumentType.Indirection: return wrap("[" ~ emit(base) ~ "]", quoted);
+            case ArgumentType.Index: return wrap("[" ~ emit(base) ~ ":" ~ emit(secondary) ~ "]", quoted);
+            case ArgumentType.BitAnd: return wrap("a & " ~ emit(base), quoted);
+            case ArgumentType.Not: return wrap("~" ~ emit(base), quoted);
+            case ArgumentType.Negated: return wrap("-" ~ emit(base), quoted);
             case ArgumentType.Pop: return wrap("pop", quoted);
             case ArgumentType.A: return wrap("a", quoted);
             case ArgumentType.X: return wrap("x", quoted);

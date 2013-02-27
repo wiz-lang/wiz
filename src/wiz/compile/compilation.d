@@ -165,7 +165,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
                         break;
                     case parse.Infix.ShiftL:
                         // If shifting more than N bits, or ls << rs > 2^N-1, then error.
-                        if(b > 16 || (b > 0 && (a & ~(1 << (16 - b))) != 0))
+                        if(b > 15 || (a << b >> 16) != 0)
                         {
                             error("logical shift left yields result which will overflow outside of 0..65535.", operand.location);
                             return;
@@ -757,7 +757,7 @@ void build(Program program, ast.Node root)
                 case parse.Keyword.Call:
                     if(auto a = cast(ast.Attribute) jump.destination)
                     {
-                        auto def = resolveAttribute(program, a);
+                        auto def = resolveAttribute(program, a, true);
                         if(auto funcdef = cast(sym.FuncDef) def)
                         {
                             if((cast(ast.FuncDecl) funcdef.decl).inlined)
@@ -980,7 +980,6 @@ void build(Program program, ast.Node root)
                 }
                 auto bank = program.checkBank(description, stmt.location);
                 bank.reservePhysical(description, data.length, stmt.location);
-                stmt.data = data;
             }
         }
     );
@@ -1030,8 +1029,36 @@ void build(Program program, ast.Node root)
         (ast.Data stmt)
         {
             enum description = "inline data";
-            auto bank = program.checkBank(description, stmt.location);
-            bank.writePhysical(stmt.data, stmt.location);
+            bool sizeless;
+            uint unit, total;
+            if(foldStorage(program, stmt.storage, sizeless, unit, total))
+            {
+                ubyte[] data;
+                assert(stmt.items.length > 0);
+                foreach(item; stmt.items)
+                {
+                    data ~= foldDataExpression(program, item, unit, program.finalized);
+                }
+                if(!sizeless)
+                {
+                    if(data.length < total)
+                    {
+                        // Fill unused section with final byte of data.
+                        data ~= std.array.array(std.range.repeat(data[data.length - 1], total - data.length));
+                    }
+                    else if(data.length > total)
+                    {
+                        error(
+                            std.string.format(
+                                "%s is an %s-byte sequence, which is %s byte(s) over the declared %s-byte limit",
+                                description, data.length, data.length - total, total
+                            ), stmt.location
+                        );
+                    }
+                }
+                auto bank = program.checkBank(description, stmt.location);
+                bank.writePhysical(data, stmt.location);
+            }
         }
     );
     verify();

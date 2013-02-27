@@ -1,0 +1,73 @@
+in ram, 0xC000:
+    package stack do
+        let SIZE = 256
+        var stack : byte * SIZE
+        let top = stack + SIZE - 1
+    end
+
+    package hardware do
+        let GB = 0
+        let GBC = 1
+        let GBA = 2
+        var type : byte
+    end
+
+    package effect do
+        var timer : byte
+        var timer2 : byte
+    end
+
+    package video do
+        package request do
+            var redraw : byte
+            var move_snake : byte
+        end
+    end
+
+    package joy do
+        package bit do
+            let A = 0
+            let B = 1
+            let SELECT = 2
+            let START = 3
+            let RIGHT = 4
+            let LEFT = 5
+            let UP = 6
+            let DOWN = 7
+        end
+
+        package mask do
+            let A = 1 << bit.A
+            let B = 1 << bit.B
+            let SELECT = 1 << bit.SELECT
+            let START = 1 << bit.START
+            let RIGHT = 1 << bit.RIGHT
+            let LEFT = 1 << bit.LEFT
+            let UP = 1 << bit.UP
+            let DOWN = 1 << bit.DOWN
+        end
+
+        var unpress : byte
+        var pressed : byte
+    end
+
+    package direction do
+        let LEFT = 0
+        let RIGHT = 1
+        let UP = 2
+        let DOWN = 3
+    end
+
+    package player do
+        let SIZE = 0
+
+        var dir : byte
+        var next_step : byte
+        var x : byte
+        var y : byte
+        var head : byte
+        var tail : byte
+
+        let MAX_LENGTH = 128
+        var parts : word * MAX_LENGTH
+    end

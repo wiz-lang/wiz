@@ -1,0 +1,95 @@
+package player do
+    func init do
+        [head] = 8 via a
+        [tail] = 0 via a
+        [x] = 8 via a
+        [y] = 7 via a
+        [dir] = direction.DOWN via a
+        call fill_snake
+        [x] = 8 via a
+        [y] = 8 via a
+        call update_coordinates
+    end
+
+    func check_controls do
+        c = [joy.pressed] via a
+        d = [dir] via a
+        if compare c@joy.bit.LEFT is ~zero then
+            if compare a to direction.RIGHT is ~= then
+                d = direction.LEFT
+            end
+        elseif compare c@joy.bit.RIGHT is ~zero then
+            if compare a to direction.LEFT is ~= then
+                d = direction.RIGHT
+            end
+        elseif compare c@joy.bit.UP is ~zero then
+            if compare a to direction.DOWN is ~= then
+                d = direction.UP
+            end
+        elseif compare c@joy.bit.DOWN is ~zero then
+            if compare a to direction.UP is ~= then
+                d = direction.DOWN
+            end
+        end
+        [dir] = d via a
+    end
+
+    func update do
+        call check_controls
+
+        hl = next_step
+        if [hl]-- is zero then
+            a = [dir]
+            if compare a to direction.LEFT is == then
+                [x] = [x] - 1 & 0x1F via a
+            elseif compare a to direction.RIGHT is == then
+                [x] = [x] + 1 & 0x1F via a
+            elseif compare a to direction.UP is == then
+                [y] = [y] - 1 & 0x1F via a
+            elseif compare a to direction.DOWN is == then
+                [y] = [y] + 1 & 0x1F via a
+            end
+            call update_coordinates
+        end
+    end
+
+    func fill_snake do
+        hl = gb.ram.map
+        e = [x] via a; d = 0
+        c = [y] via a; b = 0
+        bc = bc << 5
+        hl = hl + bc + de
+        e = l
+        d = h
+
+        hl = parts
+        loop
+            [hl++] = e via a
+            [hl++] = d via a
+            bc++
+            a = c
+            compare a to MAX_LENGTH
+        until == end
+    end
+
+    func update_coordinates do
+        [head] = [head] + 1 & (MAX_LENGTH - 1) via a
+        [tail] = [tail] + 1 & (MAX_LENGTH - 1) via a
+
+        hl = gb.ram.map
+        e = [x] via a; d = 0
+        c = [y] via a; b = 0
+        bc = bc << 5
+        hl = hl + bc + de
+        c = l
+        b = h
+
+        e = [head] << 1 via a
+        hl = parts + de
+        [hl++] = c via a
+        [hl++] = b via a
+
+        hl = next_step; [hl] = 16
+        hl = video.request.move_snake; [hl] = 1
+    end
+end

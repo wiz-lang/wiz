@@ -418,6 +418,10 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
             // 'compare a & [mem]' -> 'bit mem'
             if(right is null)
             {
+                if(left.base is null)
+                {
+                    return comparisonBadPrimaryError(left, stmt.left.location);
+                }
                 switch(left.base.type)
                 {
                     case ArgumentType.Indirection:
@@ -431,7 +435,7 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                             ? [0x24, address & 0xFF]
                             : [0x2C, address & 0xFF, (address >> 8) & 0xFF];
                     default:
-                        return comparisonBadSecondaryError(left, right, stmt.right.location);
+                        return comparisonBadPrimaryError(left, stmt.left.location);
                 }
             }
             return comparisonDisallowedSecondaryError(left, stmt.right.location);

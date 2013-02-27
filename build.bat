@@ -9,8 +9,8 @@ for %%j in (src\wiz src\wiz\ast src\wiz\cpu src\wiz\cpu\gameboy src\wiz\cpu\mos6
 )
 
 :: Build the compiler.
-dmd %files% -Isrc -ofwiz -g -debug
-if %errorlevel% neq 0 call :exit 1
+:: dmd %files% -Isrc -ofwiz -g -debug
+::if %errorlevel% neq 0 call :exit 1
 :: Compile a test program.
 wiz examples/gameboy/snake/snake.wiz -gb -o examples/gameboy/snake/snake.gb
 if %errorlevel% neq 0 call :exit 1
@@ -22,8 +22,21 @@ echo.
 :: Compile another test program.
 wiz examples/nes/scroller/scroller.wiz -6502 -o examples/nes/scroller/scroller.nes
 if %errorlevel% neq 0 call :exit 1
+echo.
+:: Compile another test program.
+wiz examples/nes/parallax/main.wiz -6502 -o examples/nes/parallax/parallax.nes
+if %errorlevel% neq 0 call :exit 1
+echo.
+:: Compile another test program.
+wiz examples/gameboy/selfpromo/main.wiz -gb -o examples/gameboy/selfpromo/selfpromo.gb
+if %errorlevel% neq 0 call :exit 1
+echo.
 :: Success!
-call :exit 0
+if exist build2.bat (
+    build2.bat
+) else (
+    call :exit 0
+)
 
 :exit
 :: Sleep so that sublime text will not write a [Finished] message in the middle of a compiler message.
@@ -33,5 +46,6 @@ if %1% equ 0 (
     echo --- Build success. ---
 ) else (
     echo --- Build failure. ---
+pause
 )
 exit %1

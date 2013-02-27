@@ -34,33 +34,33 @@ in prg, 0xC000:
     include '../common/hardware.wiz'
 
     func load_palette do
-        [ppu.address] = >ppu.PALETTE_BASE via a
-        [ppu.address] = <ppu.PALETTE_BASE via a
+        [nes.ppu.address] = >nes.ppu.PALETTE_BASE via a
+        [nes.ppu.address] = <nes.ppu.PALETTE_BASE via a
         x = 0
         loop
-            [ppu.data] = [palette:x] via a
+            [nes.ppu.data] = [palette:x] via a
             x++
-            compare x to (ppu.PALETTE_SIZE * ppu.PALETTE_TOTAL)
+            compare x to (nes.ppu.PALETTE_SIZE * nes.ppu.PALETTE_TOTAL)
         until zero end
     end
     
     func print_text do
         let START_X = 10
         let START_Y = 13
-        let TILE_ADDRESS = ppu.NAMETABLE_BASE + (START_Y * 32 + START_X)
+        let TILE_ADDRESS = nes.ppu.NAMETABLE_BASE + (START_Y * 32 + START_X)
         
         // Read PPU status to reset its state.
-        [ppu.status] = a
+        [nes.ppu.status] = a
         // Now setup the PPU for copying tiles.
-        [ppu.address] = >TILE_ADDRESS via a
-        [ppu.address] = <TILE_ADDRESS via a
+        [nes.ppu.address] = >TILE_ADDRESS via a
+        [nes.ppu.address] = <TILE_ADDRESS via a
         
         x = 0
         loop
             a = [message:x]
         while ~zero
             x++
-            [ppu.data] = a
+            [nes.ppu.data] = a
         end
     end
 
@@ -72,13 +72,13 @@ in prg, 0xC000:
         s = 0xFF via x
         
         // Turn off rendering.
-        [ppu.ctrl] = 0 via x
-        [ppu.mask] = x
+        [nes.ppu.ctrl] = 0 via x
+        [nes.ppu.mask] = x
         
         // Wait for the PPU to be ready to use, which takes 2 vertical blanks.
         loop
             loop
-                compare a & [ppu.status]
+                compare a & [nes.ppu.status]
             until negative end
             x++
             compare x to 2 
@@ -88,8 +88,8 @@ in prg, 0xC000:
         call print_text
         
         // We're finally ready to show the screen!
-        [ppu.ctrl] = ppu.CTRL_NMI via a
-        [ppu.mask] = (ppu.MASK_LEFTMOST_BG | ppu.MASK_RENDER_BG) via a
+        [nes.ppu.ctrl] = nes.ppu.CTRL_NMI via a
+        [nes.ppu.mask] = (nes.ppu.MASK_LEFTMOST_BG | nes.ppu.MASK_RENDER_BG) via a
 
         loop end
     end
@@ -98,9 +98,9 @@ in prg, 0xC000:
         push a
         push x via a
         push y via a
-        a = [ppu.status]
-        [ppu.scroll] = 0 via a
-        [ppu.scroll] = a
+        a = [nes.ppu.status]
+        [nes.ppu.scroll] = 0 via a
+        [nes.ppu.scroll] = a
         y = pop via a
         x = pop via a
         a = pop

@@ -152,6 +152,10 @@ class Parser
             {
                 break;
             }
+            if(token == Token.EndOfFile)
+            {
+                continue;
+            }
             if(keyword == Keyword.End || keyword == Keyword.Else || keyword == Keyword.ElseIf)
             {
                 reject();

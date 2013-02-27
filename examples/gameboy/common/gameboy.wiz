@@ -78,7 +78,16 @@ package gb do
         let CTRL_OBJ_8x8 = 0x00
         let CTRL_OBJ_ON = 0x02
         let CTRL_BG_ON = 0x01
-
+        
+        let CTRL_BIT_BG = 0
+        let CTRL_BIT_OBJ = 1
+        let CTRL_BIT_OBJ_SIZE = 2
+        let CTRL_BIT_BG_MAP = 3
+        let CTRL_BIT_TILESET = 4
+        let CTRL_BIT_WIN = 5
+        let CTRL_BIT_WIN_MAP = 6
+        let CTRL_BIT_ENABLE = 7
+        
         let stat = 0xFF41
         let STAT_SCANLINE_ENABLE = 0x40
         let STAT_OAM_ENABLE = 0x20
@@ -98,7 +107,7 @@ package gb do
         let tile = 0x8000
         let map = 0x9800
         let map2 = 0x9C00
-        let obj = 0x8000
+        let obj = 0xFE00
         let wave = 0xFF30
     end
 
@@ -170,8 +179,9 @@ package gb do
         end
 
         let speed = 0xFF4D
-        let SPEED_DOUBLE = 0x80
-        let SPEED_NORMAL = 0x00
+        let SPEED_IS_DOUBLE = 0x80
+        let SPEED_IS_NORMAL = 0x00
+        let SPEED_SWITCH = 0x01
 
         let infrared = 0xFF5D
         let INFRARED_WRITE_MASK = 0x01
@@ -375,7 +385,7 @@ package gb do
         let CTRL_CLOCK_4096 = 0x00
         let CTRL_CLOCK_262144 = 0x01
         let CTRL_CLOCK_65536 = 0x02
-        let CTRL_CLOCK_16384 = 0x03        
+        let CTRL_CLOCK_16384 = 0x03
     end
 
     package interrupt do

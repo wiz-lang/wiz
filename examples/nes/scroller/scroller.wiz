@@ -82,13 +82,13 @@ in prg, 0xC000:
     include '../common/tilemap.wiz'
 
     func load_palette do
-        [ppu.address] = >ppu.PALETTE_BASE via a
-        [ppu.address] = <ppu.PALETTE_BASE via a
+        [nes.ppu.address] = >nes.ppu.PALETTE_BASE via a
+        [nes.ppu.address] = <nes.ppu.PALETTE_BASE via a
         x = 0
         loop
-            [ppu.data] = [palette:x] via a
+            [nes.ppu.data] = [palette:x] via a
             x++
-            compare x to (ppu.PALETTE_SIZE * ppu.PALETTE_TOTAL)
+            compare x to (nes.ppu.PALETTE_SIZE * nes.ppu.PALETTE_TOTAL)
         until zero end
     end
     
@@ -96,15 +96,15 @@ in prg, 0xC000:
     // Derived from code posted by blargg on nesdevwiki
     func check_controls do
         // Strobe controller
-        [joy.out] = 1 via a
-        [joy.out] = 0 via a
+        [nes.joy.out] = 1 via a
+        [nes.joy.out] = 0 via a
         // Read all 8 buttons
         x = 8
         loop
             // Read next button state and mask off low 2 bits.
             // Compare with $01, which will set carry flag if
             // either or both bits are set.
-            a = [joy.in1] & 0x3
+            a = [nes.joy.in1] & 0x3
             compare a to 1
             // Now, rotate the carry flag into the top of A,
             // land shift all the other buttons to the right
@@ -121,20 +121,20 @@ in prg, 0xC000:
     func print_text do
         let START_X = 10
         let START_Y = 13
-        let TILE_ADDRESS = ppu.NAMETABLE_BASE + (START_Y * 32 + START_X)
+        let TILE_ADDRESS = nes.ppu.NAMETABLE_BASE + (START_Y * 32 + START_X)
         
         // Read PPU status to reset its state.
-        [ppu.status] = a
+        [nes.ppu.status] = a
         // Now setup the PPU for copying tiles.
-        [ppu.address] = >TILE_ADDRESS via a
-        [ppu.address] = <TILE_ADDRESS via a
+        [nes.ppu.address] = >TILE_ADDRESS via a
+        [nes.ppu.address] = <TILE_ADDRESS via a
         
         x = 0
         loop
             a = [message:x]
         while ~zero
             x++
-            [ppu.data] = a
+            [nes.ppu.data] = a
         end
     end
     
@@ -190,13 +190,13 @@ in prg, 0xC000:
         s = 0xFF via x
         
         // Turn off rendering.
-        [ppu.ctrl] = 0 via x
-        [ppu.mask] = x
+        [nes.ppu.ctrl] = 0 via x
+        [nes.ppu.mask] = x
         
         // Wait for the PPU to be ready to use, which takes 2 vertical blanks.
         loop
             loop
-                compare a & [ppu.status]
+                compare a & [nes.ppu.status]
             until negative end
             x++
             compare x to 2 
@@ -228,18 +228,18 @@ in prg, 0xC000:
         call tilemap.load
         
         // We're finally ready to show the screen!
-        [ppu.ctrl] = ppu.CTRL_NMI via a
-        [ppu.mask] = ppu.MASK_LEFTMOST_BG | ppu.MASK_RENDER_BG via a
+        [nes.ppu.ctrl] = nes.ppu.CTRL_NMI via a
+        [nes.ppu.mask] = nes.ppu.MASK_LEFTMOST_BG | nes.ppu.MASK_RENDER_BG via a
 
-        [apu.flag] = apu.FLAG_SQUARE1 via a
+        [nes.apu.flag] = nes.apu.FLAG_SQUARE1 via a
 
         [camera.direction] = direction.RIGHT via a
         loop
             call check_controls
-            a = [controls] & joy.A
+            a = [controls] & nes.joy.A
             if is ~zero then
                 [camera.direction] = [camera.direction] ^ 1 via a
-                [unpress] = [unpress] | joy.A via a
+                [unpress] = [unpress] | nes.joy.A via a
             end
         
             a = [camera.direction]
@@ -304,12 +304,12 @@ in prg, 0xC000:
         push a
         push x via a
         push y via a
-        a = [ppu.status]
+        a = [nes.ppu.status]
         
         a = [redraw.request] & redraw.SPRITES
         if is ~zero then
-            [ppu.oam.address] = >sprite_buffer via a
-            [ppu.oam.dma] = <sprite_buffer via a
+            [nes.ppu.oam.address] = >sprite_buffer via a
+            [nes.ppu.oam.dma] = <sprite_buffer via a
 
             // Done redrawing tiles
             [redraw.request] = [redraw.request] ^ redraw.SPRITES via a
@@ -341,9 +341,9 @@ in prg, 0xC000:
             [redraw.request] = [redraw.request] ^ redraw.SCROLL_TILES via a
         end
          
-        [ppu.ctrl] = [camera.x_hi] & 1 | ppu.CTRL_NMI via a
-        [ppu.scroll] = [camera.x_lo] via a
-        [ppu.scroll] = 0 via a
+        [nes.ppu.ctrl] = [camera.x_hi] & 1 | nes.ppu.CTRL_NMI via a
+        [nes.ppu.scroll] = [camera.x_lo] via a
+        [nes.ppu.scroll] = 0 via a
         y = pop via a
         x = pop via a
         a = pop

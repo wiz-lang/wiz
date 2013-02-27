@@ -330,7 +330,7 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                     case ArgumentType.E:
                     case ArgumentType.H:
                     case ArgumentType.L:
-                        return [(0xB8 + left.getRegisterIndex()) & 0xFF];
+                        return [(0xB8 + right.getRegisterIndex()) & 0xFF];
                     case ArgumentType.Indirection:
                         if(right.base.type == ArgumentType.HL)
                         {
@@ -1028,7 +1028,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                 case ArgumentType.BC, ArgumentType.DE:
                     if(load.type == ArgumentType.A)
                     {
-                        return getIndirectPairLoadAccumulator(program, stmt, load);
+                        return getIndirectPairLoadAccumulator(program, stmt, dest);
                     }
                     else
                     {
@@ -1138,7 +1138,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
             {
                 case ArgumentType.A:
                     // '[hl++] = a' -> 'ld [hl+], a'
-                    return [0x22];
+                    return getIndirectIncrementLoadAccumulator(program, stmt, dest);
                 default:
                     return invalidAssignmentError(dest, load, stmt.location);
             }
@@ -1334,12 +1334,12 @@ ubyte[] getIndirectImmediateLoadAccumulator(compile.Program program, ast.Stateme
 
 ubyte[] getAccumulatorLoadIndirectPair(compile.Program program, ast.Statement stmt, Argument load)
 {
-    return [(0x0A + load.getPairIndex() * 0x10) & 0xFF];
+    return [(0x0A + load.base.getPairIndex() * 0x10) & 0xFF];
 }
 
 ubyte[] getIndirectPairLoadAccumulator(compile.Program program, ast.Statement stmt, Argument dest)
 {
-    return [(0x02 + dest.getPairIndex() * 0x10) & 0xFF];
+    return [(0x02 + dest.base.getPairIndex() * 0x10) & 0xFF];
 }
 
 ubyte[] getAccumulatorLoadIndirectIncrement(compile.Program program, ast.Statement stmt, Argument load)

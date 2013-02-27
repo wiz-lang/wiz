@@ -16,6 +16,7 @@ class Jump : Statement
     {
         super(location);
         _type = type;
+        _far = far;
     }
 
     this(parse.Keyword type, bool far, JumpCondition condition, compile.Location location)
@@ -27,7 +28,6 @@ class Jump : Statement
     this(parse.Keyword type, bool far, Expression destination, JumpCondition condition, compile.Location location)
     {
         this(type, far, condition, location);
-        _far = far;
         _destination = destination;
     }
 

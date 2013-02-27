@@ -1,0 +1,555 @@
+include '../common/gameboy.wiz'
+include 'layout.wiz'
+include 'ram.wiz'
+include 'boot.wiz'
+include 'joy.wiz'
+include 'video.wiz'
+include 'player.wiz'
+
+// Fills a range in memory with a specified byte value.
+func memset do
+    // Arguments:
+    let dest = hl // inout
+    let value = a // in
+    let count = bc // inout
+    // Locals:
+    let count_l = c
+    let count_h = b
+
+    count_l++; count_h++
+    goto start
+def repeat:
+    [dest++] = value
+def start:
+    count_l--; goto repeat when ~zero
+    count_h--; goto repeat when ~zero
+end
+
+// Copies count bytes from source to destination.
+func memcpy do
+    let dest = de // inout
+    let source = hl // inout
+    let count = bc // inout
+    // Locals
+    let count_l = c
+    let count_h = b
+
+    count_l++; count_h++
+    goto start
+def repeat:
+    [dest] = [source++] via a
+    dest++
+def start:
+    count_l--; goto repeat when ~zero
+    count_h--; goto repeat when ~zero
+end
+
+package hardware do
+    inline func detect do
+        hl = hardware.type
+        [hl] = hardware.GB
+        if compare a to 0x11 is == then
+            [hl] = hardware.GBC
+            if compare b@0 is ~zero then
+                [hl] = hardware.GBA
+            end
+        end
+    end
+end
+
+func main do
+    interrupt = 0
+    hl = stack.top
+    sp = hl
+    
+    inline call hardware.detect
+    call joy.init
+    call video.init
+    call player.init
+
+    // Turn off the screen.
+    call video.disable
+
+    // Set up a simple black-to-white 4-color palette.
+    [gb.mono.palette.bg] = ~0b11100100 via a
+    [gb.mono.palette.obj1] =  ~0b11100100 via a
+    [gb.mono.palette.obj2] = ~0b11100000 via a
+
+    // Initialize tileset.
+    do
+        hl = bg.face
+        de = gb.ram.tile
+        bc = (bg.face_eof - bg.face)//(bg.wavy_eof - bg.wavy)
+        call memcpy
+    end
+
+    // Fill in the map.
+    do
+        hl = gb.ram.map
+        b = 32
+        d = 0
+        loop
+            c = 32
+            loop
+                a = d & 3
+                if compare a to 0 is == then
+                    if compare d@2 is zero then
+                        if compare c@0 is zero then a = 0 else a = 1 end
+                    else
+                        if compare c@0 is zero then a = 6 else a = 7 end
+                    end
+                elseif compare a to 1 is == then
+                    if compare d@2 is zero then
+                        if compare c@0 is zero then a = 2 else a = 3 end
+                    else
+                        if compare c@0 is zero then a = 8 else a = 9 end
+                    end
+                else
+                    if compare d@2 is zero then
+                        if compare c@0 is zero then a = 4 else a = 5 end
+                    else
+                        if compare c@0 is zero then a = 10 else a = 11 end
+                    end
+                end
+                [hl++] = a
+                c--
+            until zero end
+            d++
+            a = d & 3
+            if compare a to 3 is == then
+                d = d & 4 ^ 4 via a
+            end
+            b--
+        until zero end
+    end
+
+    hl = gb.ram.map2
+    a = 0x7F
+    bc = 1024
+    call memset
+
+
+
+//14-4-18-5-23 7 3-18-15-23-5-12-12
+    [gb.ram.map2 + 0x21] = 0x8A + 0 via a
+    [gb.ram.map2 + 0x22] = 0xA5 + 13 via a
+    [gb.ram.map2 + 0x23] = 0xA5 + 3 via a
+    [gb.ram.map2 + 0x24] = 0xA5 + 17 via a
+    [gb.ram.map2 + 0x25] = 0xA5 + 4 via a
+    [gb.ram.map2 + 0x26] = 0xA5 + 22 via a
+    [gb.ram.map2 + 0x27] = 0x7F via a
+    [gb.ram.map2 + 0x28] = 0x8A + 6 via a
+    [gb.ram.map2 + 0x29] = 0xA4 via a
+    [gb.ram.map2 + 0x2A] = 0x7F via a
+    [gb.ram.map2 + 0x2B] = 0x8A + 2 via a
+    [gb.ram.map2 + 0x2C] = 0xA5 + 17 via a
+    [gb.ram.map2 + 0x2D] = 0xA5 + 14 via a
+    [gb.ram.map2 + 0x2E] = 0xA5 + 22 via a
+    [gb.ram.map2 + 0x2F] = 0xA5 + 4 via a
+    [gb.ram.map2 + 0x30] = 0xA5 + 11 via a
+    [gb.ram.map2 + 0x31] = 0xA5 + 11 via a
+
+
+    [gb.ram.map2 + 0x82] = 0x8A + 8 via a
+    [gb.ram.map2 + 0x83] = 0xA5 + 13 via a
+    [gb.ram.map2 + 0x84] = 0xA5 + 3 via a
+    [gb.ram.map2 + 0x85] = 0xA5 + 8 via a
+    [gb.ram.map2 + 0x86] = 0xA5 + 4 via a
+    [gb.ram.map2 + 0x87] = 0x7F via a
+    [gb.ram.map2 + 0x88] = 0x8A + 6 via a
+    [gb.ram.map2 + 0x89] = 0xA5 + 0 via a
+    [gb.ram.map2 + 0x8A] = 0xA5 + 12 via a
+    [gb.ram.map2 + 0x8B] = 0xA5 + 4 via a
+    [gb.ram.map2 + 0x8C] = 0x7F via a
+    [gb.ram.map2 + 0x8D] = 0x8A + 3 via a
+    [gb.ram.map2 + 0x8E] = 0xA5 + 4 via a
+    [gb.ram.map2 + 0x8F] = 0xA5 + 21 via a
+    [gb.ram.map2 + 0x90] = 0xA4 via a
+
+
+    /*
+    do
+        hl = gb.ram.map
+        b = 32
+        d = 0
+        loop!
+            c = 32
+            loop!
+                if! compare d @ 4 is zero then
+                    a = d & 0x0F
+                    if! compare a to 0 is == then
+                        a = c & 3
+                        if compare a to 3 is == then a = 0
+                        elseif compare a to 2 is == then a = 1
+                        elseif compare a to 1 is == then a = 2
+                        elseif compare a to 0 is == then a = 15 end
+                    elseif compare a to 1 is == then
+                        a = c & 3
+                        if compare a to 3 is == then a = 3
+                        elseif compare a to 2 is == then a = 4
+                        elseif compare a to 1 is == then a = 5
+                        elseif compare a to 0 is == then a = 15 end
+                    elseif compare a to 2 is == then
+                        a = c & 3
+                        if compare a to 3 is == then a = 6
+                        elseif compare a to 2 is == then a = 7
+                        elseif compare a to 1 is == then a = 8
+                        elseif compare a to 0 is == then a = 15 end
+                    elseif compare a to 3 is == then
+                        a = c & 3
+                        if compare a to 3 is == then a = 9
+                        elseif compare a to 2 is == then a = 10
+                        elseif compare a to 1 is == then a = 11
+                        elseif compare a to 0 is == then a = 15 end
+                    elseif compare a to 4 is == then
+                        a = c & 3
+                        if compare a to 3 is == then a = 12
+                        elseif compare a to 2 is == then a = 13
+                        elseif compare a to 1 is == then a = 14
+                        elseif compare a to 0 is == then a = 15 end
+                    else
+                        a = 15
+                    end
+                else
+                    a = d & 0x0F
+                    if! compare a to 0 is == then
+                        a = c & 3
+                        if compare a to 3 is == then a = 1
+                        elseif compare a to 2 is == then a = 2
+                        elseif compare a to 1 is == then a = 15
+                        elseif compare a to 0 is == then a = 0 end
+                    elseif compare a to 1 is == then
+                        a = c & 3
+                        if compare a to 3 is == then a = 4
+                        elseif compare a to 2 is == then a = 5
+                        elseif compare a to 1 is == then a = 15
+                        elseif compare a to 0 is == then a = 3 end
+                    elseif compare a to 2 is == then
+                        a = c & 3
+                        if compare a to 3 is == then a = 7
+                        elseif compare a to 2 is == then a = 8
+                        elseif compare a to 1 is == then a = 15
+                        elseif compare a to 0 is == then a = 6 end
+                    elseif compare a to 3 is == then
+                        a = c & 3
+                        if compare a to 3 is == then a = 10
+                        elseif compare a to 2 is == then a = 11
+                        elseif compare a to 1 is == then a = 15
+                        elseif compare a to 0 is == then a = 9 end
+                    elseif compare a to 4 is == then
+                        a = c & 3
+                        if compare a to 3 is == then a = 13
+                        elseif compare a to 2 is == then a = 14
+                        elseif compare a to 1 is == then a = 15
+                        elseif compare a to 0 is == then a = 12 end
+                    else
+                        a = 15
+                    end
+                end
+
+                [hl++] = a
+                c--
+            until zero end
+            d++
+            a = d & 0x0F
+            if compare a to 5 is == then
+                d = d & 0x10 ^ 0x10 via a
+            end
+            b--
+        until zero end
+    end*/
+
+    hl = gb.ram.obj
+    do
+        let x = 80
+        let y = 64 
+        [hl++] = y via a
+        [hl++] = x via a
+        [hl++] = 0x00 via a
+        [hl++] = 0x00 via a
+        [hl++] = y via a
+        [hl++] = x + 8 via a
+        [hl++] = 0x01 via a
+        [hl++] = 0x00 via a
+        [hl++] = y via a
+        [hl++] = x + 16 via a
+        [hl++] = 0x02 via a
+        [hl++] = 0x00 via a
+
+        [hl++] = y + 8 via a
+        [hl++] = x via a
+        [hl++] = 0x10 via a
+        [hl++] = 0x00 via a
+        [hl++] = y + 8 via a
+        [hl++] = x + 8 via a
+        [hl++] = 0x11 via a
+        [hl++] = 0x00 via a
+        [hl++] = y + 8 via a
+        [hl++] = x + 16 via a
+        [hl++] = 0x12 via a
+        [hl++] = 0x00 via a
+
+        [hl++] = y + 16 via a
+        [hl++] = x via a
+        [hl++] = 0x20 via a
+        [hl++] = 0x00 via a
+        [hl++] = y + 16 via a
+        [hl++] = x + 8 via a
+        [hl++] = 0x21 via a
+        [hl++] = 0x00 via a
+        [hl++] = y + 16 via a
+        [hl++] = x + 16 via a
+        [hl++] = 0x22 via a
+        [hl++] = 0x00 via a
+
+        [hl++] = y + 24 via a
+        [hl++] = x via a
+        [hl++] = 0x30 via a
+        [hl++] = 0x00 via a
+        [hl++] = y + 24 via a
+        [hl++] = x + 8 via a
+        [hl++] = 0x31 via a
+        [hl++] = 0x00 via a
+        [hl++] = y + 24 via a
+        [hl++] = x + 16 via a
+        [hl++] = 0x32 via a
+        [hl++] = 0x00 via a
+
+        [hl++] = y + 32 via a
+        [hl++] = x via a
+        [hl++] = 0x40 via a
+        [hl++] = 0x00 via a
+        [hl++] = y + 32 via a
+        [hl++] = x + 8 via a
+        [hl++] = 0x41 via a
+        [hl++] = 0x00 via a
+        [hl++] = y + 32 via a
+        [hl++] = x + 16 via a
+        [hl++] = 0x42 via a
+        [hl++] = 0x00 via a
+
+        [hl++] = y + 40 via a
+        [hl++] = x via a
+        [hl++] = 0x50 via a
+        [hl++] = 0x00 via a
+        [hl++] = y + 40 via a
+        [hl++] = x + 8 via a
+        [hl++] = 0x51 via a
+        [hl++] = 0x00 via a
+        [hl++] = y + 40 via a
+        [hl++] = x + 16 via a
+        [hl++] = 0x52 via a
+        [hl++] = 0x00 via a
+
+        [hl++] = y via a
+        [hl++] = x via a
+        [hl++] = 0x03 via a
+        [hl++] = 0x10 via a
+        [hl++] = y via a
+        [hl++] = x + 8 via a
+        [hl++] = 0x04 via a
+        [hl++] = 0x10 via a
+        [hl++] = y via a
+        [hl++] = x + 16 via a
+        [hl++] = 0x05 via a
+        [hl++] = 0x10 via a
+
+        [hl++] = y + 8 via a
+        [hl++] = x via a
+        [hl++] = 0x13 via a
+        [hl++] = 0x10 via a
+        [hl++] = y + 8 via a
+        [hl++] = x + 8 via a
+        [hl++] = 0x14 via a
+        [hl++] = 0x10 via a
+        [hl++] = y + 8 via a
+        [hl++] = x + 16 via a
+        [hl++] = 0x15 via a
+        [hl++] = 0x10 via a
+
+        [hl++] = y + 16 via a
+        [hl++] = x via a
+        [hl++] = 0x23 via a
+        [hl++] = 0x10 via a
+        [hl++] = y + 16 via a
+        [hl++] = x + 8 via a
+        [hl++] = 0x24 via a
+        [hl++] = 0x10 via a
+        [hl++] = y + 16 via a
+        [hl++] = x + 16 via a
+        [hl++] = 0x25 via a
+        [hl++] = 0x10 via a
+
+        [hl++] = y + 24 via a
+        [hl++] = x via a
+        [hl++] = 0x33 via a
+        [hl++] = 0x10 via a
+        [hl++] = y + 24 via a
+        [hl++] = x + 8 via a
+        [hl++] = 0x34 via a
+        [hl++] = 0x10 via a
+        [hl++] = y + 24 via a
+        [hl++] = x + 16 via a
+        [hl++] = 0x35 via a
+        [hl++] = 0x10 via a
+
+        [hl++] = y + 32 via a
+        [hl++] = x via a
+        [hl++] = 0x43 via a
+        [hl++] = 0x10 via a
+        [hl++] = y + 32 via a
+        [hl++] = x + 8 via a
+        [hl++] = 0x44 via a
+        [hl++] = 0x10 via a
+        [hl++] = y + 32 via a
+        [hl++] = x + 16 via a
+        [hl++] = 0x45 via a
+        [hl++] = 0x10 via a
+
+        [hl++] = y + 40 via a
+        [hl++] = x via a
+        [hl++] = 0x53 via a
+        [hl++] = 0x10 via a
+        [hl++] = y + 40 via a
+        [hl++] = x + 8 via a
+        [hl++] = 0x54 via a
+        [hl++] = 0x10 via a
+        [hl++] = y + 40 via a
+        [hl++] = x + 16 via a
+        [hl++] = 0x55 via a
+        [hl++] = 0x10 via a
+
+
+        let bubx = x + 15
+        let buby = y - 15
+        [hl++] = buby via a
+        [hl++] = bubx via a
+        [hl++] = 0x06 via a
+        [hl++] = 0x10 via a
+        [hl++] = buby via a
+        [hl++] = bubx + 8 via a
+        [hl++] = 0x07 via a
+        [hl++] = 0x10 via a
+
+        [hl++] = buby + 8 via a
+        [hl++] = bubx via a
+        [hl++] = 0x16 via a
+        [hl++] = 0x10 via a
+        [hl++] = buby + 8 via a
+        [hl++] = bubx + 8 via a
+        [hl++] = 0x17 via a
+        [hl++] = 0x10 via a
+
+    end
+
+    [effect.timer] = 0 via a
+    [effect.timer2] = 0 via a
+
+    // Turn the screen back on, with backgrounds enabled using tileset 2.
+    [gb.lcd.ctrl] = gb.lcd.CTRL_ON | gb.lcd.CTRL_OBJ_ON | gb.lcd.CTRL_TILESET1 | gb.lcd.CTRL_BG_ON | gb.lcd.CTRL_WIN_MAP2 via a
+    [gb.window.x] = 7 via a
+    [gb.window.y] = 8 via a
+
+    // Enable some basic interrupts.
+    [gb.interrupt.enable] = gb.interrupt.VBLANK | gb.interrupt.STAT via a
+    [gb.lcd.stat] = gb.lcd.STAT_SCANLINE_ENABLE via a
+    interrupt = 1
+
+    loop
+        call joy.check
+        call player.update
+        call video.flush
+    end
+end
+
+inline func stack_cleanup do
+    hl = pop
+    de = pop
+    bc = pop
+    af = pop    
+end
+
+task draw do
+    call video.acknowledge
+
+    a = [gb.lcd.ctrl]
+    a@gb.lcd.CTRL_BIT_WIN = 1
+    [gb.lcd.ctrl] = a
+
+    b = 0
+    inline call wavy
+    [gb.scanline.trigger] = 1 via a
+
+    [effect.timer2] = [effect.timer2] + 1 via a
+    if compare a@0 is zero then
+        [effect.timer] = [effect.timer] + 1 via a
+        a = a & 0x1F//0x7F
+        if compare a is zero then
+            [gb.mono.palette.bg] = [gb.mono.palette.bg] >>># 2 via a
+        end
+    end
+
+    inline call stack_cleanup
+end
+
+inline func wavy do
+    c = [effect.timer] + b << 2 via a
+    l = <effect.table + c via a
+    h = >effect.table +# 0 via a
+
+    [gb.scroll.x] = [hl] via a
+
+    c = [effect.timer] + b << 1 via a
+    l = <effect.table + c via a
+    h = >effect.table +# 0 via a
+    [gb.scroll.y] = [hl] + 60 via a
+end
+
+task stat do
+    b = [gb.scanline.current] via a
+    loop
+        a = [gb.lcd.stat] & gb.lcd.STAT_MODE_MASK
+        compare a to gb.lcd.STAT_MODE_HBLANK
+    until == end
+
+    a = b
+    if compare a to 31 is == then
+        a = [gb.lcd.ctrl]
+        a@gb.lcd.CTRL_BIT_WIN = 0
+        [gb.lcd.ctrl] = a
+        [gb.scanline.trigger] = [gb.scanline.trigger] + 3 via a
+    elseif compare a to 112 is == then
+        a = [gb.lcd.ctrl]
+        a@gb.lcd.CTRL_BIT_WIN = 1
+        [gb.lcd.ctrl] = a
+        [gb.scanline.trigger] = [gb.scanline.trigger] + 3 via a
+    elseif compare a to 112 + 24 is == then
+        a = [gb.lcd.ctrl]
+        a@gb.lcd.CTRL_BIT_WIN = 0
+        [gb.lcd.ctrl] = a
+        [gb.scanline.trigger] = [gb.scanline.trigger] + 3 via a
+    else
+        inline call wavy
+        [gb.scanline.trigger] = [gb.scanline.trigger] + 3 via a
+    end
+
+    inline call stack_cleanup
+end
+
+task stub do
+    inline call stack_cleanup
+end
+
+let timer = stub
+let serial = stub
+let joypad = stub
+
+package effect do
+    def table: byte * 256:
+        0, 0, 0, 1, 1, 1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 9, 10, 10, 10, 11, 11, 11, 11, 12, 12, 12, 12, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14, 14, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 16, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 14, 14, 14, 14, 14, 14, 13, 13, 13, 13, 13, 12, 12, 12, 12, 11, 11, 11, 11, 10, 10, 10, 9, 9, 9, 8, 8, 8, 7, 7, 7, 6, 6, 6, 5, 5, 5, 4, 4, 3, 3, 3, 2, 2, 1, 1, 1, 0, 0, 0, 0, 0, 256 - 1, 256 - 1, 256 - 1, 256 - 2, 256 - 2, 256 - 3, 256 - 3, 256 - 3, 256 - 4, 256 - 4, 256 - 5, 256 - 5, 256 - 5, 256 - 6, 256 - 6, 256 - 6, 256 - 7, 256 - 7, 256 - 7, 256 - 8, 256 - 8, 256 - 8, 256 - 9, 256 - 9, 256 - 9, 256 - 10, 256 - 10, 256 - 10, 256 - 11, 256 - 11, 256 - 11, 256 - 11, 256 - 12, 256 - 12, 256 - 12, 256 - 12, 256 - 13, 256 - 13, 256 - 13, 256 - 13, 256 - 13, 256 - 14, 256 - 14, 256 - 14, 256 - 14, 256 - 14, 256 - 14, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 16, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 15, 256 - 14, 256 - 14, 256 - 14, 256 - 14, 256 - 14, 256 - 14, 256 - 13, 256 - 13, 256 - 13, 256 - 13, 256 - 13, 256 - 12, 256 - 12, 256 - 12, 256 - 12, 256 - 11, 256 - 11, 256 - 11, 256 - 11, 256 - 10, 256 - 10, 256 - 10, 256 - 9, 256 - 9, 256 - 9, 256 - 8, 256 - 8, 256 - 8, 256 - 7, 256 - 7, 256 - 7, 256 - 6, 256 - 6, 256 - 6, 256 - 5, 256 - 5, 256 - 5, 256 - 4, 256 - 4, 256 - 3, 256 - 3, 256 - 3, 256 - 2, 256 - 2, 256 - 1, 256 - 1, 256 - 1, 0, 0
+end
+
+package bg do
+    def face: embed 'dude.chr'
+    def face_eof:
+end
