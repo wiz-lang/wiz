@@ -9,8 +9,8 @@ for %%j in (src\wiz src\wiz\ast src\wiz\cpu src\wiz\cpu\gameboy src\wiz\cpu\mos6
 )
 
 :: Build the compiler.
-:: dmd %files% -Isrc -ofwiz -g -debug
-::if %errorlevel% neq 0 call :exit 1
+dmd %files% -Isrc -ofwiz -g -debug
+if %errorlevel% neq 0 call :exit 1
 :: Compile a test program.
 wiz examples/gameboy/snake/snake.wiz -gb -o examples/gameboy/snake/snake.gb
 if %errorlevel% neq 0 call :exit 1

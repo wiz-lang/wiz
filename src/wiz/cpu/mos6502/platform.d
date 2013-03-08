@@ -311,7 +311,7 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                             case ArgumentType.Immediate:
                                 uint address;
                                 compile.foldWord(program, right.base.immediate, program.finalized, address);
-                                return address < 0xFF
+                                return address <= 0xFF
                                     ? [0xC5, address & 0xFF]
                                     : [0xCD, address & 0xFF, (address >> 8) & 0xFF];
                             case ArgumentType.Index:
@@ -334,7 +334,7 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                                 compile.foldWord(program, right.base.immediate, program.finalized, address);
                                 if(right.secondary.type == ArgumentType.X)
                                 {
-                                    return address < 0xFF
+                                    return address <= 0xFF
                                         ? [0xD5, address & 0xFF]
                                         : [0xDD, address & 0xFF, (address >> 8) & 0xFF];
                                 }
@@ -376,7 +376,7 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                             case ArgumentType.Immediate:
                                 uint address;
                                 compile.foldWord(program, right.base.immediate, program.finalized, address);
-                                return address < 0xFF
+                                return address <= 0xFF
                                     ? [0xE4, address & 0xFF]
                                     : [0xEC, address & 0xFF, (address >> 8) & 0xFF];
                             default:
@@ -403,7 +403,7 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                             case ArgumentType.Immediate:
                                 uint address;
                                 compile.foldWord(program, right.base.immediate, program.finalized, address);
-                                return address < 0xFF
+                                return address <= 0xFF
                                     ? [0xC4, address & 0xFF]
                                     : [0xCC, address & 0xFF, (address >> 8) & 0xFF];
                             default:
@@ -431,7 +431,7 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                         }
                         uint address;
                         compile.foldWord(program, left.base.base.immediate, program.finalized, address);
-                        return address < 0xFF
+                        return address <= 0xFF
                             ? [0x24, address & 0xFF]
                             : [0x2C, address & 0xFF, (address >> 8) & 0xFF];
                     default:
@@ -476,6 +476,7 @@ ubyte[] postfixOperandError(parse.Postfix type, Argument operand, compile.Locati
 ubyte[] generatePostfixAssignment(compile.Program program, ast.Assignment stmt)
 {
     auto dest = buildArgument(program, stmt.dest);
+    if(!dest) return [];
     switch(dest.type)
     {
         case ArgumentType.A:
@@ -505,11 +506,11 @@ ubyte[] generatePostfixAssignment(compile.Program program, ast.Assignment stmt)
                     final switch(stmt.postfix)
                     {
                         case parse.Postfix.Inc:
-                            return address < 0xFF
+                            return address <= 0xFF
                                 ? [0xE6, address & 0xFF]
                                 : [0xEE, address & 0xFF, (address >> 8) & 0xFF];
                         case parse.Postfix.Dec:
-                            return address < 0xFF
+                            return address <= 0xFF
                                 ? [0xC6, address & 0xFF]
                                 : [0xCE, address & 0xFF, (address >> 8) & 0xFF];
                     }
@@ -527,11 +528,11 @@ ubyte[] generatePostfixAssignment(compile.Program program, ast.Assignment stmt)
                         final switch(stmt.postfix)
                         {
                             case parse.Postfix.Inc:
-                                return address < 0xFF
+                                return address <= 0xFF
                                     ? [0xF6, address & 0xFF]
                                     : [0xFE, address & 0xFF, (address >> 8) & 0xFF];
                             case parse.Postfix.Dec:
-                                return address < 0xFF
+                                return address <= 0xFF
                                     ? [0xD6, address & 0xFF]
                                     : [0xDE, address & 0xFF, (address >> 8) & 0xFF];
                         }
@@ -690,31 +691,31 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             switch(type)
                             {
                                 case parse.Infix.Or:
-                                    return address < 0xFF
+                                    return address <= 0xFF
                                         ? [0x05, address & 0xFF]
                                         : [0x0D, address & 0xFF, (address >> 8) & 0xFF];
                                 case parse.Infix.And:
-                                    return address < 0xFF
+                                    return address <= 0xFF
                                         ? [0x25, address & 0xFF]
                                         : [0x2D, address & 0xFF, (address >> 8) & 0xFF];
                                 case parse.Infix.Xor:
-                                    return address < 0xFF
+                                    return address <= 0xFF
                                         ? [0x45, address & 0xFF]
                                         : [0x4D, address & 0xFF, (address >> 8) & 0xFF];
                                 case parse.Infix.Add:
-                                    return address < 0xFF
+                                    return address <= 0xFF
                                         ? [0x18, 0x65, address & 0xFF]
                                         : [0x18, 0x6D, address & 0xFF, (address >> 8) & 0xFF];
                                 case parse.Infix.Sub:
-                                    return address < 0xFF
+                                    return address <= 0xFF
                                         ? [0x38, 0xE5, address & 0xFF]
                                         : [0x38, 0xED, address & 0xFF, (address >> 8) & 0xFF];
                                 case parse.Infix.AddC:
-                                    return address < 0xFF
+                                    return address <= 0xFF
                                         ? [0x65, address & 0xFF]
                                         : [0x6D, address & 0xFF, (address >> 8) & 0xFF];
                                 case parse.Infix.SubC:
-                                    return address < 0xFF
+                                    return address <= 0xFF
                                         ? [0xE5, address & 0xFF]
                                         : [0xED, address & 0xFF, (address >> 8) & 0xFF];
                                 default:
@@ -757,31 +758,31 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                                 switch(type)
                                 {
                                     case parse.Infix.Or:
-                                        return address < 0xFF
+                                        return address <= 0xFF
                                             ? [0x15, address & 0xFF]
                                             : [0x1D, address & 0xFF, (address >> 8) & 0xFF];
                                     case parse.Infix.And:
-                                        return address < 0xFF
+                                        return address <= 0xFF
                                             ? [0x35, address & 0xFF]
                                             : [0x3D, address & 0xFF, (address >> 8) & 0xFF];
                                     case parse.Infix.Xor:
-                                        return address < 0xFF
-                                            ? [0x35, address & 0xFF]
-                                            : [0x3D, address & 0xFF, (address >> 8) & 0xFF];
+                                        return address <= 0xFF
+                                            ? [0x55, address & 0xFF]
+                                            : [0x5D, address & 0xFF, (address >> 8) & 0xFF];
                                     case parse.Infix.Add:
-                                        return address < 0xFF
+                                        return address <= 0xFF
                                             ? [0x18, 0x75, address & 0xFF]
                                             : [0x18, 0x7D, address & 0xFF, (address >> 8) & 0xFF];
                                     case parse.Infix.Sub:
-                                        return address < 0xFF
+                                        return address <= 0xFF
                                             ? [0x38, 0xF5, address & 0xFF]
                                             : [0x38, 0xFD, address & 0xFF, (address >> 8) & 0xFF];
                                     case parse.Infix.AddC:
-                                        return address < 0xFF
+                                        return address <= 0xFF
                                             ? [0x75, address & 0xFF]
                                             : [0x7D, address & 0xFF, (address >> 8) & 0xFF];
                                     case parse.Infix.SubC:
-                                        return address < 0xFF
+                                        return address <= 0xFF
                                             ? [0xF5, address & 0xFF]
                                             : [0xFD, address & 0xFF, (address >> 8) & 0xFF];
                                     default:
@@ -832,6 +833,153 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                 default:
                     return operandError(type, dest, operand, node.location);
             }
+        case ArgumentType.Indirection:
+            switch(dest.base.type)
+            {
+                case ArgumentType.Immediate:
+                    uint address;
+                    compile.foldWord(program, dest.base.immediate, program.finalized, address);
+                    switch(type)
+                    {
+                        case parse.Infix.ShiftL:
+                            uint value;
+                            if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
+                            {
+                                return [];
+                            }
+                            ubyte[] code;
+                            while(value--)
+                            {
+                                code ~= address <= 0xFF
+                                    ? [0x06, address & 0xFF]
+                                    : [0x0E, address & 0xFF, (address >> 8) & 0xFF];
+                            }
+                            return code;
+                        case parse.Infix.ShiftR:
+                            uint value;
+                            if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
+                            {
+                                return [];
+                            }
+                            ubyte[] code;
+                            while(value--)
+                            {
+                                code ~= address <= 0xFF
+                                    ? [0x46, address & 0xFF]
+                                    : [0x4E, address & 0xFF, (address >> 8) & 0xFF];
+                            }
+                            return code;
+                        case parse.Infix.RotateL:
+                            uint value;
+                            if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
+                            {
+                                return [];
+                            }
+                            ubyte[] code;
+                            while(value--)
+                            {
+                                code ~= address <= 0xFF
+                                    ? [0x26, address & 0xFF]
+                                    : [0x2E, address & 0xFF, (address >> 8) & 0xFF];
+                            }
+                            return code;
+                        case parse.Infix.RotateR:
+                            uint value;
+                            if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
+                            {
+                                return [];
+                            }
+                            ubyte[] code;
+                            while(value--)
+                            {
+                                code ~= address <= 0xFF
+                                    ? [0x66, address & 0xFF]
+                                    : [0x6E, address & 0xFF, (address >> 8) & 0xFF];
+                            }
+                            return code;
+                        default:
+                            return operatorError(type, dest, node.location);
+                    }
+                default:
+                    return operandError(type, dest, operand, node.location);
+            }
+            break;
+        case ArgumentType.Index:
+            switch(dest.base.type)
+            {
+                case ArgumentType.Immediate:
+                    if(dest.secondary.type != ArgumentType.X)
+                    {
+                        return operatorError(type, dest, node.location);
+                    }
+                    uint address;
+                    compile.foldWord(program, dest.base.immediate, program.finalized, address);
+                    switch(type)
+                    {
+                        case parse.Infix.ShiftL:
+                            uint value;
+                            if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
+                            {
+                                return [];
+                            }
+                            ubyte[] code;
+                            while(value--)
+                            {
+                                code ~= address <= 0xFF
+                                    ? [0x16, address & 0xFF]
+                                    : [0x1E, address & 0xFF, (address >> 8) & 0xFF];
+                            }
+                            return code;
+                        case parse.Infix.ShiftR:
+                            uint value;
+                            if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
+                            {
+                                return [];
+                            }
+                            ubyte[] code;
+                            while(value--)
+                            {
+                                code ~= address <= 0xFF
+                                    ? [0x56, address & 0xFF]
+                                    : [0x5E, address & 0xFF, (address >> 8) & 0xFF];
+                            }
+                            return code;
+                        case parse.Infix.RotateL:
+                            uint value;
+                            if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
+                            {
+                                return [];
+                            }
+                            ubyte[] code;
+                            while(value--)
+                            {
+                                code ~= address <= 0xFF
+                                    ? [0x36, address & 0xFF]
+                                    : [0x3E, address & 0xFF, (address >> 8) & 0xFF];
+                            }
+                            return code;
+                        case parse.Infix.RotateR:
+                            uint value;
+                            if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
+                            {
+                                return [];
+                            }
+                            ubyte[] code;
+                            while(value--)
+                            {
+                                code ~= address <= 0xFF
+                                    ? [0x76, address & 0xFF]
+                                    : [0x7E, address & 0xFF, (address >> 8) & 0xFF];
+                            }
+                            return code;
+                        default:
+                            return operatorError(type, dest, node.location);
+                    }
+                    return operatorError(type, dest, node.location);
+                default:
+                    return operandError(type, dest, operand, node.location);
+            }
+            break;
         default:
             return operandError(type, dest, operand, node.location);
     }
@@ -902,13 +1050,14 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                     compile.foldByte(program, load.immediate, program.finalized, value);
                     return [0xA9, value & 0xFF];
                 case ArgumentType.Indirection:
+                    if(!load.base) return invalidAssignmentError(dest, load, stmt.location);
                     switch(load.base.type)
                     {
                         // 'a = [addr]' -> 'lda addr'
                         case ArgumentType.Immediate:
                             uint address;
                             compile.foldWord(program, load.base.immediate, program.finalized, address);
-                            return address < 0xFF
+                            return address <= 0xFF
                                 ? [0xA5, address & 0xFF]
                                 : [0xAD, address & 0xFF, (address >> 8) & 0xFF];
                         case ArgumentType.Index:
@@ -926,6 +1075,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                             return invalidAssignmentError(dest, load, stmt.location);
                     }
                 case ArgumentType.Index:
+                    if(!load.base) return invalidAssignmentError(dest, load, stmt.location);
                     switch(load.base.type)
                     {
                         case ArgumentType.Immediate:                                        
@@ -934,7 +1084,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                             // 'a = [addr:x]' -> 'lda addr, x'
                             if(load.secondary.type == ArgumentType.X)
                             {
-                                return address < 0xFF
+                                return address <= 0xFF
                                     ? [0xB5, address & 0xFF]
                                     : [0xBD, address & 0xFF, (address >> 8) & 0xFF];
                             }
@@ -975,33 +1125,34 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                     compile.foldByte(program, load.immediate, program.finalized, value);
                     return [0xA2, value & 0xFF];
                 case ArgumentType.Indirection:
+                    if(!load.base) return invalidAssignmentError(dest, load, stmt.location);
                     switch(load.base.type)
                     {
                         // 'x = [addr]' -> 'ldx addr'
                         case ArgumentType.Immediate:
                             uint address;
                             compile.foldWord(program, load.base.immediate, program.finalized, address);
-                            return address < 0xFF
+                            return address <= 0xFF
                                 ? [0xA6, address & 0xFF]
                                 : [0xAE, address & 0xFF, (address >> 8) & 0xFF];
-                        case ArgumentType.Index:
-                            auto index = load.base;
-                            switch(index.base.type)
+                        default:
+                            return invalidAssignmentError(dest, load, stmt.location);
+                    }
+                case ArgumentType.Index:
+                    if(!load.base) return invalidAssignmentError(dest, load, stmt.location);
+                    switch(load.base.type)
+                    {
+                        case ArgumentType.Immediate:                                        
+                            uint address;
+                            compile.foldWord(program, load.base.immediate, program.finalized, address);
+                            // 'x = [addr:y]' -> 'lda addr, y'
+                            if(load.secondary.type == ArgumentType.Y)
                             {
-                                case ArgumentType.Immediate:                                        
-                                    uint address;
-                                    compile.foldWord(program, index.base.immediate, program.finalized, address);
-                                    // 'x = [addr:y]' -> 'lda addr, y'
-                                    if(index.secondary.type == ArgumentType.Y)
-                                    {
-                                        return address < 0xFF
-                                            ? [0xB6, address & 0xFF]
-                                            : [0xBE, address & 0xFF, (address >> 8) & 0xFF];
-                                    }
-                                    return invalidAssignmentError(dest, load, stmt.location);
-                                default:
-                                    return invalidAssignmentError(dest, load, stmt.location);
+                                return address <= 0xFF
+                                    ? [0xB6, address & 0xFF]
+                                    : [0xBE, address & 0xFF, (address >> 8) & 0xFF];
                             }
+                            return invalidAssignmentError(dest, load, stmt.location);
                         default:
                             return invalidAssignmentError(dest, load, stmt.location);
                     }
@@ -1027,27 +1178,26 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                         case ArgumentType.Immediate:
                             uint address;
                             compile.foldWord(program, load.base.immediate, program.finalized, address);
-                            return address < 0xFF
+                            return address <= 0xFF
                                 ? [0xA4, address & 0xFF]
                                 : [0xAC, address & 0xFF, (address >> 8) & 0xFF];
-                        case ArgumentType.Index:
-                            auto index = load.base;
-                            switch(index.base.type)
+                        default:
+                            return invalidAssignmentError(dest, load, stmt.location);
+                    }
+                case ArgumentType.Index:
+                    switch(load.base.type)
+                    {
+                        case ArgumentType.Immediate:                                        
+                            uint address;
+                            compile.foldWord(program, load.base.immediate, program.finalized, address);
+                            // 'y = [addr:x]' -> 'ldy addr, x'
+                            if(load.secondary.type == ArgumentType.X)
                             {
-                                case ArgumentType.Immediate:                                        
-                                    uint address;
-                                    compile.foldWord(program, index.base.immediate, program.finalized, address);
-                                    // 'y = [addr:x]' -> 'ldy addr, x'
-                                    if(index.secondary.type == ArgumentType.X)
-                                    {
-                                        return address < 0xFF
-                                            ? [0xB4, address & 0xFF]
-                                            : [0xBC, address & 0xFF, (address >> 8) & 0xFF];
-                                    }
-                                    return invalidAssignmentError(dest, load, stmt.location);
-                                default:
-                                    return invalidAssignmentError(dest, load, stmt.location);
+                                return address <= 0xFF
+                                    ? [0xB4, address & 0xFF]
+                                    : [0xBC, address & 0xFF, (address >> 8) & 0xFF];
                             }
+                            return invalidAssignmentError(dest, load, stmt.location);
                         default:
                             return invalidAssignmentError(dest, load, stmt.location);
                     }
@@ -1067,30 +1217,40 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
         case ArgumentType.Indirection:
             switch(dest.base.type)
             {
-                // 'a = [addr]' -> 'lda addr'
+                // '[addr] = a' -> 'sta addr'
+                // '[addr] = x' -> 'stx addr'
+                // '[addr] = y' -> 'sty addr'
                 case ArgumentType.Immediate:
                     uint address;
                     compile.foldWord(program, dest.base.immediate, program.finalized, address);
                     switch(load.type)
                     {
                         case ArgumentType.A:
-                            return address < 0xFF
+                            return address <= 0xFF
                                 ? [0x85, address & 0xFF]
                                 : [0x8D, address & 0xFF, (address >> 8) & 0xFF];
                         case ArgumentType.X:
-                            return address < 0xFF
+                            return address <= 0xFF
                                 ? [0x86, address & 0xFF]
                                 : [0x8E, address & 0xFF, (address >> 8) & 0xFF];
                         case ArgumentType.Y:
-                            return address < 0xFF
+                            return address <= 0xFF
                                 ? [0x84, address & 0xFF]
                                 : [0x8C, address & 0xFF, (address >> 8) & 0xFF];
+                        case ArgumentType.Indirection:
+                            if(load.base.type == ArgumentType.Immediate)
+                            {
+                                uint match;
+                                compile.foldWord(program, dest.base.immediate, program.finalized, address);
+                                compile.foldWord(program, load.base.immediate, program.finalized, match);
+                                return (match == address) ? [] : invalidAssignmentError(dest, load, stmt.location);
+                            }
                         default:
                             return invalidAssignmentError(dest, load, stmt.location);
                     }
                 case ArgumentType.Index:
                     auto index = dest.base;
-                    // 'a = [[addr:x]]' -> 'lda [addr, x]'
+                    // '[[addr:x]] = a' -> 'sta [addr, x]'
                     if(index.base.type == ArgumentType.Immediate
                     && index.secondary.type == ArgumentType.X)
                     {
@@ -1111,41 +1271,59 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
             {
                 case ArgumentType.Immediate:
                     uint address;
-                    // 'a = [addr:x]' -> 'lda addr, x'
+                    // '[addr:x] = a' -> 'sta addr, x'
+                    // '[addr:x] = y' -> 'sty addr, x'
                     if(dest.secondary.type == ArgumentType.X)
                     {
                         switch(load.type)
                         {
                             case ArgumentType.A:
                                 compile.foldWord(program, dest.base.immediate, program.finalized, address);
-                                return address < 0xFF
+                                return address <= 0xFF
                                     ? [0x95, address & 0xFF]
                                     : [0x9D, address & 0xFF, (address >> 8) & 0xFF];
                             case ArgumentType.Y:
                                 compile.foldByte(program, dest.base.immediate, program.finalized, address);
                                 return [0x94, address & 0xFF];
+                            case ArgumentType.Index:
+                                if(load.base.type == ArgumentType.Immediate && load.secondary.type == ArgumentType.X)
+                                {
+                                    uint match;
+                                    compile.foldWord(program, dest.base.immediate, program.finalized, address);
+                                    compile.foldWord(program, load.base.immediate, program.finalized, match);
+                                    return (match == address) ? [] : invalidAssignmentError(dest, load, stmt.location);
+                                }
                             default:
                                 return invalidAssignmentError(dest, load, stmt.location);
                         }
                     }
-                    // 'a = [addr:y]' -> 'lda addr, y'
+                    // '[addr:y] = a' -> 'sta addr, y'
+                    // '[addr:y] = x' -> 'stx addr, y'
                     if(dest.secondary.type == ArgumentType.Y)
                     {
                         switch(load.type)
                         {
                             case ArgumentType.A:
                                 compile.foldWord(program, dest.base.immediate, program.finalized, address);
-                                return [0x99, address & 0xFF];
+                                return [0x99, address & 0xFF, (address >> 8) & 0xFF];
                             case ArgumentType.Y:
                                 compile.foldByte(program, dest.base.immediate, program.finalized, address);
                                 return [0x96, address & 0xFF];
+                            case ArgumentType.Index:
+                                if(load.base.type == ArgumentType.Immediate && load.secondary.type == ArgumentType.Y)
+                                {
+                                    uint match;
+                                    compile.foldWord(program, dest.base.immediate, program.finalized, address);
+                                    compile.foldWord(program, load.base.immediate, program.finalized, match);
+                                    return (match == address) ? [] : invalidAssignmentError(dest, load, stmt.location);
+                                }
                             default:
                                 return invalidAssignmentError(dest, load, stmt.location);
                         }
                     }
                     return invalidAssignmentDestError(dest, stmt.location);
                 case ArgumentType.Indirection:
-                    // 'a = [[addr]:y]' -> 'lda [addr], y'
+                    // '[[addr]:y] = a' -> 'sta [addr], y'
                     if(dest.base.base.type == ArgumentType.Immediate
                     && dest.secondary.type == ArgumentType.Y)
                     {
