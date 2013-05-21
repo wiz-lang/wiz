@@ -61,14 +61,10 @@ package hijack do
         a = 60
         call prepare_memory
 
-        /*hl = gb.ram.tile
-        bc = 0x1000
-        a = 0xFF
-        call memset*/
         hl = gb.ram.tile
-        [hl++] = 0x00 via a
-        [hl++] = 0x00 via a
-        [hl++] = 0x00 via a
+        bc = 0x1000
+        a = 0x00
+        call memset
         [gb.lcd.ctrl] = gb.lcd.CTRL_ON | gb.lcd.CTRL_TILESET2 | gb.lcd.CTRL_BG_ON via a
     end
 

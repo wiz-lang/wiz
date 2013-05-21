@@ -120,8 +120,6 @@ in ram, 0x1900:
     let SGB_DATA_LENGTH = 320
 
 in code, 0x0000:
-    // Stop interrupts.
-    //interrupt = 1
     // Set emulation mode.
     carry = 1; byte: 0xFB
     [mosaic] = 0 via a
@@ -158,7 +156,6 @@ in code, 0x0000:
     until zero end
 
     //[snes.ppu.mode] = snes.ppu.MODE_0 via a
-
 
     // Main loop.
     loop
