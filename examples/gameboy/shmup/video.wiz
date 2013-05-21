@@ -1,0 +1,227 @@
+package video do
+    func init do
+        [ram.video.request.redraw] = 0 via a
+        goto after
+
+        func transfer do
+            [gb.lcd.dma] = >ram.video.oam.data via a
+            // Wait about 200ms
+            a = 40
+            loop
+                a--
+            until zero end
+        end;
+    def after:
+
+        de = ram.video.oam.code
+        hl = transfer
+        bc = after - transfer
+        call memcpy
+
+        hl = ram.video.oam.data
+        a = 0x00
+        bc = 160
+        call memset
+        call oam_rewind
+
+        hl = ram.video.buffer.data
+        a = 0x00
+        bc = 256
+        call memset
+        call buffer_rewind
+    end
+
+    func wait do
+        loop
+            a = [gb.lcd.stat] & gb.lcd.STAT_MODE_MASK
+            compare a to gb.lcd.STAT_MODE_VBLANK
+        until == end
+    end
+
+    func disable do
+        call wait
+        [gb.lcd.ctrl] = 0 via a
+    end
+
+    func refresh do
+        hl = ram.video.request.redraw
+        [hl]++
+        loop
+            sleep
+            a = [hl]
+            compare a
+        until zero end
+    end
+
+    func oam_rewind do
+        [ram.video.oam.ptr_lo] = <ram.video.oam.data via a
+        [ram.video.oam.ptr_hi] = >ram.video.oam.data via a
+    end
+
+    func oam_open do
+        hl = ram.video.oam.ptr_lo
+        a = [hl++]
+        h = [hl]
+        l = a
+    end
+
+    func oam_close do
+        [ram.video.oam.ptr_lo] = l via a
+        [ram.video.oam.ptr_hi] = h via a
+    end
+
+    func buffer_rewind do
+        [ram.video.buffer.ptr_lo] = <ram.video.buffer.data via a
+        [ram.video.buffer.ptr_hi] = >ram.video.buffer.data via a
+    end
+
+    func buffer_open do
+        hl = ram.video.buffer.ptr_lo
+        a = [hl++]
+        h = [hl]
+        l = a
+    end
+
+    func buffer_close do
+        [ram.video.buffer.ptr_lo] = l via a
+        [ram.video.buffer.ptr_hi] = h via a
+    end
+
+    func buffer_draw_byte do
+        push bc
+        push hl
+        bc = pop
+
+        hl = ram.t0
+        call draw_byte
+        call buffer_open
+        [hl++] = b via a
+        [hl++] = c via a
+        [hl++] = [ram.t0] via a
+        c++
+        [hl++] = b via a
+        [hl++] = c via a
+        [hl++] = [ram.t1] via a
+        call buffer_close
+
+        push bc
+        hl = pop
+        bc = pop
+    end
+
+    func buffer_draw_word do
+        push bc
+        push hl
+        bc = pop
+
+        hl = ram.t0
+        call draw_word
+        call buffer_open
+        [hl++] = b via a
+        [hl++] = c via a
+        [hl++] = [ram.t0] via a
+        c++
+        [hl++] = b via a
+        [hl++] = c via a
+        [hl++] = [ram.t1] via a
+        c++
+        [hl++] = b via a
+        [hl++] = c via a
+        [hl++] = [ram.t2] via a
+        c++
+        [hl++] = b via a
+        [hl++] = c via a
+        [hl++] = [ram.t3] via a
+        call buffer_close
+
+        push bc
+        hl = pop
+        bc = pop
+    end
+
+    func read_bg_color do
+        [gb.color.palette.bg.index] = c << 1 via a
+        e = [gb.color.palette.bg.data] via a
+        [gb.color.palette.bg.index] = c << 1 + 1 via a
+        d = [gb.color.palette.bg.data] via a
+    end
+
+    func draw_byte do
+        a = e & 0xF0
+        d = <>a via a
+        if compare a to 10 is < then
+            [hl++] = d + (128 + 48 + 4) via a
+        else
+            [hl++] = d + (128 - 10) via a
+        end
+        d = e & 0xF via a
+        if compare a to 10 is < then
+            [hl] = d + (128 + 48 + 4) via a
+        else
+            [hl] = d + (128 - 10) via a
+        end
+    end
+
+    func draw_word do
+        push bc
+        c = 4
+        loop
+            a = d & 0xF0 via a
+            b = <>a via a
+            if compare a to 10 is < then
+                [hl++] = b + (128 + 48 + 4) via a
+            else
+                [hl++] = b + (128 - 10) via a
+            end
+            de = de << 4
+            c--
+        until zero end
+        bc = pop
+    end
+
+    func draw_text do
+        loop
+            b = [hl++] via a
+            compare a to 0
+        while ~=
+            if compare a to 65 is >= then
+                if compare a to 65 + 26 is < then
+                    [de] = 128 + b - 65 via a
+                end
+            end
+            if compare a to 97 is >= then
+                if compare a to 97 + 26 is < then
+                    [de] = 128 + 26 + b - 97 via a
+                end
+            end
+            if compare a to 48 is >= then
+                if compare a to 58 is < then
+                    [de] =  26 * 2 + 128 + b - 48 via a
+                end
+            end
+            
+            de++
+        end
+    end
+
+    func acknowledge do
+        a = [ram.video.request.redraw]
+        compare a
+        if is ~zero then
+            call ram.video.oam.code
+
+            hl = ram.video.buffer.data
+            loop
+                a = [hl++]
+                compare a
+            until zero
+                d = a
+                e = [hl++] via a
+                [de] = [hl++] via a
+            end
+
+            hl = ram.video.request.redraw
+            [hl]--
+        end
+    end
+end

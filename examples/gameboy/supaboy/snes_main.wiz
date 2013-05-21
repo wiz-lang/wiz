@@ -1,0 +1,201 @@
+let K = 1024
+bank code : rom * 8 * K
+bank ram : ram * 2 * K
+
+package snes do
+    package ppu do
+        let BRIGHTNESS_FORCE_BLANK = 0x80
+        let BRIGTNESS_MASK = 0x0F
+        let brightness = 0x2100
+
+        let MODE_0 = 0x0
+        let MODE_1 = 0x1
+        let MODE_2 = 0x2
+        let MODE_3 = 0x3
+        let MODE_4 = 0x4
+        let MODE_5 = 0x5
+        let MODE_6 = 0x6
+        let MODE_7 = 0x7
+        let MODE_BG3_PRIORITY = 0x8
+        let MODE_BG0_16x16 = 0x10
+        let MODE_BG1_16x16 = 0x20
+        let MODE_BG2_16x16 = 0x40
+        let MODE_BG3_16x16 = 0x80
+
+        let mode = 0x2105
+
+        let MOSAIC_BG0 = 0x01
+        let MOSAIC_BG1 = 0x02
+        let MOSAIC_BG2 = 0x04
+        let MOSAIC_BG3 = 0x08
+        let MOSAIC_ALL = 0x0F
+        let MOSAIC_SIZE_SHIFT = 4
+
+        let mosaic = 0x2106
+
+        let INCREMENT_ON_LOW = 0x00
+        let INCREMENT_ON_HIGH = 0x80
+        let INCREMENT_1 = 0x00
+        let INCREMENT_32 = 0x01
+        let INCREMENT_128 = 0x02
+        let INCREMENT_REMAP_MODE_0 = 0x00
+        let INCREMENT_REMAP_MODE_1 = 0x04
+        let INCREMENT_REMAP_MODE_2 = 0x08
+        let INCREMENT_REMAP_MODE_3 = 0x0C
+
+        let increment = 0x2115
+
+        let addr_low = 0x2116
+        let addr_high = 0x2117
+        let write_low = 0x2118
+        let write_high = 0x2119
+        let read_low = 0x2139
+        let read_high = 0x213A
+        let map_bg = 0x2107
+        let map_bg2 = 0x2108
+        let map_bg3 = 0x2109
+        let map_bg4 = 0x210A
+        let tile_bg12 = 0x210B
+        let tile_bg34 = 0x210C
+        let hscroll_bg1 = 0x210D
+        let vscroll_bg1 = 0x210E
+        let hscroll_bg2 = 0x210F
+        let vscroll_bg2 = 0x2110
+        let hscroll_bg3 = 0x2111
+        let vscroll_bg3 = 0x2112
+        let hscroll_bg4 = 0x2113
+        let vscroll_bg4 = 0x2114
+
+        let INTERRUPT_NMI = 0x80
+        let INTERRUPT_HCOUNT = 0x10
+        let INTERRUPT_VCOUNT = 0x10
+        let INTERRUPT_AUTOJOY = 0x01
+
+        let interrupt = 0x4200
+
+        let STATUS_VBLANK = 0x80
+        let STATUS_HBLANK = 0x40
+        let STATUS_AUTOJOY = 0x40
+        let status = 0x4212
+
+        let color_addr = 0x2121
+        let color_write = 0x2122
+        let color_read = 0x213B
+    end
+
+    package sgb do
+        let CTRL_RESET = 0x80
+        let CTRL_MODE_4P = 0x20
+        let CTRL_MODE_2P = 0x10
+        let CTRL_MODE_SPEED_FAST = 0x00
+        let CTRL_MODE_SPEED_NORMAL = 0x01
+        let CTRL_MODE_SPEED_SLOW = 0x02
+        let CTRL_MODE_SPEED_VERY_SLOW = 0x03
+
+        let COMMAND_SIZE = 16
+
+        let gb_scanline = 0x6000
+        let vram_select = 0x6001
+        let has_command = 0x6002
+        let ctrl = 0x6003
+        let joy1 = 0x6004
+        let joy2 = 0x6005
+        let joy3 = 0x6006
+        let joy4 = 0x6007 
+        let version = 0x600F
+        let command = 0x7000 // .. 0x700F
+        let vram = 0x7800
+    end
+end
+
+
+in ram, 0x1800:
+    var t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15 : byte
+    var vbl : byte
+    var brightness : byte
+    var mosaic : byte
+
+in ram, 0x1900:
+    var sgb_data : byte * 0
+    let SGB_DATA_LENGTH = 320
+
+in code, 0x0000:
+    // Stop interrupts.
+    //interrupt = 1
+    // Set emulation mode.
+    carry = 1; byte: 0xFB
+    [mosaic] = 0 via a
+
+    // Enable interrupts.
+    [snes.ppu.interrupt] = snes.ppu.INTERRUPT_NMI via a
+
+    [brightness] = 15 via a
+    x = 15
+    loop
+        [brightness] = x via a
+        [vbl]++
+        loop
+            a = [vbl]
+        until zero end
+        x--
+    until zero end
+    [brightness] = 0 via a
+
+    [snes.ppu.brightness] = snes.ppu.BRIGHTNESS_FORCE_BLANK via a
+    [snes.ppu.increment] = snes.ppu.INCREMENT_ON_HIGH via a
+    let TILEMAP_ADDR = 0x3C00
+    [snes.ppu.addr_low] = <(TILEMAP_ADDR) via a
+    [snes.ppu.addr_high] = >(TILEMAP_ADDR) via a
+    y = 16
+    loop
+        x = 0
+        loop
+            [snes.ppu.write_low] = 0x2D via a
+            [snes.ppu.write_high] = 0x00 via a
+            x--
+        until zero end
+        y--
+    until zero end
+
+    //[snes.ppu.mode] = snes.ppu.MODE_0 via a
+
+
+    // Main loop.
+    loop
+        [snes.sgb.vram_select] = [snes.sgb.gb_scanline] & 0x3 + 1 & 0x3 via a
+
+        x = 0
+        loop
+            [sgb_data:x] = [snes.sgb.vram] via a
+            x++
+        until zero end loop
+            [sgb_data+256:x] = [snes.sgb.vram] via a
+            x++
+            compare x to SGB_DATA_LENGTH - 256
+        until zero end
+
+        if a = [sgb_data] is ~zero then
+            [brightness] = [sgb_data + 1] via a
+            [mosaic] = [sgb_data + 2] via a
+        end
+
+        [vbl]++
+        loop
+            a = [vbl]
+        until zero end
+    end
+
+in code, 0x1000:
+    task draw do
+        push a
+        push x via a
+        push y via a
+        if a = [vbl] is ~zero then
+            [vbl]--
+            [snes.ppu.brightness] = [brightness] via a
+            [snes.ppu.mosaic] = [mosaic] via a
+        end
+        y = pop via a
+        x = pop via a
+        a = pop
+    end

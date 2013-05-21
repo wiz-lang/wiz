@@ -1,0 +1,127 @@
+package hijack do
+    func init do
+        hl = snes_code
+        bc = 4096
+        de = gb.ram.tile
+        call memcpy
+        call sgb.prepare_transfer
+
+        hl = ram.t0
+        [hl++] = gb.super.DATA_TRN | 1 via a
+        [hl++] = 0x00 via a
+        [hl++] = 0x00 via a
+        [hl++] = 0x7F via a
+        a = 0
+        bc = 12
+        call memset
+        hl = ram.t0
+        call sgb.send_packet
+
+        call video.disable
+        hl = (snes_code + 4096)
+        bc = 4096
+        de = gb.ram.tile
+        call memcpy
+        call sgb.prepare_transfer
+
+        hl = ram.t0
+        [hl++] = gb.super.DATA_TRN | 1 via a
+        [hl++] = 0x00 via a
+        [hl++] = 0x10 via a
+        [hl++] = 0x7F via a
+        a = 0
+        bc = 12
+        call memset
+        hl = ram.t0
+        call sgb.send_packet
+
+        hl = ram.t0
+        [hl++] = gb.super.JUMP | 1 via a
+        // PC
+        [hl++] = 0x00 via a
+        [hl++] = 0x00 via a
+        [hl++] = 0x7F via a 
+        // NMI
+        [hl++] = 0x00 via a
+        [hl++] = 0x10 via a
+        [hl++] = 0x7F via a
+        a = 0
+        bc = 9
+        call memset
+        hl = ram.t0
+        call sgb.send_packet
+
+        call video.disable
+
+        hl = gb.ram.map
+        a = 0
+        call prepare_memory
+
+        hl = gb.ram.map2
+        a = 60
+        call prepare_memory
+
+        /*hl = gb.ram.tile
+        bc = 0x1000
+        a = 0xFF
+        call memset*/
+        hl = gb.ram.tile
+        [hl++] = 0x00 via a
+        [hl++] = 0x00 via a
+        [hl++] = 0x00 via a
+        [gb.lcd.ctrl] = gb.lcd.CTRL_ON | gb.lcd.CTRL_TILESET2 | gb.lcd.CTRL_BG_ON via a
+    end
+
+    func prepare_memory do
+        e = 0
+        b = 18
+        loop
+            c = 20
+            loop
+                [hl++] = a
+                a++
+                c--
+            until zero end
+
+            push de
+            de = 12
+            hl = hl + de
+            de = pop
+
+            e++
+            /*if compare e@0 is ~zero then
+                if compare e@1 is ~zero then
+                    e = 0
+                    a = a - 60
+                end
+            end*/
+            a = 0
+
+            b--
+        until zero end
+    end
+
+    func step do
+        call video.buffer_open
+        de = gb.ram.tile
+        [hl++] = d via a
+        [hl++] = e via a
+        [hl++] = 0x01 via a
+        e++
+        [hl++] = d via a
+        [hl++] = e via a
+        [hl++] = 0x0F via a
+        e++
+        [hl++] = d via a
+        [hl++] = e via a
+        [hl++] = [ram.hijack.mosaic] via a
+        call video.buffer_close
+
+        a = [ram.hijack.delay]; a--
+        if is zero then 
+            [ram.hijack.mosaic] = [ram.hijack.mosaic] & 0xF0 + 0x10 | 0x0F via a
+            a = 8
+        end
+        [ram.hijack.delay] = a
+    end
+end

@@ -7,7 +7,7 @@ package gb do
 
         // Super Gameboy compatibility flag.
         let SGB_UNSUPPORTED = 0x00
-        let SGB_SUPPORTED = 0x80
+        let SGB_SUPPORTED = 0x03
 
         // Cartridge type.
         let CART_ROM = 0x00
@@ -210,6 +210,34 @@ package gb do
             let TRANSFER_ACTIVE = 0x00 // read
             let TRANSFER_INACTIVE = 0x80 // read
         end
+    end
+
+    package super do
+        let PAL01 = 0x00
+        let PAL23 = 0x08
+        let PAL03 = 0x10
+        let PAL12 = 0x18
+        let ATTR_BLK = 0x20
+        let ATTR_LIN = 0x28
+        let ATTR_DIV = 0x30
+        let ATTR_CHR = 0x38
+        let SOUND = 0x40
+        let SOU_TRN = 0x48
+        let PAL_SET = 0x50
+        let PAL_TRN = 0x58
+        let ATRC_EN = 0x60
+        let TEST_EN = 0x68
+        let ICON_EN = 0x70
+        let DATA_SND = 0x78
+        let DATA_TRN = 0x80
+        let MLT_REQ = 0x88
+        let JUMP = 0x90
+        let CHR_TRN = 0x98
+        let PCT_TRN = 0xA0
+        let ATTR_TRN = 0xA8
+        let ATTR_SET = 0xB0
+        let MASK_EN = 0xB8
+        let OBJ_TRN = 0xC0
     end
 
     package audio do

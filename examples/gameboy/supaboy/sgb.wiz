@@ -1,0 +1,84 @@
+package sgb do
+    func send_packet do
+        // Arguments: hl = pointer to 16-byte packet.
+        // Dirty: all registers.
+        c = 0
+        [gb.joy.ctrl:c] = 0 via a
+        [gb.joy.ctrl:c] = 0x30 via a
+
+        b = 16
+        loop
+            e = 8
+            d = [hl++] via a
+            loop
+                a = 0x10
+                if d = d >> 1 is ~carry then
+                    a = 0x20
+                end
+                [gb.joy.ctrl:c] = a
+                [gb.joy.ctrl:c] = 0x30 via a
+                e--
+            until zero end
+            b--
+        until zero end
+        [gb.joy.ctrl:c] = 0x20 via a
+        [gb.joy.ctrl:c] = 0x30 via a
+
+        c = 4
+        loop
+            call video.delay_frame
+            c--
+        until zero end
+
+    end
+
+    func detect do
+        // Dirty: all registers.
+        // Returns: b = 1 when SGB, b = 0 when not.
+        hl = ram.t0
+        [hl++] = gb.super.MLT_REQ | 1 via a
+        [hl++] = 0x01 via a
+        a = 0
+        bc = 14
+        call memset
+        hl = ram.t0
+        call sgb.send_packet
+
+        b = 0
+        call joy.check
+        a = [gb.joy.ctrl] & 0xF
+        if compare a to 0xF is ~= then
+            compare a to 0xE; return when ~=
+        end
+
+        hl = ram.t0 + 1
+        [hl++] = 0x00 via a
+        hl = ram.t0
+        call sgb.send_packet
+        b = 1
+    end
+
+    func prepare_transfer do
+        //call video.disable
+        [gb.scroll.x] = 0 via a
+        [gb.scroll.y] = a
+        [gb.mono.palette.bg] = 0b11100100 via a
+
+        hl = gb.ram.map
+        de = 12
+        a = 0
+        b = 18
+        loop
+            c = 20
+            loop
+                [hl++] = a
+                a++
+                c--
+            until zero end
+            hl = hl + de
+            b--
+        until zero end
+
+        [gb.lcd.ctrl] = gb.lcd.CTRL_ON | gb.lcd.CTRL_TILESET2 | gb.lcd.CTRL_BG_ON via a
+    end
+end

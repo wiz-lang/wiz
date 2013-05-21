@@ -31,12 +31,25 @@ echo.
 wiz examples/gameboy/selfpromo/main.wiz -gb -o examples/gameboy/selfpromo/selfpromo.gb
 if %errorlevel% neq 0 call :exit 1
 echo.
+:: Compile another test program.
+wiz examples/gameboy/shmup/main.wiz -gb -o examples/gameboy/shmup/shmup.gb
+if %errorlevel% neq 0 call :exit 1
+echo.
+:: Compile another test program.
+wiz examples/gameboy/supaboy/snes_main.wiz -6502 -o examples/gameboy/supaboy/snes_main.6502
+if %errorlevel% neq 0 call :exit 1
+echo.
+:: Compile another test program, depends on the SNES driver
+wiz examples/gameboy/supaboy/main.wiz -gb -o examples/gameboy/supaboy/supaboy.gb
+if %errorlevel% neq 0 call :exit 1
+echo.
 :: Success!
 if exist build2.bat (
     build2.bat
 ) else (
     call :exit 0
 )
+call :exit 0
 
 :exit
 :: Sleep so that sublime text will not write a [Finished] message in the middle of a compiler message.

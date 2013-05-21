@@ -1,0 +1,201 @@
+include '../common/gameboy.wiz'
+include 'layout.wiz'
+include 'ram.wiz'
+include 'boot.wiz'
+include 'joy.wiz'
+include 'video.wiz'
+include 'player.wiz'
+include 'bullet.wiz'
+include 'enemy.wiz'
+
+// Fills a range in memory with a specified byte value.
+func memset do
+    // Arguments:
+    let dest = hl // inout
+    let value = a // in
+    let count = bc // inout
+    // Locals:
+    let count_l = c
+    let count_h = b
+
+    count_l++; count_h++
+    goto start
+def repeat:
+    [dest++] = value
+def start:
+    count_l--; goto repeat when ~zero
+    count_h--; goto repeat when ~zero
+end
+
+// Copies count bytes from source to destination.
+func memcpy do
+    let dest = de // inout
+    let source = hl // inout
+    let count = bc // inout
+    // Locals
+    let count_l = c
+    let count_h = b
+
+    count_l++; count_h++
+    goto start
+def repeat:
+    [dest] = [source++] via a
+    dest++
+def start:
+    count_l--; goto repeat when ~zero
+    count_h--; goto repeat when ~zero
+end
+
+package hardware do
+    inline func detect do
+        hl = ram.hardware.type
+        [hl] = ram.hardware.GB
+        if compare a to 0x11 is == then
+            [hl] = ram.hardware.GBC
+            if compare b@0 is ~zero then
+                [hl] = ram.hardware.GBA
+            end
+        end
+    end
+end
+
+func main do
+    interrupt = 0
+    sp = ram.stack.top via hl
+    
+    inline call hardware.detect
+    call joy.init
+    call video.init
+    call player.init
+    call bullet.init
+    call enemy.init
+
+    // Turn off the screen.
+    call video.disable
+
+    // Set up a simple black-to-white 4-color palette.
+    [gb.mono.palette.bg] = ~0b11100100 via a
+    [gb.mono.palette.obj1] =  ~0b11100100 via a
+    [gb.mono.palette.obj2] = ~0b11100000 via a
+
+    // Initialize tileset.
+    do
+        hl = tileset
+        de = gb.ram.tile
+        bc = (tileset_eof - tileset)
+        call memcpy
+    end
+
+    hl = gb.ram.map
+    a = 0x7F
+    bc = 1024
+    call memset
+
+    hl = gb.ram.map2
+    a = 0x7F
+    bc = 1024
+    call memset
+
+    hl = gb.ram.obj
+    a = 0x00
+    bc = 160
+    call memset
+
+    // Turn the screen back on, with backgrounds enabled using tileset 2.
+    [gb.lcd.ctrl] = gb.lcd.CTRL_ON | gb.lcd.CTRL_OBJ_ON | gb.lcd.CTRL_TILESET1 | gb.lcd.CTRL_BG_ON | gb.lcd.CTRL_WIN_MAP2 via a
+    [gb.window.x] = 7 via a
+    [gb.window.y] = 8 via a
+
+    // Enable some basic interrupts.
+    [gb.interrupt.enable] = gb.interrupt.VBLANK | gb.interrupt.STAT via a
+    [gb.lcd.stat] = 0 via a
+    interrupt = 1
+
+    do
+        let HP = 80
+        hl = ram.t0
+        push hl
+        [hl++] = 1 via a
+        [hl++] = HP via a
+        [hl++] = 0x30 via a
+        [hl++] = 0x30 via a
+        [hl++] = 0x00 via a
+        [hl++] = a
+        [hl++] = a
+        [hl++] = a
+        call enemy.spawn
+
+        hl = pop
+        push hl
+        [hl++] = 1 via a
+        [hl++] = HP via a
+        [hl++] = 0x58 via a
+        [hl++] = 0x10 via a
+        [hl++] = 0x00 via a
+        [hl++] = a
+        [hl++] = 0x50 via a
+        [hl++] = a
+        call enemy.spawn
+
+        hl = pop
+        push hl
+        [hl++] = 1 via a
+        [hl++] = HP via a
+        [hl++] = 0x80 via a
+        [hl++] = 0x70 via a
+        [hl++] = 0x00 via a
+        [hl++] = a
+        [hl++] = 0x30 via a
+        [hl++] = a
+        call enemy.spawn
+
+        hl = pop
+    end
+
+    loop
+        call joy.check
+
+        a = [ram.joy.pressed] & 0xF
+        if compare a to 0xF is == then
+            goto! main
+        end
+
+        hl = ram.video.oam.data
+        a = 0x00
+        bc = 160
+        call memset
+        call video.oam_rewind
+        
+        call video.buffer_rewind
+        call player.refresh
+        hl = ram.bullet.data
+        call bullet.refresh
+        hl = ram.bullet.data2
+        call bullet.refresh
+        call enemy.refresh
+        call video.refresh
+    end
+end
+
+inline func stack_cleanup do
+    hl = pop
+    de = pop
+    bc = pop
+    af = pop
+end
+
+task draw do
+    call video.acknowledge
+    inline call stack_cleanup
+end
+
+task stub do
+    inline call stack_cleanup
+end
+
+let stat = stub
+let timer = stub
+let serial = stub
+let joypad = stub
+
+def tileset: embed 'spaceshit.chr'; def tileset_eof:;

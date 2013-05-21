@@ -1,0 +1,91 @@
+package player do
+    func init do
+        [ram.player.x] = 100 via a
+        [ram.player.y] = 100 via a
+        [ram.player.reload] = 0 via a
+    end
+
+    func refresh do
+        a = [ram.joy.pressed]
+        if compare a@ram.joy.bit.LEFT is ~zero then
+            a = [ram.player.x]
+            if compare a to 9 is < then
+                a++
+            end
+            a--
+            [ram.player.x] = a
+        elseif compare a@ram.joy.bit.RIGHT is ~zero then
+            a = [ram.player.x]
+            if compare a to 160 - 8 is >= then
+                a--
+            end
+            a++
+            [ram.player.x] = a
+        end
+
+        a = [ram.joy.pressed]
+        if compare a@ram.joy.bit.UP is ~zero then
+            a = [ram.player.y]
+            if compare a to 17 is < then
+                a++
+            end
+            a--
+            [ram.player.y] = a
+        elseif compare a@ram.joy.bit.DOWN is ~zero then
+            a = [ram.player.y]
+            if compare a to 144 is >= then
+                a--
+            end
+            a++
+            [ram.player.y] = a
+        end
+
+        a = [ram.player.reload]
+        if compare a is ~zero then
+            a--
+            [ram.player.reload] = a
+        end
+
+        a = [ram.joy.pressed]
+        if compare a@ram.joy.bit.A is ~zero then
+            a = [ram.player.reload]
+            if compare a is zero then
+                [ram.player.reload] = 10 via a
+
+                hl = ram.t0
+                [hl++] = 80 via a
+                [hl++] = 0 via a
+                [hl++] = [ram.player.x] + 4 via a
+                [hl++] = (2 ^0xFF+1) via a
+                [hl++] = [ram.player.y] - 2 via a
+                [hl++] = 18 via a
+                hl = ram.bullet.data
+                call bullet.spawn
+            //[ram.joy.unpress] = [ram.joy.unpress] | ram.joy.mask.A via a
+            end
+        end
+
+        call video.oam_open
+        b = [ram.player.x] via a
+        c = [ram.player.y] via a
+        e = 0
+        call draw
+        b = b + 8 via a
+        e++
+        call draw
+        b = b - 8 via a
+        c = c + 8 via a
+        e = e + 15 via a
+        call draw
+        b = b + 8 via a
+        e++
+        call draw
+        goto! video.oam_close
+
+    def draw:
+        [hl++] = c via a
+        [hl++] = b via a
+        [hl++] = e via a
+        [hl++] = 0x00 via a
+    end
+end

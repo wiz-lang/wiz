@@ -1,0 +1,86 @@
+package ram do
+in ram, 0xC000:
+    package stack do
+        let SIZE = 256
+        var stack : byte * SIZE
+        let top = stack + SIZE - 1
+    end
+
+    var t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15 : byte
+
+    package hardware do
+        let GB = 0
+        let GBC = 1
+        let GBA = 2
+        let SGB = 3
+        var type : byte
+    end
+
+    package video do
+        package request do
+            var redraw : byte
+        end
+
+        package oam do
+            var ptr_lo : byte
+            var ptr_hi : byte
+        end
+
+        package buffer do
+            var ptr_lo : byte
+            var ptr_hi : byte
+            // hi, lo, value
+            // hi = 0x00 terminates the buffer.
+            var data : byte * 256
+        end
+    end
+
+    package joy do
+        package bit do
+            let A = 0
+            let B = 1
+            let SELECT = 2
+            let START = 3
+            let RIGHT = 4
+            let LEFT = 5
+            let UP = 6
+            let DOWN = 7
+        end
+
+        package mask do
+            let A = 1 << bit.A
+            let B = 1 << bit.B
+            let SELECT = 1 << bit.SELECT
+            let START = 1 << bit.START
+            let RIGHT = 1 << bit.RIGHT
+            let LEFT = 1 << bit.LEFT
+            let UP = 1 << bit.UP
+            let DOWN = 1 << bit.DOWN
+        end
+
+        var unpress : byte
+        var pressed : byte
+    end
+
+    package hijack do
+        var delay : byte
+        var mosaic : byte
+    end
+    
+// Here is some dumb stuff that needs to be located in fixed RAM locations.
+in ram, 0xCF00:
+    package video do
+        package oam do
+            var data : byte * 160
+            //call data
+        end
+    end
+
+in hram, 0xFF80:
+    package video do
+        package oam do
+            var code : byte * 127
+        end
+    end
+end
+
