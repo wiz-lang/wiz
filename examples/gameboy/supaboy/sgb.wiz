@@ -31,7 +31,7 @@ package sgb do
         until zero end
     end
 
-    func detect do // FIXME: THIS DOES NOT WORK YET.
+    func detect do
         // Dirty: all registers.
         // Returns: b = 1 when SGB, b = 0 when not.
         hl = ram.t0
