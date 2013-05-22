@@ -81,10 +81,40 @@ package snes do
         let color_addr = 0x2121
         let color_write = 0x2122
         let color_read = 0x213B
+
+        let BLEND_CTRL_CLIP_NEVER = 0x80
+        let BLEND_CTRL_CLIP_OUTSIDE = 0x40
+        let BLEND_CTRL_CLIP_INSIDE = 0x80
+        let BLEND_CTRL_CLIP_ALWAYS = 0xC0
+        let BLEND_CTRL_DISABLE_NEVER = 0x00
+        let BLEND_CTRL_DISABLE_OUTSIDE = 0x10
+        let BLEND_CTRL_DISABLE_INSIDE = 0x20
+        let BLEND_CTRL_DISABLE_ALWAYS = 0x30
+        let BLEND_CTRL_SUBSCREEN = 0x02
+        let BLEND_CTRL_256_COLOR = 0x01
+
+        let blend_ctrl = 0x2130
+
+        let BLEND_MODE_ADD = 0x00
+        let BLEND_MODE_SUBTRACT = 0x80
+        let BLEND_MODE_HALF = 0x40
+        let BLEND_MODE_BACKDROP = 0x20
+        let BLEND_MODE_OBJ = 0x10
+        let BLEND_MODE_BG1 = 0x01
+        let BLEND_MODE_BG2 = 0x02
+        let BLEND_MODE_BG3 = 0x04
+        let BLEND_MODE_BG4 = 0x08
+        let blend_mode = 0x2131
+
+        let BLEND_INTENSITY_MASK = 0x1F
+        let BLEND_R = 0x20
+        let BLEND_G = 0x40
+        let BLEND_B = 0x80
+        let blend_color = 0x000
     end
 
     package sgb do
-        let CTRL_RESET = 0x80
+        let CTRL_ON = 0x80
         let CTRL_MODE_4P = 0x20
         let CTRL_MODE_2P = 0x10
         let CTRL_MODE_SPEED_FAST = 0x00
@@ -122,7 +152,12 @@ in ram, 0x1900:
 in code, 0x0000:
     // Set emulation mode.
     carry = 1; byte: 0xFB
+
+    [snes.sgb.ctrl] = snes.sgb.CTRL_ON | snes.sgb.CTRL_MODE_2P | snes.sgb.CTRL_MODE_SPEED_NORMAL via a
+    [snes.sgb.joy1] = 0xFF via a
+    [snes.sgb.joy2] = 0xFF via a
     [mosaic] = 0 via a
+    [brightness] = 15 via a
 
     // Enable interrupts.
     [snes.ppu.interrupt] = snes.ppu.INTERRUPT_NMI via a

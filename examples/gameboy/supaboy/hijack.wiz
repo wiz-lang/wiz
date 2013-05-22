@@ -51,6 +51,33 @@ package hijack do
         hl = ram.t0
         call sgb.send_packet
 
+        c = 4
+        loop
+            call video.delay_frame
+            c--
+        until zero end
+        call joy.check
+        a = [gb.joy.ctrl] & 0xF
+        d = a
+        call joy.check
+        a = [gb.joy.ctrl] & 0xF
+        e = a
+        call joy.check
+        a = [gb.joy.ctrl] & 0xF
+        c = a
+
+        b = 0
+        a = e
+        if a = e; compare a to 0xE is == then
+        elseif a = d; compare a to 0xE is == then
+        else
+            a = c; compare a to 0xE
+            if is ~= then
+                call video.disable
+                return
+            end
+        end
+
         call video.disable
 
         hl = gb.ram.map
@@ -66,6 +93,7 @@ package hijack do
         a = 0x00
         call memset
         [gb.lcd.ctrl] = gb.lcd.CTRL_ON | gb.lcd.CTRL_TILESET2 | gb.lcd.CTRL_BG_ON via a
+        b = 1
     end
 
     func prepare_memory do
@@ -111,6 +139,7 @@ package hijack do
         [hl++] = d via a
         [hl++] = e via a
         [hl++] = [ram.hijack.mosaic] via a
+        [hl] = 0 via a
         call video.buffer_close
 
         a = [ram.hijack.delay]; a--

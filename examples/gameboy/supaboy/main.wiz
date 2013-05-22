@@ -74,17 +74,15 @@ func main do
     call video.disable
 
     // Set up a simple black-to-white 4-color palette.
-    [gb.mono.palette.bg] = 0b11100100 via a
+    [gb.mono.palette.bg] = ~0b11100100 via a
     [gb.mono.palette.obj1] = 0b11100100 via a
     [gb.mono.palette.obj2] = 0b11100000 via a
 
     // Initialize tileset.
-    do
-        hl = tileset
-        de = gb.ram.tile
-        bc = (tileset_eof - tileset)
-        call memcpy
-    end
+    hl = tileset
+    de = gb.ram.tile
+    bc = (tileset_eof - tileset)
+    call memcpy
 
     hl = gb.ram.map
     a = 0x7F
@@ -101,15 +99,57 @@ func main do
     bc = 160
     call memset
 
+    [gb.lcd.ctrl] = gb.lcd.CTRL_ON | gb.lcd.CTRL_TILESET2 | gb.lcd.CTRL_BG_ON via a
+    call video.delay_frame
+    hl = ram.t0
+    [hl++] = gb.super.MASK_EN | 1 via a
+    [hl++] = 0x01 via a
+    a = 0
+    bc = 14
+    call memset
+    hl = ram.t0
+    call sgb.send_packet
+    call video.disable
+
     a = [ram.hardware.type]
+    b = 0
     if compare a to ram.hardware.SGB is == then
         call hijack.init
-    else
+    end
+
+    // If not a legitimate SGB, fallback to DMG.
+    a = b
+    if compare a is zero then
+        hl = gb.ram.map
+        a = 0x7F
+        bc = 1024
+        call memset
+
+        hl = gb.ram.map2
+        a = 0x7F
+        bc = 1024
+        call memset
+
+        hl = gb.ram.obj
+        a = 0x00
+        bc = 160
+        call memset
+
+        [ram.hardware.type] = ram.hardware.GB via a
+        [gb.mono.palette.bg] = ~0b11100100 via a
         // Turn the screen back on, with backgrounds enabled using tileset 2.
-        //[gb.mono.palette.bg] = ~0b11100100 via a
-        [gb.lcd.ctrl] = gb.lcd.CTRL_ON | gb.lcd.CTRL_OBJ_ON | gb.lcd.CTRL_TILESET1 | gb.lcd.CTRL_BG_ON | gb.lcd.CTRL_WIN_MAP2 via a
         [gb.window.x] = 7 via a
         [gb.window.y] = 8 via a
+        [gb.lcd.ctrl] = gb.lcd.CTRL_ON | gb.lcd.CTRL_OBJ_ON | gb.lcd.CTRL_TILESET1 | gb.lcd.CTRL_BG_ON | gb.lcd.CTRL_WIN_MAP2 via a
+
+        hl = ram.t0
+        [hl++] = gb.super.MASK_EN | 1 via a
+        [hl++] = 0x00 via a
+        a = 0
+        bc = 14
+        call memset
+        hl = ram.t0
+        call sgb.send_packet
     end
 
     // Enable some basic interrupts.
@@ -123,9 +163,12 @@ func main do
     loop
         call joy.check
 
-        a = [ram.joy.pressed] & 0xF
-        if compare a to 0xF is == then
-            goto! main
+        a = [ram.hardware.type]
+        if compare a to ram.hardware.SGB is ~= then 
+            a = [ram.joy.pressed] & 0xF
+            if compare a to 0xF is == then
+                goto! main
+            end
         end
 
         hl = ram.video.oam.data

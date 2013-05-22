@@ -29,7 +29,6 @@ package sgb do
             call video.delay_frame
             c--
         until zero end
-
     end
 
     func detect do // FIXME: THIS DOES NOT WORK YET.
@@ -43,12 +42,34 @@ package sgb do
         call memset
         hl = ram.t0
         call sgb.send_packet
+        call video.delay_frame
 
         b = 0
-        call joy.check
-        a = [gb.joy.ctrl] & 0xF
-        if compare a to 0xF is ~= then
-            compare a to 0xE; return when ~=
+        a = [gb.joy.ctrl] & 3
+        if compare a to 3 is == then
+            // Read up/down/left/right.
+            [gb.joy.ctrl] = gb.joy.select.DIRECTIONS via a
+            // Read twice are to prevent bounce.
+            unroll 2 do 
+                a = [gb.joy.ctrl]
+            end
+            // Reset the joypad port.
+            [gb.joy.ctrl] = gb.joy.select.DIRECTIONS | gb.joy.select.BUTTONS via a
+            // Read A/B/Select/Start
+            [gb.joy.ctrl] = gb.joy.select.BUTTONS via a
+            // Read 6 times to prevent bounce.
+            unroll 6 do
+                a = [gb.joy.ctrl]
+            end
+            // Reset the joypad port. (Get the joypad index)
+            [gb.joy.ctrl] = gb.joy.select.DIRECTIONS | gb.joy.select.BUTTONS via a
+            // Read 6 times to prevent bounce.
+            unroll 4 do
+                a = [gb.joy.ctrl]
+            end
+            a = [gb.joy.ctrl] & 3
+            compare a to 3
+            return when ==
         end
 
         hl = ram.t0 + 1
