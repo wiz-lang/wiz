@@ -131,7 +131,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
                         }
                         break;
                     case parse.Infix.Mul:
-                        if(a > ast.Expression.Max / b)
+                        if(b != 0 && a > ast.Expression.Max / b)
                         {
                             error("multiplication yields result which will overflow outside of 0..65535.", operand.location);
                             return;

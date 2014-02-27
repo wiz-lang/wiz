@@ -213,18 +213,31 @@ package video do
 
     func acknowledge do
         a = [ram.video.request.redraw]
-        compare a
-        if is ~zero then
-            call ram.video.oam.code
+        if compare a is ~zero then
+            a = [ram.hardware.type]
+            if compare a to ram.hardware.SGB is == then
+                hl = ram.video.buffer.data
+                de = gb.ram.tile
+                c = 13
+                loop
+                    unroll 16 do
+                        [de] = [hl++] via a
+                        e++
+                    end
+                    c--
+                until zero end
+            else
+                call ram.video.oam.code
 
-            hl = ram.video.buffer.data
-            loop
-                a = [hl++]
-                compare a
-            until zero
-                d = a
-                e = [hl++] via a
-                [de] = [hl++] via a
+                hl = ram.video.buffer.data
+                loop
+                    a = [hl++]
+                    compare a
+                until zero
+                    d = a
+                    e = [hl++] via a
+                    [de] = [hl++] via a
+                end
             end
 
             hl = ram.video.request.redraw

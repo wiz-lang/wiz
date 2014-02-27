@@ -117,6 +117,7 @@ func main do
         call hijack.init
     end
 
+
     // If not a legitimate SGB, fallback to DMG.
     a = b
     if compare a is zero then
@@ -141,7 +142,7 @@ func main do
         [gb.window.x] = 7 via a
         [gb.window.y] = 8 via a
         [gb.lcd.ctrl] = gb.lcd.CTRL_ON | gb.lcd.CTRL_OBJ_ON | gb.lcd.CTRL_TILESET1 | gb.lcd.CTRL_BG_ON | gb.lcd.CTRL_WIN_MAP2 via a
-
+    end // FIXME
         hl = ram.t0
         [hl++] = gb.super.MASK_EN | 1 via a
         [hl++] = 0x00 via a
@@ -150,38 +151,63 @@ func main do
         call memset
         hl = ram.t0
         call sgb.send_packet
-    end
+//    end
+
 
     // Enable some basic interrupts.
     [gb.interrupt.enable] = gb.interrupt.VBLANK | gb.interrupt.STAT via a
     [gb.lcd.stat] = 0 via a
     interrupt = 1
 
-    [ram.hijack.delay] = 8 via a
-    [ram.hijack.mosaic] = 0 via a
+    hl = ram.hijack.start
+    bc = (ram.hijack.eof - ram.hijack.start)
+    a = 0
+    call memset
+
+    call video.buffer_rewind
+    call video.buffer_open
+    [hl++] = 0x00 via a
+    call video.buffer_close
+
+    a = [ram.hardware.type]
+    if compare a to ram.hardware.SGB is == then
+        c = 0
+        loop
+            call video.refresh
+            c--
+        until zero end
+
+        hl = tileset
+        bc = (tileset_eof - tileset)
+        call hijack.load_tileset
+    end
 
     loop
-        call joy.check
-
-        a = [ram.hardware.type]
-        if compare a to ram.hardware.SGB is ~= then 
-            a = [ram.joy.pressed] & 0xF
-            if compare a to 0xF is == then
-                goto! main
-            end
-        end
-
-        hl = ram.video.oam.data
-        a = 0x00
-        bc = 160
-        call memset
-        call video.oam_rewind
-        call video.buffer_rewind
-
+        call update
         call hijack.step
-
-        call video.refresh
     end
+end
+
+func update do
+    call video.refresh
+    call video.refresh
+
+    call joy.check
+
+    a = [ram.hardware.type]
+    if compare a to ram.hardware.SGB is ~= then 
+        a = [ram.joy.pressed] & 0xF
+        if compare a to 0xF is == then
+            goto! main
+        end
+    end
+
+    hl = ram.video.oam.data
+    a = 0x00
+    bc = 160
+    call memset
+    call video.oam_rewind
+    call video.buffer_rewind
 end
 
 inline func stack_cleanup do

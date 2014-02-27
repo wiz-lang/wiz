@@ -29,9 +29,11 @@ in ram, 0xC000:
         package buffer do
             var ptr_lo : byte
             var ptr_hi : byte
+            // GB/GBC:
             // hi, lo, value
             // hi = 0x00 terminates the buffer.
-            var data : byte * 256
+            // SGB: 320 byte memory buffer.
+            var data : byte * 320
         end
     end
 
@@ -63,8 +65,12 @@ in ram, 0xC000:
     end
 
     package hijack do
-        var delay : byte
-        var mosaic : byte
+        var start : byte * 0
+        var row : byte
+        package scroll do
+            var x, y : byte
+        end
+        var eof : byte * 0
     end
     
 // Here is some dumb stuff that needs to be located in fixed RAM locations.

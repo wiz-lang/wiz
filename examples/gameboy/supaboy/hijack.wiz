@@ -17,7 +17,7 @@ package hijack do
         hl = ram.t0
         call sgb.send_packet
 
-        call video.disable
+        /*call video.disable
         hl = (snes_code + 4096)
         bc = 4096
         de = gb.ram.tile
@@ -33,7 +33,7 @@ package hijack do
         bc = 12
         call memset
         hl = ram.t0
-        call sgb.send_packet
+        call sgb.send_packet*/
 
         hl = ram.t0
         [hl++] = gb.super.JUMP | 1 via a
@@ -43,7 +43,7 @@ package hijack do
         [hl++] = 0x7F via a 
         // NMI
         [hl++] = 0x00 via a
-        [hl++] = 0x10 via a
+        [hl++] = 0x08 via a
         [hl++] = 0x7F via a
         a = 0
         bc = 9
@@ -51,6 +51,7 @@ package hijack do
         hl = ram.t0
         call sgb.send_packet
 
+/*
         c = 4
         loop
             call video.delay_frame
@@ -77,7 +78,7 @@ package hijack do
                 return
             end
         end
-
+*/
         call video.disable
 
         hl = gb.ram.map
@@ -127,26 +128,89 @@ package hijack do
 
     func step do
         call video.buffer_open
-        de = gb.ram.tile
-        [hl++] = d via a
-        [hl++] = e via a
         [hl++] = 0x01 via a
-        e++
-        [hl++] = d via a
-        [hl++] = e via a
-        [hl++] = 0x0F via a
-        e++
-        [hl++] = d via a
-        [hl++] = e via a
-        [hl++] = [ram.hijack.mosaic] via a
-        [hl] = 0 via a
+        [hl++] = gb.lcd.CTRL_ON via a
+        [hl++] = [ram.hijack.row] via a
+        [hl++] = [ram.hijack.row] via a
+        [hl++] = [ram.hijack.scroll.x] via a
+        [hl++] = [ram.hijack.scroll.y] via a
+        hl++
+        hl++
+        de = 8
+        hl = hl + de
+
+        a = 0x01
+        bc = 32
+        call memset
+        a = 0x1C
+        bc = 32
+        call memset
+        a = 0x01
+        bc = 32
+        call memset
+        a = 0x1C
+        bc = 32
+        call memset
+
         call video.buffer_close
 
-        a = [ram.hijack.delay]; a--
-        if is zero then 
-            [ram.hijack.mosaic] = [ram.hijack.mosaic] & 0xF0 + 0x10 | 0x0F via a
-            a = 8
+        [ram.hijack.row] = [ram.hijack.row] + 1 & 0x1F via a
+        //[ram.hijack.scroll.x] = [ram.hijack.scroll.x] + 1 via a
+        //[ram.hijack.scroll.y] = [ram.hijack.scroll.y] + 1 via a
+    end
+
+    func load_palette do
+
+    end
+
+    func load_tileset do
+        e = c
+        d = b
+        de = de << 1
+
+        [ram.t0] = d via a
+
+        loop
+            push hl // source
+            push bc // (source, count)
+            call update
+
+            call video.buffer_open
+            [hl++] = 0x05 via a
+            [hl++] = 0 via a
+            bc = pop // (source)
+            push bc // (source, count)
+            bc = bc << 1
+            [hl++] = [ram.t0] - b via a
+
+            a = 0
+            bc = 8 + 5
+            call memset
+
+            bc = pop // (source)
+            de = pop // ()
+            push hl // (dest)
+            push de // (dest, source)
+            hl = pop // (dest)
+            de = pop // ()
+            push hl // (source)
+            push bc // (source, count)
+            push de // (source, count, dest)
+            bc = 128
+            call memcpy
+
+            hl = pop // (source, count)
+            call video.buffer_close
+
+
+            bc = pop // (source)
+            c = c - 128 via a
+            b = b -# 0 via a
+            hl = pop // ()
+            l = l + 128 via a
+            h = h +# 0 via a
+            a = b | c
+            until zero
         end
-        [ram.hijack.delay] = a
     end
 end
