@@ -1,15 +1,27 @@
 @echo off
 
+
 :: A poor alternative to directory globbing.
 setlocal ENABLEDELAYEDEXPANSION
 set files=
-for %%j in (src\wiz src\wiz\ast src\wiz\cpu src\wiz\cpu\gameboy src\wiz\cpu\mos6502 src\wiz\sym src\wiz\parse src\wiz\compile) do (
+for %%j in (src\js\wiz src\js\wiz\ast src\js\wiz\cpu src\js\wiz\cpu\gameboy src\js\wiz\cpu\mos6502 src\js\wiz\compile src\js\wiz\fs src\js\wiz\parse src\js\wiz\sym) do (
+    set directory=%%j%
+    for /f %%i in ('dir /b !directory!\*.js') do set "files=!files!!directory!\%%i "
+)
+:: Minify the JS version of the compiler.
+::type %files% 2> nul | jsmin > src\js\editor\dependencies\wiz.min.js
+type %files% 2> nul > src\js\editor\dependencies\wiz.min.js
+
+:: A poor alternative to directory globbing.
+setlocal ENABLEDELAYEDEXPANSION
+set files=
+for %%j in (src\d\wiz src\d\wiz\ast src\d\wiz\cpu src\d\wiz\cpu\gameboy src\d\wiz\cpu\mos6502 src\d\wiz\sym src\d\wiz\parse src\d\wiz\compile) do (
     set directory=%%j%
     for /f %%i in ('dir /b !directory!\*.d') do set "files=!files!!directory!\%%i "
 )
 
 :: Build the compiler.
-dmd %files% -Isrc -ofwiz -g -debug
+dmd %files% -Isrc\d -ofwiz -g -debug
 if %errorlevel% neq 0 call :exit 1
 :: Compile a test program.
 wiz examples/gameboy/snake/snake.wiz -gb -o examples/gameboy/snake/snake.gb

@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>wiz</title>
+  <style type="text/css" media="screen">
+    html, body {
+        overflow: hidden;
+        padding: 0;
+        margin: 0;
+        background: #1D1F21;
+        min-width: 320px;
+        font-size: 12pt;
+        color: #C5C8C6;
+    }
+
+    ::-webkit-scrollbar, ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner {
+        background: #1D1F21;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #383A3E;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #484A4E;
+    }
+
+    input, textarea, select {
+        -webkit-appearance: none;
+    }
+    
+    .header {
+        background: #282A2E;
+        height: 32px;
+        padding: 16px;
+        max-height: 64px;
+    }
+
+    .title {
+        display: inline-block;
+        vertical-align: top;
+        color: #C5C8C6;
+        font-weight: bold;
+        padding-top: 8px;
+        padding-right: 16px;
+        font-family: Arial, sans-serif;
+    }
+
+    .header .buttons {
+        display: inline-block;
+        vertical-align: top;
+    }
+
+    .header input.button {
+        vertical-align: top;
+        display: inline-block;
+        border: 0;
+        min-width: 32px;
+        height: 32px;
+        max-height: 32px;
+        overflow: hidden;
+        background: #66CC99;
+        color: #116633;
+        font-size: 1.4em;
+        margin: 0;
+        padding: 6px 8px;
+        font-family: Arial, sans-serif;
+        outline: none;
+        line-height: 100%;
+        transition: color 0.3s ease-in-out, background 0.3s ease-in-out, opacity 0.3s ease-in-out, border 0.3s ease-in-out;
+        cursor: pointer;
+        box-sizing: border-box;
+        border-right: 1px solid #484A4E;
+    }
+    input.button:hover { background: #88EEBB; color: #338855; }
+    input.button:active { opacity: 0.5; }
+
+    input.button.build, input.button.play {
+        padding: 5px 8px 7px;
+    }
+
+    .header .dropdown {
+        position: relative;
+        display: inline-block;
+        vertical-align: top;
+        background: #6699CC;
+        min-width: 32px;
+        height: 32px;
+        transition: color 0.3s ease-in-out, background 0.3s ease-in-out, opacity 0.3s ease-in-out, border 0.3s ease-in-out;
+    }
+    .header .dropdown .tiny {
+        display: none;
+        padding: 8px 6px;
+        line-height: 100%;
+        color: #113366;
+        font-family: Arial, sans-serif;
+    }
+    .header .dropdown:hover { background: #88BBEE; }
+    .header .dropdown.highlighting { background: #CC99CC; }
+    .header .dropdown.highlighting:hover { background: #EEBBEE; }
+
+    .header select {
+        background: transparent;
+        color: #113366;
+        outline: none;
+        height: 32px;
+        padding: 5px 8px;
+        border: 0;
+        margin: 0;
+        cursor: pointer;
+        box-sizing: border-box;
+    }
+
+    .header select:hover, .header .dropdown .tiny { color: #335588; }
+    .header select option { background: #FFFFFF; color: #000000; }
+
+    .header img.icon {
+        border: 0;
+        outline: 0;
+        transition: color 0.3s ease-in-out, background 0.3s ease-in-out, opacity 0.3s ease-in-out, border 0.3s ease-in-out;
+    }
+
+    .header img.icon:hover { opacity: 0.6; }
+
+    .tabs {
+        height: 36px;
+        overflow: hidden;
+        background: #484A4E;
+        color: #C5C8C6;
+        border-top: 4px solid #282A2E;
+        font-family: Arial, sans-serif;
+    }
+
+    .tabs .tab, .tabs .add, .tabs .load {
+        display: inline-block;
+        vertical-align: top;
+        line-height: 100%;
+        transition: color 0.3s ease-in-out, background 0.3s ease-in-out, opacity 0.3s ease-in-out, border 0.3s ease-in-out;
+        cursor: pointer;
+    }
+
+    .tabs .tab {
+        padding: 8px;
+        height: 24px;
+        background: #383A3E;
+        color: #A5A8A6;
+    }
+    .tabs .tab:hover { background: #404246; color: #C5C8C6; }
+    .tabs .tab.active {
+        background: #484A4E;
+        color: #C5C8C6;
+        cursor: default;
+    }
+
+    .tabs .tab .close {
+        padding-left: 12px;
+        cursor: pointer;
+        transition: color 0.3s ease-in-out, background 0.3s ease-in-out, opacity 0.3s ease-in-out, border 0.3s ease-in-out;
+    }
+
+    .tabs .tab .close:hover { color: #FFFFFF; }
+
+    .tabs .add, .tabs .load {
+        padding: 8px;
+        width: 20px;
+        height: 24px;
+        text-align: center;
+        background: #6699CC;
+        color: #1D1F21;
+        font-size: 1.4em;
+        border-right: 1px solid #484A4E;
+    }
+    .tabs .add:hover, .tabs .load:hover { background: #88BBEE; }
+    .tabs .load { padding: 4px 8px 12px; border-right: 4px solid #484A4E; }
+
+    .relative {
+        position: relative;
+    }
+
+
+    .output {
+        position: absolute;
+        height: 168px;
+        margin: 0;
+        padding: 16px;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #282A2E;
+        color: #C5C8C6;
+        z-index: 1000;
+        transition: color 0.3s ease-in-out, background 0.3s ease-in-out, opacity 0.3s ease-in-out, border 0.3s ease-in-out;
+    }
+
+    .output .console {
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+        font-size: 12px;
+        background: #282A2E;
+        color: #C5C8C6;
+        overflow: auto;
+    }
+
+    .output .close {
+        position: absolute;
+        top: -24px;
+        right: 0px;
+        font-family: Arial;
+        font-size: 2em;
+        cursor: pointer;
+        color: #858886;
+        transition: color 0.3s ease-in-out, background 0.3s ease-in-out, opacity 0.3s ease-in-out, border 0.3s ease-in-out;
+    }
+    .output .close:hover { color: #C5C8C6; }
+
+    .editor {
+        position: absolute;
+        top: 104px;
+        bottom: 200px;
+        left: 0;
+        right: 0;
+    }
+
+    .editor .textarea { 
+        display: none;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        width: 100%;
+        height: 100%;
+        resize: none;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: #C5C8C6;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+        font-size: 12px;
+        transition: color 0.3s ease-in-out, background 0.3s ease-in-out, opacity 0.3s ease-in-out, border 0.3s ease-in-out;
+    }
+
+    .editor .textarea.text { 
+        padding: 0 8px;
+    }
+
+    .ace-tomorrow-night .ace_gutter {
+        color: #959896 !important;
+    }
+
+    .ace-tomorrow-night .ace_gutter-active-line {
+        background-color: #484A4E !important;
+    }
+
+    .ace-tomorrow-night .ace_marker-layer .ace_selection {
+        background-color: #383A48 !important;
+    }
+
+
+    @media screen and (max-width: 720px) {
+        .header .dropdown .tiny { display: block; }
+        .header .dropdown.platform select {
+            text-indent: -99999px;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+         }
+        .header .dropdown.highlighting { display: none; }
+        .header .github .icon { display: none; }
+
+        .editor { border-left: 0; }
+        .editor .textarea.ace { margin-left: 0; }
+    }
+  </style>
+  <script type='text/javascript' src='dependencies/wiz.min.js'></script>
+</head>
+<body>
+
+<div class='header'>
+    <span class='title'>wiz</span>
+    <div class='buttons'><input
+        title='Build' class='button build' type='submit' value='&#9636;' /><input
+        title='Play' class='button play' type='submit' value='&#9654;' /><input
+        title='Download' class='button download' type='submit' value='&#10052;' />
+    </div>
+    <div title="Platform" class='dropdown platform'>
+        <div class='tiny'>GB</div>
+        <select>
+            <option selected='selected' value='gb gb'>GBZ80 / Game Boy</option>
+            <option value='6502 nes'>2A03 / NES</option>
+            <option value='6502 2600'>6502 / Atari 2600</option>
+            <option value='6502 c64'>6510 / Commodore 64</option>
+        </select>
+    </div>
+    <div title="Platform" class='dropdown highlighting'>
+        <div class='tiny'></div>
+        <select>
+            <option selected='selected' value='text'>Text</option>
+            <option value='ace'>Code</option>
+        </select>
+    </div>
+    <a title="Source Code" class='link github' href='https://github.com/Bananattack/wiz' target='_blank'><img class='icon' src='https://www.gravatar.com/avatar/00257b890cff11d0af261929dbaa0c67?s=32' /></a>
+    <a title="Assembly Digest" class='link tumblr' href='http://assemblydigest.tumblr.com/' target='_blank'><img class='icon' src='https://www.gravatar.com/avatar/39c26ea60d595b437de68a566b5b4000?s=32' /></a>
+</div>
+<div class='tabs'>
+    <span class='tab active'>code.wiz<span class='close'>&times;</span></span><span class='tab'>gameboy.wiz<span class='close'>&times;</span></span><span class='add'>+</span><span class='load'>...</span>
+</div>
+<div class='output'>
+    <div class='relative'>
+        <div class='close'>&times;</div>
+        <pre class='console'></pre>
+    </div>
+</div>
+<div class='editor'>
+<textarea spellcheck='false' class='textarea text'>let K = 1024
+bank rom: rom * 32*K
+bank ram: ram * 4*K
+bank ram2: ram * 4*K
+bank hram: ram * 127
+
+// RST handlers.
+in rom, 0x0000:
+    return
+in rom, 0x0008:
+    return
+in rom, 0x0010:
+    return
+in rom, 0x0018:
+    return
+in rom, 0x0020:
+    return
+in rom, 0x0028:
+    return
+in rom, 0x0030:
+    return
+in rom, 0x0038:
+    return
+// Interrupt handlers.
+in rom, 0x0040:
+    goto! draw
+in rom, 0x0048:
+    goto! stat
+in rom, 0x0050:
+    goto! timer
+in rom, 0x0058:
+    goto! serial
+in rom, 0x0060:
+    goto! joypad
+// Startup handler.
+in rom, 0x0100:
+    nop
+    goto! main
+// The Nintendo Logo.
+in rom, 0x0104:
+    byte * 48:
+        0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B,
+        0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D,
+        0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E,
+        0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99,
+        0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC,
+        0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E
+// The title, in upper-case letters, followed by zeroes.
+in rom, 0x0134:
+    byte * 11: "TEST", 0
+// The manufacturer code.    
+in rom, 0x013F:
+    byte * 4: 0
+// Gameboy Color compatibility flag.    
+in rom, 0x0143:
+    let GBC_UNSUPPORTED = 0x00
+    let GBC_COMPATIBLE = 0x80
+    let GBC_EXCLUSIVE = 0xC0
+    byte * 1: GBC_UNSUPPORTED
+// "New" Licensee Code, a two character name.    
+in rom, 0x0144:
+    byte * 2: "OK"
+// Super Gameboy compatibility flag.
+in rom, 0x0146:
+    let SGB_UNSUPPORTED = 0x00
+    let SGB_SUPPORTED = 0x03
+    byte * 1: SGB_UNSUPPORTED
+// Cartridge type. Either no ROM or MBC5 is recommended.
+in rom, 0x0147:
+    let CART_ROM_ONLY = 0x00
+    let CART_MBC1 = 0x01
+    let CART_MBC1_RAM = 0x02
+    let CART_MBC1_RAM_BATTERY = 0x03
+    let CART_MBC2 = 0x05
+    let CART_MBC2_BATTERY = 0x06
+    let CART_ROM_RAM = 0x08
+    let CART_ROM_RAM_BATTERY = 0x09
+    let CART_MMM01 = 0x0B
+    let CART_MMM01_RAM = 0x0C
+    let CART_MMM01_RAM_BATTERY = 0x0D
+    let CART_MBC3_TIMER_BATTERY = 0x0F
+    let CART_MBC3_TIMER_RAM_BATTERY = 0x10
+    let CART_MBC3 = 0x11
+    let CART_MBC3_RAM = 0x12
+    let CART_MBC3_RAM_BATTERY = 0x13
+    let CART_MBC4 = 0x15
+    let CART_MBC4_RAM = 0x16
+    let CART_MBC4_RAM_BATTERY = 0x17
+    let CART_MBC5 = 0x19
+    let CART_MBC5_RAM = 0x1A
+    let CART_MBC5_RAM_BATTERY = 0x1B
+    let CART_MBC5_RUMBLE = 0x1C
+    let CART_MBC5_RUMBLE_RAM = 0x1D
+    let CART_MBC5_RUMBLE_RAM_BATTERY = 0x1E
+    let CART_POCKET_CAMERA = 0xFC
+    let CART_BANDAI_TAMA5 = 0xFD
+    let CART_HUC3 = 0xFE
+    let CART_HUC1_RAM_BATTERY = 0xFF
+    byte * 1: CART_ROM_ONLY
+// Rom size.
+in rom, 0x0148:
+    let ROM_32K = 0x00
+    let ROM_64K = 0x01
+    let ROM_128K = 0x02
+    let ROM_256K = 0x03
+    let ROM_512K = 0x04
+    let ROM_1024K = 0x05
+    let ROM_2048K = 0x06
+    let ROM_4096K = 0x07
+    let ROM_1152K = 0x52
+    let ROM_1280K = 0x53
+    let ROM_1536K = 0x54
+    byte * 1: ROM_32K
+// Ram sizes.
+in rom, 0x0149:
+    let RAM_NONE = 0x00
+    let RAM_2K = 0x01
+    let RAM_8K = 0x02
+    let RAM_32K = 0x03
+    byte * 1: RAM_NONE
+// Destination code.
+in rom, 0x014A:
+    let DEST_JAPAN = 0x00
+    let DEST_INTERNATIONAL = 0x01
+    byte * 1: DEST_INTERNATIONAL
+// Old licensee code.
+// 0x33 indicates new license code will be used.
+// 0x33 must be used for SGB games.
+in rom, 0x014B: byte * 1: 0x33
+// ROM version number
+in rom, 0x014C: byte * 1: 0x00
+// Header checksum.
+// Assembler needs to patch this.
+in rom, 0x014D: byte * 1: 0xFF
+// Global checksum.
+// Assembler needs to patch this.
+in rom, 0x014E: word * 1: 0xFACE
+
+in rom, 0x0150:
+    // Fills a range in memory with a specified byte value.
+    func memset do
+        // Arguments:
+        let dest = hl // inout
+        let value = a // in
+        let count = bc // inout
+        // Locals:
+        let count_l = c
+        let count_h = b
+
+        count_l++; count_h++
+        goto start
+    def repeat:
+        [dest++] = value
+    def start:
+        count_l--; goto repeat when ~zero
+        count_h--; goto repeat when ~zero
+    end
+
+    // Copies count bytes from source to destination.
+    func memcpy do
+        let dest = de // inout
+        let source = hl // inout
+        let count = bc // inout
+        // Locals
+        let count_l = c
+        let count_h = b
+
+        count_l++; count_h++
+        goto start
+    def repeat:
+        [dest] = [source++] via a
+        dest++
+    def start:
+        count_l--; goto repeat when ~zero
+        count_h--; goto repeat when ~zero
+    end
+
+    // Copies count bytes from source to destination data register.
+    func palcpy do
+        let dest = de // inout
+        let source = hl // inout
+        let count = bc // inout
+        // Locals
+        let count_l = c
+        let count_h = b
+
+        count_l++; count_h++
+        goto start
+    def repeat:
+        [dest] = [source++] via a
+    def start:
+        count_l--; goto repeat when ~zero
+        count_h--; goto repeat when ~zero
+    end
+
+    func disable_screen do
+        // Wait for not-vblank.
+        loop
+            a = [0xFF41] & 0x03
+            compare a to 0x03
+        until == end
+        // Wait for vblank.
+        loop
+            a = [0xFF41] & 0x03
+            compare a to 0x01
+        until == end
+        // Turn off screen.
+        [0xFF40] = 0 via a
+    end
+
+    func main do
+        call disable_screen
+
+        // Set up a simple black-to-white 4-color palette.
+        [0xFF47] = 0b11100100 via a
+        [0xFF48] = 0b11100100 via a
+        [0xFF49] = 0b11100000 via a
+
+        do
+            let dest = hl
+            let value = a
+            let count = bc
+
+            // Fill in some very crappy striped tile patterns.
+            dest = 0x8000
+            value = 0b11111111; count = 16
+            inline call memset
+            value = 0b10101010; count = 16
+            inline call memset
+            value = 0b10001000; count = 16
+            inline call memset
+            value = 0b00000000; count = 16
+            inline call memset
+
+            // Clear screen.
+            dest = 0x9800 + 32
+            value = 0x03
+            count = 1024 - 64
+            inline call memset
+
+            // Draw horizontal walls.
+            dest = 0x9800
+            value = 0x00
+            count = 20
+            inline call memset
+
+            dest = 0x9800 + (32 * 17)
+            count = 20
+            inline call memset
+        end
+
+        // Draw vertical walls.
+        do
+            let dest = hl
+            let step = bc
+
+            dest = 0x9800 + 32
+            step = 32
+            unroll 17 do 
+                [dest] = a
+                dest = dest + step
+            end
+            
+            dest = 0x9800 + 32 + 19
+            unroll 17 do 
+                [dest] = a
+                dest = dest + step
+            end
+        end
+
+        // Turn the screen back on, with backgrounds enabled using tileset 2.
+        [0xFF40] = 0x91 via a
+
+        // Enable some basic interrupts.
+        [0xFFFF] = 0x03 via a
+        [0xFF42] = 0 via a
+        interrupt = 1
+
+        loop
+            sleep
+        end
+    end
+
+    task nothing do
+    end
+
+    let draw = nothing
+    let stat = nothing
+    let timer = nothing
+    let serial = nothing
+    let joypad = nothing</textarea>
+<pre class='textarea ace' id='aceEditor'></pre>
+</div>
+<script src="dependencies/ace/ace.js" type="text/javascript" charset="utf-8"></script>
+<script>
+var editorPreference = false;
+var aceEditor = null;
+
+function initAceEditor(mode) {
+    if(!aceEditor) {
+        aceEditor = ace.edit("aceEditor");
+        aceEditor.setTheme("ace/theme/tomorrow_night");
+        aceEditor.getSession().setMode("ace/mode/wiz");
+        aceEditor.setDisplayIndentGuides(false);
+        aceEditor.setShowPrintMargin(false);
+        aceEditor.setShowFoldWidgets(false);
+    }
+}
+
+function getSource() {
+    var preference = editorPreference || 'text';
+    if(preference === 'ace' && aceEditor) {
+        source = aceEditor.getValue();
+    } else {
+        source = document.querySelector('.editor .textarea.' + preference).value;
+    }
+    return source;
+}
+
+function switchEditor(newPreference) {
+    var editors = document.querySelector('.editor .textarea');
+    var source = getSource();
+
+    if(!editorPreference) {
+        editorPreference = 'text';
+    }
+
+    if(newPreference === 'ace') {
+        if(aceEditor) {
+            aceEditor.setValue(source, -1);
+
+            var UndoManager = ace.require("ace/undomanager").UndoManager; 
+            aceEditor.getSession().setUndoManager(new UndoManager());
+        } else {
+            newPreference = 'text';
+        }
+    }
+    if(newPreference !== 'ace') {
+        if(newPreference === 'text') {
+            var newNode = document.createElement('textarea');
+            var oldNode = document.querySelector('.editor .textarea.' + newPreference);
+            newNode.className = oldNode.className;
+            oldNode.parentNode.replaceChild(newNode, oldNode)
+        }
+        document.querySelector('.editor .textarea.' + newPreference).value = source;
+    }
+    editorPreference = newPreference;
+
+    var date = new Date();
+    date.setTime(date.getTime()+(30*24*60*60*1000));
+    document.cookie = 'wiz_editor_preference=' + newPreference + '; expires=' + date.toGMTString() + '; path=/';
+
+    for(var i = 0, items = document.querySelectorAll('.editor .textarea'); i < items.length; i++) {
+        items[i].style.display = 'none';
+        items[i].style.opacity = '0';
+    }
+    document.querySelector('.editor .textarea.' + newPreference).style.display = 'block';
+    document.querySelector('.editor .textarea.' + newPreference).style.opacity = '0';
+
+    setTimeout(function() {
+        document.querySelector('.editor .textarea.' + newPreference).style.opacity = '1';
+        if(aceEditor) {
+            aceEditor.resize();
+        }
+    }, 500);
+
+    document.querySelector('.highlighting select').value = newPreference;
+}
+
+document.querySelector('.platform select').onchange = function(e) {
+    var tinyText = '';
+    switch(document.querySelector('.platform select').value.split(' ').pop()) {
+        case 'gb': tinyText = 'GB'; break;
+        case 'nes': tinyText = 'NES'; break;
+        case '2600': tinyText = '2600'; break;
+        case 'c64': tinyText = 'C64'; break;
+    }
+
+    document.querySelector('.platform .tiny').innerHTML = tinyText;
+}
+
+document.querySelector('.highlighting select').onchange = function(e) {
+    switchEditor(document.querySelector('.highlighting select').value);
+};
+
+wiz.compile.clearLog = function() {
+    document.querySelector('.editor').style.bottom = '';
+    if(aceEditor) {
+        aceEditor.resize();
+    }
+    document.querySelector('.output').style.display = 'block';
+    document.querySelector('.output').style.opacity = '1';
+
+    document.querySelector('.console').innerHTML = '';
+}
+
+wiz.compile.log = function(message) {
+    console.log(message);
+    document.querySelector('.console').innerHTML += message + '\n';
+}
+
+document.querySelector('.output .close').onclick = function() {
+    document.querySelector('.editor').style.bottom = '0';
+    if(aceEditor) {
+        aceEditor.resize();
+    }
+    document.querySelector('.output').style.opacity = '0';
+    setTimeout(function() {
+        document.querySelector('.output').style.display = 'none';
+    }, 300);
+}
+
+document.querySelector('.output').style.display = 'none';
+document.querySelector('.output .close').onclick();
+
+var openFileDialog = function() {
+    var click = document.createEvent("MouseEvent");
+    click.initMouseEvent('click', true, true, window, 1, 0, 0, 0, 0, false, false, false, false, 0, null);
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.dispatchEvent(click);
+};
+
+document.querySelector('.tabs .load').onclick = function() {
+    openFileDialog();
+}
+
+var saveFileDialog =
+    window.webkitSaveAs
+    || window.mozSaveAs
+    || window.msSaveAs
+    || window.navigator.msSaveBlob && function(blob, name) {
+                return window.navigator.msSaveBlob(blob, name);
+        }
+    || function(blob, name) {
+        var click = document.createEvent("MouseEvent");
+        click.initMouseEvent('click', true, true, window, 1, 0, 0, 0, 0, false, false, false, false, 0, null);
+        var a = document.createElement('a');
+        a.setAttribute('href', URL.createObjectURL(blob));
+        a.setAttribute('download', name);
+        a.dispatchEvent(click);
+    };
+
+function dataUrlToBlob(url) {
+    var parts = url.split(',');
+    var contentType = parts[0].split(':')[1].split(';');
+    var mimeType = contentType[0];
+    var encoding = contentType[1];
+    var data = parts[1];
+
+    if (encoding == 'base64') {
+        var bytes = window.atob(data);
+        var buffer = new Uint8Array(bytes.length);
+        for (var i = 0; i < bytes.length; ++i) {
+            buffer[i] = bytes.charCodeAt(i);
+        }
+        return new Blob([buffer], {type: mimeType});
+    } else {
+        return new Blob([data], {type: mimeType});
+    }
+}
+
+document.querySelector('.build').onclick = function() {
+    wiz.build(getSource(), 'code.wiz', document.querySelector('.platform select').value.split(' ').shift());
+}
+
+document.querySelector('.play').onclick = function() {
+    var rom = wiz.build(getSource(), 'code.wiz', document.querySelector('.platform select').value.split(' ').shift());
+    wiz.compile.log('');
+    wiz.compile.log('Emulation is not implemented yet!');
+}
+
+document.querySelector('.download').onclick = function() {
+    var rom = wiz.build(getSource(), 'code.wiz', document.querySelector('.platform select').value.split(' ').shift());
+    var blob = new Blob([rom], {type: "application/octet-stream"})
+    saveFileDialog(blob, 'game.gb');
+}
+
+function ready() {
+    initAceEditor();
+
+    if(document.cookie) {
+        var cookie = document.cookie.split('; ');
+        for(var i = 0; i < cookie.length; i++) {
+            var pieces = cookie[i].split('=');
+            var name = pieces[0];
+            var value = pieces[1].split(',').shift();
+            console.log(name, value);
+            if(name === 'wiz_editor_preference') {
+                switchEditor(value);
+                return;
+            }
+        }
+    }
+
+    function touch(e) {
+        if(!editorPreference) {
+            switchEditor('text');
+        }
+        document.removeEventListener('touchstart', touch, true);
+        document.removeEventListener('mousemove', mouse, true);
+    }
+
+    function mouse(e) {
+        if(!editorPreference) {
+            switchEditor('ace');
+        }
+        document.removeEventListener('touchstart', touch, true);
+        document.removeEventListener('mousemove', mouse, true);
+    }
+    document.addEventListener('touchstart', touch, true);
+    document.addEventListener('mousemove', mouse, true);
+
+    document.removeEventListener('DOMContentLoaded', ready, false);
+}
+
+ready();
+</script>
+</body>
+</html>
