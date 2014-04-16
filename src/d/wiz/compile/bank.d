@@ -14,17 +14,17 @@ class Bank
         // Until a ROM relocation occurs, this page is not initialized.
         bool initialized;
         // Origin point as an absolute memory address where this bank starts.
-        ulong origin;
+        size_t origin;
         // The position, in bytes, into the bank.
-        ulong position;
+        size_t position;
         // Whether or not this bank needs physical storage in the ROM.
         bool physical;
         // The total size of this bank, used to prevent write overflows, and calculate space in the ROM.
-        ulong capacity;
+        size_t capacity;
         // The ROM data held by this bank.
         ubyte[] data;
     
-        void reserve(string description, ulong size, compile.Location location)
+        void reserve(string description, size_t size, compile.Location location)
         {
             if(initialized)
             {
@@ -54,7 +54,7 @@ class Bank
         }
 
     public:
-        this(string name, bool physical, ulong capacity)
+        this(string name, bool physical, size_t capacity)
         {
             this.name = name;
             this.physical = physical;
@@ -76,7 +76,7 @@ class Bank
             initialized = false;
         }
 
-        void reserveVirtual(string description, ulong size, compile.Location location)
+        void reserveVirtual(string description, size_t size, compile.Location location)
         {
             if(physical)
             {
@@ -93,7 +93,7 @@ class Bank
             }
         }
 
-        void reservePhysical(string description, ulong size, compile.Location location)
+        void reservePhysical(string description, size_t size, compile.Location location)
         {
             if(physical)
             {
@@ -125,7 +125,7 @@ class Bank
             }
         }
 
-        ulong checkAddress(string description, compile.Location location)
+        size_t checkAddress(string description, compile.Location location)
         {
             if(initialized)
             {
@@ -143,7 +143,7 @@ class Bank
             }
         }
         
-        void setAddress(string description, ulong dest, compile.Location location)
+        void setAddress(string description, size_t dest, compile.Location location)
         {
             if(initialized)
             {

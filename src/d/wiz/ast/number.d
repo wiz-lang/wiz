@@ -6,9 +6,9 @@ import wiz.ast.lib;
 class Number : Expression
 {
     parse.Token _numberType;
-    ulong _value;
+    size_t _value;
 
-    this(parse.Token numberType, ulong value, compile.Location location)
+    this(parse.Token numberType, size_t value, compile.Location location)
     {
         super(location);
         _numberType = numberType;

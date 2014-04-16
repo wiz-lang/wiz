@@ -58,15 +58,15 @@ sym.Definition resolveAttribute(Program program, ast.Attribute attribute, bool q
     return def;
 }
 
-bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden, bool finalized, ref ulong result, ref ast.Expression constTail)
+bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden, bool finalized, ref size_t result, ref ast.Expression constTail)
 {
-    ulong[ast.Expression] values;
+    size_t[ast.Expression] values;
     bool[ast.Expression] completeness;
     bool runtimeRootForbidden = runtimeForbidden;
     bool badAttr = false;
-    ulong depth = 0;
+    size_t depth = 0;
 
-    void updateValue(ast.Expression node, ulong value, bool complete=true)
+    void updateValue(ast.Expression node, size_t value, bool complete=true)
     {
         values[node] = value;
         completeness[node] = complete;
@@ -90,7 +90,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
                 return;
             }
 
-            ulong a = values[first];
+            size_t a = values[first];
             updateValue(e, a, false);
 
             foreach(i, type; e.types)
@@ -104,7 +104,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
                     }
                     return;
                 }
-                ulong b = values[operand];
+                size_t b = values[operand];
 
                 final switch(type)
                 {
@@ -255,7 +255,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
                 {
                     return;
                 }
-                ulong r = values[e.operand];
+                size_t r = values[e.operand];
                 final switch(e.type)
                 {
                     case parse.Prefix.Low:
@@ -303,7 +303,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
             {
                 program.enterInline("constant '" ~ a.fullName() ~ "'", a);
                 program.enterEnvironment(constdef.environment);
-                ulong v;
+                size_t v;
                 bool folded = foldConstant(program, (cast(ast.LetDecl) constdef.decl).value, program.finalized, v);
                 program.leaveEnvironment();
                 program.leaveInline();
@@ -315,7 +315,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
             }
             else if(auto vardef = cast(sym.VarDef) def)
             {
-                ulong v;
+                size_t v;
                 if(vardef.hasAddress)
                 {
                     updateValue(a, vardef.address);
@@ -324,7 +324,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
             }
             else if(auto labeldef = cast(sym.LabelDef) def)
             {
-                ulong v;
+                size_t v;
                 if(labeldef.hasAddress)
                 {
                     updateValue(a, labeldef.address);
@@ -364,13 +364,13 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
     return true;
 }
 
-bool foldConstant(Program program, ast.Expression root, bool finalized, ref ulong result)
+bool foldConstant(Program program, ast.Expression root, bool finalized, ref size_t result)
 {
     ast.Expression constTail;
     return tryFoldConstant(program, root, true, finalized, result, constTail) && constTail == root;
 }
 
-bool foldBoundedNumber(compile.Program program, ast.Expression root, string type, ulong limit, bool finalized, ref ulong result)
+bool foldBoundedNumber(compile.Program program, ast.Expression root, string type, size_t limit, bool finalized, ref size_t result)
 {
     if(compile.foldConstant(program, root, finalized, result))
     {
@@ -388,32 +388,32 @@ bool foldBoundedNumber(compile.Program program, ast.Expression root, string type
     return false;
 }
 
-bool foldBit(compile.Program program, ast.Expression root, bool finalized, ref ulong result)
+bool foldBit(compile.Program program, ast.Expression root, bool finalized, ref size_t result)
 {
     return foldBoundedNumber(program, root, "bit", 1, finalized, result);
 }
 
-bool foldBitIndex(compile.Program program, ast.Expression root, bool finalized, ref ulong result)
+bool foldBitIndex(compile.Program program, ast.Expression root, bool finalized, ref size_t result)
 {
     return foldBoundedNumber(program, root, "bitwise index", 7, finalized, result);
 }
 
-bool foldWordBitIndex(compile.Program program, ast.Expression root, bool finalized, ref ulong result)
+bool foldWordBitIndex(compile.Program program, ast.Expression root, bool finalized, ref size_t result)
 {
     return foldBoundedNumber(program, root, "bitwise index", 15, finalized, result);
 }
 
-bool foldByte(compile.Program program, ast.Expression root, bool finalized, ref ulong result)
+bool foldByte(compile.Program program, ast.Expression root, bool finalized, ref size_t result)
 {
     return foldBoundedNumber(program, root, "8-bit", 255, finalized, result);
 }
 
-bool foldWord(compile.Program program, ast.Expression root, bool finalized, ref ulong result)
+bool foldWord(compile.Program program, ast.Expression root, bool finalized, ref size_t result)
 {
     return foldBoundedNumber(program, root, "16-bit", 65535, finalized, result);
 }
 
-bool foldSignedByte(compile.Program program, ast.Expression root, bool negative, bool finalized, ref ulong result)
+bool foldSignedByte(compile.Program program, ast.Expression root, bool negative, bool finalized, ref size_t result)
 {
     if(foldWord(program, root, finalized, result))
     {
@@ -438,7 +438,7 @@ bool foldSignedByte(compile.Program program, ast.Expression root, bool negative,
     return false;
 }
 
-bool foldRelativeByte(compile.Program program, ast.Expression root, string description, string help, ulong origin, bool finalized, ref ulong result)
+bool foldRelativeByte(compile.Program program, ast.Expression root, string description, string help, size_t origin, bool finalized, ref size_t result)
 {
     if(foldWord(program, root, finalized, result))
     {
@@ -462,7 +462,7 @@ bool foldRelativeByte(compile.Program program, ast.Expression root, string descr
     return false;
 }
 
-bool foldStorage(Program program, ast.Storage s, ref bool sizeless, ref ulong unit, ref ulong total)
+bool foldStorage(Program program, ast.Storage s, ref bool sizeless, ref size_t unit, ref size_t total)
 {
     sizeless = false;
     if(s.size is null)
@@ -485,7 +485,7 @@ bool foldStorage(Program program, ast.Storage s, ref bool sizeless, ref ulong un
     return true;
 }
 
-ubyte[] foldDataExpression(Program program, ast.Expression root, ulong unit, bool finalized)
+ubyte[] foldDataExpression(Program program, ast.Expression root, size_t unit, bool finalized)
 {
     switch(unit)
     {
@@ -496,12 +496,12 @@ ubyte[] foldDataExpression(Program program, ast.Expression root, ulong unit, boo
             }
             else
             {
-                ulong result;
+                size_t result;
                 foldByte(program, root, finalized, result);
                 return [result & 0xFF];
             }
         case 2:
-            ulong result;
+            size_t result;
             foldWord(program, root, finalized, result);
             return [result & 0xFF, (result >> 8) & 0xFF];
         default:
@@ -558,7 +558,7 @@ auto createRelocationHandler(Program program)
     return(ast.Relocation stmt)
     {
         enum description = "'in' statement";
-        ulong address;
+        size_t address;
         if(stmt.dest is null || foldConstant(program, stmt.dest, program.finalized, address))
         {
             if(auto def = cast(sym.BankDef) program.environment.get(stmt.mangledName))
@@ -714,7 +714,7 @@ void build(Program program, ast.Node root)
 
         (ast.Unroll unroll)
         {
-            ulong times;
+            size_t times;
             if(foldConstant(program, unroll.repetitions, true, times))
             {
                 unroll.expand(times);
@@ -722,7 +722,7 @@ void build(Program program, ast.Node root)
         },
     );
 
-    ulong depth = 0;
+    size_t depth = 0;
     program.rewind();
     root.traverse(
         createBlockHandler(program),
@@ -847,7 +847,7 @@ void build(Program program, ast.Node root)
 
         (ast.BankDecl decl)
         {
-            ulong size;
+            size_t size;
             if(foldConstant(program, decl.size, true, size))
             {
                 foreach(i, name; decl.names)
@@ -872,7 +872,7 @@ void build(Program program, ast.Node root)
         {
             enum description = "variable declaration";
             bool sizeless;
-            ulong unit, total;
+            size_t unit, total;
             if(foldStorage(program, decl.storage, sizeless, unit, total))
             {
                 auto bank = program.checkBank(description, decl.location);
@@ -930,9 +930,9 @@ void build(Program program, ast.Node root)
             {
                 std.stdio.File file = std.stdio.File(stmt.filename, "rb");
                 file.seek(0);
-                auto start = cast(ulong) file.tell();
+                auto start = cast(size_t) file.tell();
                 file.seek(0, std.stdio.SEEK_END);
-                auto end = cast(ulong) file.tell();
+                auto end = cast(size_t) file.tell();
                 
                 stmt.data = new ubyte[end - start];
                 file.seek(0);
@@ -952,7 +952,7 @@ void build(Program program, ast.Node root)
         {
             enum description = "inline data";
             bool sizeless;
-            ulong unit, total;
+            size_t unit, total;
             if(foldStorage(program, stmt.storage, sizeless, unit, total))
             {
                 ubyte[] data;
@@ -1030,7 +1030,7 @@ void build(Program program, ast.Node root)
         {
             enum description = "inline data";
             bool sizeless;
-            ulong unit, total;
+            size_t unit, total;
             if(foldStorage(program, stmt.storage, sizeless, unit, total))
             {
                 ubyte[] data;

@@ -6,7 +6,7 @@ import wiz.sym.lib;
 class LabelDef : Definition
 {
     bool hasAddress;
-    ulong address;
+    size_t address;
     
     this(ast.Node decl)
     {
