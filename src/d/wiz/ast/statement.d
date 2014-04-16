@@ -9,6 +9,4 @@ abstract class Statement : Node
     {
         super(location);
     }
-
-    mixin compile.AbstractAcceptor;
 }

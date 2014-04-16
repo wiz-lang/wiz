@@ -15,7 +15,7 @@ class Unroll : Statement
         _block = block;
     }
 
-    void expand(uint times)
+    void expand(ulong times)
     {
         Statement[] code;
         foreach(i; 0 .. times)

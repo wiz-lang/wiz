@@ -52,7 +52,7 @@ class Argument
         this.secondary = secondary;
     }
 
-    string toString()
+    override string toString()
     {
         return toString(true);
     }

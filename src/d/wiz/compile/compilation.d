@@ -58,15 +58,15 @@ sym.Definition resolveAttribute(Program program, ast.Attribute attribute, bool q
     return def;
 }
 
-bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden, bool finalized, ref uint result, ref ast.Expression constTail)
+bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden, bool finalized, ref ulong result, ref ast.Expression constTail)
 {
-    uint[ast.Expression] values;
+    ulong[ast.Expression] values;
     bool[ast.Expression] completeness;
     bool runtimeRootForbidden = runtimeForbidden;
     bool badAttr = false;
-    uint depth = 0;
+    ulong depth = 0;
 
-    void updateValue(ast.Expression node, uint value, bool complete=true)
+    void updateValue(ast.Expression node, ulong value, bool complete=true)
     {
         values[node] = value;
         completeness[node] = complete;
@@ -90,7 +90,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
                 return;
             }
 
-            uint a = values[first];
+            ulong a = values[first];
             updateValue(e, a, false);
 
             foreach(i, type; e.types)
@@ -104,7 +104,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
                     }
                     return;
                 }
-                uint b = values[operand];
+                ulong b = values[operand];
 
                 final switch(type)
                 {
@@ -255,7 +255,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
                 {
                     return;
                 }
-                uint r = values[e.operand];
+                ulong r = values[e.operand];
                 final switch(e.type)
                 {
                     case parse.Prefix.Low:
@@ -303,7 +303,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
             {
                 program.enterInline("constant '" ~ a.fullName() ~ "'", a);
                 program.enterEnvironment(constdef.environment);
-                uint v;
+                ulong v;
                 bool folded = foldConstant(program, (cast(ast.LetDecl) constdef.decl).value, program.finalized, v);
                 program.leaveEnvironment();
                 program.leaveInline();
@@ -315,7 +315,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
             }
             else if(auto vardef = cast(sym.VarDef) def)
             {
-                uint v;
+                ulong v;
                 if(vardef.hasAddress)
                 {
                     updateValue(a, vardef.address);
@@ -324,7 +324,7 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
             }
             else if(auto labeldef = cast(sym.LabelDef) def)
             {
-                uint v;
+                ulong v;
                 if(labeldef.hasAddress)
                 {
                     updateValue(a, labeldef.address);
@@ -364,13 +364,13 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
     return true;
 }
 
-bool foldConstant(Program program, ast.Expression root, bool finalized, ref uint result)
+bool foldConstant(Program program, ast.Expression root, bool finalized, ref ulong result)
 {
     ast.Expression constTail;
     return tryFoldConstant(program, root, true, finalized, result, constTail) && constTail == root;
 }
 
-bool foldBoundedNumber(compile.Program program, ast.Expression root, string type, uint limit, bool finalized, ref uint result)
+bool foldBoundedNumber(compile.Program program, ast.Expression root, string type, ulong limit, bool finalized, ref ulong result)
 {
     if(compile.foldConstant(program, root, finalized, result))
     {
@@ -388,32 +388,32 @@ bool foldBoundedNumber(compile.Program program, ast.Expression root, string type
     return false;
 }
 
-bool foldBit(compile.Program program, ast.Expression root, bool finalized, ref uint result)
+bool foldBit(compile.Program program, ast.Expression root, bool finalized, ref ulong result)
 {
     return foldBoundedNumber(program, root, "bit", 1, finalized, result);
 }
 
-bool foldBitIndex(compile.Program program, ast.Expression root, bool finalized, ref uint result)
+bool foldBitIndex(compile.Program program, ast.Expression root, bool finalized, ref ulong result)
 {
     return foldBoundedNumber(program, root, "bitwise index", 7, finalized, result);
 }
 
-bool foldWordBitIndex(compile.Program program, ast.Expression root, bool finalized, ref uint result)
+bool foldWordBitIndex(compile.Program program, ast.Expression root, bool finalized, ref ulong result)
 {
     return foldBoundedNumber(program, root, "bitwise index", 15, finalized, result);
 }
 
-bool foldByte(compile.Program program, ast.Expression root, bool finalized, ref uint result)
+bool foldByte(compile.Program program, ast.Expression root, bool finalized, ref ulong result)
 {
     return foldBoundedNumber(program, root, "8-bit", 255, finalized, result);
 }
 
-bool foldWord(compile.Program program, ast.Expression root, bool finalized, ref uint result)
+bool foldWord(compile.Program program, ast.Expression root, bool finalized, ref ulong result)
 {
     return foldBoundedNumber(program, root, "16-bit", 65535, finalized, result);
 }
 
-bool foldSignedByte(compile.Program program, ast.Expression root, bool negative, bool finalized, ref uint result)
+bool foldSignedByte(compile.Program program, ast.Expression root, bool negative, bool finalized, ref ulong result)
 {
     if(foldWord(program, root, finalized, result))
     {
@@ -438,7 +438,7 @@ bool foldSignedByte(compile.Program program, ast.Expression root, bool negative,
     return false;
 }
 
-bool foldRelativeByte(compile.Program program, ast.Expression root, string description, string help, uint origin, bool finalized, ref uint result)
+bool foldRelativeByte(compile.Program program, ast.Expression root, string description, string help, ulong origin, bool finalized, ref ulong result)
 {
     if(foldWord(program, root, finalized, result))
     {
@@ -462,7 +462,7 @@ bool foldRelativeByte(compile.Program program, ast.Expression root, string descr
     return false;
 }
 
-bool foldStorage(Program program, ast.Storage s, ref bool sizeless, ref uint unit, ref uint total)
+bool foldStorage(Program program, ast.Storage s, ref bool sizeless, ref ulong unit, ref ulong total)
 {
     sizeless = false;
     if(s.size is null)
@@ -485,7 +485,7 @@ bool foldStorage(Program program, ast.Storage s, ref bool sizeless, ref uint uni
     return true;
 }
 
-ubyte[] foldDataExpression(Program program, ast.Expression root, uint unit, bool finalized)
+ubyte[] foldDataExpression(Program program, ast.Expression root, ulong unit, bool finalized)
 {
     switch(unit)
     {
@@ -496,12 +496,12 @@ ubyte[] foldDataExpression(Program program, ast.Expression root, uint unit, bool
             }
             else
             {
-                uint result;
+                ulong result;
                 foldByte(program, root, finalized, result);
                 return [result & 0xFF];
             }
         case 2:
-            uint result;
+            ulong result;
             foldWord(program, root, finalized, result);
             return [result & 0xFF, (result >> 8) & 0xFF];
         default:
@@ -558,7 +558,7 @@ auto createRelocationHandler(Program program)
     return(ast.Relocation stmt)
     {
         enum description = "'in' statement";
-        uint address;
+        ulong address;
         if(stmt.dest is null || foldConstant(program, stmt.dest, program.finalized, address))
         {
             if(auto def = cast(sym.BankDef) program.environment.get(stmt.mangledName))
@@ -714,7 +714,7 @@ void build(Program program, ast.Node root)
 
         (ast.Unroll unroll)
         {
-            uint times;
+            ulong times;
             if(foldConstant(program, unroll.repetitions, true, times))
             {
                 unroll.expand(times);
@@ -722,7 +722,7 @@ void build(Program program, ast.Node root)
         },
     );
 
-    uint depth = 0;
+    ulong depth = 0;
     program.rewind();
     root.traverse(
         createBlockHandler(program),
@@ -847,7 +847,7 @@ void build(Program program, ast.Node root)
 
         (ast.BankDecl decl)
         {
-            uint size;
+            ulong size;
             if(foldConstant(program, decl.size, true, size))
             {
                 foreach(i, name; decl.names)
@@ -872,7 +872,7 @@ void build(Program program, ast.Node root)
         {
             enum description = "variable declaration";
             bool sizeless;
-            uint unit, total;
+            ulong unit, total;
             if(foldStorage(program, decl.storage, sizeless, unit, total))
             {
                 auto bank = program.checkBank(description, decl.location);
@@ -930,9 +930,9 @@ void build(Program program, ast.Node root)
             {
                 std.stdio.File file = std.stdio.File(stmt.filename, "rb");
                 file.seek(0);
-                auto start = cast(uint) file.tell();
+                auto start = cast(ulong) file.tell();
                 file.seek(0, std.stdio.SEEK_END);
-                auto end = cast(uint) file.tell();
+                auto end = cast(ulong) file.tell();
                 
                 stmt.data = new ubyte[end - start];
                 file.seek(0);
@@ -952,7 +952,7 @@ void build(Program program, ast.Node root)
         {
             enum description = "inline data";
             bool sizeless;
-            uint unit, total;
+            ulong unit, total;
             if(foldStorage(program, stmt.storage, sizeless, unit, total))
             {
                 ubyte[] data;
@@ -1030,7 +1030,7 @@ void build(Program program, ast.Node root)
         {
             enum description = "inline data";
             bool sizeless;
-            uint unit, total;
+            ulong unit, total;
             if(foldStorage(program, stmt.storage, sizeless, unit, total))
             {
                 ubyte[] data;

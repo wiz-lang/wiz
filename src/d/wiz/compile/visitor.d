@@ -116,11 +116,15 @@ mixin template AbstractAcceptor()
 
 mixin template LeafAcceptor()
 {
-    void accept(wiz.compile.visitor.Visitor v)
+    override void accept(wiz.compile.visitor.Visitor v)
     {
         v.preVisit(this);
         v.postVisit(this);
     }
+}
+
+private void branchAccept(T)(T self, Visitor v)
+{
 }
 
 private void branchAccept(T, alias Attr, Rest...)(T self, Visitor v)
@@ -144,10 +148,7 @@ private void branchAccept(T, alias Attr, Rest...)(T self, Visitor v)
             attr.accept(v);
         }
     }
-    static if(Rest.length > 0)
-    {
-        branchAccept!(T, Rest)(self, v);
-    }
+    branchAccept!(T, Rest)(self, v);
 }
 
 mixin template BranchAcceptor(alias Attr, Rest...)
@@ -157,7 +158,7 @@ mixin template BranchAcceptor(alias Attr, Rest...)
         return __traits(getMember, this, field);
     }
 
-    void accept(wiz.compile.visitor.Visitor v)
+    override void accept(wiz.compile.visitor.Visitor v)
     {
         if(v.preVisit(this))
         {

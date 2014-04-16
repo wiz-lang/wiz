@@ -8,32 +8,32 @@ static import std.stdio;
 
 class Mos6502Platform : Platform
 {
-    BuiltinTable builtins()
+    override BuiltinTable builtins()
     {
         return .builtins();
     }
 
-    ubyte[] generatePush(compile.Program program, ast.Push stmt)
+    override ubyte[] generatePush(compile.Program program, ast.Push stmt)
     {
         return .generatePush(program, stmt);
     }
 
-    ubyte[] generateJump(compile.Program program, ast.Jump stmt)
+    override ubyte[] generateJump(compile.Program program, ast.Jump stmt)
     {
         return .generateJump(program, stmt);
     }
 
-    ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
+    override ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
     {
         return .generateComparison(program, stmt);
     }
 
-    ubyte[] generateAssignment(compile.Program program, ast.Assignment stmt)
+    override ubyte[] generateAssignment(compile.Program program, ast.Assignment stmt)
     {
         return .generateAssignment(program, stmt);
     }
 
-    void patch(ref ubyte[] buffer)
+    override void patch(ref ubyte[] buffer)
     {
     }
 }
@@ -173,7 +173,7 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
                 case ArgumentType.Immediate:
                     if(stmt.far)
                     {
-                        uint address;
+                        ulong address;
                         compile.foldWord(program, argument.immediate, program.finalized, address);
                         if(stmt.condition)
                         {
@@ -197,8 +197,8 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
                         {
                             enum description = "relative jump";
                             auto bank = program.checkBank(description, stmt.location);
-                            uint pc = bank.checkAddress(description, stmt.location);
-                            uint offset;
+                            ulong pc = bank.checkAddress(description, stmt.location);
+                            ulong offset;
                             compile.foldRelativeByte(program, stmt.destination,
                                 "relative jump distance",
                                 "rewrite the branch, shorten the gaps in your code, or add a '!' far indicator.",
@@ -212,7 +212,7 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
                         }
                         else
                         {
-                            uint address;
+                            ulong address;
                             compile.foldWord(program, argument.immediate, program.finalized, address);
                             return [0x4C, address & 0xFF, (address >> 8) & 0xFF];
                         }
@@ -222,7 +222,7 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
                     switch(argument.base.type)
                     {
                         case ArgumentType.Immediate:
-                            uint address;
+                            ulong address;
                             compile.foldWord(program, argument.base.immediate, program.finalized, address);
                             return ensureUnconditional(stmt,
                                 "'goto " ~ argument.toString(false) ~ "'",
@@ -246,7 +246,7 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
             switch(argument.type)
             {
                 case ArgumentType.Immediate:
-                    uint address;
+                    ulong address;
                     compile.foldWord(program, argument.immediate, program.finalized, address);
                     return ensureUnconditional(stmt,
                         "'call " ~ argument.toString(false) ~ "'",
@@ -302,14 +302,14 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                 switch(right.type)
                 {
                     case ArgumentType.Immediate:
-                        uint value;
+                        ulong value;
                         compile.foldByte(program, right.immediate, program.finalized, value);
                         return [0xC9, value & 0xFF];
                     case ArgumentType.Indirection:
                         switch(right.base.type)
                         {
                             case ArgumentType.Immediate:
-                                uint address;
+                                ulong address;
                                 compile.foldWord(program, right.base.immediate, program.finalized, address);
                                 return address <= 0xFF
                                     ? [0xC5, address & 0xFF]
@@ -318,7 +318,7 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                                 if(right.base.base.type == ArgumentType.Immediate
                                 && right.base.secondary.type == ArgumentType.X)
                                 {
-                                    uint address;
+                                    ulong address;
                                     compile.foldByte(program, right.base.base.immediate, program.finalized, address);
                                     return [0xC1, address & 0xFF];
                                 }
@@ -330,7 +330,7 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                         switch(right.base.type)
                         {
                             case ArgumentType.Immediate:                                        
-                                uint address;
+                                ulong address;
                                 compile.foldWord(program, right.base.immediate, program.finalized, address);
                                 if(right.secondary.type == ArgumentType.X)
                                 {
@@ -347,7 +347,7 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                                 if(right.base.base.type == ArgumentType.Immediate
                                 && right.secondary.type == ArgumentType.Y)
                                 {
-                                    uint address;
+                                    ulong address;
                                     compile.foldByte(program, right.base.base.immediate, program.finalized, address);
                                     return [0xD1, address & 0xFF];
                                 }
@@ -367,14 +367,14 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                 switch(right.type)
                 {
                     case ArgumentType.Immediate:
-                        uint value;
+                        ulong value;
                         compile.foldByte(program, right.immediate, program.finalized, value);
                         return [0xE0, value & 0xFF];
                     case ArgumentType.Indirection:
                         switch(right.base.type)
                         {
                             case ArgumentType.Immediate:
-                                uint address;
+                                ulong address;
                                 compile.foldWord(program, right.base.immediate, program.finalized, address);
                                 return address <= 0xFF
                                     ? [0xE4, address & 0xFF]
@@ -394,14 +394,14 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                 switch(right.type)
                 {
                     case ArgumentType.Immediate:
-                        uint value;
+                        ulong value;
                         compile.foldByte(program, right.immediate, program.finalized, value);
                         return [0xC0, value & 0xFF];
                     case ArgumentType.Indirection:
                         switch(right.base.type)
                         {
                             case ArgumentType.Immediate:
-                                uint address;
+                                ulong address;
                                 compile.foldWord(program, right.base.immediate, program.finalized, address);
                                 return address <= 0xFF
                                     ? [0xC4, address & 0xFF]
@@ -429,7 +429,7 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                         {
                             return comparisonBadPrimaryError(left, stmt.left.location);
                         }
-                        uint address;
+                        ulong address;
                         compile.foldWord(program, left.base.base.immediate, program.finalized, address);
                         return address <= 0xFF
                             ? [0x24, address & 0xFF]
@@ -501,7 +501,7 @@ ubyte[] generatePostfixAssignment(compile.Program program, ast.Assignment stmt)
             switch(dest.base.type)
             {
                 case ArgumentType.Immediate:
-                    uint address;
+                    ulong address;
                     compile.foldWord(program, dest.base.immediate, program.finalized, address);
                     final switch(stmt.postfix)
                     {
@@ -521,7 +521,7 @@ ubyte[] generatePostfixAssignment(compile.Program program, ast.Assignment stmt)
             switch(dest.base.type)
             {
                 case ArgumentType.Immediate:                                        
-                    uint address;
+                    ulong address;
                     compile.foldWord(program, dest.base.immediate, program.finalized, address);
                     if(dest.secondary.type == ArgumentType.X)
                     {
@@ -555,7 +555,7 @@ ubyte[] generateCalculatedAssignment(compile.Program program, ast.Statement stmt
 
     if(auto infix = cast(ast.Infix) src)
     {
-        uint result;
+        ulong result;
         ast.Expression constTail;
         if(!compile.tryFoldConstant(program, infix, false, program.finalized, result, constTail))
         {
@@ -618,7 +618,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                     switch(type)
                     {
                         case parse.Infix.ShiftL:
-                            uint value;
+                            ulong value;
                             if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
                             {
                                 return [];
@@ -630,7 +630,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             }
                             return code;
                         case parse.Infix.ShiftR:
-                            uint value;
+                            ulong value;
                             if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
                             {
                                 return [];
@@ -642,7 +642,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             }
                             return code;
                         case parse.Infix.RotateL:
-                            uint value;
+                            ulong value;
                             if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
                             {
                                 return [];
@@ -654,7 +654,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             }
                             return code;
                         case parse.Infix.RotateR:
-                            uint value;
+                            ulong value;
                             if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
                             {
                                 return [];
@@ -667,7 +667,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             return code;
                         default:
                     }
-                    uint value;
+                    ulong value;
                     compile.foldByte(program, operand.immediate, program.finalized, value);
                     switch(type)
                     {
@@ -686,7 +686,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                     {
                         // 'a = [addr]' -> 'lda addr'
                         case ArgumentType.Immediate:
-                            uint address;
+                            ulong address;
                             compile.foldWord(program, operand.base.immediate, program.finalized, address);
                             switch(type)
                             {
@@ -727,7 +727,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             if(index.base.type == ArgumentType.Immediate
                             && index.secondary.type == ArgumentType.X)
                             {
-                                uint address;
+                                ulong address;
                                 compile.foldByte(program, index.base.immediate, program.finalized, address);
                                 switch(type)
                                 {
@@ -750,7 +750,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                     switch(operand.base.type)
                     {
                         case ArgumentType.Immediate:                                        
-                            uint address;
+                            ulong address;
                             compile.foldWord(program, operand.base.immediate, program.finalized, address);
                             // 'a = [addr:x]' -> 'lda addr, x'
                             if(operand.secondary.type == ArgumentType.X)
@@ -811,7 +811,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             if(operand.base.base.type == ArgumentType.Immediate
                             && operand.secondary.type == ArgumentType.Y)
                             {
-                                uint address;
+                                ulong address;
                                 compile.foldByte(program, operand.base.base.immediate, program.finalized, address);
                                 switch(type)
                                 {
@@ -837,12 +837,12 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
             switch(dest.base.type)
             {
                 case ArgumentType.Immediate:
-                    uint address;
+                    ulong address;
                     compile.foldWord(program, dest.base.immediate, program.finalized, address);
                     switch(type)
                     {
                         case parse.Infix.ShiftL:
-                            uint value;
+                            ulong value;
                             if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
                             {
                                 return [];
@@ -856,7 +856,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             }
                             return code;
                         case parse.Infix.ShiftR:
-                            uint value;
+                            ulong value;
                             if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
                             {
                                 return [];
@@ -870,7 +870,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             }
                             return code;
                         case parse.Infix.RotateL:
-                            uint value;
+                            ulong value;
                             if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
                             {
                                 return [];
@@ -884,7 +884,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             }
                             return code;
                         case parse.Infix.RotateR:
-                            uint value;
+                            ulong value;
                             if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
                             {
                                 return [];
@@ -912,12 +912,12 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                     {
                         return operatorError(type, dest, node.location);
                     }
-                    uint address;
+                    ulong address;
                     compile.foldWord(program, dest.base.immediate, program.finalized, address);
                     switch(type)
                     {
                         case parse.Infix.ShiftL:
-                            uint value;
+                            ulong value;
                             if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
                             {
                                 return [];
@@ -931,7 +931,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             }
                             return code;
                         case parse.Infix.ShiftR:
-                            uint value;
+                            ulong value;
                             if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
                             {
                                 return [];
@@ -945,7 +945,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             }
                             return code;
                         case parse.Infix.RotateL:
-                            uint value;
+                            ulong value;
                             if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
                             {
                                 return [];
@@ -959,7 +959,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             }
                             return code;
                         case parse.Infix.RotateR:
-                            uint value;
+                            ulong value;
                             if(!compile.foldBitIndex(program, operand.immediate, program.finalized, value))
                             {
                                 return [];
@@ -1046,7 +1046,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                 case ArgumentType.Pop: return [0x68];
                 // 'a = imm' -> 'lda #imm'
                 case ArgumentType.Immediate:
-                    uint value;
+                    ulong value;
                     compile.foldByte(program, load.immediate, program.finalized, value);
                     return [0xA9, value & 0xFF];
                 case ArgumentType.Indirection:
@@ -1055,7 +1055,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                     {
                         // 'a = [addr]' -> 'lda addr'
                         case ArgumentType.Immediate:
-                            uint address;
+                            ulong address;
                             compile.foldWord(program, load.base.immediate, program.finalized, address);
                             return address <= 0xFF
                                 ? [0xA5, address & 0xFF]
@@ -1066,7 +1066,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                             if(index.base.type == ArgumentType.Immediate
                             && index.secondary.type == ArgumentType.X)
                             {
-                                uint address;
+                                ulong address;
                                 compile.foldByte(program, index.base.immediate, program.finalized, address);
                                 return [0xA1, address & 0xFF];
                             }
@@ -1079,7 +1079,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                     switch(load.base.type)
                     {
                         case ArgumentType.Immediate:                                        
-                            uint address;
+                            ulong address;
                             compile.foldWord(program, load.base.immediate, program.finalized, address);
                             // 'a = [addr:x]' -> 'lda addr, x'
                             if(load.secondary.type == ArgumentType.X)
@@ -1099,7 +1099,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                             if(load.base.base.type == ArgumentType.Immediate
                             && load.secondary.type == ArgumentType.Y)
                             {
-                                uint address;
+                                ulong address;
                                 compile.foldByte(program, load.base.base.immediate, program.finalized, address);
                                 return [0xB1, address & 0xFF];
                             }
@@ -1121,7 +1121,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                 case ArgumentType.S: return [0xBA];
                 // 'x = imm' -> 'ldx #imm'
                 case ArgumentType.Immediate:
-                    uint value;
+                    ulong value;
                     compile.foldByte(program, load.immediate, program.finalized, value);
                     return [0xA2, value & 0xFF];
                 case ArgumentType.Indirection:
@@ -1130,7 +1130,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                     {
                         // 'x = [addr]' -> 'ldx addr'
                         case ArgumentType.Immediate:
-                            uint address;
+                            ulong address;
                             compile.foldWord(program, load.base.immediate, program.finalized, address);
                             return address <= 0xFF
                                 ? [0xA6, address & 0xFF]
@@ -1143,7 +1143,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                     switch(load.base.type)
                     {
                         case ArgumentType.Immediate:                                        
-                            uint address;
+                            ulong address;
                             compile.foldWord(program, load.base.immediate, program.finalized, address);
                             // 'x = [addr:y]' -> 'lda addr, y'
                             if(load.secondary.type == ArgumentType.Y)
@@ -1168,7 +1168,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                 case ArgumentType.A: return [0xA8];
                 // 'y = imm' -> 'ldy #imm'
                 case ArgumentType.Immediate:
-                    uint value;
+                    ulong value;
                     compile.foldByte(program, load.immediate, program.finalized, value);
                     return [0xA0, value & 0xFF];
                 case ArgumentType.Indirection:
@@ -1176,7 +1176,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                     {
                         // 'y = [addr]' -> 'ldy addr'
                         case ArgumentType.Immediate:
-                            uint address;
+                            ulong address;
                             compile.foldWord(program, load.base.immediate, program.finalized, address);
                             return address <= 0xFF
                                 ? [0xA4, address & 0xFF]
@@ -1188,7 +1188,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                     switch(load.base.type)
                     {
                         case ArgumentType.Immediate:                                        
-                            uint address;
+                            ulong address;
                             compile.foldWord(program, load.base.immediate, program.finalized, address);
                             // 'y = [addr:x]' -> 'ldy addr, x'
                             if(load.secondary.type == ArgumentType.X)
@@ -1221,7 +1221,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                 // '[addr] = x' -> 'stx addr'
                 // '[addr] = y' -> 'sty addr'
                 case ArgumentType.Immediate:
-                    uint address;
+                    ulong address;
                     compile.foldWord(program, dest.base.immediate, program.finalized, address);
                     switch(load.type)
                     {
@@ -1240,7 +1240,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                         case ArgumentType.Indirection:
                             if(load.base.type == ArgumentType.Immediate)
                             {
-                                uint match;
+                                ulong match;
                                 compile.foldWord(program, dest.base.immediate, program.finalized, address);
                                 compile.foldWord(program, load.base.immediate, program.finalized, match);
                                 return (match == address) ? [] : invalidAssignmentError(dest, load, stmt.location);
@@ -1254,7 +1254,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                     if(index.base.type == ArgumentType.Immediate
                     && index.secondary.type == ArgumentType.X)
                     {
-                        uint address;
+                        ulong address;
                         compile.foldByte(program, index.base.immediate, program.finalized, address);
                         if(load.type == ArgumentType.A)
                         {
@@ -1270,7 +1270,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
             switch(dest.base.type)
             {
                 case ArgumentType.Immediate:
-                    uint address;
+                    ulong address;
                     // '[addr:x] = a' -> 'sta addr, x'
                     // '[addr:x] = y' -> 'sty addr, x'
                     if(dest.secondary.type == ArgumentType.X)
@@ -1288,7 +1288,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                             case ArgumentType.Index:
                                 if(load.base.type == ArgumentType.Immediate && load.secondary.type == ArgumentType.X)
                                 {
-                                    uint match;
+                                    ulong match;
                                     compile.foldWord(program, dest.base.immediate, program.finalized, address);
                                     compile.foldWord(program, load.base.immediate, program.finalized, match);
                                     return (match == address) ? [] : invalidAssignmentError(dest, load, stmt.location);
@@ -1312,7 +1312,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                             case ArgumentType.Index:
                                 if(load.base.type == ArgumentType.Immediate && load.secondary.type == ArgumentType.Y)
                                 {
-                                    uint match;
+                                    ulong match;
                                     compile.foldWord(program, dest.base.immediate, program.finalized, address);
                                     compile.foldWord(program, load.base.immediate, program.finalized, match);
                                     return (match == address) ? [] : invalidAssignmentError(dest, load, stmt.location);
@@ -1327,7 +1327,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                     if(dest.base.base.type == ArgumentType.Immediate
                     && dest.secondary.type == ArgumentType.Y)
                     {
-                        uint address;
+                        ulong address;
                         compile.foldByte(program, dest.base.base.immediate, program.finalized, address);
                         if(load.type == ArgumentType.A)
                         {
@@ -1345,7 +1345,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                 // 'decimal = 0' -> 'cld'
                 // 'decimal = 1' -> 'sed'
                 case ArgumentType.Immediate:
-                    uint value;
+                    ulong value;
                     if(!compile.foldBit(program, load.immediate, program.finalized, value))
                     {
                         return [];
@@ -1359,7 +1359,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
             {
                 // 'overflow = 0' -> 'clv'
                 case ArgumentType.Immediate:
-                    uint value;
+                    ulong value;
                     if(!compile.foldBit(program, load.immediate, program.finalized, value))
                     {
                         return [];
@@ -1379,7 +1379,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                 // 'carry = 0' -> 'clc'
                 // 'carry = 1' -> 'sec'
                 case ArgumentType.Immediate:
-                    uint value;
+                    ulong value;
                     if(!compile.foldBit(program, load.immediate, program.finalized, value))
                     {
                         return [];
@@ -1394,7 +1394,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                 // 'interrupt = 0' -> 'cli'
                 // 'interrupt = 1' -> 'sei'
                 case ArgumentType.Immediate:
-                    uint value;
+                    ulong value;
                     if(!compile.foldBit(program, load.immediate, program.finalized, value))
                     {
                         return [];

@@ -70,7 +70,7 @@ class Argument
         this.base = base;
     }
 
-    string toString()
+    override string toString()
     {
         return toString(true);
     }
