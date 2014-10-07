@@ -987,13 +987,13 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
 
 ubyte[] invalidAssignmentDestError(Argument dest, compile.Location location)
 {
-    error("assignment '=' to " ~ dest.toString() ~ " is invalid.", location);
+    error("assignment '=' to " ~ (dest ? dest.toString() : "???") ~ " is invalid.", location);
     return [];
 }
 
 ubyte[] invalidAssignmentError(Argument dest, Argument load, compile.Location location)
 {
-    error("invalid assignment '=' of " ~ dest.toString() ~ " to " ~ load.toString() ~ ".", location);
+    error("invalid assignment '=' of " ~ (dest ? dest.toString() : "???") ~ " to " ~ (load ? load.toString() : "???") ~ ".", location);
     return [];
 }
 
@@ -1008,6 +1008,9 @@ ubyte[] getLoad(compile.Program program, ast.Statement stmt, Argument dest, ast.
 
 ubyte[] getPrefixLoad(compile.Program program, ast.Statement stmt, Argument dest, Argument load)
 {
+    if(!dest || !load) {
+        return invalidAssignmentError(dest, load, stmt.location);
+    }
     switch(load.type)
     {
         // 'a = ~a' -> 'cpl a'
@@ -1063,7 +1066,9 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                         case ArgumentType.Index:
                             auto index = load.base;
                             // 'a = [[addr:x]]' -> 'lda [addr, x]'
-                            if(index.base.type == ArgumentType.Immediate
+                            if(index.base
+                            && index.secondary
+                            && index.base.type == ArgumentType.Immediate
                             && index.secondary.type == ArgumentType.X)
                             {
                                 size_t address;
@@ -1075,7 +1080,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                             return invalidAssignmentError(dest, load, stmt.location);
                     }
                 case ArgumentType.Index:
-                    if(!load.base) return invalidAssignmentError(dest, load, stmt.location);
+                    if(!load.base || !load.secondary) return invalidAssignmentError(dest, load, stmt.location);
                     switch(load.base.type)
                     {
                         case ArgumentType.Immediate:                                        
@@ -1096,7 +1101,8 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                             return invalidAssignmentError(dest, load, stmt.location);
                         case ArgumentType.Indirection:
                             // 'a = [[addr]:y]' -> 'lda [addr], y'
-                            if(load.base.base.type == ArgumentType.Immediate
+                            if(load.base.base
+                            && load.base.base.type == ArgumentType.Immediate
                             && load.secondary.type == ArgumentType.Y)
                             {
                                 size_t address;
@@ -1139,7 +1145,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                             return invalidAssignmentError(dest, load, stmt.location);
                     }
                 case ArgumentType.Index:
-                    if(!load.base) return invalidAssignmentError(dest, load, stmt.location);
+                    if(!load.base || !load.secondary) return invalidAssignmentError(dest, load, stmt.location);
                     switch(load.base.type)
                     {
                         case ArgumentType.Immediate:                                        
@@ -1172,6 +1178,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                     compile.foldByte(program, load.immediate, program.finalized, value);
                     return [0xA0, value & 0xFF];
                 case ArgumentType.Indirection:
+                    if(!load.base) return invalidAssignmentError(dest, load, stmt.location);
                     switch(load.base.type)
                     {
                         // 'y = [addr]' -> 'ldy addr'
@@ -1185,6 +1192,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                             return invalidAssignmentError(dest, load, stmt.location);
                     }
                 case ArgumentType.Index:
+                    if(!load.base) return invalidAssignmentError(dest, load, stmt.location);
                     switch(load.base.type)
                     {
                         case ArgumentType.Immediate:                                        
@@ -1215,6 +1223,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                     return invalidAssignmentError(dest, load, stmt.location);
             }
         case ArgumentType.Indirection:
+            if(!dest.base) return invalidAssignmentError(dest, load, stmt.location);
             switch(dest.base.type)
             {
                 // '[addr] = a' -> 'sta addr'
@@ -1251,7 +1260,9 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                 case ArgumentType.Index:
                     auto index = dest.base;
                     // '[[addr:x]] = a' -> 'sta [addr, x]'
-                    if(index.base.type == ArgumentType.Immediate
+                    if(index.base
+                    && index.secondary
+                    && index.base.type == ArgumentType.Immediate
                     && index.secondary.type == ArgumentType.X)
                     {
                         size_t address;
@@ -1267,6 +1278,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                     return invalidAssignmentDestError(dest, stmt.location);
             }
         case ArgumentType.Index:
+            if(!dest.base || !dest.secondary) return invalidAssignmentError(dest, load, stmt.location);
             switch(dest.base.type)
             {
                 case ArgumentType.Immediate:
@@ -1324,7 +1336,8 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                     return invalidAssignmentDestError(dest, stmt.location);
                 case ArgumentType.Indirection:
                     // '[[addr]:y] = a' -> 'sta [addr], y'
-                    if(dest.base.base.type == ArgumentType.Immediate
+                    if(dest.base.base
+                    && dest.base.base.type == ArgumentType.Immediate
                     && dest.secondary.type == ArgumentType.Y)
                     {
                         size_t address;
