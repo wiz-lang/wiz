@@ -1019,6 +1019,10 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                     {
                         return getIndirectImmediateLoadAccumulator(program, stmt, dest);
                     }
+                    else if(load.type == ArgumentType.SP)
+                    {
+                        return getIndirectImmediateLoadStackPointer(program, stmt, dest);
+                    }
                     else
                     {
                         return invalidAssignmentError(dest, load, stmt.location);
@@ -1330,6 +1334,14 @@ ubyte[] getIndirectImmediateLoadAccumulator(compile.Program program, ast.Stateme
     {
         return [0xEA, value & 0xFF, (value >> 8) & 0xFF];
     }
+}
+
+ubyte[] getIndirectImmediateLoadStackPointer(compile.Program program, ast.Statement stmt, Argument dest)
+{
+    size_t value;
+    compile.foldWord(program, dest.base.immediate, program.finalized, value);
+    // '[nnnn] = sp' -> 'ld [nnnn], sp'
+    return [0x08, value & 0xFF, (value >> 8) & 0xFF];
 }
 
 ubyte[] getAccumulatorLoadIndirectPair(compile.Program program, ast.Statement stmt, Argument load)
