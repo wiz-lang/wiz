@@ -139,7 +139,22 @@ class Bank
             auto address = checkAddress(description, location);
             if(name && name[0] == '$')
             {
-                name = std.string.format(".%s.%04X", name[1 .. name.length], address);
+                auto match = (address in addressNames);
+                if(match is null)
+                {
+                    name = std.string.format(".%s.%04X", name[1 .. name.length], address);
+                }
+                else
+                {
+                    return address;
+                }
+            }
+            if(name && name[0] == '%')
+            {
+                if(auto match = (address in addressNames))
+                {
+                    return address;
+                }
             }
             addressNames[address] = name;
             addressSizes[address] = size;

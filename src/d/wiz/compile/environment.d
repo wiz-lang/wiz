@@ -12,7 +12,7 @@ class Environment
     private static size_t blockIndex = 0;
     static string generateBlockName()
     {
-        return std.string.format("%%blk%d%%", blockIndex++);
+        return std.string.format("%%%X%%", blockIndex++);
     }
 
     private string name;
@@ -21,6 +21,7 @@ class Environment
 
     this()
     {
+        this.name = "";
         this.parent = null;
     }
 
@@ -34,10 +35,14 @@ class Environment
     {
         if(parent is null)
         {
-            return "";
+            return name;
         }
         else
         {
+            if(name.length && name[0] == '%')
+            {
+                return name;
+            }
             string parentName = parent.getFullName();
             return (parentName.length ? parentName ~ "." : "") ~ name;
         }
