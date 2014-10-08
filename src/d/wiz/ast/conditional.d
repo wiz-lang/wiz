@@ -30,15 +30,15 @@ class Conditional : Statement
             _block = new Block([
                 // prelude
                 prelude,
-                // goto $end when ~trigger
+                // goto $endif when ~trigger
                 new Jump(parse.Keyword.Goto, far,
-                    new Attribute(["$end"], location),
+                    new Attribute(["$endif"], location),
                     new JumpCondition(true, trigger), location
                 ),
                 // action
                 action,
-                // def $end:
-                new LabelDecl("$end", location)
+                // def $endif:
+                new LabelDecl("$endif", location)
             ], location);
         }
         else
@@ -53,17 +53,17 @@ class Conditional : Statement
                 ),
                 // action
                 action,
-                // goto $end
+                // goto $endif
                 new Jump(parse.Keyword.Goto, far,
-                    new Attribute(["$end"], location),
+                    new Attribute(["$endif"], location),
                     null, location
                 ),
                 // def $else:
                 new LabelDecl("$else", location),
                 //   alternative
                 alternative,
-                // def $end:
-                new LabelDecl("$end", location)
+                // def $endif:
+                new LabelDecl("$endif", location)
             ], location);
         }
 

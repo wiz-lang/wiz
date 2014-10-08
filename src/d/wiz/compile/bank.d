@@ -238,4 +238,18 @@ class Bank
             }
             namelists[key] = namelist;
         }
+
+        void exportSymbols(ref string[] symbols)
+        {
+            if(!index)
+            {
+                return;
+            }
+
+            string key = std.string.format("%02X", index - 1);
+            foreach(address, name; addressNames)
+            {
+                symbols ~= std.string.format("%s:%04X %s\n", key, address, name);
+            }
+        }
 }

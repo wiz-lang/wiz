@@ -22,6 +22,7 @@ int run(string[] arguments)
     string output;
     string platform;
     bool useNamelists;
+    bool useSym;
     
     wiz.notice("version " ~ wiz.VersionText);
     
@@ -71,6 +72,9 @@ int run(string[] arguments)
                     break;
                 case "-nl":
                     useNamelists = true;
+                    break;
+                case "-sym":
+                    useSym = true;
                     break;
                 default:
                     wiz.notice(std.string.format("unknown command line option '%s'. ignoring...", arg));
@@ -198,6 +202,28 @@ int run(string[] arguments)
             }
         }
         wiz.log(">> Wrote all namelists.");
+    }
+
+    if(useSym)
+    {
+        auto symbols = program.exportSymbols();
+        auto fn = std.path.stripExtension(output) ~ ".sym";
+        try
+        {
+            auto file = std.stdio.File(fn, "w");
+            wiz.log(">> Writing symbol table...");
+            foreach(i, symbol; symbols)
+            {
+                file.write(symbol);
+            }
+            file.close();
+        }
+        catch(Exception e)
+        {
+            wiz.log("error: symbol file '" ~ fn ~ "' could not be written.");
+            wiz.compile.abort();
+        }
+        wiz.log(">> Wrote symbols to '" ~ fn ~ "'.");
     }
 
     wiz.notice("Done.");

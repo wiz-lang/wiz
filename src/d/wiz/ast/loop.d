@@ -61,7 +61,7 @@ class Loop : Statement
                 null, location
             );
         }
-        code ~= new LabelDecl("$end", location);
+        code ~= new LabelDecl("$endloop", location);
         _block = new Block(code, location);
     }
 

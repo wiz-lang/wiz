@@ -245,4 +245,23 @@ class Program
 
         return namelists;
     }
+
+    string[] exportSymbols()
+    {
+        string[] symbols;
+        foreach(address, name; addressNames)
+        {
+            if(address >= 0x100)
+            {
+                symbols ~= std.string.format("00:%04X %s\n", address, name);
+            }
+        }
+        
+        foreach(bank; banks)
+        {
+            bank.exportSymbols(symbols);
+        }
+
+        return symbols;
+    }
 }

@@ -41,13 +41,13 @@ class Jump : Statement
                 break;
             case parse.Keyword.While:
                 _type = parse.Keyword.Goto;
-                _destination = new Attribute(["$end"], location);
+                _destination = new Attribute(["$endloop"], location);
                 _condition = new JumpCondition(true, _condition);
                 break;
             case parse.Keyword.Until:
             case parse.Keyword.Break:
                 _type = parse.Keyword.Goto;
-                _destination = new Attribute(["$end"], location);
+                _destination = new Attribute(["$endloop"], location);
                 break;
             default: assert(0);
         }

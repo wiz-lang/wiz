@@ -24,7 +24,7 @@ for %%j in (src\d\wiz src\d\wiz\ast src\d\wiz\cpu src\d\wiz\cpu\gameboy src\d\wi
 dmd %files% -Isrc\d -ofwiz -g -debug
 if %errorlevel% neq 0 call :exit 1
 :: Compile a test program.
-wiz examples/gameboy/snake/snake.wiz -gb -o examples/gameboy/snake/snake.gb
+wiz examples/gameboy/snake/snake.wiz -gb -sym -o examples/gameboy/snake/snake.gb
 if %errorlevel% neq 0 call :exit 1
 echo.
 :: Compile another test program.

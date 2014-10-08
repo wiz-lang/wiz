@@ -1,5 +1,5 @@
 let K = 1024
-bank main: rom * 16*K
-bank aux: rom * 16*K
-bank ram: ram * 4*K
-bank ram2: ram * 4*K
+bank #0 main: rom * 16*K
+bank #1 aux: rom * 16*K
+bank #0 ram: ram * 4*K
+bank #1 ram2: ram * 4*K
