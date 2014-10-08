@@ -4,15 +4,43 @@ import wiz.lib;
 import wiz.compile.lib;
 
 static import std.array;
+//static import std.digest.md;
+static import std.base64;
 
 class Environment
 {
+    private static size_t blockIndex = 0;
+    static string generateBlockName()
+    {
+        return std.string.format("%%blk%d%%", blockIndex++);
+    }
+
+    private string name;
     private Environment parent;
     private sym.Definition[string] dictionary;
 
-    this(Environment parent = null)
+    this()
     {
+        this.parent = null;
+    }
+
+    this(string name, Environment parent)
+    {
+        this.name = name;
         this.parent = parent;
+    }
+
+    string getFullName()
+    {
+        if(parent is null)
+        {
+            return "";
+        }
+        else
+        {
+            string parentName = parent.getFullName();
+            return (parentName.length ? parentName ~ "." : "") ~ name;
+        }
     }
     
     void printKeys()

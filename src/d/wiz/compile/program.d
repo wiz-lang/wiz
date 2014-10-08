@@ -118,19 +118,13 @@ class Program
     {
         auto builtins = platform.builtins();
         auto env = new Environment();
-        auto pkg = new sym.PackageDef(new ast.BuiltinDecl(), new Environment(env));
+        auto pkg = new sym.PackageDef(new ast.BuiltinDecl(), env);
         
         foreach(name, builtin; builtins)
         {
             env.put(name, builtin);
         }
         env.put("builtin", pkg);
-
-        env = pkg.environment;
-        foreach(name, builtin; builtins)
-        {
-            env.put(name, builtin);
-        }
 
         _environment = env;
         scopes = null;
@@ -183,6 +177,11 @@ class Program
         }
     }
 
+    Environment getBuiltinEnvironment()
+    {
+        return environments[0];
+    }
+
     void enterInline(string context, ast.Node node)
     {
         auto match = inlined.get(node, false);
@@ -221,14 +220,10 @@ class Program
     string[string] exportNameLists()
     {
         string[string] namelists;
-        foreach(bank; banks)
-        {
-            bank.exportNameLists(namelists);
-        }
         string namelist = namelists.get("ram", "");
         foreach(address, name; addressNames)
         {
-            if(address < 0x8000)
+            if(address >= 0x100)
             {
                 auto size = addressSizes.get(address, 0);
                 if(size > 1)
@@ -242,6 +237,12 @@ class Program
             }
         }
         namelists["ram"] = namelist;
+        
+        foreach(bank; banks)
+        {
+            bank.exportNameLists(namelists);
+        }
+
         return namelists;
     }
 }
