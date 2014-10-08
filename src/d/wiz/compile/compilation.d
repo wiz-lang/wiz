@@ -309,6 +309,8 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
                 program.leaveInline();
                 if(folded)
                 {
+                    program.registerAddress(v, a.fullName, 1, a.location);
+
                     updateValue(a, v);
                     return;
                 }
@@ -852,9 +854,15 @@ void build(Program program, ast.Node root)
             {
                 foreach(i, name; decl.names)
                 {
+                    size_t index = 0;
+                    if(decl.indices[i])
+                    {
+                        foldConstant(program, decl.indices[i], true, index);
+                        index++;
+                    }
                     if(auto def = cast(sym.BankDef) program.environment.get(name))
                     {
-                        def.bank = new Bank(name, decl.type == "rom", size);
+                        def.bank = new Bank(index, name, decl.type == "rom", size);
                         program.addBank(def.bank);
                     }
                 }
@@ -881,7 +889,7 @@ void build(Program program, ast.Node root)
                     if(auto def = cast(sym.VarDef) program.environment.get(name))
                     {
                         def.hasAddress = true;
-                        def.address = bank.checkAddress(description, decl.location);
+                        def.address = bank.registerAddress(name, total, description, decl.location);
                         bank.reserveVirtual(description, total, decl.location);
                     }
                 }
@@ -906,7 +914,7 @@ void build(Program program, ast.Node root)
             if(auto def = cast(sym.LabelDef) program.environment.get(decl.name))
             {
                 def.hasAddress = true;
-                def.address = bank.checkAddress(description, decl.location);
+                def.address = bank.registerAddress(decl.name, 1, description, decl.location);
             }
         },
 
@@ -1001,7 +1009,7 @@ void build(Program program, ast.Node root)
             auto bank = program.checkBank(description, decl.location);
             if(auto def = cast(sym.LabelDef) program.environment.get(decl.name))
             {
-                auto addr = bank.checkAddress(description, decl.location);
+                auto addr = bank.registerAddress(decl.name, 1, description, decl.location);
                 if(!def.hasAddress)
                 {
                     error("what the hell. label was never given address!", decl.location, true);

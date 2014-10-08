@@ -36,7 +36,7 @@ wiz examples/nes/scroller/scroller.wiz -6502 -o examples/nes/scroller/scroller.n
 if %errorlevel% neq 0 call :exit 1
 echo.
 :: Compile another test program.
-wiz examples/nes/parallax/main.wiz -6502 -o examples/nes/parallax/parallax.nes
+wiz examples/nes/parallax/main.wiz -6502 -nl -o examples/nes/parallax/parallax.nes
 if %errorlevel% neq 0 call :exit 1
 echo.
 :: Compile another test program.

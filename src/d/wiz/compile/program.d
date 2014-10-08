@@ -51,6 +51,12 @@ class Program
     private bool[ast.Node] inlined;
     bool finalized;
 
+    // An label and size that may be associated with a global address in the program, used by debug symbols.
+    // A debugger will expect that each address can have exactly one label, so this is reflected here.
+    // This also won't verify for conflicts when two symbols alias or have overlapping regions.
+    string[size_t] addressNames;
+    size_t[size_t] addressSizes;
+
     cpu.Platform platform;
         
     this(cpu.Platform platform)
@@ -73,6 +79,16 @@ class Program
             b.rewind();
         }
         bank = null;
+    }
+
+    void registerAddress(size_t address, string name, size_t size, compile.Location location)
+    {
+        if(name && name[0] == '$')
+        {
+            name = std.string.format(".%s.%04X", name[1 .. name.length], address);
+        }
+        addressNames[address] = name;
+        addressSizes[address] = size;
     }
 
     void addBank(Bank b)
@@ -200,5 +216,32 @@ class Program
         }
         platform.patch(buffer);
         return buffer;
+    }
+
+    string[string] exportNameLists()
+    {
+        string[string] namelists;
+        foreach(bank; banks)
+        {
+            bank.exportNameLists(namelists);
+        }
+        string namelist = namelists.get("ram", "");
+        foreach(address, name; addressNames)
+        {
+            if(address < 0x8000)
+            {
+                auto size = addressSizes.get(address, 0);
+                if(size > 1)
+                {
+                    namelist ~= std.string.format("$%04X/%X#%s#\n", address, size, name);
+                }
+                else
+                {
+                    namelist ~= std.string.format("$%04X#%s#\n", address, name);
+                }
+            }
+        }
+        namelists["ram"] = namelist;
+        return namelists;
     }
 }

@@ -485,12 +485,23 @@ class Parser
         // bank = 'bank' IDENTIFIER (',' IDENTIFIER)* ':' IDENTIFIER '*' expression
         auto location = scanner.getLocation();
         
+        ast.Expression[] indices;
         string[] names;
         string type;
         ast.Expression size;
         
         nextToken(); // IDENTIFIER (keyword 'bank')
         
+
+        if(token == Token.Hash)
+        {
+            nextToken();
+            indices ~= parseExpression();
+        }
+        else
+        {
+            indices ~= null;
+        }
         if(checkIdentifier())
         {
             names ~= text;
@@ -501,6 +512,15 @@ class Parser
         while(token == Token.Comma)
         {
             nextToken(); // ,
+            if(token == Token.Hash)
+            {
+                nextToken();
+                indices ~= parseExpression();
+            }
+            else
+            {
+                indices ~= null;
+            }
             if(token == Token.Identifier)
             {
                 if(checkIdentifier())
@@ -527,7 +547,7 @@ class Parser
         consume(Token.Mul); // *
         size = parseExpression(); // term
         
-        return new ast.BankDecl(names, type, size, location);
+        return new ast.BankDecl(indices, names, type, size, location);
     }
     
     auto parseLabelDecl()

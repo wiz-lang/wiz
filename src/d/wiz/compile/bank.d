@@ -9,6 +9,8 @@ class Bank
         // Value used to pad unused bank space.
         enum ubyte PadValue = 0xFF;
 
+        // The index of this bank, used by debug symbols.
+        int index;
         // The name of this bank.
         string name;
         // Until a ROM relocation occurs, this page is not initialized.
@@ -23,6 +25,12 @@ class Bank
         size_t capacity;
         // The ROM data held by this bank.
         ubyte[] data;
+
+        // An label and size that may be associated with each address in this bank, used by debug symbols.
+        // A debugger will expect that each address can have exactly one label, so this is reflected here.
+        // This also won't verify for conflicts when two symbols alias or have overlapping regions.
+        string[size_t] addressNames;
+        size_t[size_t] addressSizes;
     
         void reserve(string description, size_t size, compile.Location location)
         {
@@ -54,8 +62,9 @@ class Bank
         }
 
     public:
-        this(string name, bool physical, size_t capacity)
+        this(size_t index, string name, bool physical, size_t capacity)
         {
+            this.index = index;
             this.name = name;
             this.physical = physical;
             this.capacity = capacity;
@@ -125,11 +134,24 @@ class Bank
             }
         }
 
+        size_t registerAddress(string name, size_t size, string description, compile.Location location)
+        {
+            auto address = checkAddress(description, location);
+            if(name && name[0] == '$')
+            {
+                name = std.string.format(".%s.%04X", name[1 .. name.length], address);
+            }
+            addressNames[address] = name;
+            addressSizes[address] = size;
+            return address;
+        }
+
         size_t checkAddress(string description, compile.Location location)
         {
             if(initialized)
             {
-                return origin + position;
+                auto address = origin + position;
+                return address;
             }
             else
             {
@@ -183,5 +205,37 @@ class Bank
             {
                 buffer ~= data;
             }
+        }
+
+        void exportNameLists(ref string[string] namelists)
+        {
+            string key;
+            if(!physical)
+            {
+                key = "ram";
+            }
+            else
+            {
+                if(!index)
+                {
+                    return;
+                }
+                key = std.string.format("%X", index - 1);
+            }
+
+            string namelist = namelists.get(key, "");
+            foreach(address, name; addressNames)
+            {
+                auto size = addressSizes.get(address, 0);
+                if(size > 1)
+                {
+                    namelist ~= std.string.format("$%04X/%X#%s#\n", address, size, name);
+                }
+                else
+                {
+                    namelist ~= std.string.format("$%04X#%s#\n", address, name);
+                }
+            }
+            namelists[key] = namelist;
         }
 }

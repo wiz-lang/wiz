@@ -21,6 +21,7 @@ int run(string[] arguments)
     string input;
     string output;
     string platform;
+    bool useNamelists;
     
     wiz.notice("version " ~ wiz.VersionText);
     
@@ -67,6 +68,9 @@ int run(string[] arguments)
                     {
                         platform = arg;
                     }
+                    break;
+                case "-nl":
+                    useNamelists = true;
                     break;
                 default:
                     wiz.notice(std.string.format("unknown command line option '%s'. ignoring...", arg));
@@ -171,8 +175,31 @@ int run(string[] arguments)
         wiz.log("error: output '" ~ output ~ "' could not be written.");
         wiz.compile.abort();
     }
-
     wiz.log(">> Wrote to '" ~ output ~ "'.");
+
+    if(useNamelists)
+    {
+        auto namelists = program.exportNameLists();
+        wiz.log(">> Writing namelists...");
+        foreach(name, namelist; namelists)
+        {
+            auto fn = output ~ "." ~ name ~ ".nl";
+            try
+            {
+                auto file = std.stdio.File(fn, "w");
+                wiz.log("   '" ~ fn ~ "'...");
+                file.write(namelist);
+                file.close();
+            }
+            catch(Exception e)
+            {
+                wiz.log("error: namelist '" ~ fn ~ "' could not be written.");
+                wiz.compile.abort();
+            }
+        }
+        wiz.log(">> Wrote all namelists.");
+    }
+
     wiz.notice("Done.");
     return 0;
 }

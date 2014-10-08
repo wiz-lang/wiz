@@ -1,9 +1,10 @@
 let K = 1024
 bank header : rom * 16
 bank ram : ram * 2 * K
-bank aux : rom * 8 * K
-bank aux2 : rom * 8 * K
-bank main : rom * 16 * K
+bank #0 aux : rom * 8 * K
+bank #0 aux2 : rom * 8 * K
+bank #1 main : rom * 8 * K
+bank #1 main2 : rom * 8 * K
 bank chr : rom * 8 * K
 
 in header, 0x00:
@@ -327,7 +328,8 @@ def sprites:
     byte: 0xFE, 0xFE, 0xFE, 0xFE
     byte: 0xFE, 0xFE, 0xFE, 0xFE
 
-in main, 0xFFFA:
+in main2, 0xE000:
+in main2, 0xFFFA:
     word: draw, main, scan
     
 in chr, 0x0000:
