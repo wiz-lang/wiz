@@ -1,0 +1,11 @@
+bank code : rom * 7
+in code, 0:
+    package pkg do 
+        def data: byte: 1, 2, 3
+
+        inline func test do
+            a = data
+        end
+    end
+    inline call pkg.test
+    inline call pkg.test

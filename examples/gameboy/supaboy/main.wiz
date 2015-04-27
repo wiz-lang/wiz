@@ -109,6 +109,19 @@ func main do
     call memset
     hl = ram.t0
     call sgb.send_packet
+
+    // Dirty: all registers.
+    // Returns: b = 1 when SGB, b = 0 when not.
+    hl = ram.t0
+    [hl++] = gb.super.MLT_REQ | 1 via a
+    [hl++] = 0x00 via a
+    a = 0
+    bc = 14
+    call memset
+    hl = ram.t0
+    call sgb.send_packet
+    call video.delay_frame
+
     call video.disable
 
     a = [ram.hardware.type]
@@ -142,7 +155,18 @@ func main do
         [gb.window.x] = 7 via a
         [gb.window.y] = 8 via a
         [gb.lcd.ctrl] = gb.lcd.CTRL_ON | gb.lcd.CTRL_OBJ_ON | gb.lcd.CTRL_TILESET1 | gb.lcd.CTRL_BG_ON | gb.lcd.CTRL_WIN_MAP2 via a
-    end // FIXME
+
+        hl = ram.t0
+        [hl++] = gb.super.SOUND | 1 via a
+        [hl++] = 0x15 via a
+        [hl++] = 0x00 via a
+        [hl++] = 0b00000111 via a
+        a = 0
+        bc = 12
+        call memset
+        hl = ram.t0
+        call sgb.send_packet
+
         hl = ram.t0
         [hl++] = gb.super.MASK_EN | 1 via a
         [hl++] = 0x00 via a
@@ -151,8 +175,7 @@ func main do
         call memset
         hl = ram.t0
         call sgb.send_packet
-//    end
-
+    end
 
     // Enable some basic interrupts.
     [gb.interrupt.enable] = gb.interrupt.VBLANK | gb.interrupt.STAT via a

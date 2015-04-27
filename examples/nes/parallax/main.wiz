@@ -48,7 +48,7 @@ in ram, 0x200:
     var oam : byte * 256
     
 in main, 0xC000:
-    include 'hardware.wiz'
+    include '../common/hardware.wiz'
 
     func main do
         // Set necessary processor flags.

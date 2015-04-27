@@ -1,0 +1,12 @@
+bank code : rom * 2
+in code, 0:
+    package pkg do 
+        inline func test2 do
+            a = 5
+        end
+
+        inline func test do
+            inline call test2
+        end
+    end
+    inline call pkg.test

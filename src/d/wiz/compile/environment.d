@@ -16,8 +16,8 @@ class Environment
     }
 
     private string name;
-    private Environment parent;
     private sym.Definition[string] dictionary;
+    Environment parent;
 
     this()
     {
@@ -55,11 +55,16 @@ class Environment
             std.stdio.writeln(key ~ ": " ~ value.toString());
         }
     }
+
+    bool remove(string name)
+    {
+        return dictionary.remove(name);
+    }
     
     void put(string name, sym.Definition def)
     {
         auto match = get(name, true);
-        if(match)
+        if(match && match.decl != def.decl)
         {
             error("redefinition of symbol '" ~ name ~ "'", def.decl.location, false, true);
             error("(previously defined here)", match.decl.location);

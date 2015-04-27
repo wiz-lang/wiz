@@ -229,6 +229,7 @@ package video do
             else
                 call ram.video.oam.code
 
+/*
                 hl = ram.video.buffer.data
                 loop
                     a = [hl++]
@@ -237,7 +238,7 @@ package video do
                     d = a
                     e = [hl++] via a
                     [de] = [hl++] via a
-                end
+                end*/
             end
 
             hl = ram.video.request.redraw

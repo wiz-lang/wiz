@@ -11,6 +11,7 @@ class Jump : Statement
     private JumpCondition _condition;
 
     private Block inlining;
+    private bool expanded;
 
     this(parse.Keyword type, bool far, compile.Location location)
     {
@@ -31,8 +32,15 @@ class Jump : Statement
         _destination = destination;
     }
 
-    void expand()
+    bool expand()
     {
+        if(expanded)
+        {
+            return false;
+        }
+
+        expanded = true;
+
         switch(type)
         {
             case parse.Keyword.Continue:
@@ -51,11 +59,21 @@ class Jump : Statement
                 break;
             default: assert(0);
         }
+
+        return true;
     }
 
-    void expand(Block block)
+    bool expand(Block block)
     {
+        if(expanded)
+        {
+            return false;
+        }
+
+        expanded = true;
         inlining = block;
+
+        return true;
     }
 
     mixin compile.BranchAcceptor!(_destination, _condition, inlining);

@@ -1,0 +1,4 @@
+bank code : rom * 3
+in code, 0x8000:
+    x = <foo - 1
+def foo:

@@ -33,6 +33,11 @@ class GameboyPlatform : Platform
 
     override void patch(ref ubyte[] buffer)
     {
+        if(buffer.length < 0x150)
+        {
+            return;
+        }
+
         ubyte headersum;
         ushort globalsum;
         foreach(i; 0x134 .. 0x14D)
@@ -469,26 +474,27 @@ ubyte[] generateCalculatedAssignment(compile.Program program, ast.Statement stmt
     if(auto infix = cast(ast.Infix) src)
     {
         size_t result;
-        ast.Expression constTail;
-        if(!compile.tryFoldConstant(program, infix, false, program.finalized, result, constTail))
+        ast.Expression lastConstant;
+        bool known;
+        if(!compile.tryFoldExpression(program, infix, false, program.finalized, result, lastConstant, known))
         {
             return [];
         }
         ast.Expression loadsrc = null;
-        if(constTail is null)
+        if(lastConstant is null)
         {
             loadsrc = infix.operands[0];
         }
         else
         {
-            loadsrc = new ast.Number(parse.Token.Integer, result, constTail.location);
+            loadsrc = new ast.Number(parse.Token.Integer, result, lastConstant.location);
         }
         ubyte[] code = getLoad(program, stmt, dest, loadsrc);
-        bool found = constTail is null || constTail is infix.operands[0];
+        bool found = lastConstant is null || lastConstant is infix.operands[0];
         foreach(i, type; infix.types)
         {
             auto node = infix.operands[i + 1];
-            if(node is constTail)
+            if(node is lastConstant)
             {
                 found = true;
             }
@@ -547,13 +553,13 @@ bool patchStackPointerLoadOffset(compile.Program program, parse.Infix type, ast.
 
 ubyte[] operatorError(parse.Infix type, Argument dest, compile.Location location)
 {
-    error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' to " ~ dest.toString() ~ ".", location);
+    error("infix operator " ~ parse.getInfixName(type) ~ " cannot be used in assignment '=' of " ~ dest.toString() ~ ".", location);
     return [];
 }
 
 ubyte[] operandError(parse.Infix type, Argument dest, Argument operand, compile.Location location)
 {
-    error(operand.toString() ~ " cannot be operand of " ~ parse.getInfixName(type) ~ " in assignment '=' to " ~ dest.toString() ~ ".", location);
+    error(operand.toString() ~ " cannot be operand of " ~ parse.getInfixName(type) ~ " in assignment '=' of " ~ dest.toString() ~ ".", location);
     return [];
 }
 
@@ -846,7 +852,7 @@ ubyte[] getPairShift(compile.Program program, parse.Infix type, ast.Expression n
 
 ubyte[] invalidAssignmentDestError(Argument dest, compile.Location location)
 {
-    error("assignment '=' to " ~ dest.toString() ~ " is invalid.", location);
+    error("assignment '=' of " ~ dest.toString() ~ " is invalid.", location);
     return [];
 }
 
@@ -1307,9 +1313,10 @@ ubyte[] getHighLowLoadPair(compile.Program program, ast.Statement stmt, Argument
 ubyte[] getAccumulatorLoadIndirectImmediate(compile.Program program, ast.Statement stmt, Argument load)
 {
     size_t value;
-    compile.foldWord(program, load.base.immediate, program.finalized, value);
+    bool known;
+    compile.foldWord(program, load.base.immediate, program.finalized, value, known);
     // 'a = [0xFFnn]' -> 'ldh a, [nn]'
-    if((value & 0xFF00) == 0xFF00)
+    if(known && (value & 0xFF00) == 0xFF00)
     {
         return [0xF0, value & 0xFF];
     }
@@ -1323,9 +1330,10 @@ ubyte[] getAccumulatorLoadIndirectImmediate(compile.Program program, ast.Stateme
 ubyte[] getIndirectImmediateLoadAccumulator(compile.Program program, ast.Statement stmt, Argument dest)
 {
     size_t value;
-    compile.foldWord(program, dest.base.immediate, program.finalized, value);
+    bool known;
+    compile.foldWord(program, dest.base.immediate, program.finalized, value, known);
     // '[0xFFnn] = a' -> 'ldh [nn], a'
-    if((value & 0xFF00) == 0xFF00)
+    if(known && (value & 0xFF00) == 0xFF00)
     {
         return [0xE0, value & 0xFF];
     }

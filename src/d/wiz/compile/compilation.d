@@ -58,25 +58,28 @@ sym.Definition resolveAttribute(Program program, ast.Attribute attribute, bool q
     return def;
 }
 
-bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden, bool finalized, ref size_t result, ref ast.Expression constTail)
+bool tryFoldExpression(Program program, ast.Expression root, bool runtimeForbidden, bool finalized, ref size_t result, ref ast.Expression lastConstant, ref bool known)
 {
     size_t[ast.Expression] values;
-    bool[ast.Expression] completeness;
+    bool[ast.Expression] knownNodes;
+    bool[ast.Expression] foldedNodes;
     bool runtimeRootForbidden = runtimeForbidden;
     bool badAttr = false;
     size_t depth = 0;
 
-    void updateValue(ast.Expression node, size_t value, bool complete=true)
+    void updateValue(ast.Expression node, size_t value, bool known, bool folded)
     {
         values[node] = value;
-        completeness[node] = complete;
-        if(depth == 0 && complete)
+        knownNodes[node] = known;
+        foldedNodes[node] = folded;
+        if(depth == 0 && folded)
         {
-            constTail = node;
+            lastConstant = node;
         }
     }
 
-    constTail = null;
+    lastConstant = null;
+    known = false;
     traverse(root,
         (ast.Infix e)
         {
@@ -85,13 +88,14 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
             {
                 if(depth == 0)
                 {
-                    constTail = null;
+                    lastConstant = null;
                 }
                 return;
             }
 
             size_t a = values[first];
-            updateValue(e, a, false);
+            bool known = knownNodes[first];
+            updateValue(e, a, known, false);
 
             foreach(i, type; e.types)
             {
@@ -100,95 +104,129 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
                 {
                     if(depth == 0)
                     {
-                        constTail = e.operands[i];
+                        lastConstant = e.operands[i];
                     }
                     return;
                 }
                 size_t b = values[operand];
+                known = known && knownNodes[operand];
 
                 final switch(type)
                 {
                     case parse.Infix.Add: 
-                        if(a + ast.Expression.Max < b)
+                        if(known)
                         {
-                            error("addition yields result which will overflow outside of 0..65535.", operand.location);
-                            return;
-                        }
-                        else
-                        {
-                            a += b;
+                            if(a + ast.Expression.Max < b)
+                            {
+                                error("addition yields result which will overflow outside of 0..65535.", operand.location);
+                                return;
+                            }
+                            else
+                            {
+                                a += b;
+                            }
                         }
                         break;
                     case parse.Infix.Sub:
-                        if(a < b)
+                        if(known)
                         {
-                            error("subtraction yields result which will overflow outside of 0..65535.", operand.location);
-                            return;
-                        }
-                        else
-                        {
-                            a -= b;
+                            if(a < b)
+                            {
+                                error("subtraction yields result which will overflow outside of 0..65535.", operand.location);
+                                return;
+                            }
+                            else
+                            {
+                                a -= b;
+                            }
                         }
                         break;
                     case parse.Infix.Mul:
-                        if(b != 0 && a > ast.Expression.Max / b)
+                        if(known)
                         {
-                            error("multiplication yields result which will overflow outside of 0..65535.", operand.location);
-                            return;
-                        }
-                        else
-                        {
-                            a *= b;
+                            if(b != 0 && a > ast.Expression.Max / b)
+                            {
+                                error("multiplication yields result which will overflow outside of 0..65535.", operand.location);
+                                return;
+                            }
+                            else
+                            {
+                                a *= b;
+                            }
                         }
                         break;
                     case parse.Infix.Div:
-                        if(a == 0)
+                        if(known)
                         {
-                            error("division by zero is undefined.", operand.location);
-                            return;
-                        }
-                        else
-                        {
-                            a /= b;
+                            if(b == 0)
+                            {
+                                error("division by zero is undefined.", operand.location);
+                                return;
+                            }
+                            else
+                            {
+                                a /= b;
+                            }
                         }
                         break;
                     case parse.Infix.Mod:
-                        if(a == 0)
+                        if(known)
                         {
-                            error("modulo by zero is undefined.", operand.location);
-                            return;
-                        }
-                        else
-                        {
-                            a %= b;
+                            if(b == 0)
+                            {
+                                error("modulo by zero is undefined.", operand.location);
+                                return;
+                            }
+                            else
+                            {
+                                a %= b;
+                            }
                         }
                         break;
                     case parse.Infix.ShiftL:
-                        // If shifting more than N bits, or ls << rs > 2^N-1, then error.
-                        if(b > 15 || (a << b >> 16) != 0)
+                        if(known)
                         {
-                            error("logical shift left yields result which will overflow outside of 0..65535.", operand.location);
-                            return;
-                        }
-                        else
-                        {
-                            a <<= b;
+                            // If shifting more than N bits, or ls << rs > 2^N-1, then error.
+                            if(b > 15 || (a << b >> 16) != 0)
+                            {
+                                error("logical shift left yields result which will overflow outside of 0..65535.", operand.location);
+                                return;
+                            }
+                            else
+                            {
+                                a <<= b;
+                            }
                         }
                         break;
                     case parse.Infix.ShiftR:
-                        a >>= b;
+                        if(known)
+                        {
+                            a >>= b;
+                        }
                         break;
                     case parse.Infix.And:
-                        a &= b;
+                        if(known)
+                        {
+                            a &= b;
+                        }
                         break;
                     case parse.Infix.Or:
-                        a |= b;
+                        if(known)
+                        {
+                            a |= b;
+                        }
                         break;
                     case parse.Infix.Xor:
-                        a ^= b;
+                        if(known)
+                        {
+                            a ^= b;
+                        }
                         break;
                     case parse.Infix.At:
-                        a &= (1 << b);
+                        if(known)
+                        {
+                            a &= (1 << b);
+                        }
                         break;
                     case parse.Infix.AddC, parse.Infix.SubC,
                         parse.Infix.ArithShiftL, parse.Infix.ArithShiftR,
@@ -201,11 +239,11 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
                         }
                         if(depth == 0)
                         {
-                            constTail = e.operands[i];
+                            lastConstant = e.operands[i];
                         }
                         return;
                 }
-                updateValue(e, a, i == e.types.length - 1);
+                updateValue(e, a, known, i == e.types.length - 1);
             }
         },
 
@@ -256,19 +294,24 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
                     return;
                 }
                 size_t r = values[e.operand];
+                bool known = knownNodes[e.operand];
+                if(!known)
+                {
+                    return;
+                }
                 final switch(e.type)
                 {
                     case parse.Prefix.Low:
-                        updateValue(e, r & 0xFF);
+                        updateValue(e, r & 0xFF, known, true);
                         break;
                     case parse.Prefix.High:
-                        updateValue(e, (r >> 8) & 0xFF);
+                        updateValue(e, (r >> 8) & 0xFF, known, true);
                         break;
                     case parse.Prefix.Swap:
-                        updateValue(e, ((r & 0x0F0F) << 4) | ((r & 0xF0F0) >> 4));
+                        updateValue(e, ((r & 0x0F0F) << 4) | ((r & 0xF0F0) >> 4), known, true);
                         break;
                     case parse.Prefix.Grouping:
-                        updateValue(e, r);
+                        updateValue(e, r, known, true);
                         break;
                     case parse.Prefix.Not, parse.Prefix.Indirection, parse.Prefix.Sub:
                         break;
@@ -304,33 +347,31 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
                 program.enterInline("constant '" ~ a.fullName() ~ "'", a);
                 program.enterEnvironment(constdef.environment);
                 size_t v;
-                bool folded = foldConstant(program, (cast(ast.LetDecl) constdef.decl).value, program.finalized, v);
+                bool folded = foldExpression(program, (cast(ast.LetDecl) constdef.decl).value, program.finalized, v);
                 program.leaveEnvironment();
                 program.leaveInline();
+                updateValue(a, v, folded, true);
+
                 if(folded)
                 {
                     auto qualifiers = constdef.environment.getFullName();
                     program.registerAddress(v, (qualifiers ? qualifiers ~ "." : "") ~ (cast(ast.LetDecl) constdef.decl).name, 1, a.location);
-
-                    updateValue(a, v);
                     return;
                 }
             }
             else if(auto vardef = cast(sym.VarDef) def)
             {
-                size_t v;
+                updateValue(a, vardef.address, vardef.hasAddress, true);
                 if(vardef.hasAddress)
                 {
-                    updateValue(a, vardef.address);
                     return;
                 }
             }
             else if(auto labeldef = cast(sym.LabelDef) def)
-            {
-                size_t v;
+            {   
+                updateValue(a, labeldef.address, labeldef.hasAddress, true);
                 if(labeldef.hasAddress)
                 {
-                    updateValue(a, labeldef.address);
                     return;
                 }
             }
@@ -348,36 +389,40 @@ bool tryFoldConstant(Program program, ast.Expression root, bool runtimeForbidden
 
         (ast.Number n)
         {
-            updateValue(n, n.value);
+            updateValue(n, n.value, true, true);
         },
     );
 
     result = values.get(root, 0xCACA);
-    if(!completeness.get(root, false) && runtimeForbidden && finalized)
+    known = knownNodes.get(root, false);
+
+    if(!foldedNodes.get(root, false) && runtimeForbidden && finalized)
     {
         error("expression could not be resolved as a constant", root.location);
-        constTail = null;
+        lastConstant = null;
+        known = false;
         return false;
     }
     if(badAttr)
     {
-        constTail = null;
+        lastConstant = null;
+        known = false;
         return false;
     }
     return true;
 }
 
-bool foldConstant(Program program, ast.Expression root, bool finalized, ref size_t result)
+bool foldExpression(Program program, ast.Expression root, bool finalized, ref size_t result, ref bool known)
 {
-    ast.Expression constTail;
-    return tryFoldConstant(program, root, true, finalized, result, constTail) && constTail == root;
+    ast.Expression lastConstant;
+    return tryFoldExpression(program, root, true, finalized, result, lastConstant, known) && lastConstant == root;
 }
 
-bool foldBoundedNumber(compile.Program program, ast.Expression root, string type, size_t limit, bool finalized, ref size_t result)
+bool foldBoundedNumber(compile.Program program, ast.Expression root, string type, size_t limit, bool finalized, ref size_t result, ref bool known)
 {
-    if(compile.foldConstant(program, root, finalized, result))
+    if(compile.foldExpression(program, root, finalized, result, known))
     {
-        if(result > limit)
+        if(known && result > limit)
         {
             error(
                 std.string.format(
@@ -391,36 +436,40 @@ bool foldBoundedNumber(compile.Program program, ast.Expression root, string type
     return false;
 }
 
-bool foldBit(compile.Program program, ast.Expression root, bool finalized, ref size_t result)
+bool foldBit(compile.Program program, ast.Expression root, bool finalized, ref size_t result, ref bool known)
 {
-    return foldBoundedNumber(program, root, "bit", 1, finalized, result);
+    return foldBoundedNumber(program, root, "bit", 1, finalized, result, known);
 }
 
-bool foldBitIndex(compile.Program program, ast.Expression root, bool finalized, ref size_t result)
+bool foldBitIndex(compile.Program program, ast.Expression root, bool finalized, ref size_t result, ref bool known)
 {
-    return foldBoundedNumber(program, root, "bitwise index", 7, finalized, result);
+    return foldBoundedNumber(program, root, "bitwise index", 7, finalized, result, known);
 }
 
-bool foldWordBitIndex(compile.Program program, ast.Expression root, bool finalized, ref size_t result)
+bool foldWordBitIndex(compile.Program program, ast.Expression root, bool finalized, ref size_t result, ref bool known)
 {
-    return foldBoundedNumber(program, root, "bitwise index", 15, finalized, result);
+    return foldBoundedNumber(program, root, "bitwise index", 15, finalized, result, known);
 }
 
-bool foldByte(compile.Program program, ast.Expression root, bool finalized, ref size_t result)
+bool foldByte(compile.Program program, ast.Expression root, bool finalized, ref size_t result, ref bool known)
 {
-    return foldBoundedNumber(program, root, "8-bit", 255, finalized, result);
+    return foldBoundedNumber(program, root, "8-bit", 255, finalized, result, known);
 }
 
-bool foldWord(compile.Program program, ast.Expression root, bool finalized, ref size_t result)
+bool foldWord(compile.Program program, ast.Expression root, bool finalized, ref size_t result, ref bool known)
 {
-    return foldBoundedNumber(program, root, "16-bit", 65535, finalized, result);
+    return foldBoundedNumber(program, root, "16-bit", 65535, finalized, result, known);
 }
 
-bool foldSignedByte(compile.Program program, ast.Expression root, bool negative, bool finalized, ref size_t result)
+bool foldSignedByte(compile.Program program, ast.Expression root, bool negative, bool finalized, ref size_t result, ref bool known)
 {
-    if(foldWord(program, root, finalized, result))
+    if(foldWord(program, root, finalized, result, known))
     {
-        if(!negative && result < 127)
+        if(!known)
+        {
+            return true;
+        }
+        else if(!negative && result < 127)
         {
             return true;
         }
@@ -441,10 +490,15 @@ bool foldSignedByte(compile.Program program, ast.Expression root, bool negative,
     return false;
 }
 
-bool foldRelativeByte(compile.Program program, ast.Expression root, string description, string help, size_t origin, bool finalized, ref size_t result)
+bool foldRelativeByte(compile.Program program, ast.Expression root, string description, string help, size_t origin, bool finalized, ref size_t result, ref bool known)
 {
-    if(foldWord(program, root, finalized, result))
+    if(foldWord(program, root, finalized, result, known))
     {
+        if(!known)
+        {
+            return true;
+        }
+
         int offset = cast(int) result - cast(int) origin;
         if(offset >= -128 && offset <= 127)
         {
@@ -465,6 +519,51 @@ bool foldRelativeByte(compile.Program program, ast.Expression root, string descr
     return false;
 }
 
+bool foldExpression(Program program, ast.Expression root, bool finalized, ref size_t result)
+{
+    bool known; return foldExpression(program, root, finalized, result, known);
+}
+
+bool foldBoundedNumber(compile.Program program, ast.Expression root, string type, size_t limit, bool finalized, ref size_t result)
+{
+    bool known; return foldBoundedNumber(program, root, type, limit, finalized, result, known);
+}
+
+bool foldBit(compile.Program program, ast.Expression root, bool finalized, ref size_t result)
+{
+    bool known; return foldBit(program, root, finalized, result, known);
+}
+
+bool foldBitIndex(compile.Program program, ast.Expression root, bool finalized, ref size_t result)
+{
+    bool known; return foldBitIndex(program, root, finalized, result, known);
+}
+
+bool foldWordBitIndex(compile.Program program, ast.Expression root, bool finalized, ref size_t result)
+{
+    bool known; return foldWordBitIndex(program, root, finalized, result, known);
+}
+
+bool foldByte(compile.Program program, ast.Expression root, bool finalized, ref size_t result)
+{
+    bool known; return foldByte(program, root, finalized, result, known);
+}
+
+bool foldWord(compile.Program program, ast.Expression root, bool finalized, ref size_t result)
+{
+    bool known; return foldWord(program, root, finalized, result, known);
+}
+
+bool foldSignedByte(compile.Program program, ast.Expression root, bool negative, bool finalized, ref size_t result)
+{
+    bool known; return foldSignedByte(program, root, negative, finalized, result, known);
+}
+
+bool foldRelativeByte(compile.Program program, ast.Expression root, string description, string help, size_t origin, bool finalized, ref size_t result)
+{
+    bool known; return foldRelativeByte(program, root, description, help, origin, finalized, result, known);
+}
+
 bool foldStorage(Program program, ast.Storage s, ref bool sizeless, ref size_t unit, ref size_t total)
 {
     sizeless = false;
@@ -473,7 +572,7 @@ bool foldStorage(Program program, ast.Storage s, ref bool sizeless, ref size_t u
         sizeless = true;
         total = 1;
     }
-    else if(!foldConstant(program, s.size, true, total))
+    else if(!foldExpression(program, s.size, true, total))
     {
         return false;
     }
@@ -538,6 +637,7 @@ auto createBlockHandler(Program program)
                 }
                 program.createNodeEnvironment(block, env);
             }
+            env.parent = program.environment;
             program.enterEnvironment(env);
         }
         else
@@ -562,7 +662,7 @@ auto createRelocationHandler(Program program)
     {
         enum description = "'in' statement";
         size_t address;
-        if(stmt.dest is null || foldConstant(program, stmt.dest, program.finalized, address))
+        if(stmt.dest is null || foldExpression(program, stmt.dest, program.finalized, address))
         {
             if(auto def = cast(sym.BankDef) program.environment.get(stmt.mangledName))
             {
@@ -627,16 +727,37 @@ auto createJumpHandler(Program program)
         {
             if(stmt.type == parse.Keyword.Inline)
             {
-                program.enterInline("'inline call'", stmt);
+                if(auto a = cast(ast.Attribute) stmt.destination)
+                {
+                    if(auto funcdef = cast(sym.FuncDef) resolveAttribute(program, a, true))
+                    {
+                        if((cast(ast.FuncDecl) funcdef.decl).inlined)
+                        {
+                            program.enterInline("'inline call'", stmt);
+                            program.enterEnvironment(funcdef.environment);
+                        }
+                    }
+                }
             }
         }
         else
         {
             if(stmt.type == parse.Keyword.Inline)
             {
-                program.leaveInline();
+                if(auto a = cast(ast.Attribute) stmt.destination)
+                {
+                    if(auto funcdef = cast(sym.FuncDef) resolveAttribute(program, a, true))
+                    {
+                        if((cast(ast.FuncDecl) funcdef.decl).inlined)
+                        {
+                            program.leaveEnvironment();
+                            program.leaveInline();
+                        }
+                    }
+                }
                 return;
             }
+
             auto description = parse.getKeywordName(stmt.type) ~ " statement";
             auto code = program.platform.generateJump(program, stmt);
             auto bank = program.checkBank(description, stmt.location);
@@ -690,137 +811,131 @@ auto createComparisonHandler(Program program)
 
 void build(Program program, ast.Node root)
 {
-    program.rewind();
-    root.traverse(
-        createBlockHandler(program),
+    int expansions;
+    bool expanded;
+    do
+    {
+        expanded = false;
 
-        (ast.LetDecl decl)
-        {
-            program.environment.put(decl.name, new sym.ConstDef(decl, program.environment));
-        },
+        program.rewind();
+        root.traverse(
+            createBlockHandler(program),
 
-        (ast.Conditional cond)
-        {
-            cond.expand();
-        },
-
-        (ast.Loop loop)
-        {
-            loop.expand();
-        },
-
-        (ast.FuncDecl decl)
-        {
-            decl.expand();
-            program.environment.put(decl.name, new sym.FuncDef(decl));
-        },
-
-        (ast.Unroll unroll)
-        {
-            size_t times;
-            if(foldConstant(program, unroll.repetitions, true, times))
+            (ast.LetDecl decl)
             {
-                unroll.expand(times);
-            }
-        },
-    );
+                program.environment.put(decl.name, new sym.ConstDef(decl, program.environment));
+            },
 
-    size_t depth = 0;
-    program.rewind();
-    root.traverse(
-        createBlockHandler(program),
+            (ast.Conditional cond)
+            {
+                expanded = cond.expand() || expanded;
+            },
 
-        (Visitor.Pass pass, ast.Loop loop)
-        {
-            if(pass == Visitor.Pass.Before)
+            (ast.Loop loop)
             {
-                depth++;
-            }
-            else
-            {
-                depth--;
-            }
-        },
+                expanded = loop.expand() || expanded;
+            },
 
-        (ast.Jump jump)
-        {
-            switch(jump.type)
+            (ast.FuncDecl decl)
             {
-                case parse.Keyword.While, parse.Keyword.Until,
-                    parse.Keyword.Break, parse.Keyword.Continue:
-                    if(depth == 0)
-                    {
-                        error("'" ~ parse.getKeywordName(jump.type) ~ "' used outside of a 'loop'.", jump.location);
-                    }
-                    else
-                    {
-                        jump.expand();
-                    }
-                    break;
-                case parse.Keyword.Call:
-                    if(auto a = cast(ast.Attribute) jump.destination)
-                    {
-                        auto def = resolveAttribute(program, a, true);
-                        if(auto funcdef = cast(sym.FuncDef) def)
+                if(decl.expand())
+                {
+                    program.environment.put(decl.name, new sym.FuncDef(decl, program.environment));
+                    expanded = true;
+                }
+            },
+
+            (ast.Unroll unroll)
+            {
+                size_t times;
+                if(foldExpression(program, unroll.repetitions, true, times))
+                {
+                    expanded = unroll.expand(times) || expanded;
+                }
+            },
+        );
+
+        size_t depth = 0;
+        program.rewind();
+        root.traverse(
+            createBlockHandler(program),
+
+            (Visitor.Pass pass, ast.Loop loop)
+            {
+                if(pass == Visitor.Pass.Before)
+                {
+                    depth++;
+                }
+                else
+                {
+                    depth--;
+                }
+            },
+
+            (ast.Jump jump)
+            {
+                switch(jump.type)
+                {
+                    case parse.Keyword.While, parse.Keyword.Until,
+                        parse.Keyword.Break, parse.Keyword.Continue:
+                        if(depth == 0)
                         {
-                            if((cast(ast.FuncDecl) funcdef.decl).inlined)
-                            {
-                                error("call to inline function '" ~ a.fullName() ~ "' must be 'inline call'.", jump.location);
-                            }
+                            error("'" ~ parse.getKeywordName(jump.type) ~ "' used outside of a 'loop'.", jump.location);
                         }
-                    }
-                    break;
-                case parse.Keyword.Inline:
-                    if(auto a = cast(ast.Attribute) jump.destination)
-                    {
-                        auto def = resolveAttribute(program, a);
-                        if(def)
+                        else
                         {
+                            expanded = jump.expand() || expanded;
+                        }
+                        break;
+                    case parse.Keyword.Call:
+                        if(auto a = cast(ast.Attribute) jump.destination)
+                        {
+                            auto def = resolveAttribute(program, a, true);
                             if(auto funcdef = cast(sym.FuncDef) def)
                             {
-                                jump.expand((cast(ast.FuncDecl) funcdef.decl).inner);
-                            }
-                            else
-                            {
-                                error("an inline call to a non-function really makes no sense.", jump.location);
+                                if((cast(ast.FuncDecl) funcdef.decl).inlined)
+                                {
+                                    error("call to inline function '" ~ a.fullName() ~ "' must be 'inline call'.", jump.location);
+                                }
                             }
                         }
-                    }
-                    else
-                    {
-                        error("an inline call to a non-function really makes no sense.", jump.location);
-                    }
-                    break;
-                default:
+                        break;
+                    case parse.Keyword.Inline:
+                        if(auto a = cast(ast.Attribute) jump.destination)
+                        {
+                            auto def = resolveAttribute(program, a, true);
+                            if(def)
+                            {
+                                if(auto funcdef = cast(sym.FuncDef) def)
+                                {
+                                    expanded = jump.expand((cast(ast.FuncDecl) funcdef.decl).inner) || expanded;
+                                }
+                                else
+                                {
+                                    error("'inline call' was used on a non-function.", jump.location);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            error("'inline call' was used on a non-function.", jump.location);
+                        }
+                        break;
+                    default:
+                }
             }
-        }
-    );
+        );
 
-    verify();
+        verify();
+        expansions++;
+    } while(expanded);
 
-    program.clearEnvironment();
+    log(std.string.format("  (needed %s code expansion %s)", expansions, expansions == 1 ? "pass" : "passes"));
+
     program.rewind();
     root.traverse(
         createBlockHandler(program),
         createInlineCallValidator(program),
-
-        (ast.LetDecl decl)
-        {
-            bool aliasing = false;
-            if(auto attr = cast(ast.Attribute) decl.value)
-            {
-                auto def = compile.resolveAttribute(program, attr, true);
-                if(def)
-                {
-                    aliasing = true;
-                    program.environment.put(decl.name, new sym.AliasDef(decl, def));
-                }
-            }
-            if(!aliasing)
-            {
-                program.environment.put(decl.name, new sym.ConstDef(decl, program.environment));
-            }
-        },
 
         (ast.BankDecl decl)
         {
@@ -840,6 +955,10 @@ void build(Program program, ast.Node root)
 
         (ast.LabelDecl decl)
         {
+            if(auto match = cast(sym.FuncDef) program.environment.get(decl.name, true))
+            {
+                program.environment.remove(decl.name);
+            }
             program.environment.put(decl.name, new sym.LabelDef(decl));
         },
     );
@@ -848,17 +967,44 @@ void build(Program program, ast.Node root)
     root.traverse(
         createBlockHandler(program),
 
+        (ast.LetDecl decl)
+        {
+            if(auto match = program.environment.get(decl.name, true))
+            {
+                if(cast(sym.ConstDef) match || cast(sym.AliasDef) match)
+                {
+                    program.environment.remove(decl.name);
+                }
+            }
+
+            bool aliasing = false;
+            if(auto attr = cast(ast.Attribute) decl.value)
+            {
+                auto def = compile.resolveAttribute(program, attr, true);
+                if(def)
+                {
+                    aliasing = true;
+
+                    program.environment.put(decl.name, new sym.AliasDef(decl, def));
+                }
+            }
+            if(!aliasing)
+            {
+                program.environment.put(decl.name, new sym.ConstDef(decl, program.environment));
+            }
+        },
+
         (ast.BankDecl decl)
         {
             size_t size;
-            if(foldConstant(program, decl.size, true, size))
+            if(foldExpression(program, decl.size, true, size))
             {
                 foreach(i, name; decl.names)
                 {
                     size_t index = 0;
                     if(decl.indices[i])
                     {
-                        foldConstant(program, decl.indices[i], true, index);
+                        foldExpression(program, decl.indices[i], true, index);
                         index++;
                     }
                     if(auto def = cast(sym.BankDef) program.environment.get(name))
@@ -1018,15 +1164,15 @@ void build(Program program, ast.Node root)
                 auto addr = bank.registerAddress(decl.name[0] == '$' ? decl.name : debugName, 1, description, decl.location);
                 if(!def.hasAddress)
                 {
-                    error("what the hell. label was never given address!", decl.location, true);
+                    error("compiler bug: label '" ~ decl.name ~ "'  was never given address!", decl.location, true);
                 }
                 if(addr != def.address)
                 {
                     error(
                         std.string.format(
-                            "what the hell. inconsistency in label positions detected"
-                            ~ " (was 0x%04X instruction selection pass, 0x%04X on code-gen pass)",
-                            addr, def.address
+                            "compiler bug: inconsistency in label positions detected"
+                            ~ " (label '%s' was 0x%04X instruction selection pass, 0x%04X on code-gen pass)",
+                            decl.name, addr, def.address
                         ), decl.location, true
                     );
                 }

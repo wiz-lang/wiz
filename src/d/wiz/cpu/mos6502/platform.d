@@ -310,8 +310,9 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                         {
                             case ArgumentType.Immediate:
                                 size_t address;
-                                compile.foldWord(program, right.base.immediate, program.finalized, address);
-                                return address <= 0xFF
+                                bool known;
+                                compile.foldWord(program, right.base.immediate, program.finalized, address, known);
+                                return known && address <= 0xFF
                                     ? [0xC5, address & 0xFF]
                                     : [0xCD, address & 0xFF, (address >> 8) & 0xFF];
                             case ArgumentType.Index:
@@ -331,10 +332,11 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                         {
                             case ArgumentType.Immediate:                                        
                                 size_t address;
-                                compile.foldWord(program, right.base.immediate, program.finalized, address);
+                                bool known;
+                                compile.foldWord(program, right.base.immediate, program.finalized, address, known);
                                 if(right.secondary.type == ArgumentType.X)
                                 {
-                                    return address <= 0xFF
+                                    return known && address <= 0xFF
                                         ? [0xD5, address & 0xFF]
                                         : [0xDD, address & 0xFF, (address >> 8) & 0xFF];
                                 }
@@ -375,8 +377,9 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                         {
                             case ArgumentType.Immediate:
                                 size_t address;
-                                compile.foldWord(program, right.base.immediate, program.finalized, address);
-                                return address <= 0xFF
+                                bool known;
+                                compile.foldWord(program, right.base.immediate, program.finalized, address, known);
+                                return known && address <= 0xFF
                                     ? [0xE4, address & 0xFF]
                                     : [0xEC, address & 0xFF, (address >> 8) & 0xFF];
                             default:
@@ -402,8 +405,9 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                         {
                             case ArgumentType.Immediate:
                                 size_t address;
-                                compile.foldWord(program, right.base.immediate, program.finalized, address);
-                                return address <= 0xFF
+                                bool known;
+                                compile.foldWord(program, right.base.immediate, program.finalized, address, known);
+                                return known && address <= 0xFF
                                     ? [0xC4, address & 0xFF]
                                     : [0xCC, address & 0xFF, (address >> 8) & 0xFF];
                             default:
@@ -430,8 +434,9 @@ ubyte[] generateComparison(compile.Program program, ast.Comparison stmt)
                             return comparisonBadPrimaryError(left, stmt.left.location);
                         }
                         size_t address;
-                        compile.foldWord(program, left.base.base.immediate, program.finalized, address);
-                        return address <= 0xFF
+                        bool known;
+                        compile.foldWord(program, left.base.base.immediate, program.finalized, address, known);
+                        return known && address <= 0xFF
                             ? [0x24, address & 0xFF]
                             : [0x2C, address & 0xFF, (address >> 8) & 0xFF];
                     default:
@@ -502,15 +507,16 @@ ubyte[] generatePostfixAssignment(compile.Program program, ast.Assignment stmt)
             {
                 case ArgumentType.Immediate:
                     size_t address;
-                    compile.foldWord(program, dest.base.immediate, program.finalized, address);
+                    bool known;
+                    compile.foldWord(program, dest.base.immediate, program.finalized, address, known);
                     final switch(stmt.postfix)
                     {
                         case parse.Postfix.Inc:
-                            return address <= 0xFF
+                            return known && address <= 0xFF
                                 ? [0xE6, address & 0xFF]
                                 : [0xEE, address & 0xFF, (address >> 8) & 0xFF];
                         case parse.Postfix.Dec:
-                            return address <= 0xFF
+                            return known && address <= 0xFF
                                 ? [0xC6, address & 0xFF]
                                 : [0xCE, address & 0xFF, (address >> 8) & 0xFF];
                     }
@@ -522,17 +528,18 @@ ubyte[] generatePostfixAssignment(compile.Program program, ast.Assignment stmt)
             {
                 case ArgumentType.Immediate:                                        
                     size_t address;
-                    compile.foldWord(program, dest.base.immediate, program.finalized, address);
+                    bool known;
+                    compile.foldWord(program, dest.base.immediate, program.finalized, address, known);
                     if(dest.secondary.type == ArgumentType.X)
                     {
                         final switch(stmt.postfix)
                         {
                             case parse.Postfix.Inc:
-                                return address <= 0xFF
+                                return known && address <= 0xFF
                                     ? [0xF6, address & 0xFF]
                                     : [0xFE, address & 0xFF, (address >> 8) & 0xFF];
                             case parse.Postfix.Dec:
-                                return address <= 0xFF
+                                return known && address <= 0xFF
                                     ? [0xD6, address & 0xFF]
                                     : [0xDE, address & 0xFF, (address >> 8) & 0xFF];
                         }
@@ -556,26 +563,27 @@ ubyte[] generateCalculatedAssignment(compile.Program program, ast.Statement stmt
     if(auto infix = cast(ast.Infix) src)
     {
         size_t result;
-        ast.Expression constTail;
-        if(!compile.tryFoldConstant(program, infix, false, program.finalized, result, constTail))
+        ast.Expression lastConstant;
+        bool known;
+        if(!compile.tryFoldExpression(program, infix, false, program.finalized, result, lastConstant, known))
         {
             return [];
         }
         ast.Expression loadsrc = null;
-        if(constTail is null)
+        if(lastConstant is null)
         {
             loadsrc = infix.operands[0];
         }
         else
         {
-            loadsrc = new ast.Number(parse.Token.Integer, result, constTail.location);
+            loadsrc = new ast.Number(parse.Token.Integer, result, lastConstant.location);
         }
         ubyte[] code = getLoad(program, stmt, dest, loadsrc);
-        bool found = constTail is null || constTail is infix.operands[0];
+        bool found = lastConstant is null || lastConstant is infix.operands[0];
         foreach(i, type; infix.types)
         {
             auto node = infix.operands[i + 1];
-            if(node is constTail)
+            if(node is lastConstant)
             {
                 found = true;
             }
@@ -687,35 +695,36 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                         // 'a = [addr]' -> 'lda addr'
                         case ArgumentType.Immediate:
                             size_t address;
-                            compile.foldWord(program, operand.base.immediate, program.finalized, address);
+                            bool known;
+                            compile.foldWord(program, operand.base.immediate, program.finalized, address, known);
                             switch(type)
                             {
                                 case parse.Infix.Or:
-                                    return address <= 0xFF
+                                    return known && address <= 0xFF
                                         ? [0x05, address & 0xFF]
                                         : [0x0D, address & 0xFF, (address >> 8) & 0xFF];
                                 case parse.Infix.And:
-                                    return address <= 0xFF
+                                    return known && address <= 0xFF
                                         ? [0x25, address & 0xFF]
                                         : [0x2D, address & 0xFF, (address >> 8) & 0xFF];
                                 case parse.Infix.Xor:
-                                    return address <= 0xFF
+                                    return known && address <= 0xFF
                                         ? [0x45, address & 0xFF]
                                         : [0x4D, address & 0xFF, (address >> 8) & 0xFF];
                                 case parse.Infix.Add:
-                                    return address <= 0xFF
+                                    return known && address <= 0xFF
                                         ? [0x18, 0x65, address & 0xFF]
                                         : [0x18, 0x6D, address & 0xFF, (address >> 8) & 0xFF];
                                 case parse.Infix.Sub:
-                                    return address <= 0xFF
+                                    return known && address <= 0xFF
                                         ? [0x38, 0xE5, address & 0xFF]
                                         : [0x38, 0xED, address & 0xFF, (address >> 8) & 0xFF];
                                 case parse.Infix.AddC:
-                                    return address <= 0xFF
+                                    return known && address <= 0xFF
                                         ? [0x65, address & 0xFF]
                                         : [0x6D, address & 0xFF, (address >> 8) & 0xFF];
                                 case parse.Infix.SubC:
-                                    return address <= 0xFF
+                                    return known && address <= 0xFF
                                         ? [0xE5, address & 0xFF]
                                         : [0xED, address & 0xFF, (address >> 8) & 0xFF];
                                 default:
@@ -751,38 +760,39 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                     {
                         case ArgumentType.Immediate:                                        
                             size_t address;
-                            compile.foldWord(program, operand.base.immediate, program.finalized, address);
+                            bool known;
+                            compile.foldWord(program, operand.base.immediate, program.finalized, address, known);
                             // 'a = [addr:x]' -> 'lda addr, x'
                             if(operand.secondary.type == ArgumentType.X)
                             {
                                 switch(type)
                                 {
                                     case parse.Infix.Or:
-                                        return address <= 0xFF
+                                        return known && address <= 0xFF
                                             ? [0x15, address & 0xFF]
                                             : [0x1D, address & 0xFF, (address >> 8) & 0xFF];
                                     case parse.Infix.And:
-                                        return address <= 0xFF
+                                        return known && address <= 0xFF
                                             ? [0x35, address & 0xFF]
                                             : [0x3D, address & 0xFF, (address >> 8) & 0xFF];
                                     case parse.Infix.Xor:
-                                        return address <= 0xFF
+                                        return known && address <= 0xFF
                                             ? [0x55, address & 0xFF]
                                             : [0x5D, address & 0xFF, (address >> 8) & 0xFF];
                                     case parse.Infix.Add:
-                                        return address <= 0xFF
+                                        return known && address <= 0xFF
                                             ? [0x18, 0x75, address & 0xFF]
                                             : [0x18, 0x7D, address & 0xFF, (address >> 8) & 0xFF];
                                     case parse.Infix.Sub:
-                                        return address <= 0xFF
+                                        return known && address <= 0xFF
                                             ? [0x38, 0xF5, address & 0xFF]
                                             : [0x38, 0xFD, address & 0xFF, (address >> 8) & 0xFF];
                                     case parse.Infix.AddC:
-                                        return address <= 0xFF
+                                        return known && address <= 0xFF
                                             ? [0x75, address & 0xFF]
                                             : [0x7D, address & 0xFF, (address >> 8) & 0xFF];
                                     case parse.Infix.SubC:
-                                        return address <= 0xFF
+                                        return known && address <= 0xFF
                                             ? [0xF5, address & 0xFF]
                                             : [0xFD, address & 0xFF, (address >> 8) & 0xFF];
                                     default:
@@ -838,7 +848,8 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
             {
                 case ArgumentType.Immediate:
                     size_t address;
-                    compile.foldWord(program, dest.base.immediate, program.finalized, address);
+                    bool known;
+                    compile.foldWord(program, dest.base.immediate, program.finalized, address, known);
                     switch(type)
                     {
                         case parse.Infix.ShiftL:
@@ -850,7 +861,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             ubyte[] code;
                             while(value--)
                             {
-                                code ~= address <= 0xFF
+                                code ~= known && address <= 0xFF
                                     ? [0x06, address & 0xFF]
                                     : [0x0E, address & 0xFF, (address >> 8) & 0xFF];
                             }
@@ -864,7 +875,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             ubyte[] code;
                             while(value--)
                             {
-                                code ~= address <= 0xFF
+                                code ~= known && address <= 0xFF
                                     ? [0x46, address & 0xFF]
                                     : [0x4E, address & 0xFF, (address >> 8) & 0xFF];
                             }
@@ -878,7 +889,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             ubyte[] code;
                             while(value--)
                             {
-                                code ~= address <= 0xFF
+                                code ~= known && address <= 0xFF
                                     ? [0x26, address & 0xFF]
                                     : [0x2E, address & 0xFF, (address >> 8) & 0xFF];
                             }
@@ -892,7 +903,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             ubyte[] code;
                             while(value--)
                             {
-                                code ~= address <= 0xFF
+                                code ~= known && address <= 0xFF
                                     ? [0x66, address & 0xFF]
                                     : [0x6E, address & 0xFF, (address >> 8) & 0xFF];
                             }
@@ -913,7 +924,8 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                         return operatorError(type, dest, node.location);
                     }
                     size_t address;
-                    compile.foldWord(program, dest.base.immediate, program.finalized, address);
+                    bool known;
+                    compile.foldWord(program, dest.base.immediate, program.finalized, address, known);
                     switch(type)
                     {
                         case parse.Infix.ShiftL:
@@ -925,7 +937,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             ubyte[] code;
                             while(value--)
                             {
-                                code ~= address <= 0xFF
+                                code ~= known && address <= 0xFF
                                     ? [0x16, address & 0xFF]
                                     : [0x1E, address & 0xFF, (address >> 8) & 0xFF];
                             }
@@ -939,7 +951,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             ubyte[] code;
                             while(value--)
                             {
-                                code ~= address <= 0xFF
+                                code ~= known && address <= 0xFF
                                     ? [0x56, address & 0xFF]
                                     : [0x5E, address & 0xFF, (address >> 8) & 0xFF];
                             }
@@ -953,7 +965,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             ubyte[] code;
                             while(value--)
                             {
-                                code ~= address <= 0xFF
+                                code ~= known && address <= 0xFF
                                     ? [0x36, address & 0xFF]
                                     : [0x3E, address & 0xFF, (address >> 8) & 0xFF];
                             }
@@ -967,7 +979,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
                             ubyte[] code;
                             while(value--)
                             {
-                                code ~= address <= 0xFF
+                                code ~= known && address <= 0xFF
                                     ? [0x76, address & 0xFF]
                                     : [0x7E, address & 0xFF, (address >> 8) & 0xFF];
                             }
@@ -987,7 +999,7 @@ ubyte[] getModify(compile.Program program, parse.Infix type, ast.Expression node
 
 ubyte[] invalidAssignmentDestError(Argument dest, compile.Location location)
 {
-    error("assignment '=' to " ~ (dest ? dest.toString() : "???") ~ " is invalid.", location);
+    error("assignment '=' of " ~ (dest ? dest.toString() : "???") ~ " is invalid.", location);
     return [];
 }
 
@@ -1059,8 +1071,9 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                         // 'a = [addr]' -> 'lda addr'
                         case ArgumentType.Immediate:
                             size_t address;
-                            compile.foldWord(program, load.base.immediate, program.finalized, address);
-                            return address <= 0xFF
+                            bool known;
+                            compile.foldWord(program, load.base.immediate, program.finalized, address, known);
+                            return known && address <= 0xFF
                                 ? [0xA5, address & 0xFF]
                                 : [0xAD, address & 0xFF, (address >> 8) & 0xFF];
                         case ArgumentType.Index:
@@ -1076,6 +1089,10 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                                 return [0xA1, address & 0xFF];
                             }
                             return invalidAssignmentError(dest, load, stmt.location);
+                        // 'a = [x]' -> 'lda 0, x' 
+                        case ArgumentType.X: return [0xB5, 0];
+                        // 'a = [y]' -> 'lda 0, y' 
+                        case ArgumentType.Y: return [0xB9, 0, 0];
                         default:
                             return invalidAssignmentError(dest, load, stmt.location);
                     }
@@ -1085,11 +1102,12 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                     {
                         case ArgumentType.Immediate:                                        
                             size_t address;
-                            compile.foldWord(program, load.base.immediate, program.finalized, address);
+                            bool known;
+                            compile.foldWord(program, load.base.immediate, program.finalized, address, known);
                             // 'a = [addr:x]' -> 'lda addr, x'
                             if(load.secondary.type == ArgumentType.X)
                             {
-                                return address <= 0xFF
+                                return known && address <= 0xFF
                                     ? [0xB5, address & 0xFF]
                                     : [0xBD, address & 0xFF, (address >> 8) & 0xFF];
                             }
@@ -1137,10 +1155,13 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                         // 'x = [addr]' -> 'ldx addr'
                         case ArgumentType.Immediate:
                             size_t address;
-                            compile.foldWord(program, load.base.immediate, program.finalized, address);
-                            return address <= 0xFF
+                            bool known;
+                            compile.foldWord(program, load.base.immediate, program.finalized, address, known);
+                            return known && address <= 0xFF
                                 ? [0xA6, address & 0xFF]
                                 : [0xAE, address & 0xFF, (address >> 8) & 0xFF];
+                        // 'x = [y]' -> 'ldx 0, y'
+                        case ArgumentType.Y: return [0xB6, 0];
                         default:
                             return invalidAssignmentError(dest, load, stmt.location);
                     }
@@ -1150,11 +1171,12 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                     {
                         case ArgumentType.Immediate:                                        
                             size_t address;
-                            compile.foldWord(program, load.base.immediate, program.finalized, address);
+                            bool known;
+                            compile.foldWord(program, load.base.immediate, program.finalized, address, known);
                             // 'x = [addr:y]' -> 'lda addr, y'
                             if(load.secondary.type == ArgumentType.Y)
                             {
-                                return address <= 0xFF
+                                return known && address <= 0xFF
                                     ? [0xB6, address & 0xFF]
                                     : [0xBE, address & 0xFF, (address >> 8) & 0xFF];
                             }
@@ -1184,10 +1206,13 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                         // 'y = [addr]' -> 'ldy addr'
                         case ArgumentType.Immediate:
                             size_t address;
-                            compile.foldWord(program, load.base.immediate, program.finalized, address);
-                            return address <= 0xFF
+                            bool known;
+                            compile.foldWord(program, load.base.immediate, program.finalized, address, known);
+                            return known && address <= 0xFF
                                 ? [0xA4, address & 0xFF]
                                 : [0xAC, address & 0xFF, (address >> 8) & 0xFF];
+                        // 'y = [x]' -> 'ldy 0, x'
+                        case ArgumentType.X: return [0xB4, 0];
                         default:
                             return invalidAssignmentError(dest, load, stmt.location);
                     }
@@ -1197,11 +1222,12 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                     {
                         case ArgumentType.Immediate:                                        
                             size_t address;
-                            compile.foldWord(program, load.base.immediate, program.finalized, address);
+                            bool known;
+                            compile.foldWord(program, load.base.immediate, program.finalized, address, known);
                             // 'y = [addr:x]' -> 'ldy addr, x'
                             if(load.secondary.type == ArgumentType.X)
                             {
-                                return address <= 0xFF
+                                return known && address <= 0xFF
                                     ? [0xB4, address & 0xFF]
                                     : [0xBC, address & 0xFF, (address >> 8) & 0xFF];
                             }
@@ -1231,19 +1257,20 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                 // '[addr] = y' -> 'sty addr'
                 case ArgumentType.Immediate:
                     size_t address;
-                    compile.foldWord(program, dest.base.immediate, program.finalized, address);
+                    bool known;
+                    compile.foldWord(program, dest.base.immediate, program.finalized, address, known);
                     switch(load.type)
                     {
                         case ArgumentType.A:
-                            return address <= 0xFF
+                            return known && address <= 0xFF
                                 ? [0x85, address & 0xFF]
                                 : [0x8D, address & 0xFF, (address >> 8) & 0xFF];
                         case ArgumentType.X:
-                            return address <= 0xFF
+                            return known && address <= 0xFF
                                 ? [0x86, address & 0xFF]
                                 : [0x8E, address & 0xFF, (address >> 8) & 0xFF];
                         case ArgumentType.Y:
-                            return address <= 0xFF
+                            return known && address <= 0xFF
                                 ? [0x84, address & 0xFF]
                                 : [0x8C, address & 0xFF, (address >> 8) & 0xFF];
                         case ArgumentType.Indirection:
@@ -1274,6 +1301,26 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                         return invalidAssignmentError(dest, load, stmt.location);
                     }
                     return invalidAssignmentDestError(dest, stmt.location);
+                case ArgumentType.X:
+                    switch(load.type)
+                    {
+                        // '[x] = a' -> 'sta 0, x'
+                        case ArgumentType.A: return [0x95, 0];
+                        // '[x] = y' -> 'sty 0, x'
+                        case ArgumentType.Y: return [0x94, 0];
+                        default:
+                            return invalidAssignmentError(dest, load, stmt.location);
+                    }
+                case ArgumentType.Y:
+                    switch(load.type)
+                    {
+                        // '[y] = a' -> 'sta 0, x'
+                        case ArgumentType.A: return [0x99, 0, 0];
+                        // '[y] = x' -> 'stx 0, y'
+                        case ArgumentType.X: return [0x96, 0];
+                        default:
+                            return invalidAssignmentError(dest, load, stmt.location);
+                    }
                 default:
                     return invalidAssignmentDestError(dest, stmt.location);
             }
@@ -1282,6 +1329,7 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
             switch(dest.base.type)
             {
                 case ArgumentType.Immediate:
+                    bool known;
                     size_t address;
                     // '[addr:x] = a' -> 'sta addr, x'
                     // '[addr:x] = y' -> 'sty addr, x'
@@ -1290,8 +1338,8 @@ ubyte[] getBaseLoad(compile.Program program, ast.Statement stmt, Argument dest, 
                         switch(load.type)
                         {
                             case ArgumentType.A:
-                                compile.foldWord(program, dest.base.immediate, program.finalized, address);
-                                return address <= 0xFF
+                                compile.foldWord(program, dest.base.immediate, program.finalized, address, known);
+                                return known && address <= 0xFF
                                     ? [0x95, address & 0xFF]
                                     : [0x9D, address & 0xFF, (address >> 8) & 0xFF];
                             case ArgumentType.Y:

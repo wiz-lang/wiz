@@ -71,7 +71,7 @@ package boot do
         def sgb: byte * 1: gb.boot.SGB_UNSUPPORTED
         def cart: byte * 1: gb.boot.CART_ROM
         def rom: byte * 1: gb.boot.ROM_32K
-        def ram: byte * 1: gb.boot.RAM_8K
+        def ram: byte * 1: gb.boot.RAM_NONE
         def destination: byte * 1: gb.boot.DEST_INTERNATIONAL
         def old_licensee: byte * 1: 0x33
         def version: byte * 1: 0x00

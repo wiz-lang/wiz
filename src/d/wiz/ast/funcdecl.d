@@ -13,6 +13,7 @@ class FuncDecl : Statement
     private Statement[] _statements;
 
     private Block block;
+    private bool expanded;
 
     this(parse.Keyword type, string name, Block block, compile.Location location)
     {
@@ -20,11 +21,20 @@ class FuncDecl : Statement
         _type = type;
         _name = name;
         _inner = block;
-        this.block = _inner;
+
+        this.block = block;
+        expanded = false;
     }
 
-    void expand()
+    bool expand()
     {
+        if(expanded)
+        {
+            return false;
+        }
+
+        expanded = true;
+
         if(!inlined)
         {
             // def name:
@@ -45,6 +55,7 @@ class FuncDecl : Statement
             }
         }
         block = null;
+        return true;
     }
 
     mixin compile.BranchAcceptor!(block, _statements);

@@ -12,6 +12,7 @@ class Conditional : Statement
     public Statement alternative;
 
     private Block _block;
+    private bool expanded;
 
     this(JumpCondition trigger, bool far, Statement prelude, Statement action, compile.Location location)
     {
@@ -22,8 +23,15 @@ class Conditional : Statement
         this.action = action;
     }
 
-    void expand()
+    bool expand()
     {
+        if(expanded)
+        {
+            return false;
+        }
+
+        expanded = true;
+
         Statement[] statements;
         if(alternative is null)
         {
@@ -67,11 +75,9 @@ class Conditional : Statement
             ], location);
         }
 
-        // Now that we've exanded, remove original statements
-        action = null;
-        alternative = null;
+        return true;
     }
 
-    mixin compile.BranchAcceptor!(action, alternative, _block);
+    mixin compile.BranchAcceptor!(_block);
     mixin helper.Accessor!(_block);
 }
