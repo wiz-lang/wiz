@@ -302,6 +302,7 @@ class Scanner
                         {
                             case '<': state = State.LessLess; break;
                             case '>': position++; return Token.Swap;
+                            case ':': position++; return Token.Low;
                             case '=': position++; return Token.LessEqual;
                             default: return Token.Less;
                         }
@@ -329,6 +330,7 @@ class Scanner
                         {
                             case '>': state = State.GreaterGreater; break;
                             case '<': position++; return Token.Swap;
+                            case ':': position++; return Token.High;
                             case '=': position++; return Token.GreaterEqual;
                             default: return Token.Greater;
                         }

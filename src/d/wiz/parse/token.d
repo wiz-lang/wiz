@@ -57,6 +57,8 @@ enum Token
     RotateR,
     RotateLC,
     RotateRC,
+    Low,
+    High,
 }
 
 private string[] tokenNames = [
@@ -115,6 +117,8 @@ private string[] tokenNames = [
     "'>>>'",
     "'<<<#'",
     "'>>>#'",
+    "'<:'",
+    "'>:'",
 ];
 
 enum Branch
@@ -131,8 +135,8 @@ enum Prefix
 {
     Not = Token.Not,
     Sub = Token.Sub,
-    Low = Token.Less,
-    High = Token.Greater,
+    Low = Token.Low,
+    High = Token.High,
     Swap = Token.Swap,
     Grouping = Token.LParen,
     Indirection = Token.LBracket,

@@ -78,8 +78,8 @@ in main, 0xC000:
             x++
         until zero end
 
-        [nes.ppu.address] = >nes.ppu.PALETTE_BASE via a
-        [nes.ppu.address] = <nes.ppu.PALETTE_BASE via a
+        [nes.ppu.address] = >:nes.ppu.PALETTE_BASE via a
+        [nes.ppu.address] = <:nes.ppu.PALETTE_BASE via a
         x = 0
         loop
             [nes.ppu.data] = [palette:x] via a
@@ -88,8 +88,8 @@ in main, 0xC000:
             until ==
         end
 
-        [nes.ppu.address] = >nes.ppu.NAMETABLE_BASE via a
-        [nes.ppu.address] = <nes.ppu.NAMETABLE_BASE via a
+        [nes.ppu.address] = >:nes.ppu.NAMETABLE_BASE via a
+        [nes.ppu.address] = <:nes.ppu.NAMETABLE_BASE via a
         x = 0
         loop
             [nes.ppu.data] = [map:x] via a
@@ -136,8 +136,8 @@ in main, 0xC000:
         [nes.mmc3.irq.reload] = a
         [nes.mmc3.irq.enable] = a
 
-        [nes.ppu.oam.address] = <oam via a
-        [nes.ppu.oam.dma] = >oam via a
+        [nes.ppu.oam.address] = <:oam via a
+        [nes.ppu.oam.dma] = >:oam via a
 
         a = [nes.ppu.status]
         [nes.ppu.ctrl] = nes.ppu.CTRL_NMI | nes.ppu.CTRL_SPRITE_PATTERN_1 via a

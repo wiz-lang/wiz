@@ -32,8 +32,8 @@ package video do
             a = [video.request.move_snake]
             compare a
             if is ~zero then
-                l = [player.tail] << 1 + <player.parts via a
-                h = >player.parts +# 0 via a
+                l = [player.tail] << 1 + <:player.parts via a
+                h = >:player.parts +# 0 via a
                 // hl = [hl]
                 a = [hl++]
                 h = [hl]
@@ -41,8 +41,8 @@ package video do
                 // Drop trail.
                 [hl] = 0x1
 
-                l = [player.head] << 1 + <player.parts via a
-                h = >player.parts +# 0 via a
+                l = [player.head] << 1 + <:player.parts via a
+                h = >:player.parts +# 0 via a
                 // hl = [hl]
                 a = [hl++]
                 h = [hl]

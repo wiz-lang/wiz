@@ -4,7 +4,7 @@ package video do
         goto after
 
         func transfer do
-            [gb.lcd.dma] = >ram.video.oam.data via a
+            [gb.lcd.dma] = >:ram.video.oam.data via a
             // Wait about 200ms
             a = 40
             loop
@@ -54,8 +54,8 @@ package video do
     end
 
     func oam_rewind do
-        [ram.video.oam.ptr_lo] = <ram.video.oam.data via a
-        [ram.video.oam.ptr_hi] = >ram.video.oam.data via a
+        [ram.video.oam.ptr_lo] = <:ram.video.oam.data via a
+        [ram.video.oam.ptr_hi] = >:ram.video.oam.data via a
     end
 
     func oam_open do
@@ -71,8 +71,8 @@ package video do
     end
 
     func buffer_rewind do
-        [ram.video.buffer.ptr_lo] = <ram.video.buffer.data via a
-        [ram.video.buffer.ptr_hi] = >ram.video.buffer.data via a
+        [ram.video.buffer.ptr_lo] = <:ram.video.buffer.data via a
+        [ram.video.buffer.ptr_hi] = >:ram.video.buffer.data via a
     end
 
     func buffer_open do

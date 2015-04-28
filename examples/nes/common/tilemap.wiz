@@ -29,8 +29,8 @@ package tilemap do
         a = [nes.ppu.status]
 
         // Now setup the PPU for copying tiles.
-        [nes.ppu.address] = [nametable_index] << 2 + >TILE_ADDRESS via a
-        [nes.ppu.address] = <TILE_ADDRESS via a
+        [nes.ppu.address] = [nametable_index] << 2 + >:TILE_ADDRESS via a
+        [nes.ppu.address] = <:TILE_ADDRESS via a
         // Setup the source pointer.
         [src_lo] = [map_lo] via a
         [src_hi] = [map_hi] via a
@@ -93,8 +93,8 @@ package tilemap do
         a = [nes.ppu.status]
 
         // Now setup the PPU for copying attributes.
-        [nes.ppu.address] = [nametable_index] << 2 + >ATTR_ADDRESS via a
-        [nes.ppu.address] = <ATTR_ADDRESS via a
+        [nes.ppu.address] = [nametable_index] << 2 + >:ATTR_ADDRESS via a
+        [nes.ppu.address] = <:ATTR_ADDRESS via a
         // Setup the source pointer, advanced by one row.
         [src_lo] = [map_lo] + 16 via a
         [src_hi] = [map_hi] via a

@@ -1079,6 +1079,11 @@ class Parser
         }
     }
 
+    auto parseAssignmentInner()
+    {
+
+    }
+
     auto parseExpression()
     {
         // expression = infix
@@ -1120,8 +1125,8 @@ class Parser
         // prefix_token = ...
         switch(token)
         {
-            case Token.Less:
-            case Token.Greater:
+            case Token.Low:
+            case Token.High:
             case Token.Swap:
             case Token.Sub:
             case Token.Not:

@@ -82,8 +82,8 @@ in prg, 0xC000:
     include '../common/tilemap.wiz'
 
     func load_palette do
-        [nes.ppu.address] = >nes.ppu.PALETTE_BASE via a
-        [nes.ppu.address] = <nes.ppu.PALETTE_BASE via a
+        [nes.ppu.address] = >:nes.ppu.PALETTE_BASE via a
+        [nes.ppu.address] = <:nes.ppu.PALETTE_BASE via a
         x = 0
         loop
             [nes.ppu.data] = [palette:x] via a
@@ -126,8 +126,8 @@ in prg, 0xC000:
         // Read PPU status to reset its state.
         [nes.ppu.status] = a
         // Now setup the PPU for copying tiles.
-        [nes.ppu.address] = >TILE_ADDRESS via a
-        [nes.ppu.address] = <TILE_ADDRESS via a
+        [nes.ppu.address] = >:TILE_ADDRESS via a
+        [nes.ppu.address] = <:TILE_ADDRESS via a
         
         x = 0
         loop
@@ -141,43 +141,43 @@ in prg, 0xC000:
     func buffer_column do
         a = [camera.x_hi]
         if compare a to world.WIDTH - 1 is < then
-            [t0] = <tile_top_left via a
-            [t1] = >tile_top_left via a
+            [t0] = <:tile_top_left via a
+            [t1] = >:tile_top_left via a
             [t2] = [world.ptr_lo] via a
             [t3] = [camera.x_hi] + 1 + [world.ptr_hi] via a
             [t4] = [camera.x_lo] >> 4 via a
-            [t5] = <scroll.tile_buffer_right via a
-            [t6] = >scroll.tile_buffer_right via a
+            [t5] = <:scroll.tile_buffer_right via a
+            [t6] = >:scroll.tile_buffer_right via a
             call tilemap.update_tile_buffer
             
-            [t0] = <tile_attribute via a
-            [t1] = >tile_attribute via a
+            [t0] = <:tile_attribute via a
+            [t1] = >:tile_attribute via a
             [t2] = [world.ptr_lo] via a
             [t3] = [camera.x_hi] + 1 + [world.ptr_hi] via a
             [t4] = [camera.x_lo] >> 4 & 0x0E via a
-            [t5] = <scroll.attribute_buffer_right via a
-            [t6] = >scroll.attribute_buffer_right via a
+            [t5] = <:scroll.attribute_buffer_right via a
+            [t6] = >:scroll.attribute_buffer_right via a
             call tilemap.update_attribute_buffer
         end
 
         a = [camera.x_hi]
         if compare a to 0 is >= then
-            [t0] = <tile_top_left via a
-            [t1] = >tile_top_left via a
+            [t0] = <:tile_top_left via a
+            [t1] = >:tile_top_left via a
             [t2] = [world.ptr_lo] via a
             [t3] = [camera.x_hi] + [world.ptr_hi] via a
             [t4] = [camera.x_lo] >> 4 via a
-            [t5] = <scroll.tile_buffer_left via a
-            [t6] = >scroll.tile_buffer_left via a
+            [t5] = <:scroll.tile_buffer_left via a
+            [t6] = >:scroll.tile_buffer_left via a
             call tilemap.update_tile_buffer
 
-            [t0] = <tile_attribute via a
-            [t1] = >tile_attribute via a
+            [t0] = <:tile_attribute via a
+            [t1] = >:tile_attribute via a
             [t2] = [world.ptr_lo] via a
             [t3] = [camera.x_hi] + [world.ptr_hi] via a
             [t4] = [camera.x_lo] >> 4 & 0x0E via a
-            [t5] = <scroll.attribute_buffer_left via a
-            [t6] = >scroll.attribute_buffer_left via a
+            [t5] = <:scroll.attribute_buffer_left via a
+            [t6] = >:scroll.attribute_buffer_left via a
             call tilemap.update_attribute_buffer
         end
     end
@@ -214,12 +214,12 @@ in prg, 0xC000:
         call load_palette
 
         // Setup the world map pointer.
-        [world.ptr_lo] = <world_map via a
-        [world.ptr_hi] = >world_map via a
+        [world.ptr_lo] = <:world_map via a
+        [world.ptr_hi] = >:world_map via a
         
         // Init the tileset pointer.
-        [t0] = <tile_top_left via a
-        [t1] = >tile_top_left via a
+        [t0] = <:tile_top_left via a
+        [t1] = >:tile_top_left via a
         // Setup the map pointer for the first screen
         [t2] = [world.ptr_lo] via a
         [t3] = [world.ptr_hi] via a
@@ -266,15 +266,15 @@ in prg, 0xC000:
             
             a = [camera.direction]
             if is zero then
-                [camera.tile_buffer_lo] = <scroll.tile_buffer_right via a
-                [camera.tile_buffer_hi] = >scroll.tile_buffer_right via a
-                [camera.attribute_buffer_lo] = <scroll.attribute_buffer_right via a
-                [camera.attribute_buffer_hi] = >scroll.attribute_buffer_right via a
+                [camera.tile_buffer_lo] = <:scroll.tile_buffer_right via a
+                [camera.tile_buffer_hi] = >:scroll.tile_buffer_right via a
+                [camera.attribute_buffer_lo] = <:scroll.attribute_buffer_right via a
+                [camera.attribute_buffer_hi] = >:scroll.attribute_buffer_right via a
             else
-                [camera.tile_buffer_lo] = <scroll.tile_buffer_left via a
-                [camera.tile_buffer_hi] = >scroll.tile_buffer_left via a
-                [camera.attribute_buffer_lo] = <scroll.attribute_buffer_left via a
-                [camera.attribute_buffer_hi] = >scroll.attribute_buffer_left via a
+                [camera.tile_buffer_lo] = <:scroll.tile_buffer_left via a
+                [camera.tile_buffer_hi] = >:scroll.tile_buffer_left via a
+                [camera.attribute_buffer_lo] = <:scroll.attribute_buffer_left via a
+                [camera.attribute_buffer_hi] = >:scroll.attribute_buffer_left via a
             end
             call buffer_column
             
@@ -308,8 +308,8 @@ in prg, 0xC000:
         
         a = [redraw.request] & redraw.SPRITES
         if is ~zero then
-            [nes.ppu.oam.address] = >sprite_buffer via a
-            [nes.ppu.oam.dma] = <sprite_buffer via a
+            [nes.ppu.oam.address] = >:sprite_buffer via a
+            [nes.ppu.oam.dma] = <:sprite_buffer via a
 
             // Done redrawing tiles
             [redraw.request] = [redraw.request] ^ redraw.SPRITES via a

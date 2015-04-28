@@ -228,8 +228,8 @@ in code, 0x0000:
 
     [snes.ppu.brightness] = snes.ppu.BRIGHTNESS_FORCE_BLANK via a
     [snes.ppu.increment] = snes.ppu.INCREMENT_ON_HIGH via a
-    [snes.ppu.addr_low] = <(BORDER_ADDRESS) via a
-    [snes.ppu.addr_high] = >(BORDER_ADDRESS) via a
+    [snes.ppu.addr_low] = <:(BORDER_ADDRESS) via a
+    [snes.ppu.addr_high] = >:(BORDER_ADDRESS) via a
     y = 0
     loop
         x = 0
@@ -243,10 +243,10 @@ in code, 0x0000:
         compare y to 32
     until == end
 
-    [snes.ppu.map_bg1] = >SCREEN_ADDRESS via a
-    [snes.ppu.map_bg2] = >BORDER_ADDRESS via a
-    [snes.ppu.map_bg3] = >SCREEN_ADDRESS via a
-    [snes.ppu.map_bg4] = >SCREEN_ADDRESS via a
+    [snes.ppu.map_bg1] = >:SCREEN_ADDRESS via a
+    [snes.ppu.map_bg2] = >:BORDER_ADDRESS via a
+    [snes.ppu.map_bg3] = >:SCREEN_ADDRESS via a
+    [snes.ppu.map_bg4] = >:SCREEN_ADDRESS via a
     [snes.ppu.tile_bg12] = 0 via a
 
     [snes.ppu.bg_mode] = snes.ppu.BG_MODE_0 via a
@@ -278,10 +278,10 @@ in code, 0x0000:
             [scroll_x] = [sgb_data + 4] via a
             [scroll_y] = [sgb_data + 5] via a
 
-            [row_addr_lo] = [sgb_data + 2] & 0x1F << 5 + <SCREEN_ADDRESS via a
-            [row_addr_hi] = [sgb_data + 2] & 0x1F >> 3 + >SCREEN_ADDRESS via a
-            [col_addr_lo] = [sgb_data + 3] & 0x1F + <SCREEN_ADDRESS via a
-            [col_addr_hi] = >SCREEN_ADDRESS via a
+            [row_addr_lo] = [sgb_data + 2] & 0x1F << 5 + <:SCREEN_ADDRESS via a
+            [row_addr_hi] = [sgb_data + 2] & 0x1F >> 3 + >:SCREEN_ADDRESS via a
+            [col_addr_lo] = [sgb_data + 3] & 0x1F + <:SCREEN_ADDRESS via a
+            [col_addr_hi] = >:SCREEN_ADDRESS via a
             [pal_addr] = [sgb_data + 2] via a
             [oam_addr] = [sgb_data + 3] via a
             [tileset_addr_lo] = [sgb_data + 2] & 0x1F << 6 via a

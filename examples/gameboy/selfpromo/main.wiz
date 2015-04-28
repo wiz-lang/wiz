@@ -494,14 +494,14 @@ end
 
 inline func wavy do
     c = [effect.timer] + b << 2 via a
-    l = <effect.table + c via a
-    h = >effect.table +# 0 via a
+    l = <:effect.table + c via a
+    h = >:effect.table +# 0 via a
 
     [gb.scroll.x] = [hl] via a
 
     c = [effect.timer] + b << 1 via a
-    l = <effect.table + c via a
-    h = >effect.table +# 0 via a
+    l = <:effect.table + c via a
+    h = >:effect.table +# 0 via a
     [gb.scroll.y] = [hl] + 60 via a
 end
 
