@@ -1,0 +1,2 @@
+bank code : rom * 2
+in code, 0: a = 'z' - 'a' + 1

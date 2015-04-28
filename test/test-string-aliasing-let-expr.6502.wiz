@@ -1,0 +1,4 @@
+let TEXT = "BURRITO"
+
+bank code : rom * 7
+in code, 0: byte: TEXT

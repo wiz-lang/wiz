@@ -295,10 +295,6 @@ bool tryFoldExpression(Program program, ast.Expression root, bool runtimeForbidd
                 }
                 size_t r = values[e.operand];
                 bool known = knownNodes[e.operand];
-                if(!known)
-                {
-                    return;
-                }
                 final switch(e.type)
                 {
                     case parse.Prefix.Low:
@@ -384,7 +380,14 @@ bool tryFoldExpression(Program program, ast.Expression root, bool runtimeForbidd
 
         (ast.String s)
         {
-            error("string literal is not allowed here", s.location);
+            if(s.value.length != 1)
+            {
+                error(std.string.format("string literal of length %s is not a valid character constant", s.value.length), s.location);
+            }
+            else
+            {
+                updateValue(s, s.value[0], true, true);       
+            }
         },
 
         (ast.Number n)
@@ -598,6 +601,18 @@ ubyte[] foldDataExpression(Program program, ast.Expression root, size_t unit, bo
             }
             else
             {
+                if(auto attr = cast(ast.Attribute) root)
+                {
+                    auto def = resolveAttribute(program, attr);
+                    if(auto constdef = cast(sym.ConstDef) def)
+                    {
+                        if(auto str = cast(ast.String) (cast(ast.LetDecl) constdef.decl).value)
+                        {
+                            return cast(ubyte[]) str.value;
+                        }
+                    }
+                }
+
                 size_t result;
                 foldByte(program, root, finalized, result);
                 return [result & 0xFF];

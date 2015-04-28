@@ -24,9 +24,9 @@ for %%j in (src\d\wiz src\d\wiz\ast src\d\wiz\cpu src\d\wiz\cpu\gameboy src\d\wi
 dmd %files% -Isrc\d -ofwiz -g -debug
 if %errorlevel% neq 0 call :exit 1
 :: Compiler test.
-::call runtest.bat
-::if %errorlevel% neq 0 call :exit 1
-::echo.
+call runtest.bat
+if %errorlevel% neq 0 call :exit 1
+echo.
 :: Compile a test program.
 wiz examples/gameboy/snake/snake.wiz -gb -sym -o examples/gameboy/snake/snake.gb
 if %errorlevel% neq 0 call :exit 1
@@ -61,11 +61,11 @@ if %errorlevel% neq 0 call :exit 1
 echo.
 
 :: Success!
-if exist build2.bat (
-    build2.bat
-) else (
-    call :exit 0
-)
+::if exist build2.bat (
+    ::build2.bat
+::) else (
+    ::call :exit 0
+::)
 call :exit 0
 
 :exit
