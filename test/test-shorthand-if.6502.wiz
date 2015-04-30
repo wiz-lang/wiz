@@ -1,0 +1,35 @@
+bank conditional_when : rom * 0
+in conditional_when, 0:
+    goto foo when 0
+def foo:
+
+bank conditional_if_false : rom * 0
+in conditional_if_false, 0:
+    let false = 0
+    if false then
+        byte: 100, 200
+    end
+
+bank conditional_if_true : rom * 2
+in conditional_if_true, 0:
+    if 1 then
+    end
+
+bank conditional_if_negated_constant : rom * 0
+in conditional_if_negated_constant, 0:
+    if ~10 then
+        byte: 1, 2, 3
+    end
+
+bank conditional_if_flag : rom * 5
+in conditional_if_flag, 0:
+    if carry then
+        byte: 1, 2, 3
+    end
+
+bank conditional_if_alias_flag : rom * 5
+in conditional_if_alias_flag, 0:
+    let c = carry
+    if c then
+        byte: 1, 2, 3
+    end

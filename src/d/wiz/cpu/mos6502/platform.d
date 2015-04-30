@@ -83,10 +83,10 @@ bool resolveJumpCondition(compile.Program program, bool negated, ast.Jump stmt, 
 {
     Argument flag;
     auto cond = stmt.condition;
-    auto attr = cond.attr;
+    auto attr = cast(ast.Attribute) cond.expr;
     assert(cond !is null);
 
-    if(attr is null)
+    if(cond.expr is null && attr is null)
     {
         final switch(cond.branch)
         {
@@ -108,25 +108,33 @@ bool resolveJumpCondition(compile.Program program, bool negated, ast.Jump stmt, 
             case parse.Branch.LessEqual:
                 error(
                     "comparision " ~ parse.getBranchName(cond.branch)
-                    ~ " unsupported in 'when' clause", cond.location
+                    ~ " unsupported in branch condition", cond.location
                 );
                 return false;
         }
     }
     else
     {
-        auto def = compile.resolveAttribute(program, attr);
-        if(auto builtin = cast(Builtin) def)
+        if(attr is null)
         {
-            switch(builtin.type)
+            error("conditional expression wasn't substituted in branch condition", cond.location);
+            return false;
+        }
+        else
+        {
+            auto def = compile.resolveAttribute(program, attr);
+            if(auto builtin = cast(Builtin) def)
             {
-                case ArgumentType.Zero:
-                case ArgumentType.Negative:
-                case ArgumentType.Overflow:
-                case ArgumentType.Carry:
-                    flag = new Argument(builtin.type);
-                    break;
-                default:
+                switch(builtin.type)
+                {
+                    case ArgumentType.Zero:
+                    case ArgumentType.Negative:
+                    case ArgumentType.Overflow:
+                    case ArgumentType.Carry:
+                        flag = new Argument(builtin.type);
+                        break;
+                    default:
+                }
             }
         }
     }
@@ -139,7 +147,7 @@ bool resolveJumpCondition(compile.Program program, bool negated, ast.Jump stmt, 
     {
         error(
             "unrecognized condition '" ~ attr.fullName()
-            ~ "' used in 'when' clause", cond.location
+            ~ "' used in branch", cond.location
         );
         return false;
     }
@@ -149,7 +157,7 @@ ubyte[] ensureUnconditional(ast.Jump stmt, string context, ubyte[] code)
 {
     if(stmt.condition)
     {
-        error("'when' clause is not allowed for " ~ context, stmt.condition.location);
+        error("branch condition is not allowed for " ~ context, stmt.condition.location);
         return [];
     }
     else

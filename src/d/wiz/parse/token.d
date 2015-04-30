@@ -212,12 +212,13 @@ enum Keyword
     Via,
     Break,
     Continue,
-    Abort,
+    Assert,
     Inline,
     Unroll,
     Is,
     Func,
     Task,
+    StaticAssert,
 };
 
 private Keyword[string] keywords;
@@ -263,12 +264,13 @@ static this()
         "via": Keyword.Via,
         "break": Keyword.Break,
         "continue": Keyword.Continue,
-        "abort": Keyword.Abort,
+        "assert": Keyword.Assert,
         "inline": Keyword.Inline,
         "unroll": Keyword.Unroll,
         "is": Keyword.Is,
         "func": Keyword.Func,
         "task": Keyword.Task,
+        "static_assert": Keyword.StaticAssert,
     ];
     
     foreach(name, keyword; keywords)

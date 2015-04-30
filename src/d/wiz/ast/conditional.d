@@ -23,7 +23,7 @@ class Conditional : Statement
         this.action = action;
     }
 
-    bool expand()
+    bool expand(compile.Program program)
     {
         if(expanded)
         {
@@ -32,6 +32,37 @@ class Conditional : Statement
 
         expanded = true;
 
+        // Compile-time branching.
+        if(trigger && trigger.expr)
+        {
+            size_t value;
+            bool known;
+            if(compile.foldExpression(program, trigger.expr, false, value, known) && known)
+            {
+                if(value && !trigger.negated)
+                {
+                    _block = new Block([
+                        // prelude
+                        prelude,
+                        // action
+                        action
+                    ], location);
+                }
+                else if(alternative)
+                {
+                    _block = new Block([
+                        // prelude
+                        prelude,
+                        // action
+                        alternative
+                    ], location);
+                }
+                return true;
+            }
+        }
+
+
+        // Run-time branching.
         Statement[] statements;
         if(alternative is null)
         {

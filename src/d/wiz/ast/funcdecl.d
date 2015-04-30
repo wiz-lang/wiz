@@ -26,7 +26,7 @@ class FuncDecl : Statement
         expanded = false;
     }
 
-    bool expand()
+    bool expand(compile.Program program)
     {
         if(expanded)
         {

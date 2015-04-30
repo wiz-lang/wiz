@@ -293,7 +293,7 @@ class Parser
                         Keyword.Return, Keyword.Resume,
                         Keyword.Break, Keyword.Continue,
                         Keyword.While, Keyword.Until,
-                        Keyword.Abort, Keyword.Sleep, Keyword.Suspend, Keyword.Nop:
+                        Keyword.Assert, Keyword.StaticAssert, Keyword.Sleep, Keyword.Suspend, Keyword.Nop:
                         return parseJump();
                     case Keyword.If:
                         return parseConditional();
@@ -772,7 +772,8 @@ class Parser
         //      | 'continue' ('when' jump_condition)?
         //      | 'while' jump_condition
         //      | 'until' jump_condition
-        //      | 'abort'
+        //      | 'assert'
+        //      | 'static_assert'
         //      | 'sleep'
         //      | 'suspend'
         //      | 'nop'
@@ -797,7 +798,7 @@ class Parser
                     condition = parseJumpCondition("'when'");
                 }
                 return new ast.Jump(type, far, destination, condition, location);
-            case Keyword.Return, Keyword.Resume, Keyword.Break, Keyword.Continue:
+            case Keyword.Return, Keyword.Resume, Keyword.Break, Keyword.Continue, Keyword.StaticAssert:
                 ast.JumpCondition condition = null;
                 if(token == Token.Identifier && keyword == Keyword.When)
                 {
@@ -828,11 +829,18 @@ class Parser
             context = "'~'";
         }
         
+        if(isPrefixToken())
+        {
+            auto expr = parseExpression();
+            return new ast.JumpCondition(negated, expr, scanner.getLocation());
+        }
+
         switch(token)
         {
-            case Token.Identifier:
-                auto attr = parseAttribute();
-                return new ast.JumpCondition(negated, attr, scanner.getLocation());
+            case Token.Identifier, Token.Integer, Token.Hexadecimal, Token.Binary, Token.String, Token.LParen:
+                auto expr = parseExpression();
+
+                return new ast.JumpCondition(negated, expr, scanner.getLocation());
             case Token.NotEqual:
             case Token.Equal:
             case Token.Less:
@@ -847,10 +855,51 @@ class Parser
                 return null;
         }        
     }
+
+    auto isPossibleJumpCondition()
+    {
+        if(isPrefixToken())
+        {
+            return true;
+        }
+        switch(token)
+        {
+            case Token.Identifier:
+                return keyword == Keyword.None;
+            case Token.Integer, Token.Hexadecimal, Token.Binary, Token.String, Token.LParen:
+            case Token.Not:
+            case Token.NotEqual:
+            case Token.Equal:
+            case Token.Less:
+            case Token.Greater:
+            case Token.LessEqual:
+            case Token.GreaterEqual:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    auto isPossibleAssignmentExpression()
+    {
+        if(isPrefixToken())
+        {
+            return true;
+        }
+        switch(token)
+        {
+            case Token.Identifier:
+                return keyword == Keyword.None;
+            case Token.Integer, Token.Hexadecimal, Token.Binary, Token.String, Token.LParen:
+                return true;
+            default:
+                return false;
+        }
+    }
     
     auto parseConditional()
     {
-        // condition = 'if' statement* 'is' condition 'then' statement*
+        // conditional = 'if' statement* 'is' condition 'then' statement*
         //      ('elseif' statement* 'is' condition 'then' statement*)*
         //      ('else' statement)? 'end'
         ast.Conditional first = null;
@@ -868,19 +917,47 @@ class Parser
                 nextToken(); // '!'
                 far = true;
             }
-            
-            auto prelude = new ast.Block(parseConditionalPrelude(), location); // statement*
 
-            if(keyword == Keyword.Is)
+            ast.Statement[] preludeStatements;
+            ast.JumpCondition condition;
+            bool simpleConditional;
+            if(isPossibleJumpCondition())
             {
-                nextToken(); // IDENTIFIER (keyword 'is')
-            }
-            else
-            {
-                reject("'is'");
+                bool useFallback = isPossibleAssignmentExpression();
+                auto exprLocation = scanner.getLocation();
+
+                condition = parseJumpCondition("'if'");
+                if(keyword == Keyword.Then)
+                {
+                    simpleConditional = true;
+                }
+                else if(useFallback)
+                {
+                    preludeStatements ~= parseAssignmentInner(exprLocation, condition.expr);
+                }
+                else
+                {
+                    reject("'then'");
+                }
             }
 
-            auto condition = parseJumpCondition("'is'"); // condition
+            if(!simpleConditional)
+            {
+                preludeStatements ~= parseConditionalPrelude();  // statement*
+
+                if(keyword == Keyword.Is)
+                {
+                    nextToken(); // IDENTIFIER (keyword 'is')
+                }
+                else
+                {
+                    reject("'is'");
+                }
+
+                condition = parseJumpCondition("'is'"); // condition
+            }
+
+            auto prelude = new ast.Block(preludeStatements, location);
             
             if(keyword == Keyword.Then)
             {
@@ -937,7 +1014,7 @@ class Parser
         }
         return first;
     }
-    
+
     auto parseLoop()
     {
         // loop = 'loop' statement* 'end'
@@ -1042,6 +1119,11 @@ class Parser
         // assignment = assignable_term ('=' expression ('via' term)? | postfix_token)
         auto location = scanner.getLocation();
         auto dest = parseAssignableTerm(); // term
+        return parseAssignmentInner(location, dest);
+    }
+
+    auto parseAssignmentInner(compile.Location location, ast.Expression dest)
+    {
         auto op = token;
         auto opText = text;
         if(token == Token.Set)
@@ -1064,6 +1146,10 @@ class Parser
             nextToken(); // postfix_token
             return new ast.Assignment(dest, cast(Postfix) op, location);
         }
+        else if(auto postfix = cast(ast.Postfix) dest)
+        {
+            return new ast.Assignment(postfix.operand, postfix.type, location);
+        }
         else
         {
             if(token == Token.Identifier || token == Token.Integer || token == Token.Hexadecimal || token == Token.Binary)
@@ -1077,11 +1163,6 @@ class Parser
             skipAssignment(true);
             return null;
         }
-    }
-
-    auto parseAssignmentInner()
-    {
-
     }
 
     auto parseExpression()

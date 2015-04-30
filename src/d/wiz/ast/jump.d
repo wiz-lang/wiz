@@ -9,6 +9,7 @@ class Jump : Statement
     private parse.Keyword _type;
     private Expression _destination;
     private JumpCondition _condition;
+    private bool _ignore;
 
     private Block inlining;
     private bool expanded;
@@ -32,7 +33,7 @@ class Jump : Statement
         _destination = destination;
     }
 
-    bool expand()
+    bool expand(compile.Program program)
     {
         if(expanded)
         {
@@ -63,7 +64,7 @@ class Jump : Statement
         return true;
     }
 
-    bool expand(Block block)
+    bool expand(compile.Program program, Block block)
     {
         if(expanded)
         {
@@ -76,29 +77,35 @@ class Jump : Statement
         return true;
     }
 
+    void substituteCondition(bool value)
+    {
+        this._condition = null;
+        this._ignore = !value;
+    }
+
     mixin compile.BranchAcceptor!(_destination, _condition, inlining);
-    mixin helper.Accessor!(_type, _far, _destination, _condition);
+    mixin helper.Accessor!(_type, _far, _destination, _condition, _ignore);
 }
 
 class JumpCondition : Node
 {
     private bool _negated;
-    private Attribute _attr;
+    private Expression _expr;
     private parse.Branch _branch;
 
     this(bool negated, JumpCondition condition)
     {
         super(condition.location);
         this._negated = negated ? !condition._negated : condition.negated;
-        this._attr = condition._attr;
+        this._expr = condition._expr;
         this._branch = condition._branch;
     }
 
-    this(bool negated, Attribute attr, compile.Location location)
+    this(bool negated, Expression expr, compile.Location location)
     {
         super(location);
         _negated = negated;
-        _attr = attr;
+        _expr = expr;
     }
 
     this(bool negated, parse.Branch branch, compile.Location location)
@@ -108,6 +115,6 @@ class JumpCondition : Node
         _branch = branch;
     }
 
-    mixin compile.BranchAcceptor!(_attr);
-    mixin helper.Accessor!(_negated, _attr, _branch);
+    mixin compile.BranchAcceptor!(_expr);
+    mixin helper.Accessor!(_negated, _expr, _branch);
 }

@@ -17,7 +17,7 @@ class Loop : Statement
         _far = far;
     }
 
-    bool expand()
+    bool expand(compile.Program program)
     {
         if(expanded)
         {

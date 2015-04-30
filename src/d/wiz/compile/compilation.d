@@ -773,16 +773,40 @@ auto createJumpHandler(Program program)
                 return;
             }
 
-            auto description = parse.getKeywordName(stmt.type) ~ " statement";
-            auto code = program.platform.generateJump(program, stmt);
-            auto bank = program.checkBank(description, stmt.location);
-            if(program.finalized)
+
+            bool emit = true;
+            if(stmt.condition && stmt.condition.expr)
             {
-                bank.writePhysical(code, stmt.location);
+                size_t value;
+                bool known;
+                if(foldExpression(program, stmt.condition.expr, false, value, known) && known)
+                {
+                    stmt.substituteCondition(value != 0);
+                }
             }
-            else
+
+            if(stmt.type == parse.Keyword.StaticAssert)
             {
-                bank.reservePhysical(description, code.length, stmt.location);
+                if(!stmt.ignore)
+                {
+                    compile.error("static assertion failed", stmt.location);
+                }
+                return;
+            }
+
+            if(!stmt.ignore)
+            {
+                auto description = parse.getKeywordName(stmt.type) ~ " statement";
+                auto code = program.platform.generateJump(program, stmt);
+                auto bank = program.checkBank(description, stmt.location);
+                if(program.finalized)
+                {
+                    bank.writePhysical(code, stmt.location);
+                }
+                else
+                {
+                    bank.reservePhysical(description, code.length, stmt.location);
+                }
             }
         }
     };
@@ -843,17 +867,17 @@ void build(Program program, ast.Node root)
 
             (ast.Conditional cond)
             {
-                expanded = cond.expand() || expanded;
+                expanded = cond.expand(program) || expanded;
             },
 
             (ast.Loop loop)
             {
-                expanded = loop.expand() || expanded;
+                expanded = loop.expand(program) || expanded;
             },
 
             (ast.FuncDecl decl)
             {
-                if(decl.expand())
+                if(decl.expand(program))
                 {
                     program.environment.put(decl.name, new sym.FuncDef(decl, program.environment));
                     expanded = true;
@@ -862,11 +886,7 @@ void build(Program program, ast.Node root)
 
             (ast.Unroll unroll)
             {
-                size_t times;
-                if(foldExpression(program, unroll.repetitions, true, times))
-                {
-                    expanded = unroll.expand(times) || expanded;
-                }
+                expanded = unroll.expand(program) || expanded;
             },
         );
 
@@ -899,7 +919,7 @@ void build(Program program, ast.Node root)
                         }
                         else
                         {
-                            expanded = jump.expand() || expanded;
+                            expanded = jump.expand(program) || expanded;
                         }
                         break;
                     case parse.Keyword.Call:
@@ -923,7 +943,7 @@ void build(Program program, ast.Node root)
                             {
                                 if(auto funcdef = cast(sym.FuncDef) def)
                                 {
-                                    expanded = jump.expand((cast(ast.FuncDecl) funcdef.decl).inner) || expanded;
+                                    expanded = jump.expand(program, (cast(ast.FuncDecl) funcdef.decl).inner) || expanded;
                                 }
                                 else
                                 {

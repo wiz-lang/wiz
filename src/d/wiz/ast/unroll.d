@@ -17,7 +17,7 @@ class Unroll : Statement
         _block = block;
     }
 
-    bool expand(ulong times)
+    bool expand(compile.Program program)
     {
         if(expanded)
         {
@@ -25,6 +25,12 @@ class Unroll : Statement
         }
 
         expanded = true;
+
+        size_t times;
+        if(!compile.foldExpression(program, repetitions, true, times))
+        {
+            return true;
+        }
 
         Statement[] code;
         foreach(i; 0 .. times)

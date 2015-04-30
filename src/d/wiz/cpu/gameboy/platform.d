@@ -109,11 +109,11 @@ bool resolveJumpCondition(compile.Program program, ast.Jump stmt, ref ubyte inde
 {
     Argument flag;
     auto cond = stmt.condition;
-    auto attr = cond.attr;
+    auto attr = cast(ast.Attribute) cond.expr;
     bool negated = cond.negated;
     assert(cond !is null);
 
-    if(attr is null)
+    if(cond.expr is null && attr is null)
     {
         final switch(cond.branch)
         {
@@ -135,23 +135,31 @@ bool resolveJumpCondition(compile.Program program, ast.Jump stmt, ref ubyte inde
             case parse.Branch.LessEqual:
                 error(
                     "comparision " ~ parse.getBranchName(cond.branch)
-                    ~ " unsupported in 'when' clause", cond.location
+                    ~ " unsupported in branch condition", cond.location
                 );
                 return false;
         }
     }
     else
     {
-        auto def = compile.resolveAttribute(program, attr);
-        if(auto builtin = cast(Builtin) def)
+        if(attr is null)
         {
-            switch(builtin.type)
+            error("conditional expression wasn't substituted in branch condition", cond.location);
+            return false;
+        }
+        else
+        {
+            auto def = compile.resolveAttribute(program, attr);
+            if(auto builtin = cast(Builtin) def)
             {
-                case ArgumentType.Carry:
-                case ArgumentType.Zero:
-                    flag = new Argument(builtin.type);
-                    break;
-                default:
+                switch(builtin.type)
+                {
+                    case ArgumentType.Carry:
+                    case ArgumentType.Zero:
+                        flag = new Argument(builtin.type);
+                        break;
+                    default:
+                }
             }
         }
     }
@@ -164,7 +172,7 @@ bool resolveJumpCondition(compile.Program program, ast.Jump stmt, ref ubyte inde
     {
         error(
             "unrecognized condition '" ~ attr.fullName()
-            ~ "' used in 'when' clause", cond.location
+            ~ "' used in branch", cond.location
         );
         return false;
     }
@@ -174,7 +182,7 @@ ubyte[] ensureUnconditional(ast.Jump stmt, string context, ubyte[] code)
 {
     if(stmt.condition)
     {
-        error("'when' clause is not allowed for " ~ context, stmt.condition.location);
+        error("branch condition is not allowed for " ~ context, stmt.condition.location);
         return [];
     }
     else
@@ -245,7 +253,7 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
                     }
                     else
                     {
-                        error("'goto hl' does not support 'when' clause", stmt.destination.location);
+                        error("'goto hl' does not support branch condition", stmt.destination.location);
                     }
                     return [];
                 default:
@@ -294,7 +302,7 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
                 return [0xC9];
             }
         case parse.Keyword.Resume: return ensureUnconditional(stmt, "'resume'", [0xD9]);
-        case parse.Keyword.Abort: return ensureUnconditional(stmt,  "'abort'", [0x40]);
+        case parse.Keyword.Assert: return ensureUnconditional(stmt,  "'assert'", [0x40]);
         case parse.Keyword.Sleep: return ensureUnconditional(stmt,  "'sleep'", [0x76]);
         case parse.Keyword.Suspend: return ensureUnconditional(stmt,  "'suspend'", [0x10, 0x00]);
         case parse.Keyword.Nop: return ensureUnconditional(stmt, "'nop'", [0x00]);
