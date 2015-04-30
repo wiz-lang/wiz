@@ -218,7 +218,7 @@ enum Keyword
     Is,
     Func,
     Task,
-    StaticAssert,
+    InlineAssert,
 };
 
 private Keyword[string] keywords;
@@ -270,7 +270,7 @@ static this()
         "is": Keyword.Is,
         "func": Keyword.Func,
         "task": Keyword.Task,
-        "static_assert": Keyword.StaticAssert,
+        "inline assert": Keyword.InlineAssert,
     ];
     
     foreach(name, keyword; keywords)

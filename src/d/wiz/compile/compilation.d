@@ -785,11 +785,15 @@ auto createJumpHandler(Program program)
                 }
             }
 
-            if(stmt.type == parse.Keyword.StaticAssert)
+            if(stmt.type == parse.Keyword.InlineAssert)
             {
                 if(!stmt.ignore)
                 {
                     compile.error("static assertion failed", stmt.location);
+                }
+                if(stmt.condition && (stmt.condition.expr is null || cast(ast.Attribute) stmt.condition.expr is null))
+                {
+                    error(std.string.format("conditional expression wasn't substituted in branch condition %s", stmt.condition), stmt.location);
                 }
                 return;
             }

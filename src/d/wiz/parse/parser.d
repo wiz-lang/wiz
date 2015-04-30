@@ -293,7 +293,7 @@ class Parser
                         Keyword.Return, Keyword.Resume,
                         Keyword.Break, Keyword.Continue,
                         Keyword.While, Keyword.Until,
-                        Keyword.Assert, Keyword.StaticAssert, Keyword.Sleep, Keyword.Suspend, Keyword.Nop:
+                        Keyword.Assert, Keyword.Sleep, Keyword.Suspend, Keyword.Nop:
                         return parseJump();
                     case Keyword.If:
                         return parseConditional();
@@ -729,6 +729,23 @@ class Parser
             }
             return new ast.Jump(Keyword.Inline, far, destination, condition, location);
         }
+        else if(keyword == Keyword.Assert)
+        {
+            bool far;
+            nextToken(); // IDENTIFIER (keyword 'call')
+            if(token == Token.Exclaim)
+            {
+                nextToken(); // '!'
+                far = true;
+            }
+            ast.JumpCondition condition = null;
+            if(token == Token.Identifier && keyword == Keyword.When)
+            {
+                nextToken(); // IDENTIFIER (keyword 'when')
+                condition = parseJumpCondition("'when'");
+            }
+            return new ast.Jump(Keyword.InlineAssert, far, null, condition, location);
+        }
         else
         {
             reject("'func'");
@@ -773,7 +790,6 @@ class Parser
         //      | 'while' jump_condition
         //      | 'until' jump_condition
         //      | 'assert'
-        //      | 'static_assert'
         //      | 'sleep'
         //      | 'suspend'
         //      | 'nop'
@@ -798,7 +814,7 @@ class Parser
                     condition = parseJumpCondition("'when'");
                 }
                 return new ast.Jump(type, far, destination, condition, location);
-            case Keyword.Return, Keyword.Resume, Keyword.Break, Keyword.Continue, Keyword.StaticAssert:
+            case Keyword.Return, Keyword.Resume, Keyword.Break, Keyword.Continue:
                 ast.JumpCondition condition = null;
                 if(token == Token.Identifier && keyword == Keyword.When)
                 {
