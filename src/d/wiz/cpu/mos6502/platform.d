@@ -86,7 +86,7 @@ bool resolveJumpCondition(compile.Program program, bool negated, ast.Jump stmt, 
     auto attr = cast(ast.Attribute) cond.expr;
     assert(cond !is null);
 
-    if(cond.expr is null && attr is null)
+    if(cond.expr is null)
     {
         final switch(cond.branch)
         {
@@ -166,6 +166,116 @@ ubyte[] ensureUnconditional(ast.Jump stmt, string context, ubyte[] code)
     }
 }
 
+bool handleSynthesizedBranch(compile.Program program, ast.Jump stmt, Argument argument, ref ubyte[] code)
+{
+    auto cond = stmt.condition;
+    if(cond && cond.expr is null)
+    {
+        parse.Branch branch = cond.branch;
+        bool negated =  cond.negated;
+        if(branch == parse.Branch.Greater && negated)
+        {
+            branch = parse.Branch.LessEqual;
+        }
+        else if(branch == parse.Branch.LessEqual && negated)
+        {
+            branch = parse.Branch.Greater;
+        }
+
+        final switch(branch)
+        {
+            case parse.Branch.Equal:
+            case parse.Branch.NotEqual:
+            case parse.Branch.Less:
+            case parse.Branch.GreaterEqual:
+                return false;
+            case parse.Branch.Greater:
+                if(stmt.far)
+                {
+                    size_t address;
+                    if(compile.foldWord(program, argument.immediate, program.finalized, address))
+                    {
+                        //   goto _else when ==
+                        //   goto _else when <
+                        //   goto dest
+                        // def _else:
+                        code ~= [
+                            0xF0, 5,
+                            0x90, 3,
+                            0x4C, address & 0xFF, (address >> 8) & 0xFF,
+                        ];
+                    }
+                }
+                else
+                {
+                    size_t offset;
+                    if(resolveRelativeJump(program, stmt, 4, offset))
+                    {
+                        //   goto _else when ==
+                        //   goto dest when >=
+                        // def _else:
+                        code ~= [
+                            0xF0, 2,
+                            0xB0, offset & 0xFF,
+                        ];
+                    }
+                }
+                return true;
+            case parse.Branch.LessEqual:
+                if(stmt.far)
+                {
+                    size_t address;
+                    if(compile.foldWord(program, argument.immediate, program.finalized, address))
+                    {
+                        //   goto _elseif when ~=
+                        //   goto dest
+                        // def _elseif:
+                        //   goto _else when >=
+                        //   goto dest
+                        // def _else:
+                        // 
+                        code ~= [
+                            0xD0, 3,
+                            0x4C, address & 0xFF, (address >> 8) & 0xFF,
+                            0xB0, 3,
+                            0x4C, address & 0xFF, (address >> 8) & 0xFF,
+                        ];
+                    }
+                }
+                else
+                {
+                    size_t offset;
+                    size_t offset2;
+                    if(resolveRelativeJump(program, stmt, 2, offset)
+                    && resolveRelativeJump(program, stmt, 4, offset2))
+                    {
+                        // goto dest when ==
+                        // goto dest when <
+                        code ~= [
+                            0xF0, offset & 0xFF,
+                            0x90, offset2 & 0xFF,
+                        ];
+                    }
+                }
+                return true;
+        }
+    }
+    return false;
+}
+
+bool resolveRelativeJump(compile.Program program, ast.Jump stmt, int branchOrigin, ref size_t offset)
+{
+    enum description = "relative jump";
+    auto bank = program.checkBank(description, stmt.location);
+    size_t pc = bank.checkAddress(description, stmt.location);
+    return compile.foldRelativeByte(program, stmt.destination,
+        "relative jump distance",
+        "rewrite the branch, shorten the gaps in your code, or add a '!' far indicator.",
+        pc + branchOrigin, program.finalized, offset
+    );
+}
+
+
 ubyte[] generateJump(compile.Program program, ast.Jump stmt)
 {
     switch(stmt.type)
@@ -179,6 +289,12 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
             switch(argument.type)
             {
                 case ArgumentType.Immediate:
+                    ubyte[] code;
+                    if(handleSynthesizedBranch(program, stmt, argument, code))
+                    {
+                        return code;
+                    }
+
                     if(stmt.far)
                     {
                         size_t address;
@@ -203,19 +319,14 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
                     {
                         if(stmt.condition)
                         {
-                            enum description = "relative jump";
-                            auto bank = program.checkBank(description, stmt.location);
-                            size_t pc = bank.checkAddress(description, stmt.location);
                             size_t offset;
-                            compile.foldRelativeByte(program, stmt.destination,
-                                "relative jump distance",
-                                "rewrite the branch, shorten the gaps in your code, or add a '!' far indicator.",
-                                pc + 2, program.finalized, offset
-                            );
-                            ubyte index;
-                            if(resolveJumpCondition(program, stmt.condition.negated, stmt, index))
+                            if(resolveRelativeJump(program, stmt, 2, offset))
                             {
-                                return [(0x10 + index * 0x20) & 0xFF, offset & 0xFF];
+                                ubyte index;
+                                if(resolveJumpCondition(program, stmt.condition.negated, stmt, index))
+                                {
+                                    return [(0x10 + index * 0x20) & 0xFF, offset & 0xFF];
+                                }
                             }
                         }
                         else

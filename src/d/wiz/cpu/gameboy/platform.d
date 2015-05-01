@@ -191,6 +191,133 @@ ubyte[] ensureUnconditional(ast.Jump stmt, string context, ubyte[] code)
     }
 }
 
+bool handleSynthesizedBranch(compile.Program program, ast.Jump stmt, Argument argument, ref ubyte[] code)
+{
+    auto cond = stmt.condition;
+    if(cond && cond.expr is null)
+    {
+        parse.Branch branch = cond.branch;
+        bool negated =  cond.negated;
+        if(branch == parse.Branch.Greater && negated)
+        {
+            branch = parse.Branch.LessEqual;
+        }
+        else if(branch == parse.Branch.LessEqual && negated)
+        {
+            branch = parse.Branch.Greater;
+        }
+
+        final switch(branch)
+        {
+            case parse.Branch.Equal:
+            case parse.Branch.NotEqual:
+            case parse.Branch.Less:
+            case parse.Branch.GreaterEqual:
+                return false;
+            case parse.Branch.Greater:
+                //   goto _else when ==
+                //   goto dest when >=
+                // def _else:
+                switch(stmt.type)
+                {
+                    case parse.Keyword.Goto:
+                        if(stmt.far)
+                        {
+                            size_t address;
+                            compile.foldWord(program, argument.immediate, program.finalized, address);
+                            code ~= [
+                                0x28, 3,
+                                0xD2, address & 0xFF, (address >> 8) & 0xFF,
+                            ];
+                        }
+                        else
+                        {
+                            size_t offset;
+                            if(resolveRelativeJump(program, stmt, 4, offset))
+                            {
+                                code ~= [
+                                    0x28, 2,
+                                    0x30, offset & 0xFF,
+                                ];
+                            }
+                        }
+                        return true;
+                    case parse.Keyword.Call:
+                        size_t address;
+                        compile.foldWord(program, argument.immediate, program.finalized, address);
+                        code ~= [
+                            0x28, 3,
+                            0xD4, address & 0xFF, (address >> 8) & 0xFF,
+                        ];
+                        return true;
+                    case parse.Keyword.Return:
+                        code ~= [0x28, 1, 0xD0];
+                        return true;
+                    default:
+                        return false;
+                }
+                return false;
+            case parse.Branch.LessEqual:
+                // goto dest when ==
+                // goto dest when <
+                switch(stmt.type)
+                {
+                    case parse.Keyword.Goto:
+                        if(stmt.far)
+                        {
+                            size_t address;
+                            compile.foldWord(program, argument.immediate, program.finalized, address);
+                            code ~= [
+                                0xCA, address & 0xFF, (address >> 8) & 0xFF,
+                                0xDA, address & 0xFF, (address >> 8) & 0xFF,
+                            ];
+                        }
+                        else
+                        {
+                            size_t offset;
+                            size_t offset2;
+                            if(resolveRelativeJump(program, stmt, 2, offset)
+                            && resolveRelativeJump(program, stmt, 4, offset2))
+                            {
+                                code ~= [
+                                    0x28, offset & 0xFF,
+                                    0x38, offset2 & 0xFF,
+                                ];
+                            }
+                        }
+                        return true;
+                    case parse.Keyword.Call:
+                        size_t address;
+                        compile.foldWord(program, argument.immediate, program.finalized, address);
+                        code ~= [
+                            0xCC, address & 0xFF, (address >> 8) & 0xFF,
+                            0xDC, address & 0xFF, (address >> 8) & 0xFF,
+                        ];
+                        return true;
+                    case parse.Keyword.Return:
+                        code ~= [0xC8, 0xD8];
+                        return true;
+                    default:
+                        return false;                    
+                }
+                return false; 
+        }
+
+    }
+    return false;
+}
+
+bool resolveRelativeJump(compile.Program program, ast.Jump stmt, int branchOrigin, ref size_t offset)
+{
+    enum description = "relative jump";
+    auto bank = program.checkBank(description, stmt.location);
+    size_t pc = bank.checkAddress(description, stmt.location);
+    return compile.foldRelativeByte(program, stmt.destination,
+        "relative jump distance",
+        "rewrite the branch, shorten the gaps in your code, or add a '!' far indicator.",
+        pc + branchOrigin, program.finalized, offset
+    );
+}
 ubyte[] generateJump(compile.Program program, ast.Jump stmt)
 {
     switch(stmt.type)
@@ -204,6 +331,12 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
             switch(argument.type)
             {
                 case ArgumentType.Immediate:
+                    ubyte[] code;
+                    if(handleSynthesizedBranch(program, stmt, argument, code))
+                    {
+                        return code;
+                    }
+
                     if(stmt.far)
                     {
                         size_t address;
@@ -223,15 +356,8 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
                     }
                     else
                     {
-                        enum description = "relative jump";
-                        auto bank = program.checkBank(description, stmt.location);
-                        size_t pc = bank.checkAddress(description, stmt.location);
                         size_t offset;
-                        compile.foldRelativeByte(program, stmt.destination,
-                            "relative jump distance",
-                            "rewrite the branch, shorten the gaps in your code, or add a '!' far indicator.",
-                            pc + 2, program.finalized, offset
-                        );
+                        resolveRelativeJump(program, stmt, 2, offset);
                         if(stmt.condition)
                         {
                             ubyte index;
@@ -269,6 +395,12 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
             switch(argument.type)
             {
                 case ArgumentType.Immediate:
+                    ubyte[] code;
+                    if(handleSynthesizedBranch(program, stmt, argument, code))
+                    {
+                        return code;
+                    }
+
                     size_t address;
                     compile.foldWord(program, argument.immediate, program.finalized, address);
                     if(stmt.condition)
@@ -291,6 +423,12 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
         case parse.Keyword.Return:
             if(stmt.condition)
             {
+                ubyte[] code;
+                if(handleSynthesizedBranch(program, stmt, null, code))
+                {
+                    return code;
+                }
+
                 ubyte index;
                 if(resolveJumpCondition(program, stmt, index))
                 {
