@@ -12,7 +12,7 @@ package sgb do
             d = [hl++] via a
             loop
                 a = 0x10
-                if d = d >> 1 is ~carry then
+                if d = d >> 1 is not carry then
                     a = 0x20
                 end
                 [gb.joy.ctrl:c] = a

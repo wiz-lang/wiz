@@ -27,3 +27,4 @@ public import wiz.ast.expression;
 public import wiz.ast.relocation;
 public import wiz.ast.builtindecl;
 public import wiz.ast.conditional;
+public import wiz.ast.inlineconditional;

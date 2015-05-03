@@ -203,6 +203,7 @@ enum Keyword
     Do,
     Loop,
     Until,
+    Not,
     And,
     Or,
     Compare,
@@ -212,13 +213,13 @@ enum Keyword
     Via,
     Break,
     Continue,
-    Assert,
+    Abort,
     Inline,
     Unroll,
     Is,
     Func,
     Task,
-    InlineAssert,
+    InlineAbort,
 };
 
 private Keyword[string] keywords;
@@ -255,6 +256,7 @@ static this()
         "do": Keyword.Do,
         "loop": Keyword.Loop,
         "until": Keyword.Until,
+        "not": Keyword.Not,
         "and": Keyword.And,
         "or": Keyword.Or,
         "compare": Keyword.Compare,
@@ -264,13 +266,13 @@ static this()
         "via": Keyword.Via,
         "break": Keyword.Break,
         "continue": Keyword.Continue,
-        "assert": Keyword.Assert,
+        "abort": Keyword.Abort,
         "inline": Keyword.Inline,
         "unroll": Keyword.Unroll,
         "is": Keyword.Is,
         "func": Keyword.Func,
         "task": Keyword.Task,
-        "inline assert": Keyword.InlineAssert,
+        "inline abort": Keyword.InlineAbort,
     ];
     
     foreach(name, keyword; keywords)

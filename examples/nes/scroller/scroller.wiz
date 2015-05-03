@@ -132,7 +132,7 @@ in prg, 0xC000:
         x = 0
         loop
             a = [message:x]
-        while ~zero
+        while not zero
             x++
             [nes.ppu.data] = a
         end
@@ -237,7 +237,7 @@ in prg, 0xC000:
         loop
             call check_controls
             a = [controls] & nes.joy.A
-            if is ~zero then
+            if is not zero then
                 [camera.direction] = [camera.direction] ^ 1 via a
                 [unpress] = [unpress] | nes.joy.A via a
             end
@@ -307,7 +307,7 @@ in prg, 0xC000:
         a = [nes.ppu.status]
         
         a = [redraw.request] & redraw.SPRITES
-        if is ~zero then
+        if is not zero then
             [nes.ppu.oam.address] = >:sprite_buffer via a
             [nes.ppu.oam.dma] = <:sprite_buffer via a
 
@@ -316,7 +316,7 @@ in prg, 0xC000:
         end
         
         a = [redraw.request] & redraw.SCROLL_TILES
-        if is ~zero then
+        if is not zero then
             push [t0] via a; [t0] = [camera.x_lo] via a
             push [t1] via a; [t1] = [camera.x_hi] via a
             push [t2] via a; [t2] = [camera.tile_buffer_lo] via a

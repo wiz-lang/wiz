@@ -7,14 +7,14 @@ package player do
 
     func refresh do
         a = [ram.joy.pressed]
-        if compare a@ram.joy.bit.LEFT is ~zero then
+        if compare a@ram.joy.bit.LEFT is not zero then
             a = [ram.player.x]
             if compare a to 9 is < then
                 a++
             end
             a--
             [ram.player.x] = a
-        elseif compare a@ram.joy.bit.RIGHT is ~zero then
+        elseif compare a@ram.joy.bit.RIGHT is not zero then
             a = [ram.player.x]
             if compare a to 160 - 8 is >= then
                 a--
@@ -24,14 +24,14 @@ package player do
         end
 
         a = [ram.joy.pressed]
-        if compare a@ram.joy.bit.UP is ~zero then
+        if compare a@ram.joy.bit.UP is not zero then
             a = [ram.player.y]
             if compare a to 17 is < then
                 a++
             end
             a--
             [ram.player.y] = a
-        elseif compare a@ram.joy.bit.DOWN is ~zero then
+        elseif compare a@ram.joy.bit.DOWN is not zero then
             a = [ram.player.y]
             if compare a to 144 is >= then
                 a--
@@ -41,13 +41,13 @@ package player do
         end
 
         a = [ram.player.reload]
-        if compare a is ~zero then
+        if compare a is not zero then
             a--
             [ram.player.reload] = a
         end
 
         a = [ram.joy.pressed]
-        if compare a@ram.joy.bit.A is ~zero then
+        if compare a@ram.joy.bit.A is not zero then
             a = [ram.player.reload]
             if compare a is zero then
                 [ram.player.reload] = 10 via a

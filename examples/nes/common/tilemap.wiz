@@ -372,7 +372,7 @@ package tilemap do
     
         // Check if this is an even or odd column.
         a = a & 1
-        if is ~zero then
+        if is not zero then
             [src]++
         end
         

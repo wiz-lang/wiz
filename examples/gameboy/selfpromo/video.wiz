@@ -28,9 +28,9 @@ package video do
     func acknowledge do
         a = [video.request.redraw]
         compare a
-        if is ~zero then
+        if is not zero then
             /*a = [video.request.move_snake]
-            if compare a is ~zero then
+            if compare a is not zero then
                 l = [player.tail] << 1 + <player.parts via a
                 h = >player.parts +# 0 via a
                 // hl = [hl]

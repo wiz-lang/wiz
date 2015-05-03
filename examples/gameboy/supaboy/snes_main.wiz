@@ -269,7 +269,7 @@ in code, 0x0000:
             compare x to 64
         until zero end
 
-        if a = [sgb_data] is ~zero then
+        if a = [sgb_data] is not zero then
             [brightness] = 0xF via a
             if a = [sgb_data + 1] & gb.lcd.CTRL_ON is zero then
                 [brightness] = snes.ppu.BRIGHTNESS_FORCE_BLANK via a
@@ -299,12 +299,12 @@ in code, 0x800:
         push a
         push x via a
         push y via a
-        if a = [vbl] is ~zero then
+        if a = [vbl] is not zero then
             [vbl]--
             [snes.ppu.brightness] = [brightness] via a
 
             
-            if a = [sgb_data] is ~zero then
+            if a = [sgb_data] is not zero then
                 [snes.ppu.hscroll_bg1] = [scroll_x] via a
                 [snes.ppu.hscroll_bg1] = 0x00 via a
                 [snes.ppu.vscroll_bg1] = [scroll_y] via a

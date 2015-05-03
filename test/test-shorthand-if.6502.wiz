@@ -1,23 +1,19 @@
-bank conditional_when : rom * 0
-in conditional_when, 0:
-    goto foo when 0
-def foo:
-
 bank conditional_if_false : rom * 0
 in conditional_if_false, 0:
     let false = 0
-    if false then
+    inline if false then
         byte: 100, 200
     end
 
 bank conditional_if_true : rom * 2
 in conditional_if_true, 0:
-    if 1 then
+    inline if 1 then
+        byte: 1, 2
     end
 
 bank conditional_if_negated_constant : rom * 0
 in conditional_if_negated_constant, 0:
-    if ~10 then
+    inline if not 10 then
         byte: 1, 2, 3
     end
 

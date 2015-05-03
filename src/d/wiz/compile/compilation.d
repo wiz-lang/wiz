@@ -773,44 +773,22 @@ auto createJumpHandler(Program program)
                 return;
             }
 
-
-            bool emit = true;
-            if(stmt.condition && stmt.condition.expr)
+            if(stmt.type == parse.Keyword.InlineAbort)
             {
-                size_t value;
-                bool known;
-                if(foldExpression(program, stmt.condition.expr, false, value, known) && known)
-                {
-                    stmt.substituteCondition(value != 0);
-                }
-            }
-
-            if(stmt.type == parse.Keyword.InlineAssert)
-            {
-                if(!stmt.ignore)
-                {
-                    compile.error("static assertion failed", stmt.location);
-                }
-                if(stmt.condition && (stmt.condition.expr is null || cast(ast.Attribute) stmt.condition.expr is null))
-                {
-                    error(std.string.format("conditional expression wasn't substituted in branch condition %s", stmt.condition), stmt.location);
-                }
+                error("'inline abort' triggered during compilation", stmt.location);
                 return;
             }
 
-            if(!stmt.ignore)
+            auto description = parse.getKeywordName(stmt.type) ~ " statement";
+            auto code = program.platform.generateJump(program, stmt);
+            auto bank = program.checkBank(description, stmt.location);
+            if(program.finalized)
             {
-                auto description = parse.getKeywordName(stmt.type) ~ " statement";
-                auto code = program.platform.generateJump(program, stmt);
-                auto bank = program.checkBank(description, stmt.location);
-                if(program.finalized)
-                {
-                    bank.writePhysical(code, stmt.location);
-                }
-                else
-                {
-                    bank.reservePhysical(description, code.length, stmt.location);
-                }
+                bank.writePhysical(code, stmt.location);
+            }
+            else
+            {
+                bank.reservePhysical(description, code.length, stmt.location);
             }
         }
     };
@@ -870,6 +848,11 @@ void build(Program program, ast.Node root)
             },
 
             (ast.Conditional cond)
+            {
+                expanded = cond.expand(program) || expanded;
+            },
+
+            (ast.InlineConditional cond)
             {
                 expanded = cond.expand(program) || expanded;
             },

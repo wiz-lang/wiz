@@ -207,7 +207,7 @@ package video do
     func acknowledge do
         a = [ram.video.request.redraw]
         compare a
-        if is ~zero then
+        if is not zero then
             call ram.video.oam.code
 
             hl = ram.video.buffer.data

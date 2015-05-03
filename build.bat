@@ -61,11 +61,11 @@ if %errorlevel% neq 0 call :exit 1
 echo.
 
 :: Success!
-::if exist build2.bat (
-    ::build2.bat
-::) else (
-    ::call :exit 0
-::)
+if exist build2.bat (
+    build2.bat
+) else (
+    call :exit 0
+)
 call :exit 0
 
 :exit

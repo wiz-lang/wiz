@@ -83,10 +83,10 @@ bool resolveJumpCondition(compile.Program program, bool negated, ast.Jump stmt, 
 {
     Argument flag;
     auto cond = stmt.condition;
-    auto attr = cast(ast.Attribute) cond.expr;
+    auto attr = cond.attr;
     assert(cond !is null);
 
-    if(cond.expr is null)
+    if(cond.attr is null)
     {
         final switch(cond.branch)
         {
@@ -115,26 +115,18 @@ bool resolveJumpCondition(compile.Program program, bool negated, ast.Jump stmt, 
     }
     else
     {
-        if(attr is null)
+        auto def = compile.resolveAttribute(program, attr);
+        if(auto builtin = cast(Builtin) def)
         {
-            error("conditional expression wasn't substituted in branch condition", cond.location);
-            return false;
-        }
-        else
-        {
-            auto def = compile.resolveAttribute(program, attr);
-            if(auto builtin = cast(Builtin) def)
+            switch(builtin.type)
             {
-                switch(builtin.type)
-                {
-                    case ArgumentType.Zero:
-                    case ArgumentType.Negative:
-                    case ArgumentType.Overflow:
-                    case ArgumentType.Carry:
-                        flag = new Argument(builtin.type);
-                        break;
-                    default:
-                }
+                case ArgumentType.Zero:
+                case ArgumentType.Negative:
+                case ArgumentType.Overflow:
+                case ArgumentType.Carry:
+                    flag = new Argument(builtin.type);
+                    break;
+                default:
             }
         }
     }
@@ -169,7 +161,7 @@ ubyte[] ensureUnconditional(ast.Jump stmt, string context, ubyte[] code)
 bool handleSynthesizedBranch(compile.Program program, ast.Jump stmt, Argument argument, ref ubyte[] code)
 {
     auto cond = stmt.condition;
-    if(cond && cond.expr is null)
+    if(cond && cond.attr is null)
     {
         parse.Branch branch = cond.branch;
         bool negated =  cond.negated;

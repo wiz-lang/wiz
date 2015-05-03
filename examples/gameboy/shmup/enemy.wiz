@@ -34,7 +34,7 @@ package enemy do
         c = ram.enemy.MAX
         loop
             a = [hl]
-            if compare a is ~zero then
+            if compare a is not zero then
                 push hl
                 compare a to 1; call refresh_ghost when ==
                 hl = pop
@@ -60,7 +60,7 @@ package enemy do
         e = 8
         hl = ram.bullet.data
         call bullet.collide
-        if compare a is ~zero then
+        if compare a is not zero then
             de = pop
 
             hl = pop

@@ -213,7 +213,7 @@ package video do
 
     func acknowledge do
         a = [ram.video.request.redraw]
-        if compare a is ~zero then
+        if compare a is not zero then
             a = [ram.hardware.type]
             if compare a to ram.hardware.SGB is == then
                 hl = ram.video.buffer.data

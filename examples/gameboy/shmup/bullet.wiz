@@ -72,7 +72,7 @@ package bullet do
             call video.oam_close
             hl = pop
             c--
-        goto repeat when ~zero
+        goto repeat when not zero
         return
 
     def wipe:
@@ -159,14 +159,14 @@ package bullet do
         c = ram.bullet.MAX
         loop
             a = [hl]
-            if compare a is ~zero then
+            if compare a is not zero then
                 [ram.t0] = c via a
                 de = pop
                 bc = pop
                 push bc
                 push de
                 call collide_one
-                compare a; goto done when ~zero
+                compare a; goto done when not zero
                 c = [ram.t0] via a
             else
                 de = ram.bullet.SIZE

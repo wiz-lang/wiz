@@ -109,11 +109,11 @@ bool resolveJumpCondition(compile.Program program, ast.Jump stmt, ref ubyte inde
 {
     Argument flag;
     auto cond = stmt.condition;
-    auto attr = cast(ast.Attribute) cond.expr;
+    auto attr = cond.attr;
     bool negated = cond.negated;
     assert(cond !is null);
 
-    if(cond.expr is null && attr is null)
+    if(attr is null)
     {
         final switch(cond.branch)
         {
@@ -142,24 +142,16 @@ bool resolveJumpCondition(compile.Program program, ast.Jump stmt, ref ubyte inde
     }
     else
     {
-        if(attr is null)
+        auto def = compile.resolveAttribute(program, attr);
+        if(auto builtin = cast(Builtin) def)
         {
-            error("conditional expression wasn't substituted in branch condition", cond.location);
-            return false;
-        }
-        else
-        {
-            auto def = compile.resolveAttribute(program, attr);
-            if(auto builtin = cast(Builtin) def)
+            switch(builtin.type)
             {
-                switch(builtin.type)
-                {
-                    case ArgumentType.Carry:
-                    case ArgumentType.Zero:
-                        flag = new Argument(builtin.type);
-                        break;
-                    default:
-                }
+                case ArgumentType.Carry:
+                case ArgumentType.Zero:
+                    flag = new Argument(builtin.type);
+                    break;
+                default:
             }
         }
     }
@@ -194,7 +186,7 @@ ubyte[] ensureUnconditional(ast.Jump stmt, string context, ubyte[] code)
 bool handleSynthesizedBranch(compile.Program program, ast.Jump stmt, Argument argument, ref ubyte[] code)
 {
     auto cond = stmt.condition;
-    if(cond && cond.expr is null)
+    if(cond && cond.attr is null)
     {
         parse.Branch branch = cond.branch;
         bool negated =  cond.negated;
@@ -440,7 +432,7 @@ ubyte[] generateJump(compile.Program program, ast.Jump stmt)
                 return [0xC9];
             }
         case parse.Keyword.Resume: return ensureUnconditional(stmt, "'resume'", [0xD9]);
-        case parse.Keyword.Assert: return ensureUnconditional(stmt,  "'assert'", [0x40]);
+        case parse.Keyword.Abort: return ensureUnconditional(stmt,  "'assert'", [0x40]);
         case parse.Keyword.Sleep: return ensureUnconditional(stmt,  "'sleep'", [0x76]);
         case parse.Keyword.Suspend: return ensureUnconditional(stmt,  "'suspend'", [0x10, 0x00]);
         case parse.Keyword.Nop: return ensureUnconditional(stmt, "'nop'", [0x00]);

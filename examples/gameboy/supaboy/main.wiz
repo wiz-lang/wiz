@@ -22,8 +22,8 @@ func memset do
 def repeat:
     [dest++] = value
 def start:
-    count_l--; goto repeat when ~zero
-    count_h--; goto repeat when ~zero
+    count_l--; goto repeat when not zero
+    count_h--; goto repeat when not zero
 end
 
 // Copies count bytes from source to destination.
@@ -41,8 +41,8 @@ def repeat:
     [dest] = [source++] via a
     dest++
 def start:
-    count_l--; goto repeat when ~zero
-    count_h--; goto repeat when ~zero
+    count_l--; goto repeat when not zero
+    count_h--; goto repeat when not zero
 end
 
 package hardware do
@@ -51,7 +51,7 @@ package hardware do
         [hl] = ram.hardware.GB
         if compare a to 0x11 is == then
             [hl] = ram.hardware.GBC
-            if compare b@0 is ~zero then
+            if compare b@0 is not zero then
                 [hl] = ram.hardware.GBA
             end
         end
@@ -65,7 +65,7 @@ func main do
     inline call hardware.detect
     call joy.init
     call sgb.detect
-    if compare b@0 is ~zero then
+    if compare b@0 is not zero then
         [hl] = ram.hardware.SGB
     end
     call video.init

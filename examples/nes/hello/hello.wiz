@@ -58,7 +58,7 @@ in prg, 0xC000:
         x = 0
         loop
             a = [message:x]
-        while ~zero
+        while not zero
             x++
             [nes.ppu.data] = a
         end

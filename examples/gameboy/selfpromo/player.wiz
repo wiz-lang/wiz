@@ -14,19 +14,19 @@ package player do
     func check_controls do
         c = [joy.pressed] via a
         d = [dir] via a
-        if compare c@joy.bit.LEFT is ~zero then
+        if compare c@joy.bit.LEFT is not zero then
             if compare a to direction.RIGHT is ~= then
                 d = direction.LEFT
             end
-        elseif compare c@joy.bit.RIGHT is ~zero then
+        elseif compare c@joy.bit.RIGHT is not zero then
             if compare a to direction.LEFT is ~= then
                 d = direction.RIGHT
             end
-        elseif compare c@joy.bit.UP is ~zero then
+        elseif compare c@joy.bit.UP is not zero then
             if compare a to direction.DOWN is ~= then
                 d = direction.UP
             end
-        elseif compare c@joy.bit.DOWN is ~zero then
+        elseif compare c@joy.bit.DOWN is not zero then
             if compare a to direction.UP is ~= then
                 d = direction.DOWN
             end

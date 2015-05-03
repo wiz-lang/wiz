@@ -293,7 +293,7 @@ class Parser
                         Keyword.Return, Keyword.Resume,
                         Keyword.Break, Keyword.Continue,
                         Keyword.While, Keyword.Until,
-                        Keyword.Assert, Keyword.Sleep, Keyword.Suspend, Keyword.Nop:
+                        Keyword.Abort, Keyword.Sleep, Keyword.Suspend, Keyword.Nop:
                         return parseJump();
                     case Keyword.If:
                         return parseConditional();
@@ -729,22 +729,15 @@ class Parser
             }
             return new ast.Jump(Keyword.Inline, far, destination, condition, location);
         }
-        else if(keyword == Keyword.Assert)
+        else if(keyword == Keyword.If)
+        {
+            return parseInlineConditional();
+        }
+        else if(keyword == Keyword.Abort)
         {
             bool far;
-            nextToken(); // IDENTIFIER (keyword 'call')
-            if(token == Token.Exclaim)
-            {
-                nextToken(); // '!'
-                far = true;
-            }
-            ast.JumpCondition condition = null;
-            if(token == Token.Identifier && keyword == Keyword.When)
-            {
-                nextToken(); // IDENTIFIER (keyword 'when')
-                condition = parseJumpCondition("'when'");
-            }
-            return new ast.Jump(Keyword.InlineAssert, far, null, condition, location);
+            nextToken(); // IDENTIFIER (keyword 'abort')
+            return new ast.Jump(Keyword.InlineAbort, far, null, null, location);
         }
         else
         {
@@ -838,25 +831,18 @@ class Parser
         
         // '~'*
         bool negated = false;
-        while(token == Token.Not)
+        while(token == Token.Identifier && keyword == Keyword.Not)
         {
-            nextToken(); // '~'
+            nextToken(); // 'not'
             negated = !negated;
-            context = "'~'";
-        }
-        
-        if(isPrefixToken())
-        {
-            auto expr = parseExpression();
-            return new ast.JumpCondition(negated, expr, scanner.getLocation());
+            context = "'not'";
         }
 
         switch(token)
         {
-            case Token.Identifier, Token.Integer, Token.Hexadecimal, Token.Binary, Token.String, Token.LParen:
-                auto expr = parseExpression();
-
-                return new ast.JumpCondition(negated, expr, scanner.getLocation());
+            case Token.Identifier:
+                auto attr = parseAttribute();
+                return new ast.JumpCondition(negated, attr, scanner.getLocation());
             case Token.NotEqual:
             case Token.Equal:
             case Token.Less:
@@ -874,16 +860,10 @@ class Parser
 
     auto isPossibleJumpCondition()
     {
-        if(isPrefixToken())
-        {
-            return true;
-        }
         switch(token)
         {
             case Token.Identifier:
-                return keyword == Keyword.None;
-            case Token.Integer, Token.Hexadecimal, Token.Binary, Token.String, Token.LParen:
-            case Token.Not:
+                return keyword == Keyword.None || keyword == Keyword.Not;
             case Token.NotEqual:
             case Token.Equal:
             case Token.Less:
@@ -949,7 +929,7 @@ class Parser
                 }
                 else if(useFallback)
                 {
-                    preludeStatements ~= parseAssignmentInner(exprLocation, condition.expr);
+                    preludeStatements ~= parseAssignmentInner(exprLocation, condition.attr);
                 }
                 else
                 {
@@ -989,6 +969,90 @@ class Parser
             // Construct if statement/
             auto previous = statement;
             statement = new ast.Conditional(condition, far, prelude, block, location);
+
+            // If this is an 'elseif', join to previous 'if'/'elseif'.
+            if(previous)
+            {
+                previous.alternative = statement;
+            }
+            else if(first is null)
+            {
+                first = statement;
+            }
+        } while(keyword == Keyword.ElseIf);
+        
+        // ('else' statement*)? 'end' (with error recovery for an invalid trailing else/elseif placement)
+        if(keyword == Keyword.Else)
+        {
+            auto location = scanner.getLocation();
+            nextToken(); // IDENTIFIER (keyword 'else')
+            statement.alternative = new ast.Block(parseConditionalBlock(), location); // statement*
+        }
+        switch(keyword)
+        {
+            case Keyword.Else:
+                error("duplicate 'else' clause found.", scanner.getLocation());
+                break;
+            case Keyword.ElseIf:
+                // Seeing as we loop on elseif before an else/end, this must be an illegal use of elseif.
+                error("'elseif' can't appear after 'else' clause.", scanner.getLocation());
+                break;
+            default:
+        }
+
+        if(keyword == Keyword.End)
+        {
+            nextToken(); // IDENTIFIER (keyword 'end')
+        }
+        else
+        {
+            reject("'end'");
+        }
+        return first;
+    }
+
+    auto parseInlineConditional()
+    {
+        // conditional = 'if' statement* 'is' condition 'then' statement*
+        //      ('elseif' statement* 'is' condition 'then' statement*)*
+        //      ('else' statement)? 'end'
+        ast.InlineConditional first = null;
+        ast.InlineConditional statement = null;
+        
+        // 'if' condition 'then' statement* ('elseif' condition 'then' statement*)*
+        do
+        {
+            auto location = scanner.getLocation();
+            nextToken(); // IDENTIFIER (keyword 'if' / 'elseif')
+            
+            if(token == Token.Exclaim)
+            {
+                nextToken(); // '!'
+            }
+
+            bool negated = false;
+            while(token == Token.Identifier && keyword == Keyword.Not)
+            {
+                nextToken(); // 'not'
+                negated = !negated;
+            }
+
+            auto condition = parseExpression();
+            
+            if(keyword == Keyword.Then)
+            {
+                nextToken(); // IDENTIFIER (keyword 'then')
+            }
+            else
+            {
+                reject("'then'");
+            }
+            
+            auto block = new ast.Block(parseConditionalBlock(), location); // statement*
+            
+            // Construct if statement/
+            auto previous = statement;
+            statement = new ast.InlineConditional(negated, condition, block, location);
 
             // If this is an 'elseif', join to previous 'if'/'elseif'.
             if(previous)
