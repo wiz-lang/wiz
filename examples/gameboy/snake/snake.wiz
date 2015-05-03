@@ -94,13 +94,13 @@ func main do
 
         dest = gb.ram.map + 32
         step = 32
-        unroll 17 do 
+        inline for let i = 1, 17 do 
             [dest] = a
             dest = dest + step
         end
         
         dest = gb.ram.map + 32 + 19
-        unroll 17 do 
+        inline for let i = 1, 17 do 
             [dest] = a
             dest = dest + step
         end

@@ -31,7 +31,7 @@ package math do
         // Init LSBs of product
         h = b
         l = b
-        unroll 7 do
+        inline for let i = 1, 7 do
             // Test multiplier bit.
             a = a + a
             if is carry then
@@ -61,7 +61,7 @@ package math do
         a = c
         // Set C = 0, for carry propagation.
         c = h
-        unroll 7 do
+        inline for let i = 1, 7 do
             // Test multiplier bit.
             a = a + a
             if is carry then

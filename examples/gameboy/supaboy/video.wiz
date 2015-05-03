@@ -220,7 +220,7 @@ package video do
                 de = gb.ram.tile
                 c = 13
                 loop
-                    unroll 16 do
+                    inline for let i = 1, 16 do
                         [de] = [hl++] via a
                         e++
                     end

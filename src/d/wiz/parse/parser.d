@@ -299,8 +299,6 @@ class Parser
                         return parseConditional();
                     case Keyword.Loop:
                         return parseLoop();
-                    case Keyword.Unroll:
-                        return parseUnroll();
                     case Keyword.Compare:
                         return parseComparison();
                     case Keyword.Push:
@@ -733,6 +731,10 @@ class Parser
         {
             return parseInlineConditional();
         }
+        else if(keyword == Keyword.For)
+        {
+            return parseInlineFor();
+        }
         else if(keyword == Keyword.Abort)
         {
             bool far;
@@ -1111,12 +1113,38 @@ class Parser
         return new ast.Loop(block, far, location);
     }
 
-    auto parseUnroll()
+    auto parseInlineFor()
     {
-        // unroll = 'unroll' '*' expression ':' statement
+        // unroll = 'inline' 'for' 'let' identifier '=' expression, expression, expression? ':' statement
         auto location = scanner.getLocation();
-        nextToken(); // IDENTIFIER (keyword 'unroll')
-        auto repetitions = parseExpression();
+        nextToken(); // IDENTIFIER (keyword 'for')
+
+        string name;
+        if(keyword == Keyword.Let)
+        {
+            nextToken(); // IDENTIFIER (keyword 'let')
+            if(checkIdentifier())
+            {
+                name = text;
+            }
+            nextToken(); // IDENTIFIER
+            consume(Token.Set); // =
+        }
+        else
+        {
+            reject("'let'");
+        }
+
+        ast.Expression start = parseExpression();
+        consume(Token.Comma); // ,
+        ast.Expression end = parseExpression();
+
+        ast.Expression step = null;
+        if(token == Token.Comma)
+        {
+            consume(Token.Comma); // ,
+            step = parseExpression();
+        }
 
         if(keyword == Keyword.Do)
         {
@@ -1129,7 +1157,7 @@ class Parser
         auto block = new ast.Block(parseCompound(), location); // statement*
         nextToken(); // IDENTIFIER (keyword 'end')
 
-        return new ast.Unroll(repetitions, block, location);
+        return new ast.InlineFor(name, start, end, step, block, location);
     }
 
     auto parseComparison()

@@ -871,9 +871,9 @@ void build(Program program, ast.Node root)
                 }
             },
 
-            (ast.Unroll unroll)
+            (ast.InlineFor inlineFor)
             {
-                expanded = unroll.expand(program) || expanded;
+                expanded = inlineFor.expand(program) || expanded;
             },
         );
 

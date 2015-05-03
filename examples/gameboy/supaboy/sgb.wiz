@@ -50,7 +50,7 @@ package sgb do
             // Read up/down/left/right.
             [gb.joy.ctrl] = gb.joy.select.DIRECTIONS via a
             // Read twice are to prevent bounce.
-            unroll 2 do 
+            inline for let i = 1, 2 do 
                 a = [gb.joy.ctrl]
             end
             // Reset the joypad port.
@@ -58,13 +58,13 @@ package sgb do
             // Read A/B/Select/Start
             [gb.joy.ctrl] = gb.joy.select.BUTTONS via a
             // Read 6 times to prevent bounce.
-            unroll 6 do
+            inline for let i = 1, 6 do
                 a = [gb.joy.ctrl]
             end
             // Reset the joypad port. (Get the joypad index)
             [gb.joy.ctrl] = gb.joy.select.DIRECTIONS | gb.joy.select.BUTTONS via a
             // Read 6 times to prevent bounce.
-            unroll 4 do
+            inline for let i = 1, 4 do
                 a = [gb.joy.ctrl]
             end
             a = [gb.joy.ctrl] & 3
