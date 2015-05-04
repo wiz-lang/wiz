@@ -1,10 +1,10 @@
 let K = 1024
 bank header : rom * 16
 bank ram : ram * 2 * K
-bank #0 aux : rom * 8 * K
-bank #0 aux2 : rom * 8 * K
-bank #1 main : rom * 8 * K
-bank #1 main2 : rom * 8 * K
+bank aux : rom[0] * 8 * K
+bank aux2 : rom[0] * 8 * K
+bank main : rom[1] * 8 * K
+bank main2 : rom[1] * 8 * K
 bank chr : rom * 8 * K
 
 in header, 0x00:

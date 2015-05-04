@@ -483,57 +483,18 @@ class Parser
         // bank = 'bank' IDENTIFIER (',' IDENTIFIER)* ':' IDENTIFIER '*' expression
         auto location = scanner.getLocation();
         
-        ast.Expression[] indices;
-        string[] names;
+        string name;
         string type;
+        ast.Expression index;
         ast.Expression size;
         
         nextToken(); // IDENTIFIER (keyword 'bank')
         
-
-        if(token == Token.Hash)
-        {
-            nextToken();
-            indices ~= parseExpression();
-        }
-        else
-        {
-            indices ~= null;
-        }
         if(checkIdentifier())
         {
-            names ~= text;
+            name = text;
         }
         nextToken(); // IDENTIFIER
-        
-        // Check if we should match (',' id)*
-        while(token == Token.Comma)
-        {
-            nextToken(); // ,
-            if(token == Token.Hash)
-            {
-                nextToken();
-                indices ~= parseExpression();
-            }
-            else
-            {
-                indices ~= null;
-            }
-            if(token == Token.Identifier)
-            {
-                if(checkIdentifier())
-                {
-                    // parse name
-                    names ~= text;
-                }
-                nextToken(); // IDENTIFIER
-            }
-            else
-            {
-                reject("identifier after ',' in bank declaration");
-                break;
-            }
-        }
         
         consume(Token.Colon); // :
         
@@ -542,10 +503,18 @@ class Parser
             type = text;
         }
         nextToken(); // IDENTIFIER (bank type)
+
+        if(token == Token.LBracket)
+        {
+            nextToken();
+            index = parseExpression();
+            consume(Token.RBracket);
+        }
+
         consume(Token.Mul); // *
         size = parseExpression(); // term
         
-        return new ast.BankDecl(indices, names, type, size, location);
+        return new ast.BankDecl(name, type, index, size, location);
     }
     
     auto parseLabelDecl()

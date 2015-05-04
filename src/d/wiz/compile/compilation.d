@@ -961,10 +961,7 @@ void build(Program program, ast.Node root)
 
         (ast.BankDecl decl)
         {
-            foreach(i, name; decl.names)
-            {
-                program.environment.put(name, new sym.BankDef(decl));
-            }
+            program.environment.put(decl.name, new sym.BankDef(decl));
         },
 
         (ast.VarDecl decl)
@@ -1021,19 +1018,21 @@ void build(Program program, ast.Node root)
             size_t size;
             if(foldExpression(program, decl.size, true, size))
             {
-                foreach(i, name; decl.names)
+                size_t index = 0;
+                if(decl.index)
                 {
-                    size_t index = 0;
-                    if(decl.indices[i])
+                    foldExpression(program, decl.index, true, index);
+                    index++;
+                }
+                if(auto def = cast(sym.BankDef) program.environment.get(decl.name))
+                {
+                    if(decl.type != "rom" && decl.type != "ram")
                     {
-                        foldExpression(program, decl.indices[i], true, index);
-                        index++;
+                        error(std.string.format("declared bank of unrecognized type '%s' - must be 'rom' or 'ram'", decl.type), decl.location, true);
                     }
-                    if(auto def = cast(sym.BankDef) program.environment.get(name))
-                    {
-                        def.bank = new Bank(index, name, decl.type == "rom", size);
-                        program.addBank(def.bank);
-                    }
+
+                    def.bank = new Bank(decl.name, decl.type == "rom", index, size);
+                    program.addBank(def.bank);
                 }
             }
         }

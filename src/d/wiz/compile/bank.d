@@ -62,11 +62,11 @@ class Bank
         }
 
     public:
-        this(size_t index, string name, bool physical, size_t capacity)
+        this(string name, bool physical, size_t index, size_t capacity)
         {
-            this.index = index;
             this.name = name;
             this.physical = physical;
+            this.index = index;
             this.capacity = capacity;
             
             initialized = false;
