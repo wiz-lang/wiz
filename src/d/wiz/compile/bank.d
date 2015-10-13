@@ -10,7 +10,7 @@ class Bank
         enum ubyte PadValue = 0xFF;
 
         // The index of this bank, used by debug symbols.
-        int index;
+        size_t index;
         // The name of this bank.
         string name;
         // Until a ROM relocation occurs, this page is not initialized.
