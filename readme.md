@@ -27,12 +27,12 @@ Wiz is intended to cross-compile programs that run on specific hardware, as oppo
 
 Wiz currently supports the following CPU architectures:
 
-- MOS 6502 (used by the NES, C64, Atari 2600/5200/7800/8-bit, Apple II)
+- MOS 6502 (used by the NES, Commodore 64, Apple II, Atari 2600/5200/7800/8-bit computers, etc)
 - MOS 65C02
 - WDC 65C02
 - Rockwell 65C02
 - HuC6280 (used by the PC Engine / TurboGrafx-16)
-- WDC 65816 (used by the SNES, SA-1, Apple IIgs)
+- WDC 65816 (used by the SNES, SA-1, Apple IIGS)
 - SPC700 (used by the SNES APU)
 - Zilog Z80 (used by the Sega Master System, Game Gear, MSX, ZX, etc)
 - Game Boy CPU / DMG-CPU / GBZ80 / SM83 / LR35902 (used by the Game Boy and Game Boy Color)
