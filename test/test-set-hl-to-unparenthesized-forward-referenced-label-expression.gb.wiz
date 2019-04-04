@@ -1,4 +1,0 @@
-bank code : rom * 3
-in code, 0x8000:
-    hl = foo - 1
-def foo:

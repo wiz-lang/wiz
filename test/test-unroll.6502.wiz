@@ -1,6 +1,0 @@
-bank code : rom * 10
-in code, 0:
-
-inline for let i = 1, 10 do
-    byte: i    
-end
