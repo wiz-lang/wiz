@@ -10,15 +10,16 @@ Features
 
 Wiz has the following features:
 
-- Familiar and modern feeling syntax, without large hidden runtime costs.
+- Familiar and modern-feeling syntax that avoids hidden run-time costs.
 - Explicit control over memory layout and direct access to registers and memory.
+- The fine-grained flexibility of an assembler but without the hard-to-remember mnemonics.
 - Static type system that supports integers, structures, arrays, pointers, and other types.
 - Compile-time inlining, constant expression folding, and conditional compilation.
 - High-level structured programming features (if, while, for, do/while, function calls, assignment syntax, etc)
 - Low-level branching and operations where the control is needed.
-- Expressions and statements that map directly to low-level instructions.
-- Access to platform instrinsics for stuff like stack manipulation, comparison, bit-twiddling, I/O, etc.
-- `const` and `writeonly` qualifiers to prevent undesired access to memory.
+- Expressions and statements that map directly to low-level instructions and their operands.
+- Access to platform instrinsics for stuff like stack manipulation, comparison, bit-manipulation, I/O, etc.
+- `const` and `writeonly` qualifiers to help prevent undesired access to memory.
 - Memory mapped I/O registers, variables, constants, compile-time expression binding, functions, inline function expansion and loop unrolling.
 
 Wiz is intended to cross-compile programs that run on specific hardware, as opposed to an abstract machine which requires a runtime library to support it. This means programs must be written with the feature set and limitations of the system being targeted in mind (registers, addressing modes, limitations on instructions), and programs are highly platform-dependent.
