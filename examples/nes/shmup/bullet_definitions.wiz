@@ -1,0 +1,24 @@
+import "bullet_normal";
+
+namespace bullet_definitions {
+    enum Type : u8 {
+        NONE,
+        NORMAL_FORWARD,
+        NORMAL_DIAGONAL_1,
+        NORMAL_DIAGONAL_2,
+    }
+
+    func unused() {}
+
+    const init_handlers_l = [<:unused, <:bullet_normal.init, <:bullet_normal.init, <:bullet_normal.init];
+    const init_handlers_h = [>:unused, >:bullet_normal.init, >:bullet_normal.init, >:bullet_normal.init];
+    const draw_handlers_l = [<:unused, <:bullet_normal.draw_forward, <:bullet_normal.draw_diagonal_1, <:bullet_normal.draw_diagonal_2];
+    const draw_handlers_h = [>:unused, >:bullet_normal.draw_forward, >:bullet_normal.draw_diagonal_1, >:bullet_normal.draw_diagonal_2];
+    const update_handlers_l = [<:unused, <:bullet_normal.update_forward, <:bullet_normal.update_diagonal_1, <:bullet_normal.update_diagonal_2];
+    const update_handlers_h = [>:unused, >:bullet_normal.update_forward, >:bullet_normal.update_diagonal_1, >:bullet_normal.update_diagonal_2];
+    const hitbox_x : [i8] = [0, -4, -4, -4];
+    const hitbox_y : [i8] = [0, -6, -6, -6];
+    const hitbox_x2 : [i8] = [0, 4, 4, 4];
+    const hitbox_y2 : [i8] = [0, 5, 5, 5];
+    const damage : [u8] = [0, 1, 1, 1, 1];
+}

@@ -1,0 +1,533 @@
+namespace snes {
+    namespace ppu {
+        extern writeonly brightness @ 0x2100 : u8;
+        let BRIGHTNESS_FORCE_BLANK = 0x80;
+        let BRIGHTNESS_MASK = 0x7F;        
+
+        extern writeonly obj_control @ 0x2101 : u8;
+        let OBJ_CONTROL_8x8_16x16 = 0;
+        let OBJ_CONTROL_8x8_32x32 = 1;
+        let OBJ_CONTROL_8x8_64x64 = 2;
+        let OBJ_CONTROL_16x16_32x32 = 3;
+        let OBJ_CONTROL_16x16_64x64 = 4;
+        let OBJ_CONTROL_32x32_64x64 = 5;
+        let OBJ_CONTROL_16x32_32x64 = 6;
+        let OBJ_CONTROL_16x32_32x32 = 7;        
+
+        extern writeonly oam_address_l @ 0x2102 : u8;
+        extern writeonly oam_address_h @ 0x2103 : u8;
+        extern writeonly oam_address_hl @ 0x2103 : u16;
+        extern writeonly oam_write_data @ 0x2104 : u8;
+        extern const oam_read_data @ 0x2138 : u8;
+
+        extern writeonly bg_mode @ 0x2105 : u8;
+        let BG_MODE_MASK = 0x07;
+        let BG_MODE_MODE1_BG3_PRIORITY = 0x08;
+        let BG_MODE_BG1_16x16 = 0x10;
+        let BG_MODE_BG2_16x16 = 0x20;
+        let BG_MODE_BG3_16x16 = 0x40;
+        let BG_MODE_BG4_16x16 = 0x80;        
+
+        extern writeonly mosaic @ 0x2106 : u8;
+        let MOSAIC_ENABLE_BG1 = 0x01;
+        let MOSAIC_ENABLE_BG2 = 0x02;
+        let MOSAIC_ENABLE_BG3 = 0x04;
+        let MOSAIC_ENABLE_BG4 = 0x08;
+
+        extern writeonly bg1_tilemap @ 0x2107 : u8;
+        extern writeonly bg2_tilemap @ 0x2108 : u8;
+        extern writeonly bg3_tilemap @ 0x2109 : u8;
+        extern writeonly bg4_tilemap @ 0x210A : u8;
+        let BG_TILEMAP_MIRROR_X = 0x01;
+        let BG_TILEMAP_MIRROR_Y = 0x02;
+        let BG_TILEMAP_ADDRESS_SHIFT_LEFT = 2;
+        let BG_TILEMAP_ADDRESS_BIT_ALIGN = 10;        
+
+        extern writeonly bg12_tileset @ 0x210B : u8;
+        let BG_TILESET_ADDRESS_BIT_ALIGN = 12;
+        let BG12_TILESET_ADDRESS_BG2_SHIFT = 4;
+        let BG12_TILESET_ADDRESS_BG1_SHIFT = 0;
+        extern writeonly bg34_tileset @ 0x210C : u8;
+        let BG34_TILESET_ADDRESS_BG3_SHIFT = 4;
+        let BG34_TILESET_ADDRESS_BG4_SHIFT = 0;        
+
+        extern writeonly bg1_scroll_x @ 0x210D : u8; // 2x write
+        extern writeonly bg1_scroll_y @ 0x210E : u8; // 2x write
+        extern writeonly bg2_scroll_x @ 0x210F : u8; // 2x write
+        extern writeonly bg2_scroll_y @ 0x2110 : u8; // 2x write
+        extern writeonly bg3_scroll_x @ 0x2111 : u8; // 2x write
+        extern writeonly bg3_scroll_y @ 0x2112 : u8; // 2x write
+        extern writeonly bg4_scroll_x @ 0x2113 : u8; // 2x write
+        extern writeonly bg4_scroll_y @ 0x2114 : u8; // 2x write
+
+        extern writeonly vram_control @ 0x2115 : u8;
+        let VRAM_CONTROL_INCREMENT_1 = 0x00;
+        let VRAM_CONTROL_INCREMENT_32 = 0x01;
+        let VRAM_CONTROL_INCREMENT_128 = 0x02;
+        let VRAM_CONTROL_REMAP_MODE_0 = 0x00;
+        let VRAM_CONTROL_REMAP_MODE_1 = 0x04;
+        let VRAM_CONTROL_REMAP_MODE_2 = 0x08;
+        let VRAM_CONTROL_REMAP_MODE_3 = 0x0C;
+        let VRAM_CONTROL_SIZE_8 = 0x00;
+        let VRAM_CONTROL_SIZE_16 = 0x80;        
+
+        extern writeonly vram_address_l @ 0x2116 : u8;
+        extern writeonly vram_address_h @ 0x2117 : u8;
+        extern writeonly vram_address_hl @ 0x2116 : u16;
+        extern writeonly vram_write_data_l @ 0x2118 : u8;
+        extern writeonly vram_write_data_h @ 0x2119 : u8;
+        extern writeonly vram_write_data_hl @ 0x2118 : u16;
+        extern const vram_read_data_l @ 0x2139 : u8;
+        extern const vram_read_data_h @ 0x213A : u8;
+        extern const vram_read_data_hl @ 0x2139 : u16;
+
+        extern writeonly mode7_control @ 0x211A : u8;
+        let MODE7_CONTROL_FIELD_SIZE_NORMAL = 0x00;
+        let MODE7_CONTROL_FIELD_SIZE_HUGE = 0x80;
+        let MODE7_CONTROL_EMPTY_TRANSPARENT_FILL = 0x00;
+        let MODE7_CONTROL_EMPTY_TILE_FILL = 0x40;
+        let MODE7_CONTROL_MIRROR_X = 0x01;
+        let MODE7_CONTROL_MIRROR_Y = 0x02;        
+
+        extern writeonly mode7_a @ 0x211B : u8; // 2x write
+        extern writeonly mode7_b @ 0x211C : u8; // 2x write
+        extern writeonly mode7_c @ 0x211D : u8; // 2x write
+        extern writeonly mode7_d @ 0x211E : u8; // 2x write
+        extern writeonly mode7_center_x @ 0x211F : u8; // 2x write
+        extern writeonly mode7_center_y @ 0x2120 : u8; // 2x write
+
+        extern writeonly cgram_address @ 0x2121 : u8;
+        extern writeonly cgram_write_data @ 0x2122 : u8; // 2x write
+        extern const cgram_read_data @ 0x213B : u8; // 2x read
+
+        extern writeonly win_bg12_control @ 0x2123 : u8;
+        let WIN_BG12_CONTROL_BG1_INVERT_WIN1 = 0x01;
+        let WIN_BG12_CONTROL_BG1_ENABLE_WIN1 = 0x02;
+        let WIN_BG12_CONTROL_BG1_INVERT_WIN2 = 0x04;
+        let WIN_BG12_CONTROL_BG1_ENABLE_WIN2 = 0x08;
+        let WIN_BG12_CONTROL_BG2_INVERT_WIN1 = 0x10;
+        let WIN_BG12_CONTROL_BG2_ENABLE_WIN1 = 0x20;
+        let WIN_BG12_CONTROL_BG2_INVERT_WIN2 = 0x40;
+        let WIN_BG12_CONTROL_BG2_ENABLE_WIN2 = 0x80;        
+
+        extern writeonly win_bg34_control @ 0x2124 : u8;
+        let WIN_BG34_CONTROL_BG3_INVERT_WIN1 = 0x01;
+        let WIN_BG34_CONTROL_BG3_ENABLE_WIN1 = 0x02;
+        let WIN_BG34_CONTROL_BG3_INVERT_WIN2 = 0x04;
+        let WIN_BG34_CONTROL_BG3_ENABLE_WIN2 = 0x08;
+        let WIN_BG34_CONTROL_BG4_INVERT_WIN1 = 0x10;
+        let WIN_BG34_CONTROL_BG4_ENABLE_WIN1 = 0x20;
+        let WIN_BG34_CONTROL_BG4_INVERT_WIN2 = 0x40;
+        let WIN_BG34_CONTROL_BG4_ENABLE_WIN2 = 0x80;        
+
+        extern writeonly win_obj_control @ 0x2125 : u8;
+        let WIN_OBJ_CONTROL_OBJ_INVERT_WIN1 = 0x01;
+        let WIN_OBJ_CONTROL_OBJ_ENABLE_WIN1 = 0x02;
+        let WIN_OBJ_CONTROL_OBJ_INVERT_WIN2 = 0x04;
+        let WIN_OBJ_CONTROL_OBJ_ENABLE_WIN2 = 0x08;
+        let WIN_OBJ_CONTROL_BACKDROP_INVERT_WIN1 = 0x10;
+        let WIN_OBJ_CONTROL_BACKDROP_ENABLE_WIN1 = 0x20;
+        let WIN_OBJ_CONTROL_BACKDROP_INVERT_WIN2 = 0x40;
+        let WIN_OBJ_CONTROL_BACKDROP_ENABLE_WIN2 = 0x80;        
+
+        extern writeonly win1_left @ 0x2126 : u8;
+        extern writeonly win1_right @ 0x2127 : u8;
+        extern writeonly win2_left @ 0x2128 : u8;
+        extern writeonly win2_right @ 0x2129 : u8;
+
+        extern writeonly win_bg_operators @ 0x212A : u8;
+        let WIN_OPERATOR_OR = 0;
+        let WIN_OPERATOR_AND = 1;
+        let WIN_OPERATOR_XOR = 2;
+        let WIN_OPERATOR_XNOR = 3;
+        let WIN_BG_OPERATORS_BG4_SHIFT = 6;
+        let WIN_BG_OPERATORS_BG3_SHIFT = 4;
+        let WIN_BG_OPERATORS_BG2_SHIFT = 2;
+        let WIN_BG_OPERATORS_BG1_SHIFT = 0;        
+
+        extern writeonly win_obj_operators @ 0x212B : u8;
+        let WIN_OBJ_OPERATORS_OBJ_SHIFT = 2;
+        let WIN_OBJ_OPERATORS_BACKDROP_SHIFT = 0;        
+
+        extern writeonly screen_enable_mask @ 0x212C : u8;
+        extern writeonly screen_window_mask @ 0x212E : u8;
+        extern writeonly sub_screen_enable_mask @ 0x212D : u8;
+        extern writeonly sub_screen_window_mask @ 0x212F : u8;
+        let SCREEN_ENABLE_BG1 = 0x01;
+        let SCREEN_ENABLE_BG2 = 0x02;
+        let SCREEN_ENABLE_BG3 = 0x04;
+        let SCREEN_ENABLE_BG4 = 0x08;
+        let SCREEN_ENABLE_OBJ = 0x10;
+
+        extern writeonly color_control @ 0x2130 : u8;
+        let COLOR_CONTROL_CLIP_INNER = 0x80;
+        let COLOR_CONTROL_CLIP_OUTER = 0x40;
+        let COLOR_CONTROL_DISABLE_BLEND_INNER = 0x20;
+        let COLOR_CONTROL_DISABLE_BLEND_OUTER = 0x10;
+        let COLOR_CONTROL_USE_SUBSCREEN = 0x02;
+        let COLOR_CONTROL_DIRECT_MODE = 0x01;        
+
+        extern writeonly color_math @ 0x2131 : u8;
+        let COLOR_MATH_ENABLE_MASK = 0x3F;
+        let COLOR_MATH_HALVE = 0x20;
+        let COLOR_MATH_ADD = 0x00;
+        let COLOR_MATH_SUB = 0x20;
+
+        extern writeonly color_fill @ 0x2132 : u8;
+        let COLOR_FILL_INTENSITY_MASK = 0x1F;
+        let COLOR_FILL_R = 0x20;
+        let COLOR_FILL_G = 0x40;
+        let COLOR_FILL_B = 0x80;
+
+        extern writeonly video_control @ 0x2133 : u8;
+        let VIDEO_CONTROL_EXTERNAL_SYNC = 0x80;
+        let VIDEO_CONTROL_MODE7_EXTBG = 0x40;
+        let VIDEO_CONTROL_PSEUDO_HIRES = 0x08;
+        let VIDEO_CONTROL_OVERSCAN = 0x04;
+        let VIDEO_CONTROL_OBJ_INTERLACE = 0x02;
+        let VIDEO_CONTROL_SCREEN_INTERLACE = 0x01;
+
+        extern writeonly hvcount_latch @ 0x2137 : u8;
+        extern const hcount @ 0x213C : u8; // 2x read
+        extern const vcount @ 0x213D : u8; // 2x read
+
+        extern const status77 @ 0x213E : u8;
+        let STATUS77_TIME_OVER_MASK = 0x80;
+        let STATUS77_RANGE_OVER_MASK = 0x40;
+        let STATUS77_MASTER_MASK = 0x20;
+        let STATUS77_5C77_VERSION_MASK = 0xF;
+        let STATUS77_TIME_OVER_BIT = 7;
+        let STATUS77_RANGE_OVER_BIT = 6;
+        let STATUS77_MASTER_BIT = 5;
+
+        extern const status78 @ 0x213F : u8;
+        let STATUS78_INTERLACE_FIELD_MASK = 0x80;
+        let STATUS78_EXTERNAL_LATCH_MASK = 0x40;
+        let STATUS78_PAL_MODE_MASK = 0x10;
+        let STATUS78_5C78_VERSION_MASK = 0xF;
+        let STATUS78_INTERLACE_FIELD_BIT = 7;
+        let STATUS78_EXTERNAL_LATCH_BIT = 6;
+        let STATUS78_PAL_MODE_BIT = 4;
+
+        extern writeonly hcount_trigger_l @ 0x4207 : u8;
+        extern writeonly hcount_trigger_h @ 0x4208 : u8;
+        extern writeonly hcount_trigger_hl @ 0x4207 : u16;
+        extern writeonly vcount_trigger_l @ 0x4209 : u8;
+        extern writeonly vcount_trigger_h @ 0x420A : u8;
+        extern writeonly vcount_trigger_hl @ 0x4209 : u16;
+
+        extern writeonly irq_enable @ 0x4200 : u8;
+        let IRQ_ENABLE_NMI = 0x80;
+        let IRQ_ENABLE_IRQ_ON_HCOUNT = 0x20;
+        let IRQ_ENABLE_IRQ_ON_VCOUNT = 0x10;
+        let IRQ_ENABLE_AUTOJOY = 0x01;
+
+        extern const nmi_flag @ 0x4210 : u8;
+        let NMI_FLAG_NMI_ACTIVE_MASK = 0x80;
+        let NMI_FLAG_5A22_VERSION_MASK = 0xF;
+        let NMI_FLAG_NMI_ACTIVE_BIT = 7;
+
+        extern const irq_status @ 0x4211 : u8;
+        let IRQ_STATUS_IRQ_ACTIVE_MASK = 0x80;
+        let IRQ_STATUS_IRQ_ACTIVE_BIT = 7;
+
+        extern const hvbjoy_status @ 0x4212 : u8;
+        let HVBJOY_STATUS_VBLANK_MASK = 0x80;
+        let HVBJOY_STATUS_HBLANK_MASK = 0x40;
+        let HVBJOY_STATUS_AUTOJOY_MASK = 0x01;
+        let HVBJOY_STATUS_VBLANK_BIT = 7;
+        let HVBJOY_STATUS_HBLANK_BIT = 6;
+        let HVBJOY_STATUS_AUTOJOY_BIT = 0;
+    }
+
+    namespace apu {
+        extern writeonly output0 @ 0x2140 : u8;
+        extern writeonly output1 @ 0x2141 : u8;
+        extern writeonly output2 @ 0x2142 : u8;
+        extern writeonly output3 @ 0x2143 : u8;
+        extern writeonly output10 @ 0x2140 : u16;
+        extern writeonly output21 @ 0x2141 : u16;
+        extern writeonly output32 @ 0x2142 : u16;        
+
+        extern const input0 @ 0x2140 : u8;
+        extern const input1 @ 0x2141 : u8;
+        extern const input2 @ 0x2142 : u8;
+        extern const input3 @ 0x2143 : u8;
+        extern const input10 @ 0x2140 : u16;
+        extern const input21 @ 0x2141 : u16;
+        extern const input32 @ 0x2142 : u16;
+    }
+
+    namespace wram {
+        extern var data @ 0x2180 : u8;
+        extern writeonly address_l @ 0x2181 : u8;
+        extern writeonly address_h @ 0x2182 : u8;
+        extern writeonly address_bank @ 0x2183 : u8;
+        extern writeonly address_hl @ 0x2181 : u16;
+    }
+
+    namespace joy {
+        extern writeonly output @ 0x4016 : u8;
+        extern const input1 @ 0x4016 : u8;
+        extern const input2 @ 0x4017 : u8;
+
+        extern const pad1_l @ 0x4218 : u8;
+        extern const pad1_h @ 0x4219 : u8;
+        extern const pad2_l @ 0x421A : u8;
+        extern const pad2_h @ 0x421B : u8;
+        extern const pad3_l @ 0x421C : u8;
+        extern const pad3_h @ 0x421D : u8;
+        extern const pad4_l @ 0x421E : u8;
+        extern const pad4_h @ 0x421F : u8;
+
+        extern const pad1_hl @ 0x4218 : u16;
+        extern const pad2_hl @ 0x421A : u16;
+        extern const pad3_hl @ 0x421C : u16;
+        extern const pad4_hl @ 0x421E : u16;
+    }
+
+    namespace io {
+        extern writeonly output @ 0x4201 : u8;
+        extern const input @ 0x4213 : u8;
+    }
+
+    // i16 x i8 -> i24 multiplier. Only available with mode-7 disabled.
+    // Write left, then right. Result should be available immediately.
+    namespace multiply_i16i8 {
+        extern writeonly left @ 0x211B : u8; // 2x write
+        extern writeonly right @ 0x211C : u8;
+
+        extern const result_l @ 0x2134 : u8;
+        extern const result_m @ 0x2135 : u8;
+        extern const result_h @ 0x2136 : u8;
+        extern const result_ml @ 0x2134 : u16;
+        extern const result_hm @ 0x2135 : u16;
+    }
+
+    // u8 x u8 -> u16 multiplier.
+    // Write left, then right.
+    // 8 machine cycles (~48 master cycles) after right is set, the result may be read.
+    namespace multiply_u8u8 {
+        extern writeonly left @ 0x4202 : u8;
+        extern writeonly right @ 0x4203 : u8;
+
+        extern const result_l @ 0x4216 : u8;
+        extern const result_h @ 0x4217 : u8;
+        extern const result_hl @ 0x4216 : u16;
+    }
+
+    // u16 / u8 -> (u16, u16) divider.
+    // Write left, then right.
+    // 16 machine cycles (~96 master cycles) after right is set, the result may be read.
+    namespace divider {
+        extern writeonly left_l @ 0x4204 : u8;
+        extern writeonly left_h @ 0x4205 : u8;
+        extern writeonly left_hl @ 0x4204 : u16;
+        extern writeonly right @ 0x4206 : u8;
+
+        extern const div_result_l @ 0x4214 : u8;
+        extern const div_result_h @ 0x4215 : u8;
+        extern const div_result_hl @ 0x4214 : u16;
+        extern const mod_result_l @ 0x4216 : u8;
+        extern const mod_result_h @ 0x4217 : u8;
+        extern const mod_result_hl @ 0x4216 : u16;
+    }
+
+    namespace rom {
+        extern writeonly speed @ 0x420D : u8;
+        let SPEED_SLOW = 0;
+        let SPEED_FAST = 1;
+    }
+
+    namespace dma {
+        extern writeonly mdma_enable @ 0x420B : u8;
+        extern writeonly hdma_enable @ 0x420C : u8;
+
+        let ENABLE_0 = 0b00000001;
+        let ENABLE_1 = 0b00000010;
+        let ENABLE_2 = 0b00000100;
+        let ENABLE_3 = 0b00001000;
+        let ENABLE_4 = 0b00010000;
+        let ENABLE_5 = 0b00100000;
+        let ENABLE_6 = 0b01000000;
+        let ENABLE_7 = 0b10000000;
+
+        let CONTROL_MODE_MASK = 0x07;
+        let CONTROL_MODE_A = 0x00;
+        let CONTROL_MODE_AB = 0x01;
+        let CONTROL_MODE_AA = 0x02;
+        let CONTROL_MODE_AABB = 0x03;
+        let CONTROL_MODE_ABCD = 0x04;
+        let CONTROL_MODE_ABAB = 0x05;
+
+        let CONTROL_MDMA_DECREMENT = 0x10;
+        let CONTROL_MDMA_NO_INCREMENT = 0x08;
+
+        let CONTROL_HDMA_INDIRECT_MODE = 0x40;
+
+        let CONTROL_READ_PPU = 0x80;
+
+        let HDMA_LINE_COUNTER_COUNT_MASK = 0x7F;
+        let HDMA_LINE_COUNTER_REPEATED = 0x80;
+    }
+
+    namespace dma0 {
+        extern writeonly control @ 0x4300 : u8;
+        extern writeonly mdma_dest @ 0x4301 : u8;
+        extern writeonly src_address_l @ 0x4302 : u8;
+        extern writeonly src_address_h @ 0x4303 : u8;
+        extern writeonly src_address_bank @ 0x4304 : u8;
+        extern writeonly src_address_hl @ 0x4302 : u16;
+        extern writeonly mdma_size_l @ 0x4305 : u8;
+        extern writeonly mdma_size_h @ 0x4306 : u8;
+        extern writeonly mdma_size_hl @ 0x4305 : u16;
+        extern writeonly hdma_indirect_address_l @ 0x4305 : u8;
+        extern writeonly hdma_indirect_address_h @ 0x4306 : u8;
+        extern writeonly hdma_indirect_address_bank @ 0x4307 : u8;
+        extern writeonly hdma_indirect_address_hl @ 0x4305 : u16;
+        extern writeonly hdma_table_address_l @ 0x4308 : u8;
+        extern writeonly hdma_table_address_h @ 0x4309 : u8;
+        extern writeonly hdma_table_address_hl @ 0x4308 : u16;
+        extern writeonly hdma_line_counter @ 0x430A : u8;
+    }
+
+    namespace dma1 {
+        extern writeonly control @ 0x4310 : u8;
+        extern writeonly mdma_dest @ 0x4311 : u8;
+        extern writeonly src_address_l @ 0x4312 : u8;
+        extern writeonly src_address_h @ 0x4313 : u8;
+        extern writeonly src_address_bank @ 0x4314 : u8;
+        extern writeonly src_address_hl @ 0x4312 : u16;
+        extern writeonly mdma_size_l @ 0x4315 : u8;
+        extern writeonly mdma_size_h @ 0x4316 : u8;
+        extern writeonly mdma_size_hl @ 0x4315 : u16;
+        extern writeonly hdma_indirect_address_l @ 0x4315 : u8;
+        extern writeonly hdma_indirect_address_h @ 0x4316 : u8;
+        extern writeonly hdma_indirect_address_bank @ 0x4317 : u8;
+        extern writeonly hdma_indirect_address_hl @ 0x4315 : u16;
+        extern writeonly hdma_table_address_l @ 0x4318 : u8;
+        extern writeonly hdma_table_address_h @ 0x4319 : u8;
+        extern writeonly hdma_table_address_hl @ 0x4318 : u16;
+        extern writeonly hdma_line_counter @ 0x431A : u8;
+    }
+
+    namespace dma2 {
+        extern writeonly control @ 0x4320 : u8;
+        extern writeonly mdma_dest @ 0x4321 : u8;
+        extern writeonly src_address_l @ 0x4322 : u8;
+        extern writeonly src_address_h @ 0x4323 : u8;
+        extern writeonly src_address_bank @ 0x4324 : u8;
+        extern writeonly src_address_hl @ 0x4322 : u16;
+        extern writeonly mdma_size_l @ 0x4325 : u8;
+        extern writeonly mdma_size_h @ 0x4326 : u8;
+        extern writeonly mdma_size_hl @ 0x4325 : u16;
+        extern writeonly hdma_indirect_address_l @ 0x4325 : u8;
+        extern writeonly hdma_indirect_address_h @ 0x4326 : u8;
+        extern writeonly hdma_indirect_address_bank @ 0x4327 : u8;
+        extern writeonly hdma_indirect_address_hl @ 0x4325 : u16;
+        extern writeonly hdma_table_address_l @ 0x4328 : u8;
+        extern writeonly hdma_table_address_h @ 0x4329 : u8;
+        extern writeonly hdma_table_address_hl @ 0x4328 : u16;
+        extern writeonly hdma_line_counter @ 0x432A : u8;
+    }
+
+    namespace dma3 {
+        extern writeonly control @ 0x4330 : u8;
+        extern writeonly mdma_dest @ 0x4331 : u8;
+        extern writeonly src_address_l @ 0x4332 : u8;
+        extern writeonly src_address_h @ 0x4333 : u8;
+        extern writeonly src_address_bank @ 0x4334 : u8;
+        extern writeonly src_address_hl @ 0x4332 : u16;
+        extern writeonly mdma_size_l @ 0x4335 : u8;
+        extern writeonly mdma_size_h @ 0x4336 : u8;
+        extern writeonly mdma_size_hl @ 0x4335 : u16;
+        extern writeonly hdma_indirect_address_l @ 0x4335 : u8;
+        extern writeonly hdma_indirect_address_h @ 0x4336 : u8;
+        extern writeonly hdma_indirect_address_bank @ 0x4337 : u8;
+        extern writeonly hdma_indirect_address_hl @ 0x4335 : u16;
+        extern writeonly hdma_table_address_l @ 0x4338 : u8;
+        extern writeonly hdma_table_address_h @ 0x4339 : u8;
+        extern writeonly hdma_table_address_hl @ 0x4338 : u16;
+        extern writeonly hdma_line_counter @ 0x433A : u8;
+    }
+
+    namespace dma4 {
+        extern writeonly control @ 0x4340 : u8;
+        extern writeonly mdma_dest @ 0x4341 : u8;
+        extern writeonly src_address_l @ 0x4342 : u8;
+        extern writeonly src_address_h @ 0x4343 : u8;
+        extern writeonly src_address_bank @ 0x4344 : u8;
+        extern writeonly src_address_hl @ 0x4342 : u16;
+        extern writeonly mdma_size_l @ 0x4345 : u8;
+        extern writeonly mdma_size_h @ 0x4346 : u8;
+        extern writeonly mdma_size_hl @ 0x4345 : u16;
+        extern writeonly hdma_indirect_address_l @ 0x4345 : u8;
+        extern writeonly hdma_indirect_address_h @ 0x4346 : u8;
+        extern writeonly hdma_indirect_address_bank @ 0x4347 : u8;
+        extern writeonly hdma_indirect_address_hl @ 0x4345 : u16;
+        extern writeonly hdma_table_address_l @ 0x4348 : u8;
+        extern writeonly hdma_table_address_h @ 0x4349 : u8;
+        extern writeonly hdma_table_address_hl @ 0x4348 : u16;
+        extern writeonly hdma_line_counter @ 0x434A : u8;
+    }
+
+    namespace dma5 {
+        extern writeonly control @ 0x4350 : u8;
+        extern writeonly mdma_dest @ 0x4351 : u8;
+        extern writeonly src_address_l @ 0x4352 : u8;
+        extern writeonly src_address_h @ 0x4353 : u8;
+        extern writeonly src_address_bank @ 0x4354 : u8;
+        extern writeonly src_address_hl @ 0x4352 : u16;
+        extern writeonly mdma_size_l @ 0x4355 : u8;
+        extern writeonly mdma_size_h @ 0x4356 : u8;
+        extern writeonly mdma_size_hl @ 0x4355 : u16;
+        extern writeonly hdma_indirect_address_l @ 0x4355 : u8;
+        extern writeonly hdma_indirect_address_h @ 0x4356 : u8;
+        extern writeonly hdma_indirect_address_bank @ 0x4357 : u8;
+        extern writeonly hdma_indirect_address_hl @ 0x4355 : u16;
+        extern writeonly hdma_table_address_l @ 0x4358 : u8;
+        extern writeonly hdma_table_address_h @ 0x4359 : u8;
+        extern writeonly hdma_table_address_hl @ 0x4358 : u16;
+        extern writeonly hdma_line_counter @ 0x435A : u8;
+    }
+
+    namespace dma6 {
+        extern writeonly control @ 0x4360 : u8;
+        extern writeonly mdma_dest @ 0x4361 : u8;
+        extern writeonly src_address_l @ 0x4362 : u8;
+        extern writeonly src_address_h @ 0x4363 : u8;
+        extern writeonly src_address_bank @ 0x4364 : u8;
+        extern writeonly src_address_hl @ 0x4362 : u16;
+        extern writeonly mdma_size_l @ 0x4365 : u8;
+        extern writeonly mdma_size_h @ 0x4366 : u8;
+        extern writeonly mdma_size_hl @ 0x4365 : u16;
+        extern writeonly hdma_indirect_address_l @ 0x4365 : u8;
+        extern writeonly hdma_indirect_address_h @ 0x4366 : u8;
+        extern writeonly hdma_indirect_address_bank @ 0x4367 : u8;
+        extern writeonly hdma_indirect_address_hl @ 0x4365 : u16;
+        extern writeonly hdma_table_address_l @ 0x4368 : u8;
+        extern writeonly hdma_table_address_h @ 0x4369 : u8;
+        extern writeonly hdma_table_address_hl @ 0x4368 : u16;
+        extern writeonly hdma_line_counter @ 0x436A : u8;
+    }
+
+    namespace dma7 {
+        extern writeonly control @ 0x4370 : u8;
+        extern writeonly mdma_dest @ 0x4371 : u8;
+        extern writeonly src_address_l @ 0x4372 : u8;
+        extern writeonly src_address_h @ 0x4373 : u8;
+        extern writeonly src_address_bank @ 0x4374 : u8;
+        extern writeonly src_address_hl @ 0x4372 : u16;
+        extern writeonly mdma_size_l @ 0x4375 : u8;
+        extern writeonly mdma_size_h @ 0x4376 : u8;
+        extern writeonly mdma_size_hl @ 0x4375 : u16;
+        extern writeonly hdma_indirect_address_l @ 0x4375 : u8;
+        extern writeonly hdma_indirect_address_h @ 0x4376 : u8;
+        extern writeonly hdma_indirect_address_bank @ 0x4377 : u8;
+        extern writeonly hdma_indirect_address_hl @ 0x4375 : u16;
+        extern writeonly hdma_table_address_l @ 0x4378 : u8;
+        extern writeonly hdma_table_address_h @ 0x4379 : u8;
+        extern writeonly hdma_table_address_hl @ 0x4378 : u16;
+        extern writeonly hdma_line_counter @ 0x437A : u8;
+    }
+}

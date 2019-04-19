@@ -1,0 +1,3 @@
+#!/bin/sh
+cd `dirname $0`
+../../../bin/wiz -I../common main.wiz --system=6502 -o game.nes

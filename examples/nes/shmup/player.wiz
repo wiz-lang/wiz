@@ -1,0 +1,193 @@
+import "joy";
+import "nes";
+import "math";
+import "banks";
+import "video";
+import "bullet";
+import "entity";
+import "bullet_definitions";
+import "globals";
+
+namespace entity_player {
+    in ram {
+        var move_flags : u8;
+    }
+
+    func init() {
+        entity.hp[x] = a = 1;
+    }
+
+    func draw() {
+        <:w0 = a = entity.x_pixel[x];
+        >:w0 = a = entity.x_screen[x];
+        <:w2 = a = entity.y_pixel[x];
+        >:w2 = a = entity.y_screen[x];
+        b4 = a = 0;
+        b5 = a = sizeof(typeof(video.hero_idle_frame_data));
+        if { a = move_flags & 0x01; } && !zero {
+            if { a = timer & 0x7; } && a < 4 { 
+                <:ptr6 = a = <:&video.hero_move_frame_data[0];
+                >:ptr6 = a = >:&video.hero_move_frame_data[0];
+            } else {
+                <:ptr6 = a = <:&video.hero_move2_frame_data[0];
+                >:ptr6 = a = >:&video.hero_move2_frame_data[0];
+            }
+            if { a = move_flags & 0x40; } && !zero {
+                b4 = a;
+            }
+        } else {
+            if { a = timer & 0x7; } && a < 4 { 
+                <:ptr6 = a = <:&video.hero_idle_frame_data[0];
+                >:ptr6 = a = >:&video.hero_idle_frame_data[0];
+            } else {
+                <:ptr6 = a = <:&video.hero_idle2_frame_data[0];
+                >:ptr6 = a = >:&video.hero_idle2_frame_data[0];
+            }
+        }
+        /*} else {
+            if a == 3 {
+                b4 = a = 0x40;
+            }
+            <:ptr6 = a = <:&video.hero_move_frame_data[0];
+            >:ptr6 = a = >:&video.hero_move_frame_data[0];
+        }*/
+
+        x = oam_buffer_index;
+        video.draw_metasprite(x, w0, w2, b4, b5, ptr6);
+        oam_buffer_index = x;
+
+        x = entity.current_index;
+    }
+
+    func update() {
+        let BORDER_SIDES = 16;
+        let BORDER_ABOVE = 64;
+        let BORDER_BELOW = 24;
+        let MOVE_SPEED = 0x200;
+
+        move_flags = a = move_flags & 0xFE;
+        a = joy.pressed;
+        if a & math.powers_of_two[nes.joy.bit.LEFT] != 0 {
+            move_flags = a = (move_flags & (0x40 ^ 0xFF)) | 1;
+
+            entity.x_subpixel[x] = a = entity.x_subpixel[x] - <:MOVE_SPEED;
+            a = entity.x_pixel[x] -# >:MOVE_SPEED;
+
+            if !carry || a < BORDER_SIDES {
+                entity.x_subpixel[x] = a = 0;
+                a = BORDER_SIDES;
+            }
+
+            entity.x_pixel[x] = a;
+
+        } else if a & math.powers_of_two[nes.joy.bit.RIGHT] != 0 {
+            move_flags = a = move_flags | 0x41;
+
+            entity.x_subpixel[x] = a = entity.x_subpixel[x] + <:MOVE_SPEED;
+            a = entity.x_pixel[x] +# >:MOVE_SPEED;
+
+            if carry || a >= 256 - BORDER_SIDES {
+                entity.x_subpixel[x] = a = 0;
+                a = 256 - BORDER_SIDES;
+            }
+            
+            entity.x_pixel[x] = a;
+        }
+
+        a = joy.pressed;
+        if a & math.powers_of_two[nes.joy.bit.UP] != 0 {
+            move_flags = a = move_flags & (0x80 ^ 0xFF);
+
+            entity.y_subpixel[x] = a = entity.x_subpixel[x] - <:MOVE_SPEED;
+            a = entity.y_pixel[x] -# >:MOVE_SPEED;
+
+            if !carry || a < BORDER_ABOVE {
+                entity.y_subpixel[x] = a = 0;
+                a = BORDER_ABOVE;
+            }
+            
+            entity.y_pixel[x] = a;
+        } else if a & math.powers_of_two[nes.joy.bit.DOWN] != 0 {
+            move_flags = a = move_flags | 0x80;
+
+            entity.y_subpixel[x] = a = entity.x_subpixel[x] + <:MOVE_SPEED;
+            a = entity.y_pixel[x] +# >:MOVE_SPEED;
+
+            if carry || a >= 240 - BORDER_BELOW {
+                entity.y_subpixel[x] = a = 0;
+                a = 240 - BORDER_BELOW;
+            }
+            
+            entity.y_pixel[x] = a;            
+        }
+
+        a = entity.v1[x];
+        if !zero {
+            entity.v1[x]--;
+        }
+
+        a = joy.pressed;
+        ^if a & math.powers_of_two[nes.joy.bit.B] != 0 {
+            ^if { a = entity.v1[x]; } && zero {
+                let OFFSET_X = 5;
+                let OFFSET_Y = 12;
+
+                {
+                    y = bullet_definitions.Type.NORMAL_FORWARD as u8;
+                    <:w0 = a = entity.x_pixel[x] - OFFSET_X; goto skip if !carry;
+                    >:w0 = a = entity.x_screen[x] -# 0;
+                    <:w2 = a = entity.y_pixel[x] - OFFSET_Y; goto skip if !carry;
+                    >:w2 = a = entity.y_screen[x] -# 0;
+                    bullet.spawn_player_bullet(y, w0, w2);
+                    x = entity.current_index;
+
+                    skip:
+                }
+
+                {
+                    y = bullet_definitions.Type.NORMAL_FORWARD as u8;
+                    <:w0 = a = entity.x_pixel[x] + OFFSET_X; goto skip if carry;
+                    >:w0 = a = entity.x_screen[x] +# 0;
+                    <:w2 = a = entity.y_pixel[x] - OFFSET_Y; goto skip if !carry;
+                    >:w2 = a = entity.y_screen[x] -# 0;
+                    bullet.spawn_player_bullet(y, w0, w2);
+                    x = entity.current_index;
+
+                    skip:
+                }
+
+                {
+                    if { a = move_flags & 0x40; } && !zero {
+                        y = bullet_definitions.Type.NORMAL_DIAGONAL_1 as u8;
+                        <:w0 = a = entity.x_pixel[x] - OFFSET_X;
+                        >:w0 = a = entity.x_screen[x] -# 0; goto skip if !carry;
+                        <:w2 = a = entity.y_pixel[x] - OFFSET_Y;
+                        >:w2 = a = entity.y_screen[x] -# 0; goto skip if !carry;
+                        bullet.spawn_player_bullet(y, w0, w2);
+                        x = entity.current_index;
+
+                    } else {
+                        y = bullet_definitions.Type.NORMAL_DIAGONAL_2 as u8;
+                        <:w0 = a = entity.x_pixel[x] + OFFSET_X;
+                        >:w0 = a = entity.x_screen[x] +# 0; goto skip if carry;
+                        <:w2 = a = entity.y_pixel[x] - OFFSET_Y;
+                        >:w2 = a = entity.y_screen[x] -# 0; goto skip if !carry;
+                        bullet.spawn_player_bullet(y, w0, w2);
+                        x = entity.current_index;
+                    }
+
+                    skip:
+                }
+
+                entity.v1[x] = a = 8;
+            }
+        } else {
+            if { a = 5; } && a < entity.v1[x] {
+                entity.v1[x] = a;
+            }
+
+            entity.v2[x] = a = 0;
+        }
+
+    }
+}

@@ -1,0 +1,105 @@
+import "ram";
+import "entity";
+import "directions";
+import "joy";
+import "nes";
+
+namespace hero {
+    let START_X = 8;
+    let START_Y = 8;
+
+    func spawn() {
+        entity.spawn();
+        entity.max_hp[x] = a = 3;
+        entity.hp[x] = a;
+        entity.pixel_x[x] = a = START_X * 8;
+        entity.pixel_y[x] = a = START_Y * 8;
+        entity.update_lo[x] = a = <:update;
+        entity.update_hi[x] = a = >:update;
+        entity.frame[x] = a = 19;
+        entity.direction[x] = a = directions.DOWN;
+    }
+
+    func update() {
+        let SPEED = 192;
+        let DIAGONAL_SPEED = 132;
+
+        var x_speed @ &t0 : u16;
+        var y_speed @ &t2 : u16;
+        var frame @ &t4 : u8;
+
+        <:x_speed = a = 0;
+        >:x_speed = a;
+        <:y_speed = a;
+        >:y_speed = a;
+        
+        if { a = joy.controls & nes.joy.mask.LEFT; } && !zero {
+            <:x_speed = a = <:-SPEED;
+            >:x_speed = a = >:-SPEED;
+            entity.direction[x] = a = directions.LEFT;
+        }        
+        if { a = joy.controls & nes.joy.mask.RIGHT; } && !zero {
+            <:x_speed = a = <:SPEED;
+            >:x_speed = a = >:SPEED;
+            entity.direction[x] = a = directions.RIGHT;
+        }                    
+        if { a = joy.controls & nes.joy.mask.UP; } && !zero {
+            <:y_speed = a = <:-SPEED;
+            >:y_speed = a = >:-SPEED;
+            entity.direction[x] = a = directions.UP;
+        }        
+        if { a = joy.controls & nes.joy.mask.DOWN; } && !zero {
+            <:y_speed = a = <:SPEED;
+            >:y_speed = a = >:SPEED;
+            entity.direction[x] = a = directions.DOWN;
+        }
+        
+        if { a = <:x_speed | >:x_speed; } && !zero {
+            if { a = <:y_speed | >:y_speed; } && !zero {
+                a = >:x_speed;
+                if negative {
+                    <:x_speed = a = <:-DIAGONAL_SPEED;
+                    >:x_speed = a = >:-DIAGONAL_SPEED;
+                } else {
+                    <:x_speed = a = <:DIAGONAL_SPEED;
+                    >:x_speed = a = >:DIAGONAL_SPEED;
+                }
+
+                a = >:y_speed;
+                if negative {
+                    <:y_speed = a = <:-DIAGONAL_SPEED;
+                    >:y_speed = a = >:-DIAGONAL_SPEED;
+                } else {
+                    <:y_speed = a = <:DIAGONAL_SPEED;
+                    >:y_speed = a = >:DIAGONAL_SPEED;
+                }
+            }
+        }
+
+        entity.move(<:x_speed, >:x_speed, <:y_speed, >:y_speed);
+
+        entity.anim_timer[x]++;
+        frame = a = 0;        
+        if { a = entity.anim_timer[x]; } && a >= 20 {
+            if a >= 40 {
+                entity.anim_timer[x] = a = 0;
+            }
+            frame++;
+        }
+
+        entity.attributes[x] = a = entity.attributes[x] & <:~nes.ppu.oam.ATTRIBUTE_HFLIP;
+        if { a = entity.direction[x]; } && a < 2 {
+            if a == 1 {
+                entity.attributes[x] = a = entity.attributes[x] | nes.ppu.oam.ATTRIBUTE_HFLIP;
+            }                
+
+            entity.frame[x] = a = frame + 16;
+        } else {
+            entity.frame[x] = a = a + 16;
+            
+            if { a = frame; } &&  !zero {
+                entity.attributes[x] = a = entity.attributes[x] | nes.ppu.oam.ATTRIBUTE_HFLIP;
+            }
+        }
+    }
+}

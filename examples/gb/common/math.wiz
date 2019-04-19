@@ -1,0 +1,92 @@
+namespace math {
+    // Quick 16 x 16 unsigned multiply.
+    //
+    // By: Jon Tara
+    //      MicroControl Software
+    //      1300 E. Lafayette #2808
+    //      Detroit, Michigan  48207
+    //      (313) 393-2916
+    //
+    // This software is placed in the public domain.
+    //
+    // Jon Tara (1982-01-21): Initial release
+    // Jeff Frohwein (1997-04-25): Bug fixes
+    // Andrew G. Crowell (2013-05-28): Ported to wiz.
+    //
+    // Arguments:
+    //      de = multiplicand
+    //      hl = multiplier
+    // Returns:
+    //      bcde = product
+    // Dirty:
+    //      All registers.
+    //
+    func multiply_u16_u16() {
+        // Save MSBs of multiplier.
+        c = h;
+        // Save LSBs to accumulator for an 8x16 multiply.
+        a = l;
+        // Set B = 0, for carry propagation.
+        b = 0;
+        // Init LSBs of product
+        h = b;
+        l = b;
+        inline for let i in 1 .. 7 {
+            // Test multiplier bit.
+            a = a + a;
+            if carry {
+                // Add multiplicand to product in AHL.
+                hl = hl + de;
+                a = a +# b;
+            }
+            // Shift product left.
+            hl = hl + hl;
+        }
+        // Test multiplier bit.
+        a = a + a;
+        if carry {
+            // Add multiplicand to product in AHL.
+            hl = hl + de;
+            a = a +# b;
+        }
+
+        // Save LSBs on stack.
+        push(hl);
+        // Zero second product.
+        h = b;
+        l = b;
+        // Save MSBs of first product in B.
+        b = a;
+        // Get MSBs of multiplier.
+        a = c;
+        // Set C = 0, for carry propagation.
+        c = h;
+        inline for let i in 1 .. 7 {
+            // Test multiplier bit.
+            a = a + a;
+            if carry {
+                // Add multiplicand to product in AHL.
+                hl = hl + de;
+                a = a +# c;
+            }
+            // Shift product left.
+            hl = hl + hl;
+        }
+        // Test multiplier bit.
+        a = a + a;
+        if carry {
+            // Add multiplicand to product in AHL.
+            hl = hl + de;
+            a = a +# c;
+        }
+
+        // Pop LSBs from stack.
+        de = pop();
+        // Add partial products.
+        c = a;
+        d = a = d + l;
+        h = a = b +# h;
+        b = a = c +# 0;
+        c = h;
+    }
+}

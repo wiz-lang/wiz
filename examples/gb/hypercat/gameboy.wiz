@@ -1,0 +1,429 @@
+package gb do
+    package boot do
+        // Gameboy Color compatibility flag.
+        let GBC_UNSUPPORTED = 0x00
+        let GBC_COMPATIBLE = 0x80
+        let GBC_EXCLUSIVE = 0xC0
+
+        // Super Gameboy compatibility flag.
+        let SGB_UNSUPPORTED = 0x00
+        let SGB_SUPPORTED = 0x03
+
+        // Cartridge type.
+        let CART_ROM = 0x00
+        let CART_MBC1 = 0x01
+        let CART_MBC1_RAM = 0x02
+        let CART_MBC1_RAM_BATTERY = 0x03
+        let CART_MBC2 = 0x05
+        let CART_MBC2_BATTERY = 0x06
+        let CART_ROM_RAM = 0x08
+        let CART_ROM_RAM_BATTERY = 0x09
+        let CART_MMM01 = 0x0B
+        let CART_MMM01_RAM = 0x0C
+        let CART_MMM01_RAM_BATTERY = 0x0D
+        let CART_MBC3_TIMER_BATTERY = 0x0F
+        let CART_MBC3_TIMER_RAM_BATTERY = 0x10
+        let CART_MBC3 = 0x11
+        let CART_MBC3_RAM = 0x12
+        let CART_MBC3_RAM_BATTERY = 0x13
+        let CART_MBC4 = 0x15
+        let CART_MBC4_RAM = 0x16
+        let CART_MBC4_RAM_BATTERY = 0x17
+        let CART_MBC5 = 0x19
+        let CART_MBC5_RAM = 0x1A
+        let CART_MBC5_RAM_BATTERY = 0x1B
+        let CART_MBC5_RUMBLE = 0x1C
+        let CART_MBC5_RUMBLE_RAM = 0x1D
+        let CART_MBC5_RUMBLE_RAM_BATTERY = 0x1E
+        let CART_POCKET_CAMERA = 0xFC
+        let CART_BANDAI_TAMA5 = 0xFD
+        let CART_HUC3 = 0xFE
+        let CART_HUC1_RAM_BATTERY = 0xFF
+
+        // Rom sizes.
+        let ROM_32K = 0x00
+        let ROM_64K = 0x01
+        let ROM_128K = 0x02
+        let ROM_256K = 0x03
+        let ROM_512K = 0x04
+        let ROM_1024K = 0x05
+        let ROM_2048K = 0x06
+        let ROM_4096K = 0x07
+        let ROM_1152K = 0x52
+        let ROM_1280K = 0x53
+        let ROM_1536K = 0x54
+
+        // Ram sizes.
+        let RAM_NONE = 0x00
+        let RAM_2K = 0x01
+        let RAM_8K = 0x02
+        let RAM_32K = 0x03
+
+        // Destination code.
+        let DEST_JAPAN = 0x00
+        let DEST_INTERNATIONAL = 0x01
+    end
+
+    package lcd do
+        let ctrl = 0xFF40
+        let CTRL_ON = 0x80
+        let CTRL_WIN_MAP2 = 0x40
+        let CTRL_WIN_MAP1 = 0x00
+        let CTRL_WIN_ON = 0x20
+        let CTRL_TILESET2 = 0x10
+        let CTRL_TILESET1 = 0x00
+        let CTRL_BG_MAP2 = 0x08
+        let CTRL_BG_MAP1 = 0x00
+        let CTRL_OBJ_8x16 = 0x04
+        let CTRL_OBJ_8x8 = 0x00
+        let CTRL_OBJ_ON = 0x02
+        let CTRL_BG_ON = 0x01
+        
+        let CTRL_BIT_BG = 0
+        let CTRL_BIT_OBJ = 1
+        let CTRL_BIT_OBJ_SIZE = 2
+        let CTRL_BIT_BG_MAP = 3
+        let CTRL_BIT_TILESET = 4
+        let CTRL_BIT_WIN = 5
+        let CTRL_BIT_WIN_MAP = 6
+        let CTRL_BIT_ENABLE = 7
+        
+        let stat = 0xFF41
+        let STAT_SCANLINE_ENABLE = 0x40
+        let STAT_OAM_ENABLE = 0x20
+        let STAT_VBLANK_ENABLE = 0x10
+        let STAT_HBLANK_ENABLE = 0x08
+        let STAT_SCANLINE_FLAG = 0x04
+        let STAT_MODE_MASK = 0x03
+        let STAT_MODE_HBLANK = 0x00
+        let STAT_MODE_VBLANK = 0x01
+        let STAT_MODE_BUSY_OAM = 0x02
+        let STAT_MODE_BUSY_TRANSFER = 0x03
+
+        let dma = 0xFF46
+    end
+
+    package ram do
+        let tile = 0x8000
+        let map = 0x9800
+        let map2 = 0x9C00
+        let obj = 0xFE00
+        let wave = 0xFF30
+    end
+
+    package scroll do
+        // Wrapped coordinates.
+        let y = 0xFF42 // 0..255
+        let x = 0xFF43 // 0..255
+    end
+
+    package scanline do
+        let current = 0xFF44 // curent = 0 .. 153, where 144..153 indicates vblank 
+        let trigger = 0xFF45
+    end
+
+    package window do
+        // Unwrapped coordinates.
+        let y = 0xFF4A // y = 0..143
+        let x = 0xFF4B // x - 7 = 0 .. 166 -- x < 7 is weird. So is fully-offscren x.
+    end
+
+    package mono do
+        package palette do
+            let bg = 0xFF47
+            let obj1 = 0xFF48
+            let obj2 = 0xFF49
+
+            let COLOR_3_MASK = 0xC0
+            let COLOR_2_MASK = 0x30
+            let COLOR_1_MASK = 0x0C
+            let COLOR_0_MASK = 0x03
+            let COLOR_3_SHIFT = 6
+            let COLOR_2_SHIFT = 4
+            let COLOR_1_SHIFT = 2
+            let COLOR_0_SHIFT = 0
+        end
+    end
+
+    package color do
+        package palette do
+            package bg do
+                let index = 0xFF68
+                let data = 0xFF69
+            end
+
+            package obj do
+                let index = 0xFF6A
+                let data = 0xFF6B
+            end
+
+            let INDEX_VALUE_MASK = 0x3F
+            let INDEX_AUTO_INCREMENT = 0x80
+
+            let DATA_CHANNEL_SIZE = 5
+            let DATA_BLUE_SHIFT = 10
+            let DATA_GREEN_SHIFT = 5
+            let DATA_RED_SHIFT = 0
+            let DATA_BLUE_MASK = 0x7C00
+            let DATA_GREEN_MASK = 0x03E0
+            let DATA_RED_MASK = 0x001F
+        end
+
+        package select do
+            let vram = 0xFF4F
+            let VRAM_BANK_0 = 0x00
+            let VRAM_BANK_1 = 0x01
+
+            let wram = 0xFF70
+            let WRAM_BANK_MASK = 0x07
+        end
+
+        let speed = 0xFF4D
+        let SPEED_IS_DOUBLE = 0x80
+        let SPEED_IS_NORMAL = 0x00
+        let SPEED_SWITCH = 0x01
+
+        let infrared = 0xFF5D
+        let INFRARED_WRITE_MASK = 0x01
+        let INFRARED_WRITE_OFF = 0x00
+        let INFRARED_WRITE_ON = 0x01
+        let INFRARED_READ_MASK = 0x02
+        let INFRARED_READ_NORMAL = 0x02
+        let INFRARED_READ_RECEIVING = 0x00
+        let INFRARED_READ_ENABLE = 0xC0
+        let INFRARED_READ_DISABLE = 0x00
+
+        package dma do
+            package source do
+                let high = 0xFF51
+                let low = 0xFF52
+            end
+
+            package dest do
+                let high = 0xFF53
+                let low = 0xFF54
+            end
+
+            let transfer = 0xFF55
+            let TRANSFER_GENERAL = 0x00 // write
+            let TRANSFER_HBLANK = 0x80 // write
+            let TRANSFER_ACTIVE = 0x00 // read
+            let TRANSFER_INACTIVE = 0x80 // read
+        end
+    end
+
+    package super do
+        let PAL01 = 0x00
+        let PAL23 = 0x08
+        let PAL03 = 0x10
+        let PAL12 = 0x18
+        let ATTR_BLK = 0x20
+        let ATTR_LIN = 0x28
+        let ATTR_DIV = 0x30
+        let ATTR_CHR = 0x38
+        let SOUND = 0x40
+        let SOU_TRN = 0x48
+        let PAL_SET = 0x50
+        let PAL_TRN = 0x58
+        let ATRC_EN = 0x60
+        let TEST_EN = 0x68
+        let ICON_EN = 0x70
+        let DATA_SND = 0x78
+        let DATA_TRN = 0x80
+        let MLT_REQ = 0x88
+        let JUMP = 0x90
+        let CHR_TRN = 0x98
+        let PCT_TRN = 0xA0
+        let ATTR_TRN = 0xA8
+        let ATTR_SET = 0xB0
+        let MASK_EN = 0xB8
+        let OBJ_TRN = 0xC0
+    end
+
+    package audio do
+        package tone do
+            let sweep = 0xFF10
+            let SWEEP_TIME_MASK = 0x70
+            let SWEEP_DIRECTION_INC = 0x00
+            let SWEEP_DIRECTION_DEC = 0x08
+            let SWEEP_SHIFT_MASK = 0x07
+
+            let pattern = 0xFF11
+            let PATTERN_DUTY_MASK = 0xC0
+            let PATTERN_LENGTH_MASK = 0x1F
+
+            let envelope = 0xFF12
+            let ENVELOPE_INITIAL_MASK = 0xF0
+            let ENVELOPE_DIRECTION_INC = 0x08
+            let ENVELOPE_DIRECTION_DEC = 0x00
+            let ENVELOPE_SWEEP_MASK = 0x07
+
+            package frequency do
+                let low = 0xFF13
+
+                let high = 0xFF14
+                let HIGH_RESTART = 0x80
+                let HIGH_COUNT = 0x40
+                let HIGH_MASK = 0x07
+            end
+        end
+
+        package tone2 do
+            let pattern = 0xFF16
+            let PATTERN_DUTY_MASK = 0xC0
+            let PATTERN_LENGTH_MASK = 0x1F
+
+            let envelope = 0xFF17
+            let ENVELOPE_INITIAL_MASK = 0xF0
+            let ENVELOPE_DIRECTION_INC = 0x08
+            let ENVELOPE_DIRECTION_DEC = 0x00
+            let ENVELOPE_SWEEP_MASK = 0x07
+
+            package frequency do
+                let low = 0xFF18
+
+                let high = 0xFF19
+                let HIGH_RESTART = 0x80
+                let HIGH_COUNT = 0x40
+                let HIGH_MASK = 0x07
+            end
+        end
+
+        package wave do
+            let toggle = 0xFF1A
+            let TOGGLE_ENABLE = 0x80
+            let TOGGLE_DISABLE = 0x00
+
+            let length = 0xFF1B
+
+            let volume = 0xFF1C
+            let VOLUME_0 = 0x00
+            let VOLUME_100 = 0x20
+            let VOLUME_50 = 0x40
+            let VOLUME_25 = 0x60
+
+            package frequency do
+                let low = 0xFF1D
+
+                let high = 0xFF1E
+                let HIGH_RESTART = 0x80
+                let HIGH_COUNT = 0x40
+                let HIGH_MASK = 0x07
+            end
+        end
+
+        package noise do
+            let length = 0xFF20
+            let LENGTH_MASH = 0x1F
+
+            let envelope = 0xFF21
+            let ENVELOPE_INITIAL_MASK = 0xF0
+            let ENVELOPE_DIRECTION_INC = 0x08
+            let ENVELOPE_DIRECTION_DEC = 0x00
+            let ENVELOPE_SWEEP_MASK = 0x07
+
+            let poly = 0xFF22
+            let POLY_CLOCK = 0xF0
+            let POLY_STEP = 0x08
+            let POLY_RATIO = 0x07
+
+            let play = 0xFF23
+            let PLAY_RESTART = 0x80
+            let PLAY_COUNT = 0x40
+        end
+
+        let volume = 0xFF24
+        let VOLUME_RIGHT_VIN = 0x80
+        let VOLUME_RIGHT_MASK = 0x70
+        let VOLUME_LEFT_VIN = 0x08
+        let VOLUME_LEFT_MASK = 0x07
+        
+        let pan = 0xFF25
+        let PAN_NOISE_R = 0x80
+        let PAN_NOISE_L = 0x08
+        let PAN_WAVE_R = 0x40
+        let PAN_WAVE_L = 0x04
+        let PAN_TONE2_R = 0x20
+        let PAN_TONE2_L = 0x02
+        let PAN_TONE_R = 0x10
+        let PAN_TONE_L = 0x01
+
+        let toggle = 0xFF26
+        let TOGGLE_ENABLE = 0x80
+        let TOGGLE_DISABLE = 0x00
+        let TOGGLE_NOISE = 0x08
+        let TOGGLE_WAVE = 0x04
+        let TOGGLE_TONE2 = 0x02
+        let TOGGLE_TONE = 0x01
+    end
+
+    package joy do
+        let ctrl = 0xFF00
+
+        package select do
+            let DIRECTIONS = 0x20
+            let BUTTONS = 0x10
+        end
+
+        // These bits are 0 when the appropriate button is pressed.
+        package bit do
+            let DOWN = 3
+            let UP = 2
+            let LEFT = 1
+            let RIGHT = 0
+            let START = 3
+            let SELECT = 2
+            let B = 1
+            let A = 0
+        end
+
+        package mask do
+            let ALL = 0x0F
+            let DOWN = 1 << bit.DOWN
+            let UP = 1 << bit.UP
+            let LEFT = 1 << bit.LEFT
+            let RIGHT = 1 << bit.RIGHT
+            let START = 1 << bit.START
+            let SELECT = 1 << bit.SELECT
+            let B = 1 << bit.B
+            let A = 1 << bit.A
+        end
+    end
+
+    package link do
+        let data = 0xFF01
+
+        let ctrl = 0xFF02
+        let CTRL_TRANSFER_START = 0x80
+        let CTRL_TRANSFER_OFF = 0x00
+        let CTRL_GBC_FAST = 0x02
+        let CTRL_GBC_NORMAL = 0x00
+        let CTRL_CLOCK_INTERNAL = 0x01
+        let CTRL_CLOCK_EXTERNAL = 0x00
+    end
+
+    package timer do
+        let divider = 0xFF04
+        let counter = 0xFF05
+        let modulo = 0xFF06
+
+        let ctrl = 0xFF07
+        let CTRL_STOP = 0x00
+        let CTRL_START = 0x04
+        let CTRL_CLOCK_4096 = 0x00
+        let CTRL_CLOCK_262144 = 0x01
+        let CTRL_CLOCK_65536 = 0x02
+        let CTRL_CLOCK_16384 = 0x03
+    end
+
+    package interrupt do
+        let enable = 0xFFFF
+        let flag = 0xFF0F
+
+        let VBLANK = 0x01
+        let STAT = 0x02
+        let TIMER = 0x04
+        let SERIAL = 0x04
+        let JOYPAD = 0x08
+    end
+end

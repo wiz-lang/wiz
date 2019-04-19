@@ -1,0 +1,428 @@
+import "nes";
+import "banks";
+import "globals";
+
+in prg {
+    import "joy";
+    import "video";
+    import "utility";
+    import "bullet";
+    import "entity";
+    import "entity_definitions";
+    import "bullet_definitions";
+
+    func main() {
+        // Disable decimal arithmetic (though not actually supported on 2A03 anyway)
+        decimal = false;
+        // Disable interrupts.
+        nointerrupt = true;
+        // Prepare stack.
+        s = x = 0xFF;
+
+        // Turn off rendering.
+        nes.ppu.control = x = 0;
+        nes.ppu.mask = x;
+        // Disable DMC interrupts.
+        nes.apu.frame_counter = a = nes.apu.FRAME_COUNTER_IRQ_DISABLE;
+
+        // Wait for the first PPU vertical blank
+        do {} while !nes.ppu.status$7;
+
+        for x in 0 .. 255 {
+            a = 0;
+            (0x00 as *u8)[x] = a;
+            (0x300 as *u8)[x] = a;
+            (0x400 as *u8)[x] = a;
+            (0x500 as *u8)[x] = a;
+            (0x600 as *u8)[x] = a;
+            (0x700 as *u8)[x] = a;
+            a = 0xFF;
+            oam_buffer_data[x] = a;
+        }
+
+        // Wait for the second PPU vertical blank
+        do {} while !nes.ppu.status$7;
+
+        {
+            y = 0;
+            x = nes.ppu.PALETTE_SIZE * nes.ppu.PALETTE_COUNT;
+            <:ptr0 = a = <:&palette;
+            >:ptr0 = a = >:&palette;
+            video.load_palette_offscreen(y, x, ptr0);
+        }
+
+        nes.ppu.address = a = >:nes.ppu.ADDRESS_NAMETABLE_0;  
+        nes.ppu.address = a = <:nes.ppu.ADDRESS_NAMETABLE_0;  
+        a = 0x01;
+        y = 30;
+        do {
+            x = 32;
+            do {
+                nes.ppu.data = a;
+                x--;
+            } while !zero;
+            y--;
+        } while !zero;
+
+        {
+            let START_X = 1;
+            let START_Y = 2;
+            let TILE_ADDRESS = nes.ppu.ADDRESS_NAMETABLE_0 + START_Y * 32 + START_X;
+            <:w0 = a = <:TILE_ADDRESS;
+            >:w0 = a = >:TILE_ADDRESS;
+            <:ptr2 = a = <:&message;
+            >:ptr2 = a = >:&message;
+            video.print_text_offscreen(w0, ptr2);
+        }
+
+        {
+            <:w0 = a = <:nes.ppu.ADDRESS_NAMETABLE_1;
+            >:w0 = a = >:nes.ppu.ADDRESS_NAMETABLE_1;
+
+            y = 24;
+            x = 0;
+            do {
+                nes.ppu.address = a = >:w0;
+                nes.ppu.address = a = <:w0;
+                nes.ppu.data = a = (x & 1) + 0x10;
+                x++;
+
+                <:w0 = a = <:w0 + 41;
+                >:w0 = a = >:w0 +# 0;
+
+                y--;                
+            } while !zero;
+
+        }
+
+        {
+            let START_X = 8;
+            let START_Y = 2;            
+            let TILE_ADDRESS = nes.ppu.ADDRESS_NAMETABLE_1 + START_Y * 32 + START_X;
+            nes.ppu.address = a = >:TILE_ADDRESS;
+            nes.ppu.address = a = <:TILE_ADDRESS;
+            nes.ppu.data = a = 0x19;
+            nes.ppu.data = a = 0x1A;
+            nes.ppu.data = a = 0x1A;
+            nes.ppu.data = a = 0x1A;
+            nes.ppu.data = a = 0x1A;
+            nes.ppu.data = a = 0x1B;
+            nes.ppu.address = a = >:(TILE_ADDRESS + 32);
+            nes.ppu.address = a = <:(TILE_ADDRESS + 32);
+            nes.ppu.data = a = 0x29;
+            nes.ppu.data = a = 0x2A;
+            nes.ppu.data = a = 0x2A;
+            nes.ppu.data = a = 0x2A;
+            nes.ppu.data = a = 0x2A;
+            nes.ppu.data = a = 0x2B;
+        }
+
+        {
+            let START_X = 20;
+            let START_Y = 8;            
+            let TILE_ADDRESS = nes.ppu.ADDRESS_NAMETABLE_1 + START_Y * 32 + START_X;
+            nes.ppu.address = a = >:TILE_ADDRESS;
+            nes.ppu.address = a = <:TILE_ADDRESS;
+            nes.ppu.data = a = 0x19;
+            nes.ppu.data = a = 0x1A;
+            nes.ppu.data = a = 0x1A;
+            nes.ppu.data = a = 0x1A;
+            nes.ppu.data = a = 0x1A;
+            nes.ppu.data = a = 0x1B;
+            nes.ppu.address = a = >:(TILE_ADDRESS + 32);
+            nes.ppu.address = a = <:(TILE_ADDRESS + 32);
+            nes.ppu.data = a = 0x29;
+            nes.ppu.data = a = 0x2A;
+            nes.ppu.data = a = 0x2A;
+            nes.ppu.data = a = 0x2A;
+            nes.ppu.data = a = 0x2A;
+            nes.ppu.data = a = 0x2B;            
+        }
+
+        {
+            let START_X = 14;
+            let START_Y = 16;            
+            let TILE_ADDRESS = nes.ppu.ADDRESS_NAMETABLE_1 + START_Y * 32 + START_X;
+            nes.ppu.address = a = >:TILE_ADDRESS;
+            nes.ppu.address = a = <:TILE_ADDRESS;
+            nes.ppu.data = a = 0x19;
+            nes.ppu.data = a = 0x1A;
+            nes.ppu.data = a = 0x1A;
+            nes.ppu.data = a = 0x1A;
+            nes.ppu.data = a = 0x1A;
+            nes.ppu.data = a = 0x1B;
+            nes.ppu.address = a = >:(TILE_ADDRESS + 32);
+            nes.ppu.address = a = <:(TILE_ADDRESS + 32);
+            nes.ppu.data = a = 0x29;
+            nes.ppu.data = a = 0x2A;
+            nes.ppu.data = a = 0x2A;
+            nes.ppu.data = a = 0x2A;
+            nes.ppu.data = a = 0x2A;
+            nes.ppu.data = a = 0x2B;            
+        }        
+
+        {
+            let START_X = 28;
+            let START_Y = 26;            
+            let TILE_ADDRESS = nes.ppu.ADDRESS_NAMETABLE_1 + START_Y * 32 + START_X;
+            nes.ppu.address = a = >:TILE_ADDRESS;
+            nes.ppu.address = a = <:TILE_ADDRESS;
+            nes.ppu.data = a = 0x19;
+            nes.ppu.data = a = 0x1A;
+            nes.ppu.data = a = 0x1A;
+            nes.ppu.data = a = 0x1A;
+            nes.ppu.address = a = >:(TILE_ADDRESS + 32);
+            nes.ppu.address = a = <:(TILE_ADDRESS + 32);
+            nes.ppu.data = a = 0x29;
+            nes.ppu.data = a = 0x2A;
+            nes.ppu.data = a = 0x2A;
+            nes.ppu.data = a = 0x2A;
+        }   
+
+
+        {
+            let START_X = 0;
+            let START_Y = 12;            
+            let TILE_ADDRESS = nes.ppu.ADDRESS_NAMETABLE_1 + START_Y * 32 + START_X;
+            nes.ppu.address = a = >:TILE_ADDRESS;
+            nes.ppu.address = a = <:TILE_ADDRESS;
+            nes.ppu.data = a = 0x1A;
+            nes.ppu.data = a = 0x1A;
+            nes.ppu.data = a = 0x1A;
+            nes.ppu.data = a = 0x1B;            
+            nes.ppu.address = a = >:(TILE_ADDRESS + 32);
+            nes.ppu.address = a = <:(TILE_ADDRESS + 32);
+            nes.ppu.data = a = 0x2A;
+            nes.ppu.data = a = 0x2A;
+            nes.ppu.data = a = 0x2A;
+            nes.ppu.data = a = 0x2B;            
+        }           
+
+        joy.init();
+        bullet.init_system();
+        entity.init_system();
+
+        {
+            y = entity_definitions.Type.PLAYER as u8;
+            <:w0 = a = 128;
+            >:w0 = a = 0;
+            <:w2 = a = 128 + 32;
+            >:w2 = a = 0;
+            entity.spawn_entity(y, w0, w2);
+        }
+
+
+        inline for let i in 0 .. 15 {
+            y = entity_definitions.Type.ENEMY_GHOST as u8;
+            <:w0 = a = 32 + (i % 3 * 24);
+            >:w0 = a = 0;
+            <:w2 = a = <:(48 + i * 8);
+            >:w2 = a = >:(48 + i * 8);
+            entity.spawn_entity(y, w0, w2);
+        }
+
+        nes.ppu.scroll = a = 0;
+        nes.ppu.scroll = a;
+
+        // We're finally ready to show the screen!
+        oam_start();
+        oam_finish();
+        vblank_redraw_requested++;
+        nes.ppu.control = a = nes.ppu.CONTROL_NMI;
+
+        // Enable interrupts.
+        nointerrupt = false;
+
+        draw_index = a = 0;
+
+        while true {
+            //nes.ppu.mask = a = nes.ppu.MASK_INTENSIFY_B | nes.ppu.MASK_LEFTMOST_BG | nes.ppu.MASK_RENDER_BG | nes.ppu.MASK_LEFTMOST_OBJ | nes.ppu.MASK_RENDER_OBJ;
+
+            bullet.update_all();
+            entity.update_all();
+
+            //nes.ppu.mask = a = nes.ppu.MASK_INTENSIFY_R | nes.ppu.MASK_INTENSIFY_G | nes.ppu.MASK_INTENSIFY_B | nes.ppu.MASK_LEFTMOST_BG | nes.ppu.MASK_RENDER_BG | nes.ppu.MASK_LEFTMOST_OBJ | nes.ppu.MASK_RENDER_OBJ;
+
+            oam_start();
+            draw_sprites();
+            oam_finish();
+
+            oam_buffer_index = x;
+
+            //nes.ppu.mask = a = nes.ppu.MASK_LEFTMOST_BG | nes.ppu.MASK_RENDER_BG | nes.ppu.MASK_LEFTMOST_OBJ | nes.ppu.MASK_RENDER_OBJ;
+            scroll_y_l = a = scroll_y_l - 3;
+
+            if !carry {
+                a += 240;
+                scroll_y_l = a;
+                scroll_y_h--;
+            }
+
+            timer++;
+            vblank_redraw_requested++;
+            do { a = vblank_redraw_requested; } while !zero;
+        }
+    }
+
+    inline func draw_sprites() {
+        let COUNT = entity.COUNT + bullet.COUNT;
+        var count : u8 in b15;
+
+        count = a = COUNT;
+        a = draw_index;
+
+        do {
+            x = draw_index;
+            a = x - entity.COUNT;
+            if !carry {
+                entity.current_index = x;
+
+                y = a = entity.type[x];
+                if !zero {
+                    <:w0 = a = (&entity_definitions.draw_handlers_l as *u8)[y];
+                    >:w0 = a = (&entity_definitions.draw_handlers_h as *u8)[y];
+                    call_handler(w0);
+                }
+            } else {
+                bullet.current_index = x = a;
+
+                y = a = bullet.type[x];
+                if !zero {
+                    <:w0 = a = (&bullet_definitions.draw_handlers_l as *u8)[y];
+                    >:w0 = a = (&bullet_definitions.draw_handlers_h as *u8)[y];
+                    call_handler(w0);
+                }
+            }
+
+            a = draw_index + DRAW_INDEX_LOOP_INCREMENT;
+            if a >= COUNT {
+                a -= COUNT;
+            }
+            draw_index = a;
+
+            --count;
+        } while !zero;
+
+
+        a += DRAW_INDEX_FRAME_INCREMENT;
+        if a >= COUNT {
+            a -= COUNT;
+        }
+        draw_index = a;
+    }
+
+    func oam_start() {
+        x = 0;
+        oam_buffer_data[x] = a = 0x1F; x++;
+        oam_buffer_data[x] = a = 0x61; x++;
+        oam_buffer_data[x] = a = 0x00; x++;
+        oam_buffer_data[x] = a = 0x80; x++;
+        oam_buffer_index = x;
+        oam_buffer_free_slots = a = 63;
+    }
+
+    func oam_finish() {
+        if { y = oam_buffer_free_slots; } && !zero {
+            a = 0xFF;
+            x = oam_buffer_index;
+            do {
+                oam_buffer_data[x] = a; x++;
+                oam_buffer_data[x] = a; x++;
+                oam_buffer_data[x] = a; x++;
+                oam_buffer_data[x] = a; x++;
+                y--;
+            } while !zero;
+        }
+    }
+
+    #[nmi] func vblank() {
+        push(a);
+        a = x; push(a);
+        a = y; push(a);
+
+        a = nes.ppu.status;
+
+        nes.ppu.control = a = 0;
+        nes.ppu.mask = a = 0;
+
+        if { a = vblank_disable_screen_requested; } && !zero {
+            vblank_disable_screen_requested = a = 0;
+            goto skip;
+        }
+
+        if { a = vblank_redraw_requested; } && !zero {
+            vblank_redraw_requested = a = 0;
+            nes.ppu.oam.address = a = 0;
+            nes.ppu.oam.dma = a = >:&oam_buffer_data;            
+        }
+
+        nes.ppu.control = a = nes.ppu.CONTROL_NMI | nes.ppu.CONTROL_OBJ_PATTERN_1 | nes.ppu.CONTROL_OBJ_8x16;
+        nes.ppu.mask = a = nes.ppu.MASK_LEFTMOST_BG | nes.ppu.MASK_RENDER_BG | nes.ppu.MASK_LEFTMOST_OBJ | nes.ppu.MASK_RENDER_OBJ;
+        nes.ppu.scroll = a = 0;
+        nes.ppu.scroll = a = 0;
+
+        joy.update();
+
+        a = 0x40;
+        do {} while a & nes.ppu.status != 0;
+
+        a = 0xC0;
+        do {} while a & nes.ppu.status == 0;
+
+        inline for in 1 .. 7 { nop(); }
+
+        a = b0; push(a);
+        {
+            // xxxx NNxx - nametable select
+            nes.ppu.address = a = 0x0C;
+            // VVxx xvvv - upper two bits of coarse vertical scrolling, all bits of fine vertical scrolling
+            nes.ppu.scroll = a = scroll_y_l;
+            b0 = a = (a & 0xF8) << 2;
+            // xxxx xhhh - fine horizontal scrolling
+            nes.ppu.scroll = a = scroll_x_l;
+            // VVH HHHH - final course scroll lower three bits of coarse V scroll, all bits of coarse H scroll
+            nes.ppu.address = a = (a >>> 3) | b0;
+        }
+        b0 = a = pop();
+
+
+        skip:
+
+        y = a = pop();
+        x = a = pop();
+        a = pop();
+    }
+
+    #[irq] func scanline() {
+        push(a);
+        a = x; push(a);
+        a = y; push(a);
+        y = a = pop();
+        x = a = pop();
+        a = pop();
+    }
+
+    const message = "SCORE 9999999\0";
+
+    let BG = 0x23;
+
+    const palette : [u8] = [
+        // Tiles
+        BG, 0x13, 0x34, 0x30,
+        BG, 0x23, 0x23, 0x30,
+        BG, 0x23, 0x23, 0x30,
+        BG, 0x23, 0x23, 0x30,
+        // Sprites
+        BG, 0x13, 0x25, 0x37,
+        BG, 0x1C, 0x29, 0x39,
+        BG, 0x11, 0x21, 0x30,
+        BG, 0x14, 0x24, 0x34
+    ];
+
+    const @ 0xFFFA = [vblank, main, scanline];
+}
+
+in chr {
+    const = embed "bg_tiles.chr";
+    const = embed "shmup_sprites.chr";
+}

@@ -1,0 +1,198 @@
+import "sms";
+
+bank prg @ 0x0000 : [constdata; 0x8000];
+bank chr @ 0x8000 : [constdata; 0x4000];
+bank ram @ 0xC000 : [vardata; 0x2000];
+
+in ram {
+    var frame : u8;
+    var wave : u8;
+}
+
+in prg @ 0x0000 {
+    interrupt = false;
+    interrupt_mode = 1;
+    goto main;
+}
+
+in prg @ 0x0038 {
+    #[irq] func handle_irq() {
+        interrupt = false;
+        push(af);
+        push(bc);
+        push(de);
+        push(hl);
+
+        a = io_read(sms.io.vdp.control);
+        if a $ sms.io.vdp.CONTROL_STATUS_BIT_VBLANK {
+            draw();
+        } else {
+            scan();
+        }
+
+        hl = pop();
+        de = pop();
+        bc = pop();
+        af = pop();
+        interrupt = true;
+    }
+}
+
+in prg @ 0x0066 {
+    #[nmi] func handle_pause() {
+
+    }
+
+    #[fallthrough] func main() {
+        // Init stack.
+        sp = 0xDFF0;
+
+        frame = a = 0;
+        wave = a = 0;
+
+        // Init mapper.
+        a = 0;
+        sms.mapper.control = a;
+        sms.mapper.rom_0000 = a;
+        a++;
+        sms.mapper.rom_4000 = a;
+        a++;
+        sms.mapper.rom_8000 = a;
+
+        // Init VDP.
+        io_write_increment_repeat(c = sms.io.vdp.control, hl = &vdp_data as u16, b = vdp_data.len);
+
+        // Clear VRAM.
+        io_write(sms.io.vdp.control, a = 0);
+        io_write(sms.io.vdp.control, a = sms.io.vdp.CONTROL_ACCESS_VRAM_WRITE);
+        bc = 0x4000;
+        do {
+            io_write(sms.io.vdp.data, a = 0);
+            bc--;
+            a = b | c;
+        } while !zero;
+
+        // Load background palette.
+        io_write(sms.io.vdp.control, a = 0x00);
+        io_write(sms.io.vdp.control, a = sms.io.vdp.CONTROL_ACCESS_CRAM);
+        io_write_increment_repeat(c = sms.io.vdp.data, hl = &bkg_palette_data as u16, b = sizeof(typeof(bkg_palette_data)));
+
+        // Load sprite palette.
+        io_write(sms.io.vdp.control, a = 0x20);
+        io_write(sms.io.vdp.control, a = sms.io.vdp.CONTROL_ACCESS_CRAM);
+        io_write_increment_repeat(c = sms.io.vdp.data, hl = &spr_palette_data as u16, b = sizeof(typeof(spr_palette_data)));
+
+        // Load background tileset.
+        io_write(sms.io.vdp.control, a = 0x00);
+        io_write(sms.io.vdp.control, a = 0x00 | sms.io.vdp.CONTROL_ACCESS_VRAM_WRITE);
+        hl = &bkg_tileset as u16;
+        bc = sizeof(typeof(bkg_tileset));
+        do {
+            io_write(sms.io.vdp.data, a = *(hl as *u8));
+            hl++;
+            bc--;
+            a = b | c;
+        } while !zero;
+
+        // Load sprite tileset.
+        io_write(sms.io.vdp.control, a = 0x00);
+        io_write(sms.io.vdp.control, a = 0x20 | sms.io.vdp.CONTROL_ACCESS_VRAM_WRITE);
+        hl = &spr_tileset as u16;
+        bc = sizeof(typeof(spr_tileset));
+        do {
+            io_write(sms.io.vdp.data, a = *(hl as *u8));
+            hl++;
+            bc--;
+            a = b | c;
+        } while !zero;
+
+        // Write text to nametable.
+        io_write(sms.io.vdp.control, a = 0xD4);
+        io_write(sms.io.vdp.control, a = 0x3A | sms.io.vdp.CONTROL_ACCESS_VRAM_WRITE);
+        hl = &message as u16;
+        bc = message.len;
+        do {
+            io_write(sms.io.vdp.data, a = *(hl as *u8));
+            io_write(sms.io.vdp.data, a = 0);
+            hl++;
+            bc--;
+            a = b | c;
+        } while !zero;
+
+        // Add a sprite to the sprite attribute table.
+        let sprite_index = 0;
+        io_write(sms.io.vdp.control, a = 0x00 + sprite_index);
+        io_write(sms.io.vdp.control, a = 0x3F | sms.io.vdp.CONTROL_ACCESS_VRAM_WRITE);
+        io_write(sms.io.vdp.data, a = 0x30); // y
+        io_write(sms.io.vdp.control, a = 0x80 + sprite_index * 2);
+        io_write(sms.io.vdp.control, a = 0x3F | sms.io.vdp.CONTROL_ACCESS_VRAM_WRITE);
+        io_write(sms.io.vdp.data, a = 0x60); // x
+        io_write(sms.io.vdp.data, a = 0x13); // tile
+
+        // Turn screen on
+        a = sms.vdp.MODE_CONTROL2_ENABLE | sms.vdp.MODE_CONTROL2_VBLANK_IRQ | sms.vdp.MODE_CONTROL2_DEFAULT_MASK;
+        io_write(sms.io.vdp.control, a);
+        io_write(sms.io.vdp.control, a = sms.vdp.mode_control2);
+
+        a = sms.vdp.MODE_CONTROL_SCANLINE_IRQ | sms.vdp.MODE_CONTROL_DEFAULT_MASK;
+        io_write(sms.io.vdp.control, a);
+        io_write(sms.io.vdp.control, a = sms.vdp.mode_control);
+
+        interrupt = true;
+
+        while true {
+            halt();
+        }
+    }
+
+    func draw() {
+        io_write(sms.io.vdp.control, a = wave);
+        io_write(sms.io.vdp.control, a = sms.vdp.scroll_x);
+        frame = a = frame + 1;
+        wave = a;
+    }
+
+    func scan() {
+        wave = a = wave + 1;
+        a = wave;
+        io_write(sms.io.vdp.control, a);
+        io_write(sms.io.vdp.control, a = sms.vdp.scroll_x);
+    }
+
+    const vdp_data : [u8] = [
+        sms.vdp.MODE_CONTROL_DEFAULT_MASK, sms.vdp.mode_control,
+        sms.vdp.MODE_CONTROL2_DEFAULT_MASK, sms.vdp.mode_control2,
+        0xFF, sms.vdp.nametable_address,
+        0xFF, sms.vdp.palette_address,
+        0xFF, sms.vdp.pattern_address,
+        0xFF, sms.vdp.sprite_attribute_address,
+        0xFF, sms.vdp.sprite_pattern_address,
+        0x00, sms.vdp.overscan_color,
+        0x00, sms.vdp.scroll_x,
+        0x00, sms.vdp.scroll_y,
+        0x1, sms.vdp.line_counter,
+        //0xFF, sms.vdp.line_counter,
+    ];
+
+    // Game Gear background palette is 16 colors in BGR444 format.
+    const bkg_palette_data : [u16] = [
+        0x98E, 0x633, 0x000, 0x000,
+        0x000, 0x000, 0x000, 0x000,
+        0x000, 0x000, 0x000, 0x000,
+        0x000, 0x000, 0x000, 0xFFF,
+    ];
+
+    const spr_palette_data : [u16] = [
+        0x000, 0x935, 0x000, 0x000,
+        0x000, 0x000, 0x000, 0x000,
+        0xF99, 0x000, 0x000, 0x000,
+        0x000, 0x000, 0x000, 0xCBF,
+    ];
+
+    const message = "HELLO  WORLD";
+}
+
+in chr {
+    const bkg_tileset = embed "../common/hello_tiles.chr";
+    const spr_tileset = embed "../common/minirpg_sprites.chr";
+}

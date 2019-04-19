@@ -1,0 +1,55 @@
+import "banks";
+import "video";
+import "entity";
+import "globals";
+import "collision";
+
+namespace fx_enemy_death {
+    func init() {
+        entity.flash_timer[x] = a = 12;
+    }
+
+    func draw() {
+        <:w0 = a = entity.x_pixel[x];
+        >:w0 = a = entity.x_screen[x];
+        <:w2 = a = entity.y_pixel[x];
+        >:w2 = a = entity.y_screen[x];
+ 
+        b4 = a = 0;
+
+        if { a = entity.flash_timer[x]; } && a >= 9 {
+            b4 = a = a & 0x3 | 0x4;
+            b5 = a = sizeof(typeof(video.orb_frame_data));
+            <:ptr6 = a = <:&video.orb_frame_data[0];
+            >:ptr6 = a = >:&video.orb_frame_data[0];
+        } else if a >= 6 {
+            b4 = a = a & 0x3 | 0x4;
+            b5 = a = sizeof(typeof(video.orb2_frame_data));
+            <:ptr6 = a = <:&video.orb2_frame_data[0];
+            >:ptr6 = a = >:&video.orb2_frame_data[0];
+        } else if a >= 3 {
+            b5 = a = sizeof(typeof(video.orb3_frame_data));
+            <:ptr6 = a = <:&video.orb3_frame_data[0];
+            >:ptr6 = a = >:&video.orb3_frame_data[0];
+        } else {
+            b5 = a = sizeof(typeof(video.orb4_frame_data));
+            <:ptr6 = a = <:&video.orb4_frame_data[0];
+            >:ptr6 = a = >:&video.orb4_frame_data[0];
+        }
+        x = oam_buffer_index;
+
+        video.draw_metasprite(x, w0, w2, b4, b5, ptr6);
+
+        oam_buffer_index = x;
+        x = entity.current_index;
+    }
+
+    func update() {
+        if { a = entity.flash_timer[x]; } && !zero {
+            entity.flash_timer[x]--;
+            if zero {
+                entity.type[x] = a = 0;
+            }
+        }
+    }
+}

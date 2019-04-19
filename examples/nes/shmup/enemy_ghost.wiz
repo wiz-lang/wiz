@@ -1,0 +1,188 @@
+import "math";
+import "banks";
+import "video";
+import "entity";
+import "globals";
+import "collision";
+
+namespace enemy_ghost {
+    in ram {
+        var rand : u8;
+    }
+    let TURN_DELAY = 30;
+
+    func init() {
+        entity.v0[x] = a = entity.y_pixel[x];
+        entity.v3[x] = a = x << 3;
+
+        a = x; push(a);
+        y = 0;
+        b0 = a = entity.x_pixel[x];
+        b1 = a = entity.y_pixel[x];
+        b2 = a = entity.x_pixel[y];
+        b3 = a = entity.y_pixel[y];
+        a = math.atan2(b0, b1, b2, b3);
+        b0 = a;
+        x = a = pop();
+        entity.v4[x] = a = b0;
+
+        entity.v5[x] = a = (rand & 0x3F) + TURN_DELAY;
+        rand = a = rand + 37;
+        entity.v6[x] = a = 60;
+
+        entity.hp[x] = a = 8;
+    }
+
+    func draw() {
+        <:w0 = a = entity.x_pixel[x];
+        >:w0 = a = entity.x_screen[x];
+        <:w2 = a = entity.y_pixel[x];
+        >:w2 = a = entity.y_screen[x];
+        if { a = entity.v1[x]; } && zero {
+            a = 0x0;
+        } else {
+            a = 0x40;
+        }
+
+        b4 = a;
+
+        if { a = entity.flash_timer[x]; } && !zero {
+            b4 = a = ((((a + 2) >>> 1) & 0x03) | 0x4) | b4;
+        }
+
+        b5 = a = sizeof(typeof(video.ghost_idle_frame_data));
+        <:ptr6 = a = <:&video.ghost_idle_frame_data[0];
+        >:ptr6 = a = >:&video.ghost_idle_frame_data[0];
+        x = oam_buffer_index;
+
+        video.draw_metasprite(x, w0, w2, b4, b5, ptr6);
+
+        oam_buffer_index = x;
+        x = entity.current_index;
+    }
+
+    func update() {
+        if { a = entity.flash_timer[x]; } && !zero {
+            entity.flash_timer[x]--;
+        }
+
+        if { a = entity.hp[x]; } && a >= 8 {
+            b0 = a = 0x40;
+            b1 = a = 0;
+        } else if a >= 6 {
+            b0 = a = 0x80;
+            b1 = a = 0;
+        } else if a >= 4 {
+            b0 = a = 0x00;
+            b1 = a = 0x1;
+        } else {
+            b0 = a = 0x00;
+            b1 = a = 0x2;
+        }
+
+        /*if { a = entity.v2[x]; } && zero {
+            if { a = entity.v1[x]; } && zero {
+                entity.x_subpixel[x] = a = entity.x_subpixel[x] + b0;
+                a = entity.x_pixel[x] +# b1;
+                if carry || a >= 256 - 8 {
+                    entity.v1[x] = a = entity.v1[x] ^ 1;
+                    entity.v2[x] = a = 20;
+                    entity.x_subpixel[x] = a = 0;
+                    a = 256 - 8;
+                }
+                entity.x_pixel[x] = a;
+            } else {
+                entity.x_subpixel[x] = a = entity.x_subpixel[x] - b0;
+                a = entity.x_pixel[x] -# b1;
+                if !carry || a < 8 {
+                    entity.v1[x] = a = entity.v1[x] ^ 1;
+                    entity.v2[x] = a = 20;
+                    entity.x_subpixel[x] = a = 0;
+                    a = 8;
+                }
+                entity.x_pixel[x] = a;
+            }
+        } else {
+            entity.v2[x]--;
+        }*/
+
+        /*y = a = entity.v3[x];
+        a = math.sine_table_h[y];
+        inline for in 1 .. 3 { cmp(a, 0x80); a >>>>#= 1; }
+
+        cmp(a, 0x80);
+        if carry {
+            entity.y_pixel[x] = a = a + entity.v0[x];
+            entity.y_screen[x] = a = 0u8 -# 0;
+        } else {
+            entity.y_pixel[x] = a = a + entity.v0[x];
+            entity.y_screen[x] = a = 0u8 +# 0;
+        }
+
+        entity.v3[x]++;*/
+
+        a = entity.v6[x];
+        ^if !zero {
+            entity.v6[x]--;
+        } else {
+            y = a = entity.v4[x];
+            a = math.sine_table_h[y];
+            cmp(a, 0x80);
+            if carry {
+                entity.y_subpixel[x] = a = a + entity.y_subpixel[x];
+                a = entity.y_pixel[x] -# 0;
+                if !carry || a < 56 {
+                    entity.y_subpixel[x] = a = 0;
+                    a = 56;
+                }
+                entity.y_pixel[x] = a;      
+            } else {
+                entity.y_subpixel[x] = a = a + entity.y_subpixel[x];
+                a = entity.y_pixel[x] +# 0;
+                if carry || a >= 240 - 8 {
+                    entity.y_subpixel[x] = a = 0;
+                    a = 240 - 8;
+                }
+                entity.y_pixel[x] = a;
+            }
+
+            y = a = y + 64;
+            a = math.sine_table_h[y];
+            cmp(a, 0x80);
+            if carry {
+                entity.x_subpixel[x] = a = a + entity.x_subpixel[x];
+                a = entity.x_pixel[x] -# 0;
+                if !carry || a < 8 {
+                    entity.x_subpixel[x] = a = 0;
+                    a = 8;
+                }
+                entity.x_pixel[x] = a;
+            } else {
+                entity.x_subpixel[x] = a = a + entity.x_subpixel[x];
+                a = entity.x_pixel[x] +# 0;
+                if carry || a >= 256 - 8 {
+                    entity.x_subpixel[x] = a = 0;
+                    a = 256 - 8;
+                }
+                entity.x_pixel[x] = a;
+            }                
+            
+            entity.v5[x]--;
+            if zero {
+                a = x; push(a);
+                y = 0;
+                b0 = a = entity.x_pixel[x];
+                b1 = a = entity.y_pixel[x];
+                b2 = a = entity.x_pixel[y];
+                b3 = a = entity.y_pixel[y];
+                b0 = a = math.atan2(b0, b1, b2, b3);
+                x = a = pop();
+                entity.v4[x] = a = b0;
+                entity.v5[x] = a = (rand & 0x3F) + TURN_DELAY;
+                rand = a = rand + 37;
+            }
+        }
+
+        return collision.check_enemy_vs_player();
+    }
+}

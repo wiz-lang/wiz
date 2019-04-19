@@ -1,0 +1,86 @@
+body, html {
+    padding: 0;
+    margin: 0;
+}
+
+body {
+    background: #F8F8F8;
+    padding: 0;
+}
+
+.wiz-main-container {
+    color: #000000;
+    font-family: sans-serif;
+    padding: 64px;
+}
+
+.wiz-main-container h1 {
+    font-family: sans-serif;
+    font-size: 48px;
+    font-weight: bold;
+    margin: 0;
+    margin-bottom: 36px;
+    text-align: left;
+}
+
+.wiz-source-file h2:hover {
+    cursor: pointer;
+    opacity: 0.3;
+}
+
+textarea.wiz-source-editor {
+    font-family: monospace;
+    font-size: 12px;
+    display: block;
+    border: 0;
+    outline: none;
+    resize: none;
+    width: 100%;
+    height: 400px;
+    margin: 16px 0px;
+}
+
+.wiz-source-file.wiz-source-collapsed .wiz-source-editor {
+    display: none;
+}
+
+.wiz-build-button {
+    display: inline-block;
+    background: #FFFFFF;
+    border: 4px solid #CCCCFF;
+    font-family: sans-serif;
+    font-size: 32px;
+    margin-top: 32px;
+    margin-bottom: 32px;
+    outline: none;
+    resize: none;
+}
+
+.wiz-build-button:active {
+    border: 4px solid #CCCCCC;
+}
+
+.wiz-build-report {
+    font-family: monospace;
+    font-size: 12px;
+    white-space: pre;
+}
+
+.wiz-build-report .message {
+}
+
+.wiz-build-report .message.notice {
+    font-weight: bold;
+}
+
+.wiz-build-report .message.note {
+    color: #FF00FF;
+}
+
+.wiz-build-report .message.error {
+    color: #FF0000;
+}
+
+.nes-canvas-wrapper-hidden {
+    display: none;
+}

@@ -1,0 +1,331 @@
+namespace pce {
+    namespace vce {
+        // Control register.
+        extern writeonly control @ 0x0400 : u8;
+        let CONTROL_PIXEL_CLOCK_5MHz = 0x00;
+        let CONTROL_PIXEL_CLOCK_7MHz = 0x01;
+        let CONTROL_PIXEL_CLOCK_10MHz = 0x03;
+        let CONTROL_PIXEL_CLOCK_MASK = 0x03;        
+        let CONTROL_FIELD_EXTRA_LINE = 0x04;
+        let CONTROL_STRIP_GREYSCALE = 0x80;
+
+        // Address registers.
+        extern writeonly address_l @ 0x0402 : u8;
+        extern writeonly address_h @ 0x0403 : u8;
+
+        // Data registers.
+        // Stored in a weird BRG333 format.
+        extern var data_l @ 0x0404 : u8;
+        extern var data_h @ 0x0405 : u8;
+
+        // Mask of possible blue color channel values.
+        let DATA_BLUE_MASK = 0x007;
+        // Starting bit of blue color channel.
+        let DATA_BLUE_SHIFT = 0;
+        // Mask of possible red color channel values.
+        let DATA_RED_MASK = 0x038;
+        // Starting bit of red color channel.
+        let DATA_RED_SHIFT = 3;
+        // Mask of possible green color channel values.        
+        let DATA_GREEN_MASK = 0x1C0;
+        // Starting bit of green color channel.
+        let DATA_GREEN_SHIFT = 6;
+    }
+
+    namespace vdc {
+        // VDC status.
+        extern const status @ 0x0000 : u8;
+        let STATUS_BUSY_MASK = 0x40;
+        let STATUS_VBLANK = 0x20;
+        let STATUS_VRAM_DMA_END = 0x10;
+        let STATUS_SATB_DMA_END = 0x08;
+        let STATUS_SCANLINE = 0x04;
+        let STATUS_OVERFLOW = 0x02;
+        let STATUS_COLLISION = 0x01;
+        let STATUS_BUSY_BIT = 6;
+
+        // VDC port select.
+        extern writeonly select @ 0x0000 : u8;
+
+        let SELECT_VRAM_WRITE_ADDRESS = 0x00;
+        let SELECT_VRAM_READ_ADDRESS = 0x01;
+        let SELECT_VRAM_DATA = 0x02;
+        let SELECT_CONTROL = 0x05;
+        let SELECT_SCANLINE_COMPARE = 0x06;
+        let SELECT_SCROLL_X = 0x07;
+        let SELECT_SCROLL_Y = 0x08;
+        let SELECT_MEMORY_SIZE = 0x09;
+        let SELECT_HSYNC_SETTING = 0x0A;
+        let SELECT_HDISP_SETTING = 0x0B;
+        let SELECT_VSYNC_SETTING = 0x0C;
+        let SELECT_VDISP_HEIGHT = 0x0D;        
+        let SELECT_VDISP_END = 0x0E;
+        let SELECT_DMA_CONTROL = 0x0F;
+        let SELECT_DMA_SOURCE = 0x10;
+        let SELECT_DMA_DEST = 0x11;
+        let SELECT_DMA_LEN = 0x12;
+        let SELECT_SATB_SOURCE_ADDRESS = 0x13;
+
+        // Data registers.
+        extern var data_l @ 0x0002 : u8;
+        extern var data_h @ 0x0003 : u8;
+
+        // Tilemap (also known as the Block Attribute Table / BAT) always starts at 0x0000.
+        // Size occupied is defined by tilemap memory size setting.
+        let DATA_VRAM_ADDRESS_TILEMAP = 0x0000;
+
+        let TILEMAP_INDEX_MASK = 0x0FFF;
+        let TILEMAP_ATTRIBUTE_MASK = 0xF000;
+
+        let DATA_H_CONTROL_INCREMENT_MASK = 0x18;
+        let DATA_H_CONTROL_INCREMENT_128 = 0x18;
+        let DATA_H_CONTROL_INCREMENT_64 = 0x10;
+        let DATA_H_CONTROL_INCREMENT_32 = 0x08;
+        let DATA_H_CONTROL_INCREMENT_1 = 0x00;
+        let DATA_L_CONTROL_ENABLE_BG = 0x80;
+        let DATA_L_CONTROL_ENABLE_SPRITES = 0x40;
+        let DATA_L_CONTROL_ENABLE_VBLANK_IRQ = 0x08;
+        let DATA_L_CONTROL_ENABLE_HBLANK_IRQ = 0x04;
+        let DATA_L_CONTROL_ENABLE_SPRITE_OVERFLOW_IRQ = 0x02;
+        let DATA_L_CONTROL_ENABLE_SPRITE_ZERO_HIT_IRQ = 0x01;
+
+        let DATA_SCROLL_MASK = 0x1FF;
+
+        let DATA_L_MEMORY_SIZE_VRAM_PIXEL_WIDTH_MASK = 0x03;
+        let DATA_L_MEMORY_SIZE_VRAM_SPRITE_WIDTH_MASK = 0x0C;
+        let DATA_L_MEMORY_SIZE_VRAM_SPRITE_WIDTH_SHIFT = 2;
+        let DATA_L_MEMORY_SIZE_TILEMAP_32x32 = 0x00;
+        let DATA_L_MEMORY_SIZE_TILEMAP_64x32 = 0x10;
+        let DATA_L_MEMORY_SIZE_TILEMAP_128x32 = 0x20;
+        let DATA_L_MEMORY_SIZE_TILEMAP_32x64 = 0x40;
+        let DATA_L_MEMORY_SIZE_TILEMAP_64x64 = 0x50;
+        let DATA_L_MEMORY_SIZE_TILEMAP_128x64 = 0x60;
+        let DATA_L_MEMORY_SIZE_TILEMAP_MASK = 0x70;
+        let DATA_L_MEMORY_SIZE_TILEMAP_SHIFT = 4;
+
+        let DATA_L_HSYNC_SETTING_SYNC_WIDTH_MASK = 0x1F;
+        let DATA_H_HSYNC_SETTING_DISPLAY_START_MASK = 0x7F;
+
+        let DATA_L_HDISP_SETTING_DISPLAY_WIDTH_MASK = 0x7F;
+        let DATA_H_HDISP_SETTING_DISPLAY_END_MASK = 0x7F;
+
+        let DATA_L_VSYNC_SYNC_HEIGHT_MASK = 0x1F;
+        let DATA_H_VSYNC_DISPLAY_START_MASK = 0xFF;
+
+        let DATA_VDISP_HEIGHT_MASK = 0x1FF;
+        let DATA_VDISP_END_MASK = 0x1FF;
+
+        let DATA_L_DMA_CONTROL_ENABLE_SATB_DMA_END_IRQ = 0x01;
+        let DATA_L_DMA_CONTROL_ENABLE_VRAM_DMA_END_IRQ = 0x02;
+        let DATA_L_DMA_CONTROL_SOURCE_INCREMENT = 0x00;
+        let DATA_L_DMA_CONTROL_SOURCE_DECREMENT = 0x04;
+        let DATA_L_DMA_CONTROL_DEST_INCREMENT = 0x00;
+        let DATA_L_DMA_CONTROL_DEST_DECREMENT = 0x08; 
+        let DATA_L_DMA_CONTROL_SATB_AUTO_TRANSFER = 0x10;
+
+        let SATB_Y_MASK = 0x3FF;
+        let SATB_X_MASK = 0x3FF;
+        // sprite data VRAM address shifted right 5 bits (Shift left 6 bits to get real VRAM address)
+        let SATB_VRAM_ADDRESS_MASK = 0x3FF;
+        // sprite attributes
+        let SATB_ATTRIBUTE_H_VFLIP = 0x80;
+        let SATB_ATTRIBUTE_H_HEIGHT_16 = 0x00;
+        let SATB_ATTRIBUTE_H_HEIGHT_32 = 0x10;
+        let SATB_ATTRIBUTE_H_HEIGHT_64 = 0x30;
+        let SATB_ATTRIBUTE_H_HEIGHT_MASK = 0x30;
+        let SATB_ATTRIBUTE_H_HFLIP = 0x0800;
+        let SATB_ATTRIBUTE_H_WIDTH_16 = 0x00;
+        let SATB_ATTRIBUTE_H_WIDTH_32 = 0x01;
+        let SATB_ATTRIBUTE_L_BG_PRIORITY = 0x80;
+        let SATB_ATTRIBUTE_L_PALETTE_INDEX_MASK = 0x0F;
+
+        let SATB_OFFSET_Y = 0x00;
+        let SATB_OFFSET_X = 0x01;
+        let SATB_OFFSET_VRAM_ADDRESS = 0x01;
+        let SATB_OFFSET_ATTRIBUTE = 0x01;
+    }
+
+    namespace irq {
+        // Controls which interrupts are disabled.
+        extern var disable @ 0x1402 : u8;
+        // Pending interrupts.
+        extern const status @ 0x1403 : u8;
+        // Write here to acknowledge a timer interrupt.
+        extern writeonly acknowledge @ 0x1403 : u8;
+
+        // Timer interrupts.
+        let INTERRUPT_TIMER = 0x04;
+        // VDC-generated interrupts.
+        let INTERRUPT_VDC = 0x02;
+        // External interrupts. (cartridge, super-CD, user-requested)
+        let INTERRUPT_EXTERNAL = 0x01;
+        // Mask of all interrupts.
+        let INTERRUPT_ALL = 0x07;
+
+    }
+
+    namespace timer {
+        // Current timer value.
+        extern const value @ 0x0C00 : u8;
+        // Mask of possible timer values.
+        let VALUE_MASK = 0x7F;
+
+        // Timer reload value.
+        extern writeonly reload @ 0x0C00 : u8;
+        // Mask of possible timer reload values.
+        let RELOAD_MASK = 0x7F;
+
+        // Timer control register.
+        extern writeonly control @ 0x0C01 : u8;
+        // Enable the timer.
+        let CONTROL_ENABLE = 0x01;
+    }
+
+    namespace io {
+        // Input port.
+        extern const input @ 0x1000 : u8;
+        // Mask for CDROM connection (0 = attached, 1 = detached)
+        let INPUT_CD_MASK = 0x80;
+        // Mask for country code. (0 = Japan, 1 = US)
+        let INPUT_COUNTRY_MASK = 0x40;
+        // Mask of possible values for button reading.
+        let INPUT_VALUE_MASK = 0x0F;
+        // Bit for CDROM connection (0 = attached, 1 = detached)
+        let INPUT_CD_BIT = 7;
+        // Bit for country code. (0 = Japan, 1 = US)
+        let INPUT_COUNTRY_BIT = 6;
+
+        // Output port.
+        extern writeonly output @ 0x1000 : u8;
+        // Clear pin.
+        let OUTPUT_CLEAR = 0x02;
+        // Select pin.
+        let OUTPUT_SELECT = 0x01;
+
+        namespace joy {
+            // Select buttons.
+            let SELECT_BUTTONS = 0x00;
+            // Select directionals.
+            let SELECT_DIRECTIONS = 0x01;
+
+            // I button status.
+            let BUTTON_I = 0x01;
+            // II button status
+            let BUTTON_II = 0x02;
+            // Select button status.
+            let BUTTON_SELECT = 0x04;
+            // Start button status.
+            let BUTTON_RUN = 0x08;
+            // Mask of all possible buttons.
+            let BUTTON_MASK = 0x0F;
+
+            // Up direction status.
+            let DIRECTION_UP = 0x01;
+            // Right direction status.
+            let DIRECTION_RIGHT = 0x02;
+            // Down direction status.
+            let DIRECTION_DOWN = 0x04;
+            // Left direction status.
+            let DIRECTION_LEFT = 0x08;
+            // Mask of all possible directions.
+            let DIRECTION_MASK = 0x0F;
+
+            // III button status for 6-button controller.
+            let BUTTON_6B_III = 0x01;
+            // IV button status for 6-button controller.
+            let BUTTON_6B_IV = 0x02;
+            // V button status for 6-button controller.
+            let BUTTON_6B_V = 0x04;
+            // VI button status for 6-button controller.
+            let BUTTON_6B_VI = 0x08;
+        }
+    }
+
+    namespace psg {
+        // http://www.magicengine.com/mkit/doc_hard_psg.html
+        namespace channel_data {
+            // 12-bit frequency low bits (bits 0 .. 7)
+            extern writeonly frequency_l @ 0x0802 : u8;
+            // 12-bit frequency high bits (bits 8 .. 11)
+            extern writeonly frequency_h @ 0x0803 : u8;
+            // Mask of possible values that are used for high bits of frequency.
+            let FREQUENCY_H_MASK = 0x0F;
+
+            // Control register
+            extern writeonly control @ 0x0804 : u8;
+            // Enable wave output.
+            let CONTROL_ENABLE_WAVE = 0x80;
+            // Enable direct output.
+            let CONTROL_ENABLE_DIRECT = 0xC0;
+            // Wave index is reset to beginning.
+            let CONTROL_RESET_WAVE_INDEX = 0x40;
+            // Mask of possible values that can be used for gain.
+            let CONTROL_GAIN_MASK = 0x1F;
+            // Volume register.
+            extern writeonly volume @ 0x0805 : u8;
+            // Mask of possible values that can be used for left volume.
+            let VOLUME_LEFT_MASK = 0xF0;
+            // Mask of possible values that can be used for right volume.
+            let VOLUME_RIGHT_MASK = 0x0F;
+
+            // Wave data register. Writes a single sample into the 32-sample wave buffer of the channel at the current index.
+            extern writeonly wave @ 0x0806 : u8;
+            // Mask of possible values that can be used for wave sample data.
+            let WAVE_DATA_MASK = 0x1F;
+
+            // (Channels 4 .. 5) Noise register.
+            extern writeonly noise @ 0x0807 : u8;
+            // Enable noise on this channel.
+            let NOISE_ENABLE = 0x80;
+            // Mask of possible values that can be used for noise frequency.
+            let NOISE_FREQUENCY_MASK = 0x1F;
+        }
+
+        // Current channel to write data for.
+        extern writeonly channel_index @ 0x0800 : u8;
+        // Number of channels available on the PSG.
+        let CHANNEL_COUNT = 6;
+
+        // Master volume.
+        extern writeonly volume @ 0x0801 : u8;
+        // Mask of possible values that can be used for left volume.
+        let VOLUME_LEFT_MASK = 0xF0;
+        // Mask of possible values that can be used for right volume.
+        let VOLUME_RIGHT_MASK = 0x0F;
+
+        namespace lfo {
+            // LFO frequency register. Multiplied against channel 1's 12-bit frequency to get the effective frequency of the LFO.
+            extern writeonly frequency @ 0x0808 : u8;
+
+            // LFO control register.
+            extern writeonly control @ 0x0809 : u8;
+            // Enable LFO modulation mode (channel 1 is used to control an LFO that gets applied to channel 0)
+            let CONTROL_ENABLE = 0x80;
+            // Add LFO sample x 0 to channel 0 (no modulation)
+            let CONTROL_LFO_SAMPLE_MULTIPLIER_0 = 0x00;
+            // Add LFO sample x 1 to channel 0
+            let CONTROL_LFO_SAMPLE_MULTIPLIER_1 = 0x01;
+            // Add LFO sample x 16 to channel 0
+            let CONTROL_LFO_SAMPLE_MULTIPLIER_16 = 0x02;
+            // Add LFO sample x 256 to channel 0
+            let CONTROL_LFO_SAMPLE_MULTIPLIER_256 = 0x03;
+            // Mask of possible values that can be used for the LFO sample multiplier.            
+            let CONTROL_LFO_SAMPLE_MULTIPLIER_MASK = 0x03;
+        }
+
+    }
+
+    namespace syscard {
+        // Add address definition for Backup RAM
+        // Add address definition for Work RAM
+        // Add entry points to call System Card BIOS ROM
+    }
+
+    namespace cdrom {
+        // Add entry points to call Super CD-ROM2 BIOS
+    }
+
+    // TODO: Memory Base 128 routines.
+    // https://forums.nesdev.com/viewtopic.php?f=5&t=13082&hilit=memory+base+128
+    // http://pcedev.blockos.org/viewtopic.php?f=5&t=98
+}

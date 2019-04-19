@@ -1,0 +1,187 @@
+namespace spc {
+    extern writeonly control @ 0xF1 : u8;
+    let CONTROL_PORT_23_CLEAR_MASK = 0x20;
+    let CONTROL_PORT_01_CLEAR_MASK = 0x10;
+    let CONTROL_TIMER_2_ENABLE_MASK = 0x04;
+    let CONTROL_TIMER_1_ENABLE_MASK = 0x02;
+    let CONTROL_TIMER_0_ENABLE_MASK = 0x01;
+    let CONTROL_PORT_23_CLEAR_BIT = 5;
+    let CONTROL_PORT_01_CLEAR_BIT = 4;
+    let CONTROL_TIMER_2_ENABLE_BIT = 2;
+    let CONTROL_TIMER_1_ENABLE_BIT = 1;
+    let CONTROL_TIMER_0_ENABLE_BIT = 0;
+
+    namespace dsp {
+        extern var address @ 0xF2 : u8;
+        let ADDRESS_VOLUME_L_0 = 0x00;
+        let ADDRESS_VOLUME_L_1 = 0x10;
+        let ADDRESS_VOLUME_L_2 = 0x20;
+        let ADDRESS_VOLUME_L_3 = 0x30;
+        let ADDRESS_VOLUME_L_4 = 0x40;
+        let ADDRESS_VOLUME_L_5 = 0x50;
+        let ADDRESS_VOLUME_L_6 = 0x60;
+        let ADDRESS_VOLUME_L_7 = 0x70;
+        let ADDRESS_VOLUME_R_0 = 0x01;
+        let ADDRESS_VOLUME_R_1 = 0x11;
+        let ADDRESS_VOLUME_R_2 = 0x21;
+        let ADDRESS_VOLUME_R_3 = 0x31;
+        let ADDRESS_VOLUME_R_4 = 0x41;
+        let ADDRESS_VOLUME_R_5 = 0x51;
+        let ADDRESS_VOLUME_R_6 = 0x61;
+        let ADDRESS_VOLUME_R_7 = 0x71;
+        let ADDRESS_PITCH_L_0 = 0x02;
+        let ADDRESS_PITCH_L_1 = 0x12;
+        let ADDRESS_PITCH_L_2 = 0x22;
+        let ADDRESS_PITCH_L_3 = 0x32;
+        let ADDRESS_PITCH_L_4 = 0x42;
+        let ADDRESS_PITCH_L_5 = 0x52;
+        let ADDRESS_PITCH_L_6 = 0x62;
+        let ADDRESS_PITCH_L_7 = 0x72;
+        let ADDRESS_PITCH_H_0 = 0x03;
+        let ADDRESS_PITCH_H_1 = 0x13;
+        let ADDRESS_PITCH_H_2 = 0x23;
+        let ADDRESS_PITCH_H_3 = 0x33;
+        let ADDRESS_PITCH_H_4 = 0x43;
+        let ADDRESS_PITCH_H_5 = 0x53;
+        let ADDRESS_PITCH_H_6 = 0x63;
+        let ADDRESS_PITCH_H_7 = 0x73;
+        let ADDRESS_SOURCE_0 = 0x04;
+        let ADDRESS_SOURCE_1 = 0x14;
+        let ADDRESS_SOURCE_2 = 0x24;
+        let ADDRESS_SOURCE_3 = 0x34;
+        let ADDRESS_SOURCE_4 = 0x44;
+        let ADDRESS_SOURCE_5 = 0x54;
+        let ADDRESS_SOURCE_6 = 0x64;
+        let ADDRESS_SOURCE_7 = 0x74;
+        let ADDRESS_ADSR_L_0 = 0x05;
+        let ADDRESS_ADSR_L_1 = 0x15;
+        let ADDRESS_ADSR_L_2 = 0x25;
+        let ADDRESS_ADSR_L_3 = 0x35;
+        let ADDRESS_ADSR_L_4 = 0x45;
+        let ADDRESS_ADSR_L_5 = 0x55;
+        let ADDRESS_ADSR_L_6 = 0x65;
+        let ADDRESS_ADSR_L_7 = 0x75;
+        let ADDRESS_ADSR_H_0 = 0x06;
+        let ADDRESS_ADSR_H_1 = 0x16;
+        let ADDRESS_ADSR_H_2 = 0x26;
+        let ADDRESS_ADSR_H_3 = 0x36;
+        let ADDRESS_ADSR_H_4 = 0x46;
+        let ADDRESS_ADSR_H_5 = 0x56;
+        let ADDRESS_ADSR_H_6 = 0x66;
+        let ADDRESS_ADSR_H_7 = 0x76;
+        let ADDRESS_GAIN_0 = 0x07;
+        let ADDRESS_GAIN_1 = 0x17;
+        let ADDRESS_GAIN_2 = 0x27;
+        let ADDRESS_GAIN_3 = 0x37;
+        let ADDRESS_GAIN_4 = 0x47;
+        let ADDRESS_GAIN_5 = 0x57;
+        let ADDRESS_GAIN_6 = 0x67;
+        let ADDRESS_GAIN_7 = 0x77;
+        let ADDRESS_ENV_0 = 0x08;
+        let ADDRESS_ENV_1 = 0x18;
+        let ADDRESS_ENV_2 = 0x28;
+        let ADDRESS_ENV_3 = 0x38;
+        let ADDRESS_ENV_4 = 0x48;
+        let ADDRESS_ENV_5 = 0x58;
+        let ADDRESS_ENV_6 = 0x68;
+        let ADDRESS_ENV_7 = 0x78;
+        let ADDRESS_OUT_0 = 0x09;
+        let ADDRESS_OUT_1 = 0x19;
+        let ADDRESS_OUT_2 = 0x29;
+        let ADDRESS_OUT_3 = 0x39;
+        let ADDRESS_OUT_4 = 0x49;
+        let ADDRESS_OUT_5 = 0x59;
+        let ADDRESS_OUT_6 = 0x69;
+        let ADDRESS_OUT_7 = 0x79;
+        let ADDRESS_MAIN_VOLUME_L = 0x0C;
+        let ADDRESS_MAIN_VOLUME_R = 0x1C;
+        let ADDRESS_ECHO_VOLUME_L = 0x2C;
+        let ADDRESS_ECHO_VOLUME_R = 0x3C;
+        let ADDRESS_KEY_ON = 0x4C;
+        let ADDRESS_KEY_OFF = 0x5C;
+        let ADDRESS_FLAGS = 0x6C;
+        let ADDRESS_END_STATUS = 0x7C;
+        let ADDRESS_ECHO_FEEDBACK = 0x0D;
+        let ADDRESS_PITCH_MODULATION_ENABLE = 0x2D;
+        let ADDRESS_NOISE_ENABLE = 0x3D;
+        let ADDRESS_ECHO_ENABLE = 0x4D;
+        let ADDRESS_SOURCE_DIRECTORY_PAGE = 0x5D;
+        let ADDRESS_ECHO_BUFFER_PAGE = 0x6D;
+        let ADDRESS_ECHO_DELAY = 0x7D;
+        let ADDRESS_FIR_COEFFICIENT_0 = 0x0F;
+        let ADDRESS_FIR_COEFFICIENT_1 = 0x1F;
+        let ADDRESS_FIR_COEFFICIENT_2 = 0x2F;
+        let ADDRESS_FIR_COEFFICIENT_3 = 0x3F;
+        let ADDRESS_FIR_COEFFICIENT_4 = 0x4F;
+        let ADDRESS_FIR_COEFFICIENT_5 = 0x5F;
+        let ADDRESS_FIR_COEFFICIENT_6 = 0x6F;
+        let ADDRESS_FIR_COEFFICIENT_7 = 0x7F;
+
+        extern var data @ 0xF3 : u8;
+        let CHANNEL_MASK_0 = 0b00000001;
+        let CHANNEL_MASK_1 = 0b00000010;
+        let CHANNEL_MASK_2 = 0b00000100;
+        let CHANNEL_MASK_3 = 0b00001000;
+        let CHANNEL_MASK_4 = 0b00010000;
+        let CHANNEL_MASK_5 = 0b00100000;
+        let CHANNEL_MASK_6 = 0b01000000;
+        let CHANNEL_MASK_7 = 0b10000000;
+
+        let DATA_ADSR_L_ATTACK_MASK = 0x0F;
+        let DATA_ADSR_L_DECAY_MASK = 0x70;
+        let DATA_ADSR_L_DECAY_SHIFT = 4;
+        let DATA_ADSR_L_ENABLE = 0x80;
+        
+        let DATA_ADSR_H_SUSTAIN_MASK = 0x1F;
+        let DATA_ADSR_H_RELEASE_MASK = 0xE0;
+        let DATA_ADSR_H_RELEASE_SHIFT = 5;
+
+        let DATA_GAIN_CONSTANT = 0x00;
+        let DATA_GAIN_CONSTANT_VALUE_MASK = 0x3F;
+        let DATA_GAIN_FADE_SPEED_MASK = 0x1F;
+        let DATA_GAIN_FADE_LINEAR_IN = 0xC0;
+        let DATA_GAIN_FADE_BENT_IN = 0xE0;
+        let DATA_GAIN_FADE_LINEAR_OUT = 0x80;
+        let DATA_GAIN_FADE_EXPONENTIAL_OUT = 0xE0;    
+
+        let DATA_ENV_MASK = 0x7F;
+
+        let DATA_FLAGS_RESET = 0x80;
+        let DATA_FLAGS_MUTE = 0x40;
+        let DATA_FLAGS_ECHO_DISABLE = 0x20;
+        let DATA_FLAGS_NOISE_CLOCK_MASK = 0x1F;
+
+        let DATA_ECHO_DELAY_MASK = 0x0F;
+
+        extern var data_and_address @ 0xF2 : u16;
+    }
+
+    namespace port {
+        extern writeonly output0 @ 0xF4 : u8;
+        extern writeonly output1 @ 0xF5 : u8;
+        extern writeonly output2 @ 0xF6 : u8;
+        extern writeonly output3 @ 0xF7 : u8;
+        extern writeonly output10 @ 0xF4 : u16;
+        extern writeonly output21 @ 0xF5 : u16;
+        extern writeonly output32 @ 0xF6 : u16;
+
+        extern const input0 @ 0xF4 : u8;
+        extern const input1 @ 0xF5 : u8;
+        extern const input2 @ 0xF6 : u8;
+        extern const input3 @ 0xF7 : u8;
+        extern const input10 @ 0xF4 : u16;
+        extern const input21 @ 0xF5 : u16;
+        extern const input32 @ 0xF6 : u16;
+    }
+
+    namespace timer {
+        extern writeonly delay0 @ 0xFA : u8;
+        extern writeonly delay1 @ 0xFB : u8;
+        extern writeonly delay2 @ 0xFC : u8;
+
+        extern const counter0 @ 0xFD : u8;
+        extern const counter1 @ 0xFE : u8;
+        extern const counter2 @ 0xFF : u8;
+        let COUNTER_VALUE_MASK = 0xF;
+    }
+}

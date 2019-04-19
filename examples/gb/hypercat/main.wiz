@@ -1,0 +1,148 @@
+import "gb";
+import "banks";
+
+in ram {
+    namespace stack {
+        let SIZE = 256;
+        var data : [u8; SIZE];
+    }
+
+    namespace title {
+        var done : u8;
+    }    
+}
+
+in rom @ 0x150 {
+    import "joy";
+    import "video";
+    import "random";
+    import "text";
+    import "kitty";
+    import "oam";
+    import "gbc_util";
+    import "art";
+    import "memory";
+
+    #[fallthrough] func main() {
+        interrupt = false;
+        hl = &stack.data as u16 + stack.SIZE - 1;
+        sp = hl;
+        
+        gbc_util.detect();
+        joy.init();
+        video.init();
+        random.init();
+        kitty.init();
+        oam.init();
+
+        // Turn off the screen.
+        video.disable();
+
+        // Set up a simple black-to-white 4-color palette.
+        gb.mono.palette.bg = a = 0b00011011;
+        gb.mono.palette.obj1 = a = 0b00011111;
+        gb.mono.palette.obj2 = a = 0b00011111;
+
+        // Initialize tileset.
+        memcpy(&gb.ram.tile as u16, &art.sprite_tileset as u16, art.sprite_tileset.len);
+        memcpy(&gb.ram.tile as u16 + 0x1000, &art.background_tileset as u16, art.background_tileset.len);
+        memset(&gb.ram.map as u16, 26, 1024);
+        memset(&gb.ram.map2 as u16, 26, 1024);
+        oam.clear();
+
+        // Enable some basic interrupts.
+        gb.interrupt.enable = a = gb.interrupt.VBLANK;
+        gb.lcd.stat = a = 0;
+        interrupt = true;
+
+        gb.lcd.ctrl = a = gb.lcd.CTRL_ON | gb.lcd.CTRL_BG_ON | gb.lcd.CTRL_OBJ_ON;
+
+        title_mode();
+
+        kitty.init();
+
+        ^goto game_mode;
+    }
+
+    func title_mode() {
+        video.disable();
+
+        text.print(&text.string.title as u16, &gb.ram.map as u16 + 32 * 3 + 1);
+        text.print(&text.string.press_start as u16, &gb.ram.map as u16 + 32 * 6 + 4);
+        text.print(&text.string.andrew_g_crowell as u16, &gb.ram.map as u16 + 32 * 15 + 1);
+
+        gb.lcd.ctrl = a = gb.lcd.CTRL_ON | gb.lcd.CTRL_BG_ON | gb.lcd.CTRL_OBJ_ON;
+
+        title.done = a = 0;
+        do {
+            update();
+            a = joy.pressed;
+            if a$joy.bit.START {
+                joy.unpress = a = joy.unpress | joy.mask.START;
+                title.done = a = 1;
+            } else if a$joy.bit.A {
+                joy.unpress = a = joy.unpress | joy.mask.A;
+                title.done = a = 1;
+            }
+
+            a = title.done;
+        } while a == 0;
+    }
+
+    func game_mode() {
+        video.disable();
+        memset(&gb.ram.map as u16, 26, 1024);
+
+        text.print(&text.string.love as u16, &gb.ram.map as u16 + 32 * 1 + 1);
+        text.print(&text.string.food as u16, &gb.ram.map as u16 + 32 * 2 + 1);
+        text.print(&text.string.hug as u16, &gb.ram.map as u16 + 32 * 13 + 3);
+        text.print(&text.string.feed as u16, &gb.ram.map as u16 + 32 * 14 + 3);
+        text.print(&text.string.clean as u16, &gb.ram.map as u16 + 32 * 15 + 3);
+        text.print(&text.string.lights as u16, &gb.ram.map as u16 + 32 * 16 + 3);
+
+        gb.lcd.ctrl = a = gb.lcd.CTRL_ON | gb.lcd.CTRL_BG_ON | gb.lcd.CTRL_OBJ_ON;
+
+        while true {
+            update();
+            kitty.draw_hud();
+            kitty.update_menu();
+            kitty.update();
+        }
+    }
+
+    func update() {
+        video.request_update();
+
+        random.next();
+
+        joy.update();
+        a = joy.reset;
+        if a != 0 {
+            ^goto main;
+        }
+
+        video.oam_buffer_clear();
+    }
+
+    #[irq]
+    func draw() {
+        video.acknowledge_update();
+        hl = pop();
+        de = pop();
+        bc = pop();
+        af = pop();
+    }
+
+    #[irq]
+    func stub() {
+        hl = pop();
+        de = pop();
+        bc = pop();
+        af = pop();
+    }
+
+    let stat = stub;
+    let timer = stub;
+    let serial = stub;
+    let joypad = stub;
+}

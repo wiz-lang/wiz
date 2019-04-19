@@ -1,0 +1,187 @@
+// TODO: add lots of missing I/O register definitions, clean up definitions.
+// TODO: variables in I/O space? instead of io_write/io_read, just use like a register/variable.
+namespace sms {
+    namespace mapper {
+        extern var control @ 0xFFFC : u8;
+
+        let CONTROL_ROM_WRITE = 0x80;
+        let CONTROL_RAM_ENABLE_C000 = 0x10;
+        let CONTROL_RAM_ENABLE_8000 = 0x08;
+        let CONTROL_RAM_SELECT = 0x04;
+        let CONTROL_ROM_BANK_SHIFT_MASK = 0x03;
+
+        extern var rom_0000 @ 0xFFFD : u8;
+        extern var rom_4000 @ 0xFFFE : u8;
+        extern var rom_8000 @ 0xFFFF : u8;
+    }
+
+    namespace io {
+        namespace vdp {
+            let data = 0xBE;
+            let control = 0xBF;
+            let vcount = 0x7E;
+            let hcount = 0x7F;
+
+            // Writing to the control port lets you access one of the following through the data port.
+            let CONTROL_ACCESS_VRAM_READ = 0x00;
+            let CONTROL_ACCESS_VRAM_WRITE = 0x40;
+            let CONTROL_ACCESS_REGISTER = 0x80;
+            let CONTROL_ACCESS_CRAM = 0xC0;
+
+            // Reading the control port gives back VDP status.
+            let CONTROL_STATUS_BIT_VBLANK = 7;
+            let CONTROL_STATUS_BIT_SPRITE_OVERFLOW = 6;
+            let CONTROL_STATUS_BIT_SPRITE_COLLISION = 5;
+            let CONTROL_STATUS_MASK_VBLANK = 0x80;
+            let CONTROL_STATUS_MASK_SPRITE_OVERFLOW = 0x40;
+            let CONTROL_STATUS_MASK_SPRITE_COLLISION = 0x20;
+            let CONTROL_STATUS_MASK_FIFTH_SPRITE = 0x1F;
+        }
+
+        namespace memory {
+            let control = 0x3E;
+
+            let CONTROL_EXPANSION_DISABLE = 0x80;
+            let CONTROL_CARTRIDGE_DISABLE = 0x40;
+            let CONTROL_CARD_DISABLE = 0x20;
+            let CONTROL_RAM_DISABLE = 0x10;
+            let CONTROL_BIOS_DISABLE = 0x04;
+            let CONTROL_DEVICE_DISABLE = 0x02;
+        }
+
+        namespace device {
+            let control = 0x3F;
+            let CONTROL_OUTPUT_B_TH = 0x80;
+            let CONTROL_OUTPUT_B_TR = 0x40;
+            let CONTROL_OUTPUT_A_TH = 0x20;
+            let CONTROL_OUTPUT_A_TR = 0x10;
+            let CONTROL_ENABLE_INPUT_B_TH = 0x08;
+            let CONTROL_ENABLE_INPUT_B_TR = 0x04;
+            let CONTROL_ENABLE_INPUT_A_TH = 0x02;
+            let CONTROL_ENABLE_INPUT_A_TR = 0x01;
+
+            let input = 0xDC;
+            let INPUT_BIT_B_DOWN = 7;
+            let INPUT_BIT_B_UP = 6;
+            let INPUT_BIT_A_TR = 5;
+            let INPUT_BIT_A_TL = 4;
+            let INPUT_BIT_A_RIGHT = 3;
+            let INPUT_BIT_A_LEFT = 2;
+            let INPUT_BIT_A_DOWN = 1;
+            let INPUT_BIT_A_UP = 0;
+            let INPUT_MASK_B_DOWN = 0x80;
+            let INPUT_MASK_B_UP = 0x40;
+            let INPUT_MASK_A_TR = 0x20;
+            let INPUT_MASK_A_TL = 0x10;
+            let INPUT_MASK_A_RIGHT = 0x08;
+            let INPUT_MASK_A_LEFT = 0x04;
+            let INPUT_MASK_A_DOWN = 0x02;
+            let INPUT_MASK_A_UP = 0x01;
+
+            let input2 = 0xDD;
+            let INPUT2_BIT_B_TH = 7;
+            let INPUT2_BIT_A_TH = 6;
+            let INPUT2_BIT_CARTRIDGE_SLOT_PIN = 5;
+            let INPUT2_BIT_RESET = 4;
+            let INPUT2_BIT_B_TR = 3;
+            let INPUT2_BIT_B_TL = 2;
+            let INPUT2_BIT_B_LEFT = 1;
+            let INPUT2_BIT_B_RIGHT = 0;
+            let INPUT2_MASK_B_TH = 0x80;
+            let INPUT2_MASK_A_TH = 0x40;
+            let INPUT2_MASK_CARTRIDGE_SLOT_PIN = 0x20;
+            let INPUT2_MASK_RESET = 0x10;
+            let INPUT2_MASK_B_TR = 0x08;
+            let INPUT2_MASK_B_TL = 0x04;
+            let INPUT2_MASK_B_LEFT = 0x02;
+            let INPUT2_MASK_B_RIGHT = 0x01;            
+        }
+
+        namespace psg {
+            let output = 0x7F;
+        }
+
+        namespace fm {
+            let output = 0xF0;
+            let output2 = 0xF1;
+
+            let status = 0xF2;
+
+            let STATUS_BIT_CONNECTED = 0;
+            let STATUS_MASK_CONNECTED = 0x01;
+        }
+
+        namespace gg {
+            let state = 0x00;
+            let STATE_BIT_START_BUTTON = 7;
+            let STATE_BIT_REGION = 6;
+            let STATE_MASK_START_BUTTON = 0x80;
+            let STATE_MASK_REGION = 0x40;
+
+            let pan = 0x06;
+            let PAN_LEFT_MASK = 0x40;
+            let PAN_LEFT_SHIFT = 4;
+            let PAN_RIGHT_MASK = 0x04;
+            let PAN_RIGHT_SHIFT = 0;
+
+            namespace link {
+                let raw_direction = 0x02;
+                let raw_data = 0x03;
+
+                let status = 0x05;
+
+                let STATUS_BIT_NOT_CONNECTED = 2;
+                let STATUS_BIT_RECEIVE_BUSY = 1;
+                let STATUS_BIT_SEND_BUSY = 0;
+
+                let STATUS_MASK_ENABLE = 0x38;
+                let STATUS_MASK_NOT_CONNECTED = 0x04;
+                let STATUS_MASK_RECEIVE_BUSY = 0x02;
+                let STATUS_MASK_SEND_BUSY = 0x01;
+
+                let send = 0x03;
+                let receive = 0x04;
+            }
+
+        }
+    }
+
+    namespace glasses {
+        extern var control @ 0xFFF8 : u8;
+    }
+
+    // VDP registers
+    namespace vdp {
+        let mode_control = 0x80;
+
+        let MODE_CONTROL_VLOCK = 0x80;
+        let MODE_CONTROL_HLOCK = 0x40;
+        let MODE_CONTROL_HIDE_LEFTMOST = 0x20;
+        let MODE_CONTROL_SCANLINE_IRQ = 0x10;
+        let MODE_CONTROL_SPRITE_SHIFT = 0x08;
+        let MODE_CONTROL_MODE4 = 0x04;
+        let MODE_CONTROL_MODE2 = 0x02;
+        let MODE_CONTROL_DEFAULT_MASK = MODE_CONTROL_MODE4 | MODE_CONTROL_MODE2;
+
+        let mode_control2 = 0x81;
+
+        let MODE_CONTROL2_ENABLE = 0x40;
+        let MODE_CONTROL2_VBLANK_IRQ = 0x20;
+        let MODE_CONTROL2_MODE1 = 0x10;
+        let MODE_CONTROL2_MODE3 = 0x08;
+        let MODE_CONTROL2_MODE5 = 0x04;
+        let MODE_CONTROL2_SPRITE_8x16 = 0x02;
+        let MODE_CONTROL2_SPRITE_STRETCH = 0x01;
+        let MODE_CONTROL2_DEFAULT_MASK = 0x80;        
+
+        let nametable_address = 0x82;
+        let palette_address = 0x83;
+        let pattern_address = 0x84;
+        let sprite_attribute_address = 0x85;
+        let sprite_pattern_address = 0x86;
+        let overscan_color = 0x87;
+        let scroll_x = 0x88;
+        let scroll_y = 0x89;
+        let line_counter = 0x8A;
+    }
+}

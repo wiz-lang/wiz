@@ -1,0 +1,11 @@
+bank zeropage @ 0x00 : [vardata; 256];
+bank stackpage @ 0x100 : [vardata; 256];
+bank oampage @ 0x200 : [vardata; 256];
+bank ram @ 0x300 : [vardata; 256 * 5];
+bank prg @ 0x8000 : [constdata; 32768];
+bank chr : [chrdata; 8192];
+
+config {
+    vertical_mirror = true,
+    battery = false,
+}

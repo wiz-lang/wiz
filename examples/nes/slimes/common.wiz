@@ -1,0 +1,70 @@
+import "ram";
+import "nes";
+import "data";
+
+#[fallthrough] func call_t0() {
+    goto *(&t0 as *func);
+}
+
+func clear_nametable_vram() {
+    a = nes.ppu.status;
+    nes.ppu.address = a = >:nes.ppu.ADDRESS_NAMETABLE_DATA;
+    nes.ppu.address = a = <:nes.ppu.ADDRESS_NAMETABLE_DATA;
+    a = 0;
+
+    for y in 8 .. 1 by -1 {
+        for x in 0 .. 255 {
+            nes.ppu.data = a;
+        }
+    }
+}
+
+
+func load_tilemap() {
+    a = nes.ppu.status;
+    nes.ppu.address = a = >:nes.ppu.ADDRESS_NAMETABLE_DATA;
+    nes.ppu.address = a = <:nes.ppu.ADDRESS_NAMETABLE_DATA;
+    
+    for y in 0 .. 119 {
+        a = tilemap_ptr[y];
+
+        inline for let i in 0 .. 7 {
+            a <<= 1;
+            if carry {
+                x = tilemap_fg_tile;
+            } else {
+                x = tilemap_bg_tile;
+            }
+            nes.ppu.data = x;
+        }
+    }
+}
+
+func load_palette() {
+    a = nes.ppu.status;
+    nes.ppu.address = a = >:nes.ppu.ADDRESS_PALETTE_DATA;
+    nes.ppu.address = a = <:nes.ppu.ADDRESS_PALETTE_DATA;
+
+    for x in 0 .. (nes.ppu.PALETTE_SIZE * nes.ppu.PALETTE_COUNT) - 1 {
+        nes.ppu.data = a = data.palette[x];
+    }
+}
+
+func print_text() {
+    let START_X = 10;
+    let START_Y = 3;
+    let TILE_ADDRESS = nes.ppu.ADDRESS_NAMETABLE_DATA + START_Y * 32 + START_X;
+    
+    // Read PPU status to reset its state.
+    a = nes.ppu.status;
+    // Now setup the PPU for copying tiles.
+    nes.ppu.address = a = >:TILE_ADDRESS;
+    nes.ppu.address = a = <:TILE_ADDRESS;
+    
+    x = 0;
+
+    while { a = data.message[x]; } && !zero {
+        x++;
+        nes.ppu.data = a;
+    }
+}

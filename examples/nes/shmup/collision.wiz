@@ -1,0 +1,96 @@
+import "nes";
+import "video";
+import "bullet";
+import "entity";
+import "globals";
+import "bullet_definitions";
+import "entity_definitions";
+
+namespace collision {
+    func detect_entity(
+        hitbox_x : u8 in b0,
+        hitbox_y : u8 in b1,
+        hitbox_x2 : u8 in b2,
+        hitbox_y2 : u8 in b3,
+        index : u8 in x,
+        count : u8 in b4
+    ) : bool in carry {
+        do {
+            y = a = entity.type[x];
+
+            if !zero {
+                if { a = entity.x_screen[x] | entity.y_screen[x]; } && zero {
+                    if { a = entity.hp[x]; } && !zero {
+                        if { a = entity.y_pixel[x] + (entity_definitions.hitbox_y2[y] as u8); } && a >= hitbox_y {
+                            if {a = entity.y_pixel[x] + (entity_definitions.hitbox_y[y] as u8); } && a < hitbox_y2 {
+                                if { a = entity.x_pixel[x] + (entity_definitions.hitbox_x[y] as u8); } && a < hitbox_x2 {
+                                    if { a = entity.x_pixel[x] + (entity_definitions.hitbox_x2[y] as u8); } && a >= hitbox_x {
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            x++;
+            count--;
+        } while !zero;        
+
+        return false;
+    }
+
+    func check_bullet_vs_enemy() {
+        y = a = bullet.type[x];
+
+        b0 = a = bullet.x_pixel[x] + (bullet_definitions.hitbox_x[y] as u8);
+        b1 = a = bullet.y_pixel[x] + (bullet_definitions.hitbox_y[y] as u8);
+        b2 = a = bullet.x_pixel[x] + (bullet_definitions.hitbox_x2[y] as u8);
+        b3 = a = bullet.y_pixel[x] + (bullet_definitions.hitbox_y2[y] as u8);
+        x = entity.ENEMY_INDEX;
+        b4 = a = entity.ENEMY_COUNT;
+
+        if { carry = detect_entity(b0, b1, b2, b3, x, b4); } && carry {
+            y = bullet.current_index;
+            y = a = bullet.type[y];
+
+            a = entity.hp[x] - bullet_definitions.damage[y];
+            if !carry {
+                a = 0;
+            }
+            entity.hp[x] = a;
+
+            if zero {
+                y = entity_definitions.Type.FX_ENEMY_DEATH as u8;
+                <:w0 = a = entity.x_pixel[x];
+                >:w0 = a = entity.x_screen[x];
+                <:w2 = a = entity.y_pixel[x];
+                >:w2 = a = entity.y_screen[x];
+                entity.init_entity(x, y, w0, w2);
+            } else {
+                entity.flash_timer[x] = a = 16;
+            }
+
+            x = bullet.current_index;
+
+            bullet.type[x] = a = 0;
+        }
+    }
+
+    func check_enemy_vs_player() {
+        y = a = entity.type[x];
+
+        b0 = a = entity.x_pixel[x] + (entity_definitions.hitbox_x[y] as u8);
+        b1 = a = entity.y_pixel[x] + (entity_definitions.hitbox_y[y] as u8);
+        b2 = a = entity.x_pixel[x] + (entity_definitions.hitbox_x2[y] as u8);
+        b3 = a = entity.y_pixel[x] + (entity_definitions.hitbox_y2[y] as u8);
+        x = entity.PLAYER_INDEX;
+        b4 = a = entity.PLAYER_COUNT;
+
+        if { carry = detect_entity(b0, b1, b2, b3, x, b4); } && carry {
+            video.disable_screen();
+            return (*(0xFFFC as *func))();
+        }
+    }    
+}

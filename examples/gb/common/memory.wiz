@@ -1,0 +1,46 @@
+// Fills a range in memory with a specified byte value.
+//
+// Notes:
+// - Some memory is unsafe to write while other hardware is using it.
+// - This will not work for 0xFExx addressses. Use the OAM library instead for modifying OAM memory.
+//
+// Arguments:
+//
+// hl = destination address
+// a = value
+// bc = byte count
+//
+// After: hl += bc, bc = 0, a is preserved.
+func memset(dest : u16 in hl, value : u8 in a, count : u16 in bc) {
+    c++; b++;
+    goto start;
+repeat:
+    *(hl++ as *u8) = a;
+start:
+    c--; goto repeat if !zero;
+    b--; goto repeat if !zero;
+}
+
+// Copies count bytes from source to destination.
+//
+// Notes:
+// - Some memory is unsafe to write to while other hardware is using it.
+// - This will not work for 0xFExx addressses. Use the OAM library instead for modifying OAM memory.
+//
+// Arguments:
+//
+// de = destination address
+// hl = source address
+// bc = byte count
+//
+// After: de += bc, hl += bc, bc = 0
+func memcpy(dest : u16 in de, source : u16 in hl, count : u16 in bc) {
+    c++; b++;
+    goto start;
+repeat:
+    *(de as *u8) = a = *(hl++ as *u8);
+    de++;
+start:
+    c--; goto repeat if !zero;
+    b--; goto repeat if !zero;
+}

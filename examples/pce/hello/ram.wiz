@@ -1,0 +1,9 @@
+import "banks";
+
+in zeropage {
+    var b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15 : u8;
+    var w0 @ &b0, w2 @ &b2, w4 @ &b4, w6 @ &b6, w8 @ &b8 : u16;
+    
+    var mosaic : u8;
+    var timer : u8;
+}

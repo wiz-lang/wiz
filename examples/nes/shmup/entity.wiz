@@ -1,0 +1,123 @@
+import "banks";
+import "globals";
+import "utility";
+import "entity_definitions";
+
+namespace entity {
+    in zeropage {
+        var current_index : u8 in b14;
+    }
+
+    in ram {
+        let COUNT = 16;
+
+        let PLAYER_INDEX = 0;
+        let PLAYER_COUNT = 1;
+        let ENEMY_INDEX = 1;
+        let ENEMY_COUNT = 15;
+
+        var type : [u8; COUNT];
+        var flags : [u8; COUNT];
+        var x_subpixel : [u8; COUNT];
+        var x_pixel : [u8; COUNT];
+        var x_screen : [u8; COUNT];
+        var y_subpixel : [u8; COUNT];
+        var y_pixel : [u8; COUNT];
+        var y_screen : [u8; COUNT];
+        var hp : [u8; COUNT];        
+        var flash_timer : [u8; COUNT];
+        var v0 : [u8; COUNT];
+        var v1 : [u8; COUNT];
+        var v2 : [u8; COUNT];
+        var v3 : [u8; COUNT];
+        var v4 : [u8; COUNT];
+        var v5 : [u8; COUNT];
+        var v6 : [u8; COUNT];
+        var v7 : [u8; COUNT];
+    }
+
+    func init_system() {
+        a = 0;
+
+        for x in 0 .. COUNT - 1 {
+            type[x] = a;
+            flags[x] = a;
+            x_subpixel[x] = a;
+            x_pixel[x] = a;
+            x_screen[x] = a;
+            y_subpixel[x] = a;
+            y_pixel[x] = a;
+            y_screen[x] = a;
+            hp[x] = a;
+            flash_timer[x] = a;
+            v0[x] = a;
+            v1[x] = a;
+            v2[x] = a;
+            v3[x] = a;
+            v4[x] = a;
+            v5[x] = a;
+            v6[x] = a;
+            v7[x] = a;
+        }
+    }
+
+    func init_entity(
+        index : u8 in x,
+        spawn_type : u8 in y,
+        spawn_x : u16 in w0,
+        spawn_y : u16 in w2
+    ) {
+        flags[x] = a = 0;
+        x_subpixel[x] = a;
+        y_subpixel[x] = a;
+        hp[x] = a;
+        flash_timer[x] = a;
+        v0[x] = a;
+        v1[x] = a;
+        v2[x] = a;
+        v3[x] = a;
+        v4[x] = a;
+        v5[x] = a;
+        v6[x] = a;
+        v7[x] = a;
+        x_pixel[x] = a = <:spawn_x;
+        x_screen[x] = a = >:spawn_x;
+        y_pixel[x] = a = <:spawn_y;
+        y_screen[x] = a = >:spawn_y;
+
+        type[x] = a = y;
+
+        if !zero {
+            <:w0 = a = (&entity_definitions.init_handlers_l as *u8)[y];
+            >:w0 = a = (&entity_definitions.init_handlers_h as *u8)[y];
+            return (*(&w0 as *func))();
+        }
+    }
+
+    func spawn_entity(spawn_type : u8 in y, spawn_x : u16 in w0, spawn_y : u16 in w2) : bool in carry {
+        for x in 0 .. COUNT - 1 {
+            a = type[x];
+            if zero {
+                init_entity(x, spawn_type, spawn_x, spawn_y);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    func update_all() {
+        for x in 0 .. COUNT - 1 {
+            current_index = x;
+
+            y = a = type[x];
+            if !zero {
+                <:w0 = a = (&entity_definitions.update_handlers_l as *u8)[y];
+                >:w0 = a = (&entity_definitions.update_handlers_h as *u8)[y];
+                call_handler(w0);
+            }
+
+            x = current_index;
+        }
+    }
+}

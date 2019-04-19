@@ -1,0 +1,4 @@
+namespace art {
+    const background_tileset = embed "bkg_tileset.chr";
+    const sprite_tileset = embed "spr_tileset.chr";
+}

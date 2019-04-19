@@ -1,0 +1,4 @@
+bank zeropage @ 0x2000 : [vardata; 256];
+bank stack @ 0x2100 : [vardata; 256];
+bank prg @ 0xE000 : [constdata; 0x2000];
+bank chr @ 0x8000 : [constdata; 0x4000];

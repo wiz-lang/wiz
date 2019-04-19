@@ -1,0 +1,104 @@
+import "banks";
+import "globals";
+import "utility";
+import "bullet_definitions";
+
+namespace bullet {
+    in zeropage {
+        var current_index : u8 in b14;
+    }
+
+    in ram {
+        let COUNT = 32;
+
+        let PLAYER_INDEX = 0;
+        let PLAYER_COUNT = 16;
+        let ENEMY_INDEX = 16;
+        let ENEMY_COUNT = 16;
+
+        var type : [u8; COUNT];
+        var x_subpixel : [u8; COUNT];
+        var x_screen : [u8; COUNT];
+        var x_pixel : [u8; COUNT];
+        var y_subpixel : [u8; COUNT];
+        var y_pixel : [u8; COUNT];
+        var y_screen : [u8; COUNT];
+        var v0 : [u8; COUNT];
+        var v1 : [u8; COUNT];
+    }
+
+    func init_system() {
+        a = 0;
+
+        for x in 0 .. COUNT - 1 {
+            type[x] = a;
+            x_subpixel[x] = a;
+            x_pixel[x] = a;
+            x_screen[x] = a;
+            y_subpixel[x] = a;
+            y_pixel[x] = a;
+            y_screen[x] = a;
+            v0[x] = a;
+            v1[x] = a;
+        }
+    }
+
+    func init_bullet(
+        index : u8 in x,
+        spawn_type : u8 in y,
+        spawn_x : u16 in w0,
+        spawn_y : u16 in w2
+    ) {
+        x_subpixel[x] = a;
+        y_subpixel[x] = a;
+        v0[x] = a;
+        v1[x] = a;
+        x_pixel[x] = a = <:spawn_x;
+        x_screen[x] = a = >:spawn_x;
+        y_pixel[x] = a = <:spawn_y;
+        y_screen[x] = a = >:spawn_y;
+
+        type[x] = a = y;
+
+        if !zero {
+            <:w0 = a = (&bullet_definitions.init_handlers_l as *u8)[y];
+            >:w0 = a = (&bullet_definitions.init_handlers_h as *u8)[y];
+            return (*(&w0 as *func))();
+        }
+    }
+
+    func _spawn_bullet(spawn_type : u8 in y, spawn_x : u16 in w0, spawn_y : u16 in w2, start : u8 in x, count : u8 in b4) : bool in carry {
+        do {
+            a = type[x];
+            if zero {
+                init_bullet(x, spawn_type, spawn_x, spawn_y);
+                return true;
+            }
+
+            x++;
+            count--;
+        } while !zero;
+
+        return false;
+    }
+
+    func spawn_player_bullet(spawn_type : u8 in y, spawn_x : u16 in w0, spawn_y : u16 in w2) : bool in carry {
+        b4 = a = PLAYER_COUNT;
+        return _spawn_bullet(spawn_type, spawn_x, spawn_y, PLAYER_INDEX, b4);
+    }
+
+    func update_all() {
+        for x in 0 .. COUNT - 1 {
+            current_index = x;
+
+            y = a = type[x];
+            if !zero {
+                <:w0 = a = (&bullet_definitions.update_handlers_l as *u8)[y];
+                >:w0 = a = (&bullet_definitions.update_handlers_h as *u8)[y];
+                call_handler(w0);
+            }
+
+            x = current_index;
+        }
+    }    
+}

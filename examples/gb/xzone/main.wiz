@@ -1,0 +1,297 @@
+import "gb";
+import "banks";
+
+in ram {
+    namespace stack {
+        let SIZE = 256;
+        var data : [u8; SIZE];
+    }
+
+    var effect_fade_timer : u8;
+    var effect_fade_loop : u8;
+    var effect_scale_timer : u8;
+    var effect_sine_timer : u8;
+    var effect_sine_delay : u8;
+    var mask_offset : u8;
+}
+
+in rom @ 0x150 {
+    import "memory";
+    import "joy";
+    import "video";
+    import "gbc_util";
+    import "oam";
+    import "tables";
+
+    const mask_tileset = embed "mask_tileset.chr";
+
+    func main() {
+        interrupt = false;
+        hl = &stack.data as u16 + stack.SIZE - 1;
+        sp = hl;
+
+        // Turn off the screen.
+        video.disable();
+
+        video.init();
+        joy.init();
+        oam.init();
+        oam.clear();
+
+        // Fill in some very crappy striped tile patterns.
+        memcpy(&gb.ram.tile as u16, &mask_tileset as u16, sizeof(typeof(mask_tileset)));
+        memset(&gb.ram.map as u16, 0, 1024);
+
+        hl = &gb.ram.map as u16;
+        b = 0;
+        do {
+            c = 0;
+            do {
+                d = 0;
+
+                a = 15 - b;
+                if a >= c {
+                    if a == c {
+                        d = 1;
+                    }
+                } else {
+                    a = 16 + b;
+                    if a >= c {
+                        if a == c {
+                            d = 2;
+                        } else {
+                            d = 5;
+                        }
+                    }
+                }
+
+                *(hl++ as *u8) = a = d;
+
+                c++;
+                a = c;
+            } while a != 32;
+
+            b++;
+            a = b;
+        } while a != 10;
+
+        hl = &gb.ram.map as u16 + 10 * 32;
+        b = 0;
+        do {
+            c = 0;
+            e = a = 9 - b;
+            do {
+                d = 0;
+
+                a = 15 - e;
+                if a >= c {
+                    if a == c {
+                        d = 3;
+                    }
+                } else {
+                    a = 16 + e;
+                    if a >= c {
+                        if a == c {
+                            d = 4;
+                        } else {
+                            d = 5;
+                        }
+                    }
+                }
+
+                *(hl++ as *u8) = a = d;
+
+                c++;
+                a = c;
+            } while a != 32;
+
+            b++;
+            a = b;
+        } while a != 10;  
+
+        gb.scroll.x = a = 48;
+        gb.scroll.y = a = 8;
+
+        draw_sprites();
+
+        effect_fade_timer = a = 0;
+        effect_fade_loop = a;
+        effect_scale_timer = a;
+        effect_sine_timer = a;
+        effect_sine_delay = a;
+        mask_offset = a = 0;
+
+        gb.mono.palette.bg = a = 0b00011011;
+        gb.mono.palette.obj1 = a = 0b00011011;
+        gb.mono.palette.obj2 = a = 0b00011011;
+
+        // Enable some basic interrupts.
+        gb.interrupt.flag = a = 0;
+        gb.interrupt.enable = a = gb.interrupt.VBLANK | gb.interrupt.STAT;
+
+        // Turn the screen back on, with backgrounds enabled using tileset 2.
+        gb.lcd.ctrl = a = gb.lcd.CTRL_ON | gb.lcd.CTRL_TILESET2 | gb.lcd.CTRL_BG_ON | gb.lcd.CTRL_OBJ_ON;
+
+        gb.lcd.stat = a = gb.lcd.STAT_SCANLINE_ENABLE;
+        interrupt = true;
+
+        ^while true {
+            joy.update();
+            video.request_update();
+
+            draw_sprites();
+
+            a = effect_fade_timer;
+            if a < 60 {
+                a = a + 1;
+                effect_fade_timer = a;
+            } else {
+                a = effect_scale_timer;
+                if a < 80 {
+                    a += 1;
+                    effect_scale_timer = a;
+                }
+
+                a = effect_sine_delay;
+                if a < 74 {
+                    a++;
+                    effect_sine_delay = a;
+
+                    a = effect_sine_timer;
+                    if a < 64 {
+                        a++;
+                        effect_sine_timer = a;
+                    }
+                }
+            }
+
+            a = joy.pressed;
+            if a $ joy.bit.A {
+                joy.unpress = a = joy.unpress | joy.mask.A;
+                effect_fade_timer = a = 0;
+                effect_fade_loop = a;
+                effect_scale_timer = a;
+                effect_sine_timer = a;
+                effect_sine_delay = a;
+            }
+        }
+    }
+
+    func draw_sprites() {
+        memset(&video.oam_buffer as u16, 0, 160);
+
+        hl = &video.oam_buffer as u16;
+        *(hl++ as *u8) = a = 0x50;
+        *(hl++ as *u8) = a = 0x2F;
+        *(hl++ as *u8) = a = 0x10;
+        *(hl++ as *u8) = a = 0x0;
+        *(hl++ as *u8) = a = 0x50;
+        *(hl++ as *u8) = a = 0x37;
+        *(hl++ as *u8) = a = 0x11;
+        *(hl++ as *u8) = a = 0x0;
+        *(hl++ as *u8) = a = 0x58;
+        *(hl++ as *u8) = a = 0x2F;
+        *(hl++ as *u8) = a = 0x20;
+        *(hl++ as *u8) = a = 0x0;
+        *(hl++ as *u8) = a = 0x58;
+        *(hl++ as *u8) = a = 0x37;
+        *(hl++ as *u8) = a = 0x21;
+        *(hl++ as *u8) = a = 0x0;
+
+        *(hl++ as *u8) = a = 0x50;
+        *(hl++ as *u8) = a = 0x4F;
+        *(hl++ as *u8) = a = 0x10;
+        *(hl++ as *u8) = a = 0x80;
+        *(hl++ as *u8) = a = 0x50;
+        *(hl++ as *u8) = a = 0x57;
+        *(hl++ as *u8) = a = 0x11;
+        *(hl++ as *u8) = a = 0x80;
+        *(hl++ as *u8) = a = 0x58;
+        *(hl++ as *u8) = a = 0x4F;
+        *(hl++ as *u8) = a = 0x20;
+        *(hl++ as *u8) = a = 0x80;
+        *(hl++ as *u8) = a = 0x58;
+        *(hl++ as *u8) = a = 0x57;
+        *(hl++ as *u8) = a = 0x21;
+        *(hl++ as *u8) = a = 0x80;
+
+        *(hl++ as *u8) = a = 0x50;
+        *(hl++ as *u8) = a = 0x6F;
+        *(hl++ as *u8) = a = 0x10;
+        *(hl++ as *u8) = a = 0x0;
+        *(hl++ as *u8) = a = 0x50;
+        *(hl++ as *u8) = a = 0x77;
+        *(hl++ as *u8) = a = 0x11;
+        *(hl++ as *u8) = a = 0x0;
+        *(hl++ as *u8) = a = 0x58;
+        *(hl++ as *u8) = a = 0x6F;
+        *(hl++ as *u8) = a = 0x20;
+        *(hl++ as *u8) = a = 0x0;
+        *(hl++ as *u8) = a = 0x58;
+        *(hl++ as *u8) = a = 0x77;
+        *(hl++ as *u8) = a = 0x21;
+        *(hl++ as *u8) = a = 0x0;        
+    }
+
+    #[irq]
+    func draw() {
+        video.acknowledge_update();
+
+        hl = &tables.sine as u16;
+        c = a = effect_sine_timer;
+        c = a = c + c + c + c;
+        b = 0;
+        c <<= 1;
+        b <<<<#= 1;
+        hl += bc;
+        hl++;
+
+        c = *(hl as *u8) >> 2;
+        b = a = effect_scale_timer + c;
+        mask_offset = a = b;
+
+        gb.scroll.y = a = 8 - b;
+        gb.scanline.trigger = a = 71;
+
+        a = effect_fade_timer;
+        if a < 20 {
+            gb.mono.palette.bg = a = 0b00011000;
+        } else if a < 30 {
+            gb.mono.palette.bg = a = 0b00011001;
+        } else if a < 40 {
+            gb.mono.palette.bg = a = 0b00011010;
+        } else {
+            gb.mono.palette.bg = a = 0b00011011;
+        }
+
+        hl = pop();
+        de = pop();
+        bc = pop();
+        af = pop();
+    }
+
+    #[irq]
+    func stat() {
+        do {
+            a = gb.lcd.stat & gb.lcd.STAT_MODE_MASK;
+        } while a != gb.lcd.STAT_MODE_HBLANK;
+
+        gb.scroll.y = a = mask_offset + 8;
+        hl = pop();
+        de = pop();
+        bc = pop();
+        af = pop();
+    }
+
+    #[irq]
+    func stub() {
+        hl = pop();
+        de = pop();
+        bc = pop();
+        af = pop();
+    }
+
+    let timer = stub;
+    let serial = stub;
+    let joypad = stub;
+}

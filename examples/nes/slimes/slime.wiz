@@ -1,0 +1,36 @@
+import "ram";
+import "entity";
+import "ai_wander";
+
+namespace slime {
+    func spawn() {
+        entity.spawn();
+        entity.max_hp[x] = a = 10;
+        entity.hp[x] = a;
+        entity.pixel_x[x] = a = t0;
+        entity.pixel_y[x] = a = t1;
+        entity.update_lo[x] = a = <:update;
+        entity.update_hi[x] = a = >:update;
+
+        entity.flags[x] = a = entity.flags[x] | entity.FLAGS_HOSTILE;
+        ai_wander.init();
+        ai_wander.wander_setting[x] = a = 0;
+    }
+
+    func update() {
+        ai_wander.update();
+
+        let frame = t0;
+        entity.anim_timer[x]++;
+
+        frame = a = 0;
+        if { a = entity.anim_timer[x]; } && a >= 20 {
+            if a >= 40 {
+                entity.anim_timer[x] = a = 0;
+            }
+            frame++;
+        }
+
+        entity.frame[x] = a = 20 + frame;
+    }
+}

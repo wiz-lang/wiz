@@ -1,0 +1,189 @@
+import "banks";
+import "ram";
+import "nes";
+
+// (6502) goto label if a & t0 != 0; -> bit(a, t0); goto label if !zero; 
+// (6502) goto label if a & t0 == 0; -> bit(a, t0); goto label if zero; 
+// (z80) goto label if a & 0x80 == 0; -> goto label if a $ 7;
+// (z80) goto label if a & 0x80 != 0; -> goto label if !(a $ 7);
+// (z80) goto label if a $ 1; -> bit(1, a); goto label if !zero; (zero flag is inverse of bit read)
+// (z80) goto label if !a $ 1; -> bit(1, a); goto label if zero; (zero flag is inverse of bit read)
+// (z80) goto label if a == 0; -> a = a | a; goto label if zero;
+// (z80) goto label if a != 0; -> a = a | a; goto label if !zero;
+// (z80) goto label if a == b; -> cmp(a, b); goto label if zero;
+// (z80) goto label if a != b; -> cmp(a, b); goto label if !zero;
+
+
+// #[r8], #[r16] - relative 8, relative 16
+// #[a16], #[a24] - absolute 16, absolute 24
+
+// 65816 - p |= mask (sep), p &= ~mask (rep)
+
+// +if {} else {} -- expand jump
+// +goto label;
+
+/*
+struct Point {
+    x : u8,
+    y : u8,
+}
+
+var p : Point;
+const p2 = Point { x = 100, y = 1000 };
+
+p.x = 0;
+p.y = 0;
+
+union Foo {
+    a : u8,
+    b : u16,    
+}
+
+var foo : Foo;
+
+mem8_idx16();
+#[mem8_idx16] {
+    foo.a = a;
+    foo.b = x;
+}
+
+
+enum Foo {
+    A,
+    B,
+    C,
+}
+
+*/
+
+
+in prg {
+    import "entity";
+    import "common";
+    import "slime";
+    import "hero";
+    import "joy";
+    import "random";
+    import "data";
+
+    #[fallthrough] func main() {
+        // Disable decimal arithmetic (though not actually supported on 2A03 anyway)
+        decimal = false;
+        // Disable interrupts.
+        nointerrupt = true;
+        // Prepare stack.
+        s = x = 0xFF;
+
+        // Turn off rendering.
+        nes.ppu.control = x = 0;
+        nes.ppu.mask = x;
+        // Disable DMC interrupts.
+        nes.apu.frame_counter = a = nes.apu.FRAME_COUNTER_IRQ_DISABLE;
+
+        // Wait for the PPU to be ready to use, which takes 2 vertical blanks.
+        for x in 0 .. 1 {
+            do {} while !nes.ppu.status$7;
+        }
+
+        for x in 0 .. 255 {
+            (0 as *u8)[x] = a = 0x00;
+            (0x200 as *u8)[x] = a = 0xFE;
+        }
+
+        load_palette();
+        clear_nametable_vram();
+
+        let BG_TILE = 0;
+        let FG_TILE = 8;
+        tilemap_bg_tile = a = BG_TILE;
+        tilemap_fg_tile = a = FG_TILE;
+
+        <:tilemap_ptr = a = <:&data.level1;
+        >:tilemap_ptr = a = >:&data.level1;
+        load_tilemap();
+        print_text();
+
+        joy.init();
+        entity.init_system();
+        random.init();        
+        hero.spawn();
+
+        y = 0;
+        while { a = data.spawns[y]; } && a != 0xFF {
+            t0 = a << 3;
+            y++;
+            t1 = a = data.spawns[y] << 3;
+            y++;
+            a = y; push(a);
+            slime.spawn();
+            y = a = pop();
+        }
+
+        a = nes.ppu.status; 
+        nes.ppu.scroll = a = 0;
+        nes.ppu.scroll = a;
+
+        // We're finally ready to show the screen!
+        nes.ppu.control = a = nes.ppu.CONTROL_NMI | nes.ppu.CONTROL_OBJ_PATTERN_1;
+        nes.ppu.mask = a = nes.ppu.MASK_LEFTMOST_BG | nes.ppu.MASK_RENDER_BG | nes.ppu.MASK_LEFTMOST_OBJ | nes.ppu.MASK_RENDER_OBJ;
+
+        // Enable interrupts.
+        nointerrupt = false;
+
+        while true {
+            //nes.ppu.mask = a = nes.ppu.MASK_LEFTMOST_BG | nes.ppu.MASK_RENDER_BG | nes.ppu.MASK_LEFTMOST_OBJ | nes.ppu.MASK_RENDER_OBJ | nes.ppu.MASK_GREYSCALE;
+            joy.update();
+            entity.update_all();
+
+            for x in 0 .. 255 {
+                (0x200 as *u8)[x] = a = 0xFE;
+                x++;
+            }
+            entity.draw_all();
+            random.next();
+
+            draw_request = a = DRAW_REQUEST_WAIT_FRAME | DRAW_REQUEST_UPDATE_SPRITES;
+            //nes.ppu.mask = a = nes.ppu.MASK_LEFTMOST_BG | nes.ppu.MASK_RENDER_BG | nes.ppu.MASK_LEFTMOST_OBJ | nes.ppu.MASK_RENDER_OBJ;
+
+            do {
+                a = draw_request;
+            } while !zero;
+        }
+    }
+
+    #[nmi] func draw() {
+        push(a);
+        push(a = x);
+        push(a = y);
+        a = nes.ppu.status; 
+        nes.ppu.scroll = a = 0;
+        nes.ppu.scroll = a = 0;
+        
+        if { a = draw_request & DRAW_REQUEST_UPDATE_SPRITES; } && !zero {
+            nes.ppu.oam.address = a = <:&oam_buffer;
+            nes.ppu.oam.dma = a = >:&oam_buffer;
+        }
+
+        draw_request = a = 0;
+        
+        y = a = pop();
+        x = a = pop();
+        a = pop();
+    }
+
+    #[irq] func scanline() {
+        push(a);
+        push(a = x);
+        push(a = y);
+        y = a = pop();
+        x = a = pop();
+        a = pop();
+    }
+
+    const @ 0xFFFA = [draw, main, scanline];
+}
+
+in chr {
+    const = embed "bobble_tiles.chr";
+    const = embed "minirpg_sprites.chr";
+}

@@ -1,0 +1,17 @@
+import "banks";
+
+in zeropage {
+    var t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15 : u8;
+
+    var tilemap_ptr : *u8;
+    var tilemap_bg_tile : u8;
+    var tilemap_fg_tile : u8;
+
+    let DRAW_REQUEST_WAIT_FRAME = 0x01;
+    let DRAW_REQUEST_UPDATE_SPRITES = 0x02;
+    var draw_request : u8;
+}
+
+in ram @ 0x200 {
+    var oam_buffer : [u8; 256];
+}

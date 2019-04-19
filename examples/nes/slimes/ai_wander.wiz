@@ -1,0 +1,73 @@
+import "ram";
+import "entity";
+import "directions";
+import "random";
+
+namespace ai_wander {
+    const direction_wait_base : [u8] = [60];
+    const direction_wait_random : [u8] = [60];
+    const wander_speed_lo : [u8] = [128];
+    const wander_speed_hi : [u8] = [0];
+
+    let direction_timer = entity.v1;
+    let wander_setting = entity.v2;
+
+    func init() {
+        random.next();
+        entity.direction[x] = a = a & 0x3;
+    }
+
+    func update() {        
+        if { a = direction_timer[x]; } && zero {
+            entity.direction[x] = a = (entity.direction[x] & 0x2) ^ 0x2;
+            random.next();
+            entity.direction[x] = a = a & 1 | entity.direction[x];
+
+            random.next();
+            y = wander_setting[x];
+
+            while a >= direction_wait_random[y] {
+                a -= direction_wait_random[y];
+            }
+            direction_timer[x] = a = a + direction_wait_base[y];            
+        } else {
+            direction_timer[x]--;
+        }
+
+        t0 = a = 0;
+        t1 = a;
+        t2 = a;
+        t3 = a;
+        y = entity.direction[x];
+        if { a = directions.x_offset[y]; } && !zero {
+            if negative {
+                y = wander_setting[x];
+                t0 = a = -wander_speed_lo[y];
+                t1 = a = (wander_speed_hi[y] ^ 0xFF) +# 0;
+            } else {
+                y = wander_setting[x];
+                t0 = a = wander_speed_lo[y];
+                t1 = a = wander_speed_hi[y];
+            }
+        }
+
+        y = entity.direction[x];        
+        if { a = directions.y_offset[y]; } && !zero {
+            if negative {
+                y = wander_setting[x];
+                t2 = a = -wander_speed_lo[y];
+                t3 = a = (wander_speed_hi[y] ^ 0xFF) +# 0;
+            }  else {
+                y = wander_setting[x];
+                t2 = a = wander_speed_lo[y];
+                t3 = a = wander_speed_hi[y];
+            }
+        }
+
+        entity.move(t0, t1, t2, t3);
+        
+        if { a = t15; } && zero {
+            direction_timer[x] = a = 0;
+        }
+    }
+}

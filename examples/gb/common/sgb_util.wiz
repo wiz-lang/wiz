@@ -1,0 +1,90 @@
+import "gb";
+import "joy";
+import "banks";
+
+namespace sgb_util {
+    in ram {
+        var sgb_detected : u8;
+    }
+
+    // Send a single 16-byte packet to the Super Game Boy hardware.
+    // Packets are 16-bytes and zero-padded as necessary. Exact structure depends on the command
+    // Arguments: hl = pointer to 16-byte packet.    
+    func send_packet() {
+        gb.joy.ctrl = a = 0;
+        gb.joy.ctrl = a = 0x30;
+
+        b = 16;
+        do {
+            e = 8;
+            a = *(hl++ as *u8);
+            d = a;
+            do {
+                a = 0x10;
+                d >>>= 1;
+                if !carry {
+                    a = 0x20;
+                }
+
+                gb.joy.ctrl = a;
+                gb.joy.ctrl = a = 0x30;
+                e--;
+            } while !zero;
+            
+            b--;
+        } while !zero;
+
+        gb.joy.ctrl = a = 0x20;
+        gb.joy.ctrl = a = 0x30;
+
+        bc = 6400;
+        do {
+            nop();
+            nop();
+            nop();
+            bc--;
+
+            a = c | b;
+        } while !zero;
+    }
+
+    // Send multiple 16-byte SGB-formatted packets in a row.
+    //
+    // Arguments: hl = pointer to a sequence of 16-byte packets, terminated by a single 0xFF byte.
+    #[fallthrough] func send_packet_sequence() {
+        while true {
+            a = *(hl as *u8);
+            return if a == 0xFF;
+            send_packet();
+        }
+    }
+
+    // Detects if running on the Super Game Boy.
+    // After: sgb_detected = 1 if found, 0 otherwise.
+    func detect() {
+        // Turn on 2P mode.
+        hl = &packet_2_player_mode as u16;
+        send_packet();
+
+        // If joystick id != 0 in the next two reads, we successfully switched to multiplayer mode (which means we're on a Super Game Boy)
+        joy.read_raw();
+        goto was_detected if a != 0;
+        joy.read_raw();
+        goto was_detected if a != 0;
+
+    was_not_detected:
+        a = 0;
+        goto done_detection;        
+    was_detected:
+        a = 1;
+    done_detection:
+        sgb_detected = a;
+
+        // Turn off 1P mode.
+        hl = &packet_1_player_mode as u16;
+        send_packet();
+    }
+
+    const packet_1_player_mode : [u8] = [gb.super.MLT_REQ | 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    const packet_2_player_mode : [u8] = [gb.super.MLT_REQ | 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+}

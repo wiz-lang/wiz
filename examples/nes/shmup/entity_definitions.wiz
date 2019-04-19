@@ -1,0 +1,25 @@
+import "player";
+import "enemy_ghost";
+import "fx_enemy_death";
+
+namespace entity_definitions {
+    enum Type : u8 {
+        NONE,
+        PLAYER,
+        ENEMY_GHOST,
+        FX_ENEMY_DEATH,
+    }
+
+    func unused() {}
+
+    const init_handlers_l = [<:unused, <:entity_player.init, <:enemy_ghost.init, <:fx_enemy_death.init];
+    const init_handlers_h = [>:unused, >:entity_player.init, >:enemy_ghost.init, >:fx_enemy_death.init];
+    const draw_handlers_l = [<:unused, <:entity_player.draw, <:enemy_ghost.draw, <:fx_enemy_death.draw];
+    const draw_handlers_h = [>:unused, >:entity_player.draw, >:enemy_ghost.draw, >:fx_enemy_death.draw];
+    const update_handlers_l = [<:unused, <:entity_player.update, <:enemy_ghost.update, <:fx_enemy_death.update];
+    const update_handlers_h = [>:unused, >:entity_player.update, >:enemy_ghost.update, >:fx_enemy_death.update];
+    const hitbox_x : [i8] = [0, -1, -8, 0];
+    const hitbox_y : [i8] = [0, -4, -8, 0];
+    const hitbox_x2 : [i8] = [0, 0, 7, 0];
+    const hitbox_y2 : [i8] = [0, 0, 7, 0];
+}

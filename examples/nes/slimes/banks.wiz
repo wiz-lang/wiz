@@ -1,0 +1,10 @@
+config {
+    format = "nes",
+    cart_type = "nrom",
+}
+
+bank zeropage @ 0x00 : [vardata; 256];
+bank stack @ 0x100 : [vardata; 256];
+bank ram @ 0x200 : [vardata; 256 * 6];
+bank prg @ 0x8000 : [prgdata; 0x8000];
+bank chr : [chrdata; 0x2000];

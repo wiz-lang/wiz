@@ -1,0 +1,425 @@
+package tilemap do
+    // Turns off rendering and loads a map.
+    func load do
+        // Argument: Tileset Pointer. Should be page-aligned (low byte of 0x00), and pointing to the top-left page of the tileset.
+        let ptr_lo = t0
+        let ptr_hi = t1
+        let ptr = ptr_lo
+        // Argument: Map Source Pointer.
+        let map_lo = t2
+        let map_hi = t3
+        let map = map_lo
+        // Argument: Nametable index 0..3
+        let nametable_index = t4
+        // Local: Current Map Source Pointer.
+        let src_lo = t5
+        let src_hi = t6
+        let src = src_lo
+        // Local: Current Column.
+        let column = t7
+        // Local: Combined Tile Attributes.
+        let combined_attr = t8
+        let TILE_ADDRESS = nes.ppu.NAMETABLE_BASE
+        let ATTR_ADDRESS = (nes.ppu.NAMETABLE_BASE + nes.ppu.NAMETABLE_ATTRIBUTE)
+        
+        // Turn off the PPU.
+        [nes.ppu.ctrl] = 0 via a
+        [nes.ppu.mask] = a
+        // Read PPU status to reset its state.
+        a = [nes.ppu.status]
+
+        // Now setup the PPU for copying tiles.
+        [nes.ppu.address] = [nametable_index] << 2 + >:TILE_ADDRESS via a
+        [nes.ppu.address] = <:TILE_ADDRESS via a
+        // Setup the source pointer.
+        [src_lo] = [map_lo] via a
+        [src_hi] = [map_hi] via a
+
+        // Initialize the loop counter.
+        x = 0
+        loop
+            y = 0
+            // Move the pointer to the top-right tiles.
+            [ptr_hi]++
+            
+            // Copy top.
+            loop
+                // Save the column
+                [column] = y
+                // Get the metatile index for this column, and put it into y.
+                y = [[src]:y] via a
+
+                // Move the pointer back to the top-left tiles.
+                [ptr_hi]--
+                [nes.ppu.data] = [[ptr]:y] via a
+                // Move ptr to the top-right tiles.
+                [ptr_hi]++
+                [nes.ppu.data] = [[ptr]:y] via a
+
+                // Get the column back, and increment.
+                // If we've done this 16 times, stop -- we've finished the row.
+                y = [column]; y++
+                compare y to 16
+            until zero end
+            
+            y = 0
+            // Move ptr to bottom-right.
+            [ptr_hi]++; [ptr_hi]++
+            // Copy bottom. See column_top_loop for the gist of things.
+            loop
+                [column] = y
+                y = [[src]:y] via a
+
+                [ptr_hi]--
+                [nes.ppu.data] = [[ptr]:y] via a
+                [ptr_hi]++
+                [nes.ppu.data] = [[ptr]:y] via a
+
+                y = [column]; y++
+                compare y to 16
+            until zero end
+            
+            // Advance the source by one row.
+            [src] = [src] + 16 via a
+            // Move ptr back to top-left again.
+            [ptr_hi] = [ptr_hi] - 3 via a
+
+            // Repeat until 15 rows have been copied.
+            x++
+            compare x to 15
+        until zero end
+
+        // Read PPU status to reset its state.
+        a = [nes.ppu.status]
+
+        // Now setup the PPU for copying attributes.
+        [nes.ppu.address] = [nametable_index] << 2 + >:ATTR_ADDRESS via a
+        [nes.ppu.address] = <:ATTR_ADDRESS via a
+        // Setup the source pointer, advanced by one row.
+        [src_lo] = [map_lo] + 16 via a
+        [src_hi] = [map_hi] via a
+        // Set the pointer to attributes.
+        [ptr_hi] = [ptr_hi] + 4 via a
+
+        // Initialize the row counter x.
+        x = 0
+        
+        loop
+            y = 0
+            loop
+                // Save the column
+                [column] = y
+                // Decrease the source by one row.
+                [src] = [src] - 16 via a
+                // Get the metatile index for this column, and put it into y.
+                y = [[src]:y] via a
+                // Get the attribute for this column.
+                // xxxxxxAA -> 000000AA
+                [combined_attr] = [[ptr]:y] & 3 via a
+                
+                // Get the column back, and increment
+                y = [column]; y++
+                // Get the metatile index for this column, and put it into y.
+                y = [[src]:y] via a
+                // Get the attribute for this column and combine with the existing attribute.
+                // xxxxxxBB -> 0000BBAA
+                [combined_attr] = [[ptr]:y] & 3 << 2 | [combined_attr] via a
+                
+                // Advance the source by one row.
+                [src] = [src] + 16 via a
+                
+                // Get the column back.
+                y = [column]
+                // Get the metatile index for this column, and put it into y.
+                y = [[src]:y] via a
+                // Get the attribute for this column and combine with the existing attribute.
+                // xxxxxxCC -> 00CCBBAA
+                [combined_attr] = [[ptr]:y] & 3 << 4 | [combined_attr] via a
+                
+                // Get the column back, and increment
+                y = [column]; y++
+                // Get the metatile index for this column, and put it into y.
+                y = [[src]:y] via a
+                // Get the attribute for this column and combine with the existing attribute.
+                // Rotate 3 times, because rotation is 9-bit due using the carry.
+                // This also why we unset the carry, so that we don't accidentally slip in a
+                // 1 bit during the roatation.
+                // xxxxxxDD -> DDCCBBAA
+                carry = 0
+                a = [[ptr]:y] & 3 >>> 3 | [combined_attr]
+
+                // Write to PPU.
+                [nes.ppu.data] = a
+
+                // Get the column back, and increment ahead.
+                y = [column]; y++; y++
+
+                // Check if we've done 16 columns yet.
+                compare y to 16
+            until zero end
+            
+            // Advance the source by two rows.
+            [src] = [src] + 32 via a
+
+            // Increment the row counter.
+            x++
+            compare x to 7
+            // If we have no remaining rows, we're done.
+        until zero end
+        
+        // Final row of attributes has only one row of tiles, handle it specially.
+        y = 0
+        // Decrease the source by one row.
+        [src] = [src] - 16 via a
+        loop
+            // Save the column
+            [column] = y
+            // Get the metatile index for this column, and put it into y.
+            y = [[src]:y] via a
+            // Get the attribute for this column.
+            // xxxxxxAA -> 000000AA
+            [combined_attr] = [[ptr]:y] & 3 via a
+            
+            // Get the column back, and increment
+            y = [column]; y++
+            // Get the metatile index for this column, and put it into y.
+            y = [[src]:y] via a
+            // Get the attribute for this column and combine with the existing attribute.
+            // xxxxxxBB -> 0000BBAA
+            a = [[ptr]:y] & 3 << 2 | [combined_attr]
+
+            // Write to PPU.
+            [nes.ppu.data] = a
+            
+            // Get the column back, and increment ahead.
+            y = [column]; y++; y++
+            // Check if we've done 16 columns yet.
+            compare y to 16
+        until zero end
+    end
+    
+    // Loads in a tile column of the map for scrolling.
+    func update_tile_buffer do
+        // Argument: Tileset pointer. Should be page-aligned (low byte of 0x00), and pointing to the top-left page of the tileset.
+        let ptr_lo = t0
+        let ptr_hi = t1
+        let ptr = ptr_lo
+        // Argument: Map source pointer.
+        let map_lo = t2
+        let map_hi = t3
+        let map = map_lo
+        // Argument: Current column.
+        let column = t4
+        // Argument: Destination pointer
+        let dest_lo = t5
+        let dest_hi = t6
+        let dest = dest_lo
+        // Local: Current tile from source.
+        let tile = t7
+
+        // Initialize the row counter.
+        x = 0
+        loop
+            y = [column]
+            [tile] = [[map]:y] via a
+            y = a
+            
+            // Copy top-left tile
+            a = [[ptr]:y]
+            y = 0; [[dest]:y] = a
+            [dest]++
+            [ptr_hi]++
+            
+            // Copy top-right tile
+            y = [tile]; a = [[ptr]:y]
+            y = 0; [[dest]:y] = a
+            [dest]++
+            [ptr_hi]++
+            
+            // Copy bottom-left tile
+            y = [tile]; a = [[ptr]:y]
+            y = 0; [[dest]:y] = a
+            [dest]++
+            [ptr_hi]++
+            
+            // Copy bottom-right tile
+            y = [tile]; a = [[ptr]:y]
+            y = 0; [[dest]:y] = a
+            [dest]++
+            
+            // Move ptr back to top-left again.
+            [ptr_hi] = [ptr_hi] - 3 via a
+            // Advance the source by one row.
+            [map] = [map] + 16 via a
+            // Repeat until all rows have been copied.
+            x++
+            compare x to 15
+        until zero end
+    end
+    
+    // Loads in an attribute column of the map for scrolling.
+    func update_attribute_buffer do
+        // Argument: Tileset pointer. Should be page-aligned (low byte of 0x00), and pointing to the attribute page of the tileset.
+        let ptr_lo = t0
+        let ptr_hi = t1
+        let ptr = ptr_lo
+        // Argument: Map source pointer.
+        let map_lo = t2
+        let map_hi = t3
+        let map = map_lo
+        // Argument: Current column.
+        let column = t4
+        // Argument: Destination pointer
+        let dest_lo = t5
+        let dest_hi = t6
+        let dest = dest_lo
+        // Local: Current tile from source.
+        let combined_attr = t7
+
+        // Initialize the row counter.
+        x = 0
+        loop
+            // Get the column
+            y = [column]
+            // Get the metatile index for this column, and put it into y.
+            y = [[map]:y] via a
+            // Get the attribute for this column.
+            // xxxxxxAA -> 000000AA
+            [combined_attr] = [[ptr]:y] & 3 via a
+            
+            // Get the column back, and increment
+            y = [column]; y++
+            // Get the metatile index for this column, and put it into y.
+            y = [[map]:y] via a
+            // Get the attribute for this column and combine with the existing attribute.
+            // xxxxxxBB -> 0000BBAA
+            [combined_attr] = [[ptr]:y] & 3 << 2 | [combined_attr] via a
+            
+            // Advance the source by one row.
+            [map] = [map] + 16 via a
+            
+            // Get the column back.
+            y = [column]
+            // Get the metatile index for this column, and put it into y.
+            y = [[map]:y] via a
+            // Get the attribute for this column and combine with the existing attribute.
+            // xxxxxxCC -> 00CCBBAA
+            [combined_attr] = [[ptr]:y] & 3 << 4 | [combined_attr] via a
+            
+            // Get the column back, and increment
+            y = [column]; y++
+            // Get the metatile index for this column, and put it into y.
+            y = [[map]:y] via a
+            // Get the attribute for this column and combine with the existing attribute.
+            // Rotate 3 times, because rotation is 9-bit due using the carry.
+            // This also why we unset the carry, so that we don't accidentally slip in a
+            // 1 bit during the roatation.
+            // xxxxxxDD -> DDCCBBAA
+            carry = 0
+            a = [[ptr]:y] & 3 >>> 3 | [combined_attr]
+            // Write to destination.
+            y = 0; [[dest]:y] = a
+            [dest]++
+            
+            // Advance the source by one row.
+            [map] = [map] + 16 via a
+            // Increment the row counter.
+            x++
+            // Repeat until all rows have been copied.
+            compare x to 7
+        until zero end
+
+        // Final row of attributes has only one row of tiles, handle it specially.
+        // Get the column
+        y = [column]
+        // Get the metatile index for this column, and put it into y.
+        y = [[map]:y] via a
+        // Get the attribute for this column.
+        // xxxxxxAA -> 000000AA
+        [combined_attr] = [[ptr]:y] & 3 via a
+        
+        // Get the column back and increment
+        y = [column]; y++
+        // Get the metatile index for this column, and put it into y.
+        y = [[map]:y] via a
+        // Get the attribute for this column and combine with the existing attribute.
+        // xxxxxxBB -> 0000BBAA
+        a = [[ptr]:y] & 3 << 2 | [combined_attr]        
+        // Write to destination.
+        y = 0; [[dest]:y] = a
+    end
+    
+    // Draws a scroll buffer's tiles offscreen. Should be called during NMI.
+    func draw_tile_buffer do
+        // Argument: 16-bit camera position
+        let camera_x_lo = t0
+        let camera_x_hi = t1
+        // Argument: The buffer to copy from.
+        let src_lo = t2
+        let src_hi = t3
+        let src = src_lo
+        // Argument: The direction to move.
+        let direction = t4
+        
+        a = [direction]
+        if is zero then
+            a = [camera_x_hi] & 1 ^ 1
+        else
+            a = [camera_x_hi] & 1
+        end
+        [camera_x_hi] = a << 2 + 0x20 via a
+        [camera_x_lo] = [camera_x_lo] >> 3 via a
+    
+        // Check if this is an even or odd column.
+        a = a & 1
+        if is not zero then
+            [src]++
+        end
+        
+        [nes.ppu.ctrl] = nes.ppu.CTRL_VRAM_STEP_Y via a
+        a = [nes.ppu.status]
+        [nes.ppu.address] = [camera_x_hi] via a
+        [nes.ppu.address] = [camera_x_lo] via a
+        
+        y = 0
+        loop
+            [nes.ppu.data] = [[src]:y] via a
+            y++; y++
+            compare y to 60
+        until >= end
+    end
+    
+    // Draws a scroll buffer's attributes offscreen. Should be called during NMI.
+    func draw_attribute_buffer do
+        // Argument: 16-bit camera position
+        let camera_x_lo = t0
+        let camera_x_hi = t1
+        // Argument: The buffer to copy from.
+        let src_lo = t2
+        let src_hi = t3
+        let src = src_lo
+        // Argument: The direction to move.
+        let direction = t4
+        
+        a = [direction]
+        if is zero then
+            a = [camera_x_hi] & 1 ^ 1
+        else
+            a = [camera_x_hi] & 1
+        end
+        [camera_x_hi] = a << 2 + 0x23 via a
+        [camera_x_lo] = [camera_x_lo] >> 5 + 0xC0 via a
+
+        a = [nes.ppu.status]
+        
+        y = 0
+        loop
+            [nes.ppu.address] = [camera_x_hi] via a
+            [nes.ppu.address] = [camera_x_lo] via a
+            [nes.ppu.data] = [[src]:y] via a
+            [camera_x_lo] = [camera_x_lo] + 8 via a
+            y++
+            compare y to 8
+        until == end
+    end
+end

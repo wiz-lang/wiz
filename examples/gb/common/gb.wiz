@@ -1,0 +1,469 @@
+namespace gb {
+    namespace lcd {
+        extern var ctrl @ 0xFF40 : u8;
+        let CTRL_ON = 0x80;
+        let CTRL_WIN_MAP2 = 0x40;
+        let CTRL_WIN_MAP1 = 0x00;
+        let CTRL_WIN_ON = 0x20;
+        let CTRL_TILESET2 = 0x10;
+        let CTRL_TILESET1 = 0x00;
+        let CTRL_BG_MAP2 = 0x08;
+        let CTRL_BG_MAP1 = 0x00;
+        let CTRL_OBJ_8x16 = 0x04;
+        let CTRL_OBJ_8x8 = 0x00;
+        let CTRL_OBJ_ON = 0x02;
+        let CTRL_BG_ON = 0x01;
+        
+        let CTRL_BIT_BG = 0;
+        let CTRL_BIT_OBJ = 1;
+        let CTRL_BIT_OBJ_SIZE = 2;
+        let CTRL_BIT_BG_MAP = 3;
+        let CTRL_BIT_TILESET = 4;
+        let CTRL_BIT_WIN = 5;
+        let CTRL_BIT_WIN_MAP = 6;
+        let CTRL_BIT_ENABLE = 7;
+        
+        extern var stat @ 0xFF41 : u8;
+        let STAT_SCANLINE_ENABLE = 0x40;
+        let STAT_OAM_ENABLE = 0x20;
+        let STAT_VBLANK_ENABLE = 0x10;
+        let STAT_HBLANK_ENABLE = 0x08;
+        let STAT_SCANLINE_FLAG = 0x04;
+        let STAT_MODE_MASK = 0x03;
+        let STAT_MODE_HBLANK = 0x00;
+        let STAT_MODE_VBLANK = 0x01;
+        let STAT_MODE_BUSY_OAM = 0x02;
+        let STAT_MODE_BUSY_TRANSFER = 0x03;
+
+        extern writeonly dma @ 0xFF46 : u8;
+    }
+
+    namespace ram {
+        // Tile data.
+        extern var tile @ 0x8000 : [u8; 0x1800];
+        // Background maps.
+        extern var map @ 0x9800 : [u8; 0x400];
+        extern var map2 @ 0x9C00 : [u8; 0x400];
+        
+        // Object attribute memory.
+        extern var obj @ 0xFE00 : [u8; OBJ_SIZE * OBJ_TOTAL];
+        // Offset of each piece of object data.
+        let OBJ_OFFSET_Y = 0;
+        let OBJ_OFFSET_X = 1;
+        let OBJ_OFFSET_TILE = 2;
+        let OBJ_OFFSET_ATTR = 3;
+        // Size of each object.
+        let OBJ_SIZE = 4;
+        // Total number of objects.
+        let OBJ_TOTAL = 40;
+
+        // 4-bit wave memory.
+        extern var wave @ 0xFF30 : [u8; WAVE_BYTES_TOTAL];
+        // Number of bits taken by each wave sample.
+        let WAVE_BITS_PER_SAMPLE = 4;
+        // Total number of samples.
+        let WAVE_SAMPLE_TOTAL = 32;
+        // Number of samples per byte in wave memory.
+        let WAVE_SAMPLES_PER_BYTE = 2;
+        // Total number of bytes in wave memory.
+        let WAVE_BYTES_TOTAL = WAVE_SAMPLE_TOTAL / WAVE_SAMPLES_PER_BYTE;
+
+        // High-ram memory area.
+        extern var hram @ 0xFF80 : [u8; HRAM_SIZE];
+        // Size of high-ram.
+        let HRAM_SIZE = 128;
+    }
+
+    namespace scroll {
+        // Wrapped coordinates.
+        extern var y @ 0xFF42 : u8;
+        extern var x @ 0xFF43 : u8;
+    }
+
+    namespace scanline {
+        extern const current @ 0xFF44 : u8; // curent = 0 .. 153, where 144..153 indicates vblank 
+        extern var trigger @ 0xFF45 : u8;
+    }
+
+    namespace window {
+        // Unwrapped coordinates.
+        extern var y @ 0xFF4A : u8; // y = 0..143
+        extern var x @ 0xFF4B : u8; // x - 7 = 0 .. 166 -- x < 7 is weird. So is fully-offscren x.
+    }
+
+    namespace mono {
+        namespace palette {
+            extern var bg @ 0xFF47 : u8;
+            extern var obj1 @ 0xFF48 : u8;
+            extern var obj2 @ 0xFF49 : u8;
+
+            let COLOR_3_MASK = 0xC0;
+            let COLOR_2_MASK = 0x30;
+            let COLOR_1_MASK = 0x0C;
+            let COLOR_0_MASK = 0x03;
+            let COLOR_3_SHIFT = 6;
+            let COLOR_2_SHIFT = 4;
+            let COLOR_1_SHIFT = 2;
+            let COLOR_0_SHIFT = 0;
+        }
+    }
+
+    namespace color {
+        namespace palette {
+            namespace bg {
+                extern var index @ 0xFF68 : u8;
+                extern var data @ 0xFF69 : u8;
+            }
+
+            namespace obj {
+                extern var index @ 0xFF6A : u8;
+                extern var data @ 0xFF6B : u8;
+            }
+
+            let INDEX_VALUE_MASK = 0x3F;
+            let INDEX_AUTO_INCREMENT = 0x80;
+
+            let DATA_CHANNEL_SIZE = 5;
+            let DATA_BLUE_SHIFT = 10;
+            let DATA_GREEN_SHIFT = 5;
+            let DATA_RED_SHIFT = 0;
+            let DATA_BLUE_MASK = 0x7C00;
+            let DATA_GREEN_MASK = 0x03E0;
+            let DATA_RED_MASK = 0x001F;
+        }
+
+        namespace select {
+            extern var vram @ 0xFF4F : u8;
+            let VRAM_BANK_0 = 0x00;
+            let VRAM_BANK_1 = 0x01;
+
+            extern var wram @ 0xFF70 : u8;
+            let WRAM_BANK_MASK = 0x07;
+        }
+
+        extern var speed @ 0xFF4D : u8;
+        let SPEED_BIT_TURBO_ON = 7;
+        let SPEED_BIT_SWITCH = 0;
+        let SPEED_MASK_TURBO_ON = 0x80;
+        let SPEED_MASK_TURBO_OFF = 0;
+        let SPEED_MASK_SWITCH = 0x01;
+
+        extern var infrared @ 0xFF56 : u8;
+        let INFRARED_WRITE_MASK = 0x01;
+        let INFRARED_WRITE_OFF = 0x00;
+        let INFRARED_WRITE_ON = 0x01;
+        let INFRARED_READ_MASK = 0x02;
+        let INFRARED_READ_NORMAL = 0x02;
+        let INFRARED_READ_RECEIVING = 0x00;
+        let INFRARED_READ_ENABLE = 0xC0;
+        let INFRARED_READ_DISABLE = 0x00;
+
+        namespace dma {
+            namespace source {
+                extern var high @ 0xFF51 : u8;
+                extern var low @ 0xFF52 : u8;
+            }
+
+            namespace dest {
+                extern var high @ 0xFF53 : u8;
+                extern var low @ 0xFF54 : u8;
+            }
+
+            extern var transfer @ 0xFF55 : u8;
+            let TRANSFER_GENERAL = 0x00; // write
+            let TRANSFER_HBLANK = 0x80; // write
+            let TRANSFER_ACTIVE = 0x00; // read
+            let TRANSFER_INACTIVE = 0x80; // read
+        }
+    }
+
+    namespace super {
+        let PAL01 = 0x00;
+        let PAL23 = 0x08;
+        let PAL03 = 0x10;
+        let PAL12 = 0x18;
+        let ATTR_BLK = 0x20;
+        let ATTR_LIN = 0x28;
+        let ATTR_DIV = 0x30;
+        let ATTR_CHR = 0x38;
+        let SOUND = 0x40;
+        let SOU_TRN = 0x48;
+        let PAL_SET = 0x50;
+        let PAL_TRN = 0x58;
+        let ATRC_EN = 0x60;
+        let TEST_EN = 0x68;
+        let ICON_EN = 0x70;
+        let DATA_SND = 0x78;
+        let DATA_TRN = 0x80;
+        let MLT_REQ = 0x88;
+        let JUMP = 0x90;
+        let CHR_TRN = 0x98;
+        let PCT_TRN = 0xA0;
+        let ATTR_TRN = 0xA8;
+        let ATTR_SET = 0xB0;
+        let MASK_EN = 0xB8;
+        let OBJ_TRN = 0xC0;
+    }
+
+    namespace audio {
+        namespace pulse1 {
+            // Sweep setting. (read/write)
+            extern var sweep @ 0xFF10 : u8;
+            // Mask of possible sweep time values.
+            let SWEEP_TIME_MASK = 0x70;
+            // Starting bit of sweep time value.
+            let SWEEP_TIME_SHIFT = 4;
+            // Sweep upwards.
+            let SWEEP_DIRECTION_UP = 0x00;
+            // Sweep downards.
+            let SWEEP_DIRECTION_DOWN = 0x08;
+            // Mask of possible sweep shift values.
+            let SWEEP_SHIFT_MASK = 0x07;
+
+            // Length counter and duty setting. (read/write)
+            extern var pattern @ 0xFF11 : u8;
+            // 12% duty cycle.
+            let PATTERN_DUTY_12 = 0x00;
+            // 25% duty cycle.
+            let PATTERN_DUTY_25 = 0x40;
+            // 50% duty cycle.
+            let PATTERN_DUTY_50 = 0x80;
+            // 75% duty cycle.
+            let PATTERN_DUTY_75 = 0xC0;
+            // Mask of possible duty values.
+            let PATTERN_DUTY_MASK = 0xC0;            
+            // Starting bit of duty value.
+            let PATTERN_DUTY_SHIFT = 6;
+            // Mask of possible length values.
+            let PATTERN_LENGTH_MASK = 0x1F;
+
+            // Volume envelope setting. (read/write)
+            extern var envelope @ 0xFF12 : u8;
+            // Mask of possible initial volume settings.
+            let ENVELOPE_INITIAL_MASK = 0xF0;
+            // Fade volume in.
+            let ENVELOPE_DIRECTION_IN = 0x08;
+            // Fade volume out.
+            let ENVELOPE_DIRECTION_OUT = 0x00;
+            // Mask of possible envelope durations.
+            let ENVELOPE_DURATION_MASK = 0x07;
+
+            // Low frequency. (lower 5 bits of 11-bit value) (write-only)
+            extern writeonly low @ 0xFF13 : u8;
+            // High frequency (upper 3 bits of 11-bit value) and playback control flags. (read/write)
+            extern var high @ 0xFF14 : u8;
+            // Restart sound.
+            let HIGH_RESTART = 0x80;
+            // When counter is enabled, playback automatically stops after length counter expires.
+            let HIGH_COUNTER_ENABLE = 0x40;
+            // Mask of possible values for the high frequency.
+            let HIGH_FREQUENCY_MASK = 0x07;
+        }
+
+        namespace pulse2 {
+            // Length counter and duty setting. (read/write)
+            extern var pattern @ 0xFF16 : u8;
+            // 12% duty cycle.
+            let PATTERN_DUTY_12 = 0x00;
+            // 25% duty cycle.
+            let PATTERN_DUTY_25 = 0x40;
+            // 50% duty cycle.
+            let PATTERN_DUTY_50 = 0x80;
+            // 75% duty cycle.
+            let PATTERN_DUTY_75 = 0xC0;
+            // Mask of possible duty values.
+            let PATTERN_DUTY_MASK = 0xC0;
+            // Starting bit of duty value.
+            let PATTERN_DUTY_SHIFT = 6;
+            // Mask of possible length values.
+            let PATTERN_LENGTH_MASK = 0x1F;
+
+            // Volume envelope setting. (read/write)
+            extern var envelope @ 0xFF17 : u8;
+            // Mask of possible initial volume settings.
+            let ENVELOPE_INITIAL_MASK = 0xF0;
+            // Fade volume in.
+            let ENVELOPE_DIRECTION_IN = 0x08;
+            // Fade volume out.
+            let ENVELOPE_DIRECTION_OUT = 0x00;
+            // Mask of possible envelope durations.
+            let ENVELOPE_DURATION_MASK = 0x07;
+
+            // Low frequency. (lower 5 bits of 11-bit value) (write-only)
+            extern writeonly low @ 0xFF18 : u8;
+            // High frequency (upper 3 bits of 11-bit value) and playback control flags. (read/write)
+            extern var high @ 0xFF19 : u8;
+            // Restart sound.
+            let HIGH_RESTART = 0x80;
+            // When counter is enabled, playback automatically stops after length counter expires.
+            let HIGH_COUNTER_ENABLE = 0x40;
+            // Mask of possible values for the high frequency.
+            let HIGH_FREQUENCY_MASK = 0x07;
+        }
+
+        namespace wave {
+            // Wave control register.
+            extern var ctrl @ 0xFF1A : u8;
+            // Enable wave playback.
+            let CTRL_ENABLE = 0x80;
+
+            // Length counter. (8-bit) (read/write)
+            extern var length @ 0xFF1B : u8;
+            // Mask of possible length values.
+            let LENGTH_MASK = 0xFF;
+
+            // Volume setting.
+            extern var volume @ 0xFF1C : u8;
+            // 0% volume.
+            let VOLUME_0 = 0x00;
+            // 100% volume.
+            let VOLUME_100 = 0x20;
+            // 50% volume.
+            let VOLUME_50 = 0x40;
+            // 25% volume.
+            let VOLUME_25 = 0x60;
+
+            // Low frequency. (lower 5 bits of 11-bit value) (write-only)
+            extern writeonly low @ 0xFF1D : u8;
+            // High frequency (upper 3 bits of 11-bit value) and playback control flags. (read/write)
+            extern var high @ 0xFF1E : u8;
+            // Restart sound.
+            let HIGH_RESTART = 0x80;
+            // When counter is enabled, playback automatically stops after length counter expires.
+            let HIGH_COUNTER_ENABLE = 0x40;
+            // Mask of possible values for the high frequency.
+            let HIGH_FREQUENCY_MASK = 0x07;
+        }
+
+        namespace noise {
+            // Length counter. (5-bit) (read/write)
+            extern var length @ 0xFF20 : u8;
+            // Mask of possible length values.
+            let LENGTH_MASK = 0x1F;
+
+            // Volume envelope. (read/write)
+            extern var envelope @ 0xFF21 : u8;
+            // Mask of possible initial volume settings.
+            let ENVELOPE_INITIAL_MASK = 0xF0;
+            // Fade volume in.
+            let ENVELOPE_DIRECTION_IN = 0x08;
+            // Fade volume out.
+            let ENVELOPE_DIRECTION_OUT = 0x00;
+            // Mask of possible envelope durations.
+            let ENVELOPE_DURATION_MASK = 0x07;
+
+            // Polynomial counter settings. (read/write)
+            extern var frequency @ 0xFF22 : u8;
+            // Mask of possible frequency shift values.
+            let FREQUENCY_SHIFT_MASK = 0xF0;
+            // Starting bit of frequency shift.
+            let FREQUENCY_SHIFT_SHIFT = 4;
+            // 15-bit step mode. ("white noise")
+            let FREQUENCY_STEP_15 = 0x08;
+            // 7-bit step mode. ("metallic noise")
+            let FREQUENCY_STEP_7 = 0x08;
+            // Mask of possible frequency divisor values.
+            let FREQUENCY_DIVISOR_MASK = 0x07;
+
+            // Playback control flags. (read/write)
+            extern var play @ 0xFF23 : u8;
+            // Restart sound.
+            let PLAY_RESTART = 0x80;
+            // When counter is enabled, playback automatically stops after length counter expires.
+            let PLAY_COUNTER_ENABLE = 0x40;
+        }
+
+        // Master volume (read/write)
+        // Left volume settings in low nybble.
+        // Right volume settings in high nybble.
+        extern var volume @ 0xFF24 : u8;
+        // Enable output of expansion sound on right speaker.
+        let VOLUME_RIGHT_VIN = 0x80;
+        // Mask of possible volume values in the right speaker.
+        let VOLUME_RIGHT_MASK = 0x70;
+        // Enable output of expansion sound on left speaker.
+        let VOLUME_LEFT_VIN = 0x08;
+        // Mask of possible volume values in the left speaker.
+        let VOLUME_LEFT_MASK = 0x07;
+        
+        // Hard pan (read/write)
+        // Left pan settings in low nybble.
+        // Right pan settings in high nybble.        
+        extern var pan @ 0xFF25 : u8;
+        // Enable noise on right speaker.
+        let PAN_NOISE_R = 0x80;
+        // Enable wave on right speaker.
+        let PAN_WAVE_R = 0x40;
+        // Enable pulse 2 on right speaker.
+        let PAN_PULSE2_R = 0x20;
+        // Enable pulse 1 on right speaker.
+        let PAN_PULSE1_R = 0x10;        
+        // Enable noise on left speaker.
+        let PAN_NOISE_L = 0x08;        
+        // Enable wave on left speaker.
+        let PAN_WAVE_L = 0x04;        
+        // Enable pulse 2 on left speaker.
+        let PAN_PULSE2_L = 0x02;
+        // Enable pulse 1 on left speaker.
+        let PAN_PULSE1_L = 0x01;
+
+        // Active channel status.
+        extern const status @ 0xFF26 : u8;
+        // Whether sound output is enabled. (if this flag is not included, all playback is stopped.) (read/write)
+        let STATUS_ENABLED = 0x80;
+        // Whether noise channel is active. (read-only)
+        let STATUS_NOISE_ACTIVE = 0x08;
+        // Whether wave channel is active. (read-only)
+        let STATUS_WAVE_ACTIVE = 0x04;
+        // Whether pulse 2 channel is active. (read-only)
+        let STATUS_PULSE2_ACTIVE = 0x02;
+        // Whether pulse 1 channel is active. (read-only)
+        let STATUS_PULSE1_ACTIVE = 0x01;
+    }
+
+    namespace joy {
+        extern var ctrl @ 0xFF00 : u8;
+
+        namespace select {
+            let DIRECTIONS = 0x20;
+            let BUTTONS = 0x10;
+        }
+    }
+
+    namespace link {
+        extern var data @ 0xFF01 : u8;
+
+        extern var ctrl @ 0xFF02 : u8;
+        let CTRL_TRANSFER_START = 0x80;
+        let CTRL_TRANSFER_OFF = 0x00;
+        let CTRL_GBC_FAST = 0x02;
+        let CTRL_GBC_NORMAL = 0x00;
+        let CTRL_CLOCK_INTERNAL = 0x01;
+        let CTRL_CLOCK_EXTERNAL = 0x00;
+    }
+
+    namespace timer {
+        extern var divider @ 0xFF04 : u8;
+        extern var counter @ 0xFF05 : u8;
+        extern var modulo @ 0xFF06 : u8;
+
+        extern var ctrl @ 0xFF07 : u8;
+        let CTRL_STOP = 0x00;
+        let CTRL_START = 0x04;
+        let CTRL_CLOCK_4096 = 0x00;
+        let CTRL_CLOCK_262144 = 0x01;
+        let CTRL_CLOCK_65536 = 0x02;
+        let CTRL_CLOCK_16384 = 0x03;
+    }
+
+    namespace interrupt {
+        extern var enable @ 0xFFFF : u8;
+        extern var flag @ 0xFF0F : u8;
+
+        let VBLANK = 0x01;
+        let STAT = 0x02;
+        let TIMER = 0x04;
+        let SERIAL = 0x04;
+        let JOYPAD = 0x08;
+    }
+}

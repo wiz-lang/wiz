@@ -1,0 +1,197 @@
+import "nes";
+import "banks";
+import "globals";
+
+namespace video {
+    let SPRITE_WIDTH = 8;
+    let SPRITE_HEIGHT = 16;
+    let SPRITE_MIN_Y = 31;
+
+    struct Sprite {
+        x : i8,
+        y : i8,
+        tile : u8,
+        attr : u8,
+    }
+
+    struct Frame {
+        data : *Sprite,
+        size : u8,
+    }
+
+    func disable_screen() {
+        vblank_disable_screen_requested++;
+        do { a = vblank_disable_screen_requested; } while !zero;
+    }
+
+    func load_palette_offscreen(dest_index : u8 in y, source_size : u8 in x, source_ptr : (*u8) in ptr0) {
+        a = nes.ppu.status;
+        nes.ppu.address = a = y + >:nes.ppu.ADDRESS_PALETTE_DATA;
+        nes.ppu.address = a = <:nes.ppu.ADDRESS_PALETTE_DATA +# 0;
+
+        y = 0;
+
+        do {
+            nes.ppu.data = a = source_ptr[y];
+            y++;
+            x--;
+        } while !zero;
+    }
+
+    func print_text_offscreen(dest_address : u16 in w0, source_ptr : (*u8) in ptr2) {
+        a = nes.ppu.status;
+        nes.ppu.address = a = >:dest_address;
+        nes.ppu.address = a = <:dest_address;
+        
+        y = 0;
+
+        while {
+            a = source_ptr[y];
+        } && !zero {
+            ++<:source_ptr; if zero { ++>:source_ptr; }
+            nes.ppu.data = a;
+        }
+    }
+
+    func draw_metasprite(dest_index : u8 in x, dest_x : u16 in w0, dest_y : u16 in w2, dest_attr : u8 in b4, source_size : u8 in b5, source_ptr : (*u8) in ptr6) {
+        y = 0;
+
+        var dest_flip_mask : u8 in b8;
+        var dest_palette_mask : u8 in b9;
+
+        dest_flip_mask = a = dest_attr & 0xC0;
+        dest_palette_mask = a = dest_attr & 0x03;
+
+        ^if { a = oam_buffer_free_slots << 2; } && a >= source_size {
+            ^do {
+                var draw_x : u8 in b10;
+                var draw_y : u8 in b11;
+                var temp : u8 in b12;
+
+                temp = a = >:dest_x;
+                if dest_flip_mask$6 {
+                    a = (source_ptr[y] ^ 0xFF) - (SPRITE_WIDTH - 1);
+                } else {
+                    a = source_ptr[y];
+                }
+                if negative {
+                    temp--;
+                }
+                y++;
+                draw_x = a = a + <:dest_x;
+                a = temp +# 0;
+                goto skip_3 if !zero;
+
+                temp = a = >:dest_y;
+                if dest_flip_mask$7 {
+                    a = (source_ptr[y] ^ 0xFF) - (SPRITE_HEIGHT - 1);
+                } else {
+                    a = source_ptr[y];
+                }
+                if negative {
+                    temp--;
+                }
+                y++;
+                draw_y = a = a + <:dest_y;
+                a = temp +# 0;
+                goto skip_2 if !zero;
+
+                a = draw_y;
+                goto skip_2 if a < SPRITE_MIN_Y;
+                oam_buffer_data[x] = a; x++;
+                oam_buffer_data[x] = a = source_ptr[y]; x++; y++;
+
+                temp = a = source_ptr[y] ^ dest_flip_mask;
+                if { a = dest_attr & 0x4; } && !zero {
+                    a = (temp & 0xFC) | dest_palette_mask;
+                } else {
+                    a = temp;
+                }
+
+                oam_buffer_data[x] = a; x++;
+                oam_buffer_data[x] = a = draw_x; x++;
+                oam_buffer_free_slots--;
+                if zero {
+                    return;
+                }
+                goto skip_1;
+
+                skip_3: y++;
+                skip_2: y++;
+                skip_1: y++;
+            } while y != source_size;
+        }
+    }
+
+    func draw_sprite(dest_index : u8 in x, dest_x : u16 in w0, dest_y : u16 in w2, dest_tile : u8 in b4, dest_attr : u8 in b5) {
+        a = oam_buffer_free_slots;
+        goto skip if zero;
+
+        <:dest_x = a = <:dest_x - (SPRITE_WIDTH / 2);
+        >:dest_x = a = >:dest_x -# 0; 
+        goto skip if !zero;
+
+        <:dest_y = a = <:dest_y - (SPRITE_HEIGHT / 2);
+        >:dest_y = a = >:dest_y -# 0;
+        goto skip if !zero;
+
+        a = <:dest_y;
+        goto skip if a < SPRITE_MIN_Y;
+        oam_buffer_data[x] = a; x++;
+        oam_buffer_data[x] = a = dest_tile; x++;
+        oam_buffer_data[x] = a = dest_attr; x++;
+        oam_buffer_data[x] = a = <:dest_x; x++;
+        oam_buffer_free_slots--;
+
+        skip:
+    }
+
+    const hero_idle_frame_data = [
+        Sprite {x = -8, y = -8, tile = 0x21, attr = 0x00},
+        Sprite {x = 0, y = -8, tile = 0x21, attr = 0x40},
+    ];
+
+    const hero_idle2_frame_data = [
+        Sprite {x = -8, y = -8, tile = 0x23, attr = 0x00},
+        Sprite {x = 0, y = -8, tile = 0x23, attr = 0x40},
+    ];
+
+    const hero_move_frame_data = [
+        Sprite {x = -8, y = -8, tile = 0x25, attr = 0x00},
+        Sprite {x = 0, y = -8, tile = 0x27, attr = 0x00},
+    ];
+
+    const hero_move2_frame_data = [
+        Sprite {x = -8, y = -8, tile = 0x29, attr = 0x00},
+        Sprite {x = 0, y = -8, tile = 0x2B, attr = 0x00},
+    ];
+
+    const ghost_idle_frame_data = [
+        Sprite {x = -8, y = -8, tile = 0x4B, attr = 0x02},
+        Sprite {x = 0, y = -8, tile = 0x4D, attr = 0x02},
+    ];
+
+    const orb_frame_data = [
+        Sprite {x = -8, y = -8, tile = 0x15, attr = 0x00},
+        Sprite {x = 0, y = -8, tile = 0x15, attr = 0x40},
+    ];
+
+    const orb2_frame_data = [
+        Sprite {x = -8, y = -8, tile = 0x17, attr = 0x00},
+        Sprite {x = 0, y = -8, tile = 0x17, attr = 0x40},
+    ]; 
+
+    const orb3_frame_data = [
+        Sprite {x = -8, y = -8, tile = 0x19, attr = 0x00},
+        Sprite {x = 0, y = -8, tile = 0x19, attr = 0x40},
+    ];
+
+    const orb4_frame_data = [
+        Sprite {x = -8, y = -8, tile = 0x1B, attr = 0x00},
+        Sprite {x = 0, y = -8, tile = 0x1B, attr = 0x40},
+    ];
+
+    const hero_frames = [
+        Frame { data = &hero_idle_frame_data[0] as *Sprite, size = sizeof(typeof(hero_idle_frame_data)) },
+    ];        
+}

@@ -1,0 +1,93 @@
+import "banks";
+import "video";
+import "bullet";
+import "globals";
+import "collision";
+
+namespace bullet_normal {
+    let YSPEED = 13;
+    let XSPEED = 10;
+
+    func init() {}
+
+    func _draw() {        
+        <:w0 = a = bullet.x_pixel[x];
+        >:w0 = a = bullet.x_screen[x];
+        <:w2 = a = bullet.y_pixel[x];
+        >:w2 = a = bullet.y_screen[x];
+        if { a = bullet.v0[x]; } && a < 2 {
+            b4 = a = 0x7;
+        }        
+
+        x = oam_buffer_index;
+        video.draw_sprite(x, w0, w2, b4, b5);
+        oam_buffer_index = x;
+
+        x = bullet.current_index;    
+    }
+
+    inline func _pre_update() {
+        b4 = a = bullet.v0[x] + 1;
+        if !carry {
+            bullet.v0[x] = a;
+        }
+    }
+
+    inline func _post_update() {
+        return collision.check_bullet_vs_enemy();
+    }
+
+    func draw_forward() {
+        b4 = a = 0x3;
+        b5 = a = 0;
+        return _draw();
+    }
+
+    func update_forward() {
+        _pre_update();
+
+        if a >= 2 {
+            bullet.y_pixel[x] = a = bullet.y_pixel[x] - YSPEED; goto _die if !carry; 
+        }
+
+        _post_update();
+    }
+
+    func draw_diagonal_1() {
+        b4 = a = 0x5;
+        b5 = a = 0;
+        return _draw();
+    }    
+
+    func update_diagonal_1() {
+        _pre_update();
+
+        if a >= 2 {
+            bullet.x_pixel[x] = a = bullet.x_pixel[x] - XSPEED; goto _die if !carry;
+            bullet.y_pixel[x] = a = bullet.y_pixel[x] - YSPEED; goto _die if !carry;
+        }
+
+        _post_update();
+    }
+
+    func draw_diagonal_2() {
+        b4 = a = 0x5;
+        b5 = a = 0x40;
+        return _draw();
+    }    
+
+    func update_diagonal_2() {
+        _pre_update();
+
+        if a >= 2 {
+            bullet.x_pixel[x] = a = bullet.x_pixel[x] + XSPEED; goto _die if carry;
+            bullet.y_pixel[x] = a = bullet.y_pixel[x] - YSPEED; goto _die if !carry;
+        }
+
+        _post_update();
+    }
+
+    func _die() {
+        bullet.type[x] = a = 0;
+    }
+}

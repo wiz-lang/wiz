@@ -1,0 +1,644 @@
+import "gb";
+import "joy";
+import "banks";
+import "video";
+import "random";
+
+namespace kitty {
+    in ram {
+        var frame_lo, frame_hi : u8;
+        var x, y : u8;
+        var reverse : u8;
+        var step : u8;
+        var moving : u8;
+        var cursor : u8;
+
+        namespace love {
+            var timer_lo, timer_hi : u8;
+            var value : u8;
+
+            var animation : u8;
+            var hugs : u8;
+        }
+
+        namespace food {
+            var timer_lo, timer_hi : u8;
+            var value : u8;
+
+            var feeding : u8;
+            var x : u8;
+            var y : u8;
+        }
+
+        namespace poop {
+            var timer_lo, timer_hi : u8;
+            var pooped : u8;
+            var x : u8;
+        }
+
+        namespace nap {
+            var timer_lo, timer_hi : u8;
+            var sleeping : u8;
+            var dark : u8;
+        }
+    }
+
+    func init() {
+        frame_lo = a = 0;
+        frame_hi = a;
+        x = a = 40;
+        y = a = 60;
+        reverse = a = 0;
+        step = a = 0;
+        moving = a = 1;
+        cursor = a = 0;
+
+        a = random.next();
+        b = a >>> 7;
+        love.timer_lo = a = a << 1;
+        love.timer_hi = a = b + 4;
+        a = random.next();
+        love.value = a = (a >>> 6) + 1;
+        love.animation = a = 0;
+        a = random.next();
+        love.hugs = a = (a >>> 6) + 2;
+
+        a = random.next();
+        b = a >>> 7;
+        food.timer_lo = a = a << 1;
+        food.timer_hi = a = b + 4;
+        a = random.next();
+        food.value = a = (a >>> 6) + 1;
+        food.feeding = a = 0;
+        food.x = a = 78;
+        food.y = a = 0;
+
+        a = random.next();
+        b = a >>> 7;
+        poop.timer_lo = a = a << 1;
+        poop.timer_hi = a = b + 4;
+        poop.pooped = a = 0;
+        poop.x = a = 0;
+        
+        a = random.next();
+        b = a >>> 6;
+        nap.timer_lo = a = a << 1;
+        nap.timer_hi = a = b + 16;
+        nap.sleeping = a = 0;
+        nap.dark = a = 0;
+    }
+
+    func draw_hud() {
+        video.oam_buffer_open();
+        d = a = nap.dark << 4;
+        c = a = love.value;
+        if a != 0 {
+            do {
+                *(hl++ as *u8) = a = (1 << 3) + 16;
+                a = 5 + c;
+                *(hl++ as *u8) = a = (a << 3) + 8;
+                *(hl++ as *u8) = a = 0x42 + d;
+                *(hl++ as *u8) = a = 0;
+                c--;
+            } while !zero;
+        }
+
+        c = a = food.value;
+        if a != 0 {
+            do {
+                *(hl++ as *u8) = a = (2 << 3) + 16;
+                a = 5 + c;
+                *(hl++ as *u8) = a = (a << 3) + 8;
+                *(hl++ as *u8) = a = 0x42 + d;
+                *(hl++ as *u8) = a = 0;
+                c--;
+            } while !zero;
+        }
+
+        c = a = cursor;
+        *(hl++ as *u8) = a = ((13 + c) << 3) + 16;
+        *(hl++ as *u8) = a = (1 << 3) + 8;
+        *(hl++ as *u8) = a = 0x43 + d;
+        *(hl++ as *u8) = a = 0;
+        video.oam_buffer_close();
+    }
+
+    func update_menu() {
+        a = joy.pressed;
+        if a$joy.bit.UP {
+            joy.unpress = a = joy.unpress | joy.mask.UP;
+            a = cursor;
+
+            if a != 0 {
+                cursor = a = a - 1;
+            }
+        } else if a$joy.bit.DOWN {
+            joy.unpress = a = joy.unpress | joy.mask.DOWN;
+            a = cursor;
+            if a < 3 {
+                cursor = a = a + 1;
+            }
+        }
+
+        a = joy.pressed;
+        ^if a $ joy.bit.A {
+            joy.unpress = a = joy.unpress | joy.mask.A;
+
+            a = cursor;
+            if a == 0 {
+                if { a = poop.pooped; } && a == 0 {
+                    if { a = love.animation; } && a == 0 {
+                        if { a = nap.sleeping; } && a == 0 {
+                            love.animation = a = 52;
+                        }
+                    }
+                }
+            } else if a == 1 {
+                if { a = poop.pooped; } && a == 0 {
+                    if { a = food.feeding; } && a == 0 {
+                        food.feeding = a = 1;
+                        food.y = a = 0;
+                    }
+                }
+            } else if a == 2 {
+                if { a = poop.pooped; } && a != 0 {
+                    poop.pooped = a = 0;
+                    a = random.next();
+                    b = a >>> 7;
+                    poop.timer_lo = a = a << 1;
+                    poop.timer_hi = a = b + 4;
+                }
+            } else if a == 3 {
+                nap.dark = a = nap.dark ^ 1;
+
+                if !zero {
+                    if { a = nap.sleeping; } && a == 0 {
+                        a = random.next();
+                        a = a >>> 1;
+                        love.timer_lo = a = a + 63;
+                        love.timer_hi = a = 0u8 +# 0;
+                    }
+                }
+            }
+        }
+    }
+
+    func update() {
+        let bubble = t0;
+        let head = t1;
+        let legs = t2;
+        let tail = t3;
+        let bob = t4;
+
+        frame_lo = a = frame_lo + 1;
+        b = a;
+        frame_hi = a = frame_hi +# 0;
+
+        d = a = nap.sleeping;
+        if { a = nap.dark | d; } && a != 0 {
+            moving = a = 0;
+            step = a = 10;
+        }
+
+        if { a = love.animation; } && a != 0 {
+            a--;
+            love.animation = a;
+
+            if zero {
+                love.timer_lo = a = love.timer_lo + 63;
+                love.timer_hi = a = love.timer_hi +# 0;
+                love.hugs = a = love.hugs - 1;
+
+                if zero {
+                    a = random.next();
+                    love.hugs = a = (a >>> 6) + 2;
+
+                    a = love.value;
+                    if a < 4 {
+                        love.value = a = a + 1;
+                    }
+
+                    if { a = nap.sleeping; } && a == 0 {
+                        a = nap.timer_hi;
+                        if a >= 3 {
+                            nap.timer_hi = a = a - 2;
+                        } else {
+                            nap.timer_lo = a = 1;
+                            a--;
+                            nap.timer_hi = a;
+                        }
+                    }
+                }
+            }
+
+            moving = a = 0;
+            step = a = 40;
+        }
+
+        nap.timer_lo = a = nap.timer_lo - 1;
+        nap.timer_hi = a = nap.timer_hi -# 0;
+        d = a;
+        a = nap.timer_lo | d;
+
+        if a == 0 {
+            nap.sleeping = a = nap.sleeping ^ 1;
+
+            if !zero {
+                a = random.next();
+                b = a >>> 7;
+                nap.timer_lo = a = a << 1;
+                nap.timer_hi = a = b + 4;
+                food.timer_lo = a = random.next();
+                food.timer_hi = a = 2;
+            } else {
+                a = random.next();
+                love.timer_lo = a = a + 120;
+                love.timer_hi = a = 0u8 +# 0;
+
+                if { a = nap.dark; } && a == 0 {
+                    a = love.value;
+                    if a != 0 {
+                        a--;
+                        love.value = a = a - 1;
+                    }
+                } else {
+                    a = love.value;
+                    if a < 4 {
+                        a++;
+                        love.value = a;
+                    }
+                }
+
+                a = random.next();
+                b = a >>> 6;
+                nap.timer_lo = a = a << 1;
+                nap.timer_hi = a = b + 16;
+            }
+        }
+
+        if { a = nap.sleeping; } && a == 0 {
+            love.timer_lo = a = love.timer_lo - 1;
+            love.timer_hi = a = love.timer_hi -# 0;
+            d = a;
+            a = love.timer_lo | d;
+
+            if a == 0 {
+                if { a = nap.dark; } && a != 0 {
+                    a = random.next();
+                    a = a >>> 1;
+                    love.timer_lo = a = a + 63;
+                    love.timer_hi = a = 0u8 +# 0;
+                } else if { a = poop.pooped; } && a != 0 {
+                    a = random.next();
+                    a = a >>> 1;
+                    love.timer_lo = a = a + 127;
+                    love.timer_hi = a = 0u8 +# 0;
+                } else { 
+                    a = random.next();
+                    b = a >>> 7;
+                    love.timer_lo = a = a << 1;
+                    love.timer_hi = a = b + 4;
+                }
+
+                a = love.value;
+                if a != 0 {
+                    a--;
+                    love.value = a;
+                }
+            }
+        }
+
+        food.timer_lo = a = food.timer_lo - 1;
+        food.timer_hi = a = food.timer_hi -# 0;
+        d = a;
+        a = food.timer_lo | d;
+
+        if a == 0 {
+            if { a = nap.sleeping; } && !zero {
+                a = random.next();
+                food.timer_lo = a;
+                food.timer_hi = a = 2;
+            } else {
+                a = random.next();
+                b = a >>> 7;
+                food.timer_lo = a = a << 1;
+                food.timer_hi = a = b + 4;
+            }
+            a = food.value;
+            if a != 0 {
+                a--;
+            }
+            food.value = a;
+        }
+
+        if { a = food.feeding; } && a == 0 {
+            if { a = nap.dark; } && a == 0 {
+                if { a = nap.sleeping; } && a == 0 {
+                    if { a = poop.pooped; } && a == 0 {
+                        poop.timer_lo = a = poop.timer_lo - 1;
+                        poop.timer_hi = a = poop.timer_hi -# 0;
+                        poop.x = a = x;
+                        b = a = poop.timer_lo;
+                        a = poop.timer_hi | b;
+
+                        if a == 0 {
+                            poop.pooped = a = 1;
+                            a = random.next();
+                            a = a >>> 1;
+                            love.timer_lo = a = a + 127;
+                            love.timer_hi = a = 0u8 +# 0;
+                            moving = a = 0;
+                            step = a = 80;
+                        }
+                    }
+                }
+            }
+        }
+
+        if { a = food.feeding; } && a != 0 {
+            d = a = y;
+            if { a = food.y; } && a < d {
+                food.y = a = a + 2;
+            } else {
+                d = a = food.x;
+                if { a = x - 16; } && a < d {
+                    if { a = x; } && a >= d {
+                        food.feeding = a = 0;
+
+                        a = food.value;
+                        if a < 4 {
+                            food.value = a = a + 1;
+                        } else {
+                            a = love.value;
+                            if a != 0 {
+                                a--;
+                                love.value = a = a;
+                            }
+                        }
+
+                        a = poop.timer_hi;
+                        if a == 0 {
+                            a = poop.timer_lo;
+                            if a >= 129 {
+                                poop.timer_lo = a = poop.timer_lo - 128;
+                            } else {
+                                poop.timer_lo = a = 1;
+                            }
+                        } else { 
+                            poop.timer_lo = a = poop.timer_lo - 128;
+                            poop.timer_hi = a = poop.timer_hi -# 0;
+                        }
+                    }
+                }
+            }
+        }
+
+
+        if { a = step; } && a == 0 {
+            moving = a = 1;
+            if { a = reverse; } && a != 0 {
+                if { a = poop.pooped; } && a != 0 {
+                    x = a = x - 3;
+                } else {
+                    x = a = x - 1;
+                }
+                if { a = x + 24; } && a < 40 {
+                    reverse = a = 0;
+                }
+            } else {
+                if { a = poop.pooped; } && a != 0 {
+                    x = a = x + 3;
+                } else {
+                    x = a = x + 1;
+                }
+                if { a = x; } && a >= 160 - 40 {
+                    reverse = a = 1;
+                }
+            }
+
+            if { a = poop.pooped; } && a != 0 {
+                step = a = 0;
+            } else {
+                step = a = 3;
+            }
+        } else {
+            step = a = step - 1;
+        }
+
+        bubble = a = 0x00;
+
+        if { a = nap.sleeping; } && a != 0 {
+            head = a = 0x24;
+            if { a = frame_lo; } && a >= 128 {
+                bubble = a = 0x28;
+            }
+        } else if { a = nap.dark; } && a != 0 {
+            head = a = 0x46;
+            if { a = frame_lo; } && a >= 128 {
+                bubble = a = 0x4C;
+            }
+        } else {
+            if { a = love.value; } && a < 2 {
+                head = a = 0x04;
+                if { a = frame_lo; } && a >= 128 {
+                    bubble = a = 0x0C;
+                }
+            } else {
+                head = a = 0x02;
+                if { a = food.value; } && a >= 2 {
+                    head = a = 0x06;
+                }
+                if { a = frame_lo; } && a >= 128 {
+                    if { a = frame_hi & 1; } && zero {
+                        if { a = poop.pooped; } && a == 0 {
+                            bubble = a = 0x0A;
+                        }
+                    }
+                }
+            }
+        }
+        
+        if { a = frame_lo; } && a < 128 {
+            bubble = a = 0x00;
+            if { a = nap.sleeping; } && a != 0 {
+                head = a = 0x26;
+            } else if { a = nap.dark; } && a != 0 {
+                head = a = 0x46;
+            } else {
+                if { a = food.value; } && a < 2 {
+                    bubble = a = 0x2C;
+                    if { a = love.value; } && a < 2 {
+                        head = a = 0x26;
+                    } else {
+                        head = a = 0x46;
+                    }
+                } else if { a = love.value; } && a >= 2 {
+                    head = a = 0x02;
+                }
+            }
+        }
+
+        if { a = love.animation; } && a != 0 {
+            if a >= 32 {
+                bubble = a = 0x00;
+                head = a = 0x26;
+            } else if a >= 16 {
+                bubble = a = 0x08;
+                head = a = 0x02;
+            } else {
+                bubble = a = 0x08;
+                head = a = 0x06;
+            }
+        }
+        
+        tail = a = 0x40;
+
+        if { a = b & 0x1F; } && a < 16 {
+            legs = a = 0x20;
+            bob = a = 0;
+        } else if { a = moving; } && a != 0 {
+            legs = a = 0x30;
+            bob = a = 1;
+        }
+
+        video.oam_buffer_open();
+
+        c = a = bob;
+        *(hl++ as *u8) = a = y + c + 0x00 - 0x10 + 16;
+        *(hl++ as *u8) = a = x + 0x00 + 8;
+        *(hl++ as *u8) = a = bubble + 0x00;
+        *(hl++ as *u8) = a = 0;
+        *(hl++ as *u8) = a = y + c + 0x00 - 0x10 + 16;
+        *(hl++ as *u8) = a = x + 0x08 + 8;
+        *(hl++ as *u8) = a = bubble + 0x01;
+        *(hl++ as *u8) = a = 0;
+        *(hl++ as *u8) = a = y + c + 0x08 - 0x10 + 16;
+        *(hl++ as *u8) = a = x + 0x00 + 8;
+        *(hl++ as *u8) = a = bubble + 0x10;
+        *(hl++ as *u8) = a = 0;
+        *(hl++ as *u8) = a = y + c + 0x08 - 0x10 + 16;
+        *(hl++ as *u8) = a = x + 0x08 + 8;
+        *(hl++ as *u8) = a = bubble + 0x11;
+        *(hl++ as *u8) = a = 0;
+
+        if { a = food.feeding; } && a != 0 {
+            *(hl++ as *u8) = a = food.y + 0x08 + 16;
+            *(hl++ as *u8) = a = food.x + 0x08 + 8;
+            *(hl++ as *u8) = a = 0x2E;
+            *(hl++ as *u8) = a = 0;
+            *(hl++ as *u8) = a = food.y + 0x08 + 16;
+            *(hl++ as *u8) = a = food.x + 0x10 + 8;
+            *(hl++ as *u8) = a = 0x2F;
+            *(hl++ as *u8) = a = 0;
+            *(hl++ as *u8) = a = food.y + 0x10 + 16;
+            *(hl++ as *u8) = a = food.x + 0x08 + 8;
+            *(hl++ as *u8) = a = 0x3E;
+            *(hl++ as *u8) = a = 0;
+            *(hl++ as *u8) = a = food.y + 0x10 + 16;
+            *(hl++ as *u8) = a = food.x + 0x10 + 8;
+            *(hl++ as *u8) = a = 0x3F;
+            *(hl++ as *u8) = a = 0;
+        }
+
+        ^if { a = reverse; } && a != 0 {
+            *(hl++ as *u8) = a = y + c + 16;
+            *(hl++ as *u8) = a = x + 0x00 + 8;
+            *(hl++ as *u8) = a = head + 0x00;
+            *(hl++ as *u8) = a = 0;
+            *(hl++ as *u8) = a = y + c + 16;
+            *(hl++ as *u8) = a = x + 0x08 + 8;
+            *(hl++ as *u8) = a = head + 0x01;
+            *(hl++ as *u8) = a = 0;
+            *(hl++ as *u8) = a = y + 0x08 + 16;
+            *(hl++ as *u8) = a = x + 0x10 + 8;
+            *(hl++ as *u8) = a = tail + 0x00;
+            *(hl++ as *u8) = a = 0;
+            *(hl++ as *u8) = a = y + c + 0x08 + 16;
+            *(hl++ as *u8) = a = x + 0x00 + 8;
+            *(hl++ as *u8) = a = head + 0x10;
+            *(hl++ as *u8) = a = 0;
+            *(hl++ as *u8) = a = y + c + 0x08 + 16;
+            *(hl++ as *u8) = a = x + 0x08 + 8;
+            *(hl++ as *u8) = a = head + 0x11;
+            *(hl++ as *u8) = a = 0;
+            *(hl++ as *u8) = a = y + 0x08 + 16;
+            *(hl++ as *u8) = a = x + 0x10 + 8;
+            *(hl++ as *u8) = a = tail + 0x10;
+            *(hl++ as *u8) = a = 0;
+            *(hl++ as *u8) = a = y + 0x10 + 16;
+            *(hl++ as *u8) = a = x + 0x00 + 8;
+            *(hl++ as *u8) = a = legs + 0x00;
+            *(hl++ as *u8) = a = 0;
+            *(hl++ as *u8) = a = y + 0x10 + 16;
+            *(hl++ as *u8) = a = x + 0x08 + 8;
+            *(hl++ as *u8) = a = legs + 0x01;
+            *(hl++ as *u8) = a = 0;
+            *(hl++ as *u8) = a = y + 0x10 + 16;
+            *(hl++ as *u8) = a = x + 0x10 + 8;
+            *(hl++ as *u8) = a = legs + 0x02;
+            *(hl++ as *u8) = a = 0;
+        } else {
+            let HFLIP = 0x20;
+
+            *(hl++ as *u8) = a = y + c + 16;
+            *(hl++ as *u8) = a = x + 0x10 - 0x00 + 8;
+            *(hl++ as *u8) = a = head + 0x00;
+            *(hl++ as *u8) = a = HFLIP;
+            *(hl++ as *u8) = a = y + c + 16;
+            *(hl++ as *u8) = a = x + 0x10 - 0x08 + 8;
+            *(hl++ as *u8) = a = head + 0x01;
+            *(hl++ as *u8) = a = HFLIP;
+            *(hl++ as *u8) = a = y + 0x08 + 16;
+            *(hl++ as *u8) = a = x + 0x10 - 0x10 + 8;
+            *(hl++ as *u8) = a = tail + 0x00;
+            *(hl++ as *u8) = a = HFLIP;
+            *(hl++ as *u8) = a = y + c + 0x08 + 16;
+            *(hl++ as *u8) = a = x + 0x10 - 0x00 + 8;
+            *(hl++ as *u8) = a = head + 0x10;
+            *(hl++ as *u8) = a = HFLIP;
+            *(hl++ as *u8) = a = y + c + 0x08 + 16;
+            *(hl++ as *u8) = a = x + 0x10 - 0x08 + 8;
+            *(hl++ as *u8) = a = head + 0x11;
+            *(hl++ as *u8) = a = HFLIP;
+            *(hl++ as *u8) = a = y + 0x08 + 16;
+            *(hl++ as *u8) = a = x + 0x10 - 0x10 + 8;
+            *(hl++ as *u8) = a = tail + 0x10;
+            *(hl++ as *u8) = a = HFLIP;
+            *(hl++ as *u8) = a = y + 0x10 + 16;
+            *(hl++ as *u8) = a = x + 0x10 - 0x00 + 8;
+            *(hl++ as *u8) = a = legs + 0x00;
+            *(hl++ as *u8) = a = HFLIP;
+            *(hl++ as *u8) = a = y + 0x10 + 16;
+            *(hl++ as *u8) = a = x + 0x10 - 0x08 + 8;
+            *(hl++ as *u8) = a = legs + 0x01;
+            *(hl++ as *u8) = a = HFLIP;
+            *(hl++ as *u8) = a = y + 0x10 + 16;
+            *(hl++ as *u8) = a = x + 0x10 - 0x10 + 8;
+            *(hl++ as *u8) = a = legs + 0x02;
+            *(hl++ as *u8) = a = HFLIP;
+        }
+
+        if { a = poop.pooped; } && a != 0 {
+            *(hl++ as *u8) = a = y + 0x08 + 16;
+            *(hl++ as *u8) = a = poop.x + 0x08 + 8;
+            *(hl++ as *u8) = a = 0x0E;
+            *(hl++ as *u8) = a = 0;
+            *(hl++ as *u8) = a = y + 0x08 + 16;
+            *(hl++ as *u8) = a = poop.x + 0x10 + 8;
+            *(hl++ as *u8) = a = 0x0F;
+            *(hl++ as *u8) = a = 0;
+            *(hl++ as *u8) = a = y + 0x10 + 16;
+            *(hl++ as *u8) = a = poop.x + 0x08 + 8;
+            *(hl++ as *u8) = a = 0x1E;
+            *(hl++ as *u8) = a = 0;
+            *(hl++ as *u8) = a = y + 0x10 + 16;
+            *(hl++ as *u8) = a = poop.x + 0x10 + 8;
+            *(hl++ as *u8) = a = 0x1F;
+            *(hl++ as *u8) = a = 0;
+        }
+
+        video.oam_buffer_close();
+
+        video.dark_mode = a = nap.dark;
+    }
+}

@@ -1,0 +1,9 @@
+namespace directions {
+    let LEFT = 0;
+    let RIGHT = 1;
+    let UP = 2;
+    let DOWN = 3;        
+
+    const x_offset : [u8] = [-1 as u8 as iexpr, 1, 0, 0];
+    const y_offset : [u8] = [0, 0, -1 as u8 as iexpr, 1];
+}

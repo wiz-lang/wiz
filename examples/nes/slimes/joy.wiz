@@ -1,0 +1,38 @@
+import "banks";
+import "nes";
+
+namespace joy {
+    in zeropage {
+        var unpress : u8;
+        var controls : u8;
+    }
+
+    func init() {
+        unpress = a = 0;
+        controls = a = 0;
+    }
+
+    // Reads controller and stores the result in controls
+    // Derived from code posted by blargg on nesdevwiki
+    func update() {
+        // Strobe controller
+        nes.joy.output = a = 1;
+        nes.joy.output = a = 0;
+        // Read all 8 buttons
+        for x in 8 .. 1 by -1 {
+            // Read next button state and mask off low 2 bits.
+            // Compare with $01, which will set carry flag if
+            // either or both bits are set.
+            a = nes.joy.input1 & 0x3;
+            cmp(a, 1);
+            // Now, rotate the carry flag into the top of A,
+            // land shift all the other buttons to the right
+            controls = a = controls >>>># 1;
+        }
+        // Remove unpress flag for controls no longer being held.
+        unpress = a = unpress & controls;
+        // Remove controls that have the unpress flag set.
+        // (Keep controls that don't have the unpress flag set)
+        controls = a = ~unpress & controls;
+    }
+}

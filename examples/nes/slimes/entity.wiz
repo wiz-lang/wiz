@@ -1,0 +1,229 @@
+import "banks";
+import "ram";
+import "nes";
+import "common";
+
+namespace entity {
+    in ram {
+        let COUNT = 32;
+
+        let FLAGS_ACTIVE = 0x01;
+        let FLAGS_HOSTILE = 0x02;
+        var flags : [u8; COUNT + 1];
+        var subpixel_x : [u8; COUNT + 1];
+        var subpixel_y : [u8; COUNT + 1];
+        var pixel_x : [u8; COUNT + 1];
+        var pixel_y : [u8; COUNT + 1];
+        var hp : [u8; COUNT + 1];
+        var max_hp : [u8; COUNT + 1];
+        var anim_timer : [u8; COUNT + 1];
+        var frame : [u8; COUNT + 1];
+        var attributes : [u8; COUNT + 1];
+        var update_lo : [u8; COUNT + 1];
+        var update_hi : [u8; COUNT + 1];
+        var direction : [u8; COUNT + 1];
+        var v1 : [u8; COUNT + 1];
+        var v2 : [u8; COUNT + 1];
+        var v3 : [u8; COUNT + 1];
+        var v4 : [u8; COUNT + 1];
+
+        var current : u8;
+        var flicker_frame : u8;
+    }
+
+    func init_system() {
+        for x in 0 .. COUNT {
+            init_ent();
+        }
+
+        flicker_frame = a = 0;
+    }
+
+    func init_ent() {
+        a = 0;
+        flags[x] = a;
+        subpixel_x[x] = a;
+        subpixel_y[x] = a;
+        pixel_x[x] = a;
+        pixel_y[x] = a;
+        hp[x] = a;
+        max_hp[x] = a;
+        anim_timer[x] = a;
+        frame[x] = a;
+        attributes[x] = a;
+        update_lo[x] = a;
+        update_hi[x] = a;
+        direction[x] = a;
+        v1[x] = a;
+        v2[x] = a;
+        v3[x] = a;
+        v4[x] = a;
+    }
+
+    func spawn() {
+        for x in 0 .. COUNT - 1 {
+            a = flags[x] & FLAGS_ACTIVE;
+            break if zero;
+        }
+
+        init_ent();
+        flags[x] = a = FLAGS_ACTIVE;
+    }
+
+    func draw_all() {
+        y = flicker_frame;
+        for x in 0 .. COUNT - 1 {
+            oam_buffer[y] = a = pixel_y[x]; y++;
+            oam_buffer[y] = a = frame[x]; y++;
+            oam_buffer[y] = a = attributes[x]; y++;
+            oam_buffer[y] = a = pixel_x[x]; y++;
+            y = a = y + (18 * 4);
+            x++;
+        } 
+
+        flicker_frame = a = flicker_frame + 19 * 4;
+    }
+
+    func update_all() {
+        for x in 0 .. COUNT - 1 {            
+            current = x;
+            if { a = flags[x] & FLAGS_ACTIVE; } && !zero {
+                t0 = a = update_lo[x];
+                t1 = a = update_hi[x];
+                a = t0 | t1;
+                if !zero {
+                    call_t0();
+                }
+            }
+            x = current;
+        }
+    }
+
+    func move(x_speed_lo : u8 in t0, x_speed_hi : u8 in t1, y_speed_lo : u8 in t2, y_speed_hi : u8 in t3) {
+        var collided @ &t15 : u8;
+        collided = a = 0;
+
+        a = x_speed_lo | x_speed_hi;
+        ^if !zero {
+            var temp_x @ &t4 : u8;
+            var temp_y @ &t5 : u8;
+            var temp_y2 @ &t6 : u8;
+
+            temp_x = a = entity.pixel_x[x];
+            a = x_speed_hi;
+            if negative {
+                a = temp_x - 1;
+            } else {
+                a = temp_x + 8;
+            }
+
+            temp_x = a = a >>> 3;
+
+            temp_y = a = entity.pixel_y[x];
+            temp_y2 = a = a + 7;
+            temp_y = a = temp_y >>> 3;
+            temp_y2 = a = temp_y2 >>> 3;
+
+            var index @ &t7 : u8;
+            index = a = temp_y << 2;
+            y = a = (temp_x >>> 3) + index;
+
+            a = tilemap_ptr[y];
+
+            push(a);
+            y = a = temp_x & 0x7;
+            a = pop();
+
+            while y != 0 {
+                a <<<<#= 1;
+                y--;
+            }
+
+            a &= 0x80;
+            if zero {
+                index = a = temp_y2 << 2;
+                y = a = (temp_x >>> 3) + index;
+
+                a = tilemap_ptr[y];
+
+                push(a);
+                y = a = temp_x & 0x7;
+                a = pop();
+
+                while y != 0 {
+                    a <<<<#= 1;
+                    y--;
+                }
+
+                a &= 0x80;
+                if zero {
+                    collided++;
+
+                    entity.subpixel_x[x] = a = entity.subpixel_x[x] + x_speed_lo;
+                    entity.pixel_x[x] = a = entity.pixel_x[x] +# x_speed_hi;
+                }
+            }
+        }
+
+        a = y_speed_lo | y_speed_hi;
+        ^if !zero {
+            var temp_y @ &t4 : u8;
+            var temp_x @ &t5 : u8;
+            var temp_x2 @ &t6 : u8;
+
+            temp_y = a = entity.pixel_y[x];
+            a = y_speed_hi;
+            if negative {
+                a = temp_y - 1;
+            } else {
+                a = temp_y + 8;
+            }
+
+            temp_y = a = a >>> 3;
+
+            temp_x = a = entity.pixel_x[x];
+            temp_x2 = a = a + 7;
+            temp_x = a = temp_x >>> 3;
+            temp_x2 = a = temp_x2 >>> 3;
+
+            var index @ &t7 : u8;
+            index = a = temp_y << 2;
+            y = a = (temp_x >>> 3) + index;
+
+            a = tilemap_ptr[y];
+
+            push(a);
+            y = a = temp_x & 0x7;
+            a = pop();
+
+            while y != 0 {
+                a <<<<#= 1;
+                y--;
+            }
+
+            a &= 0x80;
+            if zero {
+                y = a = (temp_x2 >>> 3) + index;
+
+                a = tilemap_ptr[y];
+                
+                push(a);
+                y = a = temp_x2 & 0x7;
+                a = pop();
+
+                while y != 0 {
+                    a <<<<#= 1;
+                    y--;
+                }
+
+                a &= 0x80;
+                if zero {
+                    collided++;
+
+                    entity.subpixel_y[x] = a = entity.subpixel_y[x] + y_speed_lo;
+                    entity.pixel_y[x] = a = entity.pixel_y[x] +# y_speed_hi;
+                }
+            }
+        }    
+    }
+}

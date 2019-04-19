@@ -1,0 +1,139 @@
+
+namespace bcd {
+    // Arguments:
+    //      l = an 8-bit binary number
+    // Result:
+    //      chl = a 6-digit bcd number
+    // Dirty: all registers
+    func from_byte() {
+        b = 8;
+        de = 0x0000;
+
+        do {
+            l <<= 1;
+            a = e;
+            a +#= a
+            decimal_adjust();
+            e = a;
+
+            a = d;
+            a +#= a;
+            decimal_adjust();
+            d = a;
+
+            b--;
+        } while !zero;
+
+        l = e;
+        h = d;
+        c = 0;
+    }
+
+    // Arguments:
+    //      hl = a 16-bit binary number
+    // Result:
+    //      chl = a 6-digit bcd number
+    // Dirty: all registers
+    func from_word() {
+        bc = 0x1000;
+        de = 0x0000;
+
+        do {
+            l <<= 1;
+            h <<<#= 1;
+            a = e;
+            a +#= a;
+            decimal_adjust();
+            e = a;
+
+            a = d;
+            a +#= a;
+            decimal_adjust();
+            d = a;
+
+            a = c;
+            a +#= a;
+            decimal_adjust();
+            c = a;
+
+            --b;
+        } while !zero;
+
+        l = e;
+        h = d;
+    }
+
+    // Arguments:
+    //      chl = a 6-digit bcd number
+    // Result:
+    //      d = number of digits (1-6)
+    // Dirty: a, d
+    func get_length() {
+        d = 6;
+
+        a = c & 0xF0;
+        return if !zero;
+        d--;
+        a = c & 0x0F;
+        return if !zero;
+        d--;
+        a = h & 0xF0;
+        return if !zero;
+        d--;
+        a = h & 0x0F;
+        return if !zero;
+        d--;
+        a = l & 0xF0;
+        return if !zero;
+        d--;
+    }
+
+    // Arguments:
+    //      chl = a 6-digit bcd number
+    //      de = the pointer to the start of the string area (7 characters: 6 digits + 0 terminator)
+    // Dirty: all registers
+    func to_string() {
+        push(de);
+        get_length();
+        b = d;
+        de = pop();
+
+        e = a = e + b;
+        d = a = d +# 0;
+        *(de as *u8) = a = 0;
+
+        de--;
+        *(de as *u8) = a = l & 0x0F + '0';
+        b--;
+        return if zero;
+
+        de--;
+        *(de as *u8) = a = l & 0xF0;
+        swap_digits(a);
+        a += '0';
+        b--;
+        return if zero;
+
+        de--;
+        *(de as *u8) = a = h & 0x0F + '0';
+        b--;
+        return if zero;
+
+        de--;
+        *(de as *u8) = a = h & 0xF0;
+        swap_digits(a);
+        a += '0';
+        b--;
+        return if zero;
+
+        de--;
+        *(de as *u8) = a = c & 0x0F + '0';
+        b--;
+        return if zero;
+
+        de--;
+        *(de as *u8) = a = c & 0xF0;
+        swap_digits(a);
+        a += '0';
+    }
+}

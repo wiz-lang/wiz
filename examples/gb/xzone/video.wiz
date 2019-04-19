@@ -1,0 +1,47 @@
+import "gb";
+import "gbc_util";
+import "banks";
+import "oam";
+import "memory";
+import "tables";
+
+namespace video {
+    in ram {
+        var redraw : u8;
+        var oam_buffer @ 0xCF00 : [u8; 160];
+    }
+
+    func init() {
+        redraw = a = 0;
+        memset(&oam_buffer as u16, 0, 160);
+    }
+
+    func wait() {
+        do {
+            a = gb.lcd.stat & gb.lcd.STAT_MODE_MASK;
+        } while a != gb.lcd.STAT_MODE_VBLANK;
+    }
+
+    func disable() {
+        wait();
+        gb.lcd.ctrl = a = 0;
+    }
+
+    func request_update() {
+        hl = &redraw as u16;
+        ++*(hl as *u8);
+
+        do {
+            halt();
+            a = *(hl as *u8);
+        } while a != 0;
+    }
+
+    func acknowledge_update() {
+        if { a = redraw; } && a != 0 {
+            oam.transfer((&oam_buffer as u16 >> 8) as u8);
+
+            redraw = a = 0;
+        }
+    }
+}

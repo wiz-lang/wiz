@@ -1,0 +1,39 @@
+import "gb";
+import "banks";
+
+namespace video {
+    in ram {
+        var update_requested : u8;
+    }
+
+    inline func init() {
+        update_requested = a = 0;
+    }
+
+    inline func wait() {
+        do {
+            a = gb.lcd.stat & gb.lcd.STAT_MODE_MASK;
+        } while a != gb.lcd.STAT_MODE_VBLANK;
+    }
+
+    inline func disable() {
+        wait();
+        gb.lcd.ctrl = a = 0;
+    }
+
+    func request_update() {
+        hl = &update_requested as u16;
+        ++*(hl as *u8);
+
+        do {
+            halt();
+            a = *(hl as *u8);
+        } while a != 0;
+    }
+
+    func acknowledge_update() {
+        if { a = update_requested; } && a != 0 {
+            update_requested = a = 0;
+        }
+    }
+}
