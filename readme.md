@@ -160,11 +160,11 @@ bank name @ address, name @ address, name @ address : [type; size];
 The type of bank of `bank` determines what kind of declarations can be placed there. 
 
 - `vardata` is uninitialized RAM. useful for variables that can be written to and read back at runtime. Because this section is uninitialized, variables declared here must be assigned a value at execution time. Because of these limitations, compiled code and and constant data cannot be placed here.
-- `prgdata` is ROM used for program code and constants.
-- `constdata` is ROM used for constants and program code.
+- `prgdata` is ROM used for program code and constants. Cannot be written to.
+- `constdata` is ROM used for constants and program code. Cannot be written to.
 - `chrdata` is ROM used for character / tile graphic data. This type of bank has a special meaning on platforms like the NES, where character data is on a separate memory bus. It is otherwise the same as `constdata`.
 - The distinction between `prgdata` and `constdata` will only exist on Harvard architectures, where the program and constant data live on separate buses. Otherwise, just use it for clarifying the purpose of ROM banks, if it matters.
-- `varinitdata` is initialized RAM. Useful for programs with code and data that get uploaded to RAM.
+- `varinitdata` is initialized RAM. Useful for programs with code and data that get uploaded to RAM. 
 
 The size of a `bank` is the number of bytes that it will hold. Exceeding this size limitation is considered an error.
 
@@ -303,13 +303,9 @@ let MAP_WIDTH = CEILING_DIV(1000, 8);
 
 A single `;` is allowed anywhere, and is an empty statement. It has no effect.
 
-### Expression Statement
-
-An expression statement is some statement that evaluates an expresssion that contains side-effects. It is terminated by a `;`. Assingment statements and call statements are both forms of expression statement.
-
 ### Assignment Statement
 
-An assignment statement is kind of expression statement that can be used to store a value somewhere. Depending on where the value is stored, it can be retrieved again later.
+An assignment statement is used to store a value somewhere. Depending on where the value is stored, it can be retrieved again later.
 
 ```
 dest = source; // assignment
@@ -330,12 +326,9 @@ a = max_hp - hp;
 damage = a;
 ```
 
-After constant expression folding, any remaining run-time operations must have instructions available for them.
+After constant expression folding, any remaining run-time operations must have instructions available for them. It must be either an exact instruction that does the calcuation and stores it in the destination, or a series of instructions that first load the into the destination, and then modify the destination. For an assignment containing a binary expression like `a = b + c;`, instruction selection will first look for an exact instruction of form `a = b + c;`. Failing that, it will attempt decomposing the assignment `a = b + c` into the form `a = b; a = a + c;`.
 
-For an assignment containing a binary expression like `a = b + c;`, the instruction selection system will first look for an exact instruction of form `a = b + c;`. Failing that, it will attempt decomposing the assignment `a = b + c` into the form `a = b; a = a + c;`.
-
-
-Assignments containing run-time operations cannot require an implicit temporary expression, or it is an error. All registers.
+Failing that, it is an error, and will probably require the assignment to be manually re-written in terms of multiple assignment statements. Assignments containing run-time operations cannot require an implicit temporary expression, or it is an error.
 
 Most expressions are evaluated in left-to-right fashion, and as a result, they must be written so that they can be left-folded without temporaries. This requirement means parenthesized expressions can happen on the left, but the right-hand side will be a constant or simple term.
 
@@ -356,13 +349,36 @@ a = b - (5 + c);
 // a = a - (5 + c) // the (5 + c) requires a temporary.
 ```
 
+Oftentimes, it won't be possible to assign a value directly to memory. In these cases, the code will need to put an intermediate assignment into a register first, and then store the register into the memory afterwards.
+
+Example:
+
+```
+// If there's no instruction available to assign immediate values to memory, this line will be an error.
+hp = 100;
+
+// It must be re-written to use a register in the middle.
+// This will work if there is a register named a,
+// and there is an instruction to load an immediate to register a,
+// and there is another instruction to load memory with the value of the register.
+a = 100;
+hp = a;
+```
+
 Assignments can be chained together if they're compatible.
 
 Example:
 
 ```
+// This is the same as:
+// a = x;
+// y = a;
 y = a = x;
 
+// This is the same as:
+// a = hp;
+// a = a - 10;
+// hp = a;
 hp = a = hp - 10;
 ```
 
@@ -395,7 +411,7 @@ Similarly, there can be side-effects that occur when reading an external hardwar
 
 Assignments may also result in processor status flag registers being changed as a side-effect. Sometimes, a throw-away calculation in some registers or temporary memory might be performed simply to affect a conditional flag. The effect on flags depends on what sequence of instructions are generated as a result of the assignment. Not every operation affects every flag consistently, due to the design of the processor hardware. Knowing what instructions affect flags and which don't requires some study.
 
-A common-to-find flag is the `zero` flag. If an instruction affects the zero flag, it might be used to indicate whether the result of the last operation was equal to zero. This can avoid the need to do some .
+A common-to-find flag is the `zero` flag. If an instruction affects the zero flag, it might be used to indicate whether the result of the last operation was equal to zero. This side-effect can be used sometimes to avoid an extra comparison instruction later.
 
 Example:
 
@@ -406,7 +422,7 @@ do {
 } while !zero;
 ```
 
-A `carry` flag is a common flag to be affected. The interpretation of a `carry` flag is dependent on the system. There are operations like add-with-carry `+#`, subtract-with-carry `-#`, rotate-left-with-carry `<<<<#`, and rotate-right-with-carry `>>>>#` which depend upon the last state of the `carry`. These operations can be useful for extending arithmetic operations to work on larger numeric values.
+A `carry` flag is a common flag to be affected by arithmetic operations such as addition/subtraction. The interpretation of a `carry` flag is dependent on the system. There are operations like add with carry `+#`, subtract with carry `-#`, rotate left with carry `<<<<#`, and rotate right with carry `>>>>#` which depend upon the last state of the `carry`. These operations can be useful for extending arithmetic operations to work on larger numeric values.
 
 Example:
 
@@ -418,10 +434,16 @@ b = a = b +# 0x01;
 
 Some CPUs allow the `carry` to be set or cleared by assigning to it.
 
+Examples:
+
+```
+carry = false;
+carry = true;
+```
 
 ### Call Statement
 
-A call statement is a kind of expression statement that invokes a function. If the function being called produces a return value, the value is discarded. If the function call returns, the code following it will execute. Intrinsic instructions can also be called in the same manner.
+A call statement is a kind of statement that invokes a function. If the function being called produces a return value, the value is discarded. If the function call returns, the code following it will execute. Intrinsic instructions can also be called in the same manner.
 
 ```
 function(argument1, argument2, argument3);
@@ -561,13 +583,35 @@ for counter in start .. end by step {
 }
 ```
 
-`start .. end` is an inclusive range. If the loop terminates normally, then after the loop, the counter provided will have the first value that is outside of the sequence.
-
 Example:
 
 ```
 for x in 0 .. 31 {
     beep();
+}
+```
+
+
+`start .. end` is an inclusive range. If the loop terminates normally, then after the loop, the counter provided will have the first value that is outside of the sequence.
+
+Example:
+
+```
+// x is a u8 register that can be incremented and decremented.
+
+// x will now be 32.
+for x in 0 .. 31 {
+    // ...
+}
+
+// x will be 0 after the loop.
+for x in 31 .. 0 by -1 {
+    // ...
+}
+
+// x will be 0 after the loop.
+for x in 0 .. 255 {
+    // ...
 }
 ```
 
@@ -731,6 +775,22 @@ Example:
     // ...
 }
 ```
+
+TODO: list all attributes as well as platform-specific ones
+
+### Config Directives
+
+Depending on the output file format selected for the program, there are extra options that can be configured.
+
+```
+config {
+    option = value,
+    option = value,
+    option = value
+}
+```
+
+See Formats section for possible options.
 
 ### Types
 
@@ -902,8 +962,8 @@ Example:
 const data = embed "hero.chr";
 ```
 
-Platform Specifics
-------------------
+Platforms
+---------
 
 The registers, addressing modes and operations all vary depending on the system.
 
@@ -911,49 +971,736 @@ TODO: write about each platform's specifics.
 
 ### MOS 6502
 
-- Status: Supported.
-- Documentation: TODO
+The MOS 6502 was a very popular 8-bit CPU used by a number of 8-bit game consoles and computer systems. Some common machines that used the 6502:
+
+- NES
+- Atari 2600 (VCS)
+- Atari 5200
+- Atari 7800
+- Atari 8-bit family (400, 800, 1200, 800XL, 1200XL, etc)
+- Commodore 64
+- Commodore 128
+- Commodore VIC-@0
+- Apple II
+
+Miscellaneous:
+
+- `sizeof(*u8) = sizeof(u16)`
+- `sizeof(far *u8) = sizeof(u24)` 
+
+Registers:
+
+- `a : u8` - the accumulator
+- `x : u8` - index register x
+- `y : u8` - index register y
+- `s : u8` - stack pointer register. decides the 
+- `p : u8` - processor flag register
+- `zero : bool` - the zero flag, used to indicate if the result of the last operation resulted in the value 0.
+- `carry : bool` - the carry flag, used to indicate if the last operation resulted in a carry outside of the range 0 .. 255. For addition, the `carry` flag is `true` when an addition resulted in a carry, and `false` otherwise. For subtraction and comparison, the `carry` flag is `false` when there is a borrow (left-hand side was less than the right-hand side), and `true` otherwise.
+- `negative : bool` - the negative flag, used to indicate the sign bit (bit 7) of the last operation.
+- `overflow : bool` - the overflow flag, used to indicate if the last operation resulted an arithmetic overflow. If an overflow happened, the sign bit (bit 7) of the result is flipped.
+- `decimal : bool` - the decimal flag, used to indicate whether decimal mode is active. If `true`, numbers are treated as if they are packed binary-coded decimal (BCD) format. If `false`, numbers are treated as binary numbers. Some 6502 CPUs like the 2A03/2A07 used in the NES do not have a decimal mode, so BCD arithmetic must be manually accomplished through software.
+- `nointerrupt : bool` - the interrupt disable flag, used to indicate that maskable interrupt requests (IRQ) are disallowed. This will not disable non-maskable interrupts (NMI).
+
+Intrinsics:
+
+- `cmp(left, right)` - compares two values, by performing a subtraction without storing the result in memory.
+- `bit(left, right)` - bitwise test between two values
+- `irqcall(status)` - manually requests an IRQ.
+- `push(value)` - pushes the given value to the stack.
+- `pop(value)` - pushes the given value to the stack.
+- `nop()` - does nothing, and uses 1 byte and 2 cycles.
+
+
+Addressing Modes:
+
+- `{integer 0..255}` - immediate
+- `*({integer 0..255}) : 8` - zero-page
+- `*({integer 0..255} + x) : 8` - zero-page indexed by x
+- `*({integer 0..255} + y) : 8` - zero-page indexed by y
+- `*(*({integer 0..255} + x) : 16) : 8` - zero-page indexed by x indirect
+- `*({integer 0..255} + y) : 8` - zero-page indexed by y
+- `*(*({integer 0..255}) : 16 + x) : 8` - zero-page indirect indexed by y
+- `*({integer 0..65535}) : 8` - absolute indexed by x
+- `*({integer 0..65535} + x) : 8` - absolute indexed by x
+- `*({integer 0..65535} + y) : 8` - absolute indexed by y
+
+Instructions:
+
+```
+a = {integer 0..255}
+a = *({integer 0..255}) : 8
+a = *({integer 0..255} + x) : 8
+a = *(*({integer 0..255} + x) : 16) : 8
+a = *(*({integer 0..255}) : 16 + y) : 8
+a = *({integer 0..65535}) : 8
+a = *({integer 0..65535 + x}) : 8
+a = *({integer 0..65535 + y}) : 8
+
+a += {integer 0..255}
+a += *({integer 0..255}) : 8
+a += *({integer 0..255} + x) : 8
+a += *(*({integer 0..255} + x) : 16) : 8
+a += *(*({integer 0..255}) : 16 + y) : 8
+a += *({integer 0..65535}) : 8
+a += *({integer 0..65535 + x}) : 8
+a += *({integer 0..65535 + y}) : 8
+
+a +#= {integer 0..255}
+a +#= *({integer 0..255}) : 8
+a +#= *({integer 0..255} + x) : 8
+a +#= *(*({integer 0..255} + x) : 16) : 8
+a +#= *(*({integer 0..255}) : 16 + y) : 8
+a +#= *({integer 0..65535}) : 8
+a +#= *({integer 0..65535 + x}) : 8
+a +#= *({integer 0..65535 + y}) : 8
+
+a -= {integer 0..255}
+a -= *({integer 0..255}) : 8
+a -= *({integer 0..255} + x) : 8
+a -= *(*({integer 0..255} + x) : 16) : 8
+a -= *(*({integer 0..255}) : 16 + y) : 8
+a -= *({integer 0..65535}) : 8
+a -= *({integer 0..65535 + x}) : 8
+a -= *({integer 0..65535 + y}) : 8
+
+a -#= {integer 0..255}
+a -#= *({integer 0..255}) : 8
+a -#= *({integer 0..255} + x) : 8
+a -#= *(*({integer 0..255} + x) : 16) : 8
+a -#= *(*({integer 0..255}) : 16 + y) : 8
+a -#= *({integer 0..65535}) : 8
+a -#= *({integer 0..65535 + x}) : 8
+a -#= *({integer 0..65535 + y}) : 8
+
+a |= {integer 0..255}
+a |= *({integer 0..255}) : 8
+a |= *({integer 0..255} + x) : 8
+a |= *(*({integer 0..255} + x) : 16) : 8
+a |= *(*({integer 0..255}) : 16 + y) : 8
+a |= *({integer 0..65535}) : 8
+a |= *({integer 0..65535 + x}) : 8
+a |= *({integer 0..65535 + y}) : 8
+
+a &= {integer 0..255}
+a &= *({integer 0..255}) : 8
+a &= *({integer 0..255} + x) : 8
+a &= *(*({integer 0..255} + x) : 16) : 8
+a &= *(*({integer 0..255}) : 16 + y) : 8
+a &= *({integer 0..65535}) : 8
+a &= *({integer 0..65535 + x}) : 8
+a &= *({integer 0..65535 + y}) : 8
+
+a ^= {integer 0..255}
+a ^= *({integer 0..255}) : 8
+a ^= *({integer 0..255} + x) : 8
+a ^= *(*({integer 0..255} + x) : 16) : 8
+a ^= *(*({integer 0..255}) : 16 + y) : 8
+a ^= *({integer 0..65535}) : 8
+a ^= *({integer 0..65535 + x}) : 8
+a ^= *({integer 0..65535 + y}) : 8
+
+{integer 0..255} = a
+*({integer 0..255}) : 8 = a
+*({integer 0..255} + x) : 8 = a
+*(*({integer 0..255} + x) : 16) : 8 = a
+*(*({integer 0..255}) : 16 + y) : 8 = a
+*({integer 0..65535}) : 8 = a
+*({integer 0..65535 + x}) : 8 = a
+*({integer 0..65535 + y}) : 8 = a
+
+cmp(a, {integer 0..255})
+cmp(a, *({integer 0..255}) : 8)
+cmp(a, *({integer 0..255} + x) : 8)
+cmp(a, *(*({integer 0..255} + x) : 16) : 8)
+cmp(a, *(*({integer 0..255}) : 16 + y) : 8)
+cmp(a, *({integer 0..65535}) : 8)
+cmp(a, *({integer 0..65535 + x}) : 8)
+cmp(a, *({integer 0..65535 + y}) : 8)
+
+bit(*({integer 0..255}) : 8)
+bit(*({integer 0..65535}) : 8)
+
+a = x
+x = a
+a = y
+y = a
+x = s
+s = x
+
+x = {integer 0..255};
+x = *({integer 0..255}) : 8
+x = *({integer 0..255} + y) : 8
+x = *({integer 0..65535}) : 8
+x = *({integer 0..65535} + y) : 8
+
+*({integer 0..255}) : 8 = x
+*({integer 0..255} + y) : 8 = x
+*({integer 0..65535}) : 8 = x
+
+cmp(x, {integer 0..255})
+cmp(x, *({integer 0..255}) : 8)
+cmp(x, *({integer 0..65535}) : 8)
+
+y = {integer 0..255};
+y = *({integer 0..255}) : 8
+y = *({integer 0..255} + y) : 8
+y = *({integer 0..65535}) : 8
+y = *({integer 0..65535} + y) : 8
+
+*({integer 0..255}) : 8 = y
+*({integer 0..255} + x) : 8 = y
+*({integer 0..65535}) : 8 = y
+
+cmp(y, {integer 0..255})
+cmp(y, *({integer 0..255}) : 8)
+cmp(y, *({integer 0..65535}) : 8)
+
+push(a)
+push(p)
+
+a = pop()
+p = pop()
+
+++*({integer 0..255}) : 8
+++*({integer 0..255} + x) : 8
+++*({integer 0..65535}) : 8
+++*({integer 0..65535} + x) : 8
+++x
+++y
+
+--*({integer 0..255}) : 8
+--*({integer 0..255} + x) : 8
+--*({integer 0..65535}) : 8
+--*({integer 0..65535} + x) : 8
+--x
+--y
+
+a = ~a
+a = -a
+
+a <<= {integer 0 .. 7}
+*({integer 0..255}) : 8 <<= {integer 0 .. 7}
+*({integer 0..255} + x) : 8 <<= {integer 0 .. 7}
+*({integer 0..65535}) : 8 <<= {integer 0 .. 7}
+*({integer 0..65535} + x) : 8 <<= {integer 0 .. 7}
+
+a <<<= {integer 0 .. 7}
+*({integer 0..255}) : 8 <<<= {integer 0 .. 7}
+*({integer 0..255} + x) : 8 <<<= {integer 0 .. 7}
+*({integer 0..65535}) : 8 <<<= {integer 0 .. 7}
+*({integer 0..65535} + x) : 8 <<<= {integer 0 .. 7}
+
+a >>>= {integer 0 .. 7}
+*({integer 0..255}) : 8 >>>= {integer 0 .. 7}
+*({integer 0..255} + x) : 8 >>>= {integer 0 .. 7}
+*({integer 0..65535}) : 8 >>>= {integer 0 .. 7}
+*({integer 0..65535} + x) : 8 >>>= {integer 0 .. 7}
+
+a <<<<#= {integer 0 .. 7}
+*({integer 0..255}) : 8 <<<<#= {integer 0 .. 7}
+*({integer 0..255} + x) : 8 <<<<#= {integer 0 .. 7}
+*({integer 0..65535}) : 8 <<<<#= {integer 0 .. 7}
+*({integer 0..65535} + x) : 8 <<<<#= {integer 0 .. 7}
+
+a >>>>#= {integer 0 .. 7}
+*({integer 0..255}) : 8 >>>>#= {integer 0 .. 7}
+*({integer 0..255} + x) : 8 >>>>#= {integer 0 .. 7}
+*({integer 0..65535}) : 8 >>>>#= {integer 0 .. 7}
+*({integer 0..65535} + x) : 8 >>>>#= {integer 0 .. 7}
+
+goto {integer -128..127} if zero
+goto {integer -128..127} if !zero
+goto {integer -128..127} if carry
+goto {integer -128..127} if !carry
+goto {integer -128..127} if negative
+goto {integer -128..127} if !negative
+goto {integer -128..127} if overflow
+goto {integer -128..127} if !overflow
+
+goto {integer 0..65535}
+^goto {integer 0..65535} if zero
+^goto {integer 0..65535} if !zero
+^goto {integer 0..65535} if carry
+^goto {integer 0..65535} if !carry
+^goto {integer 0..65535} if negative
+^goto {integer 0..65535} if !negative
+^goto {integer 0..65535} if overflow
+^goto {integer 0..65535} if !overflow
+
+goto *({integer 0..65535}) : 16
+
+return
+irqreturn
+nmireturn
+
+irqcall({integer 0..255})
+
+nop()
+
+carry = false
+carry = true
+
+decimal = false
+decimal = true
+
+nointerrupt = false
+nointerrupt = true
+
+overflow = false
+```
 
 ### MOS 65C02
 
-- Status: Supported.
-- Documentation: TODO
+The MOS 65C02 is like the MOS 6502, but also has some extra instructions.
+
+Extra Instructions:
+
+```
+a = *(*({integer 0..255}) : 16) : 8
+a += *(*({integer 0..255}) : 16) : 8
+a +#= *(*({integer 0..255}) : 16) : 8
+a -= *(*({integer 0..255}) : 16) : 8
+a -#= *(*({integer 0..255}) : 16) : 8
+a |= *(*({integer 0..255}) : 16) : 8
+a &= *(*({integer 0..255}) : 16) : 8
+a ^= *(*({integer 0..255}) : 16) : 8
+*(*({integer 0..255}) : 16) : 8 = a
+cmp(a, *(*({integer 0..255}) : 16) : 8)
+
+bit({integer 0..255})
+bit(*({integer 0..255} + x) : 8)
+bit(*({integer 0..65535} + x) : 8)
+
+++a
+--a
+
+goto {-128..127}
+^goto {integer 0..65535}
+
+goto *(*({integer 0..65535} + x) : 16) : 16
+
+push(x)
+push(y)
+
+x = pop()
+y = pop()
+
+*({integer 0..255}) : 8 = 0
+*({integer 0..255} + x) : 8 = 0
+*({integer 0..65535}) : 8 = 0
+*({integer 0..65535} + x) : 8 = 0
+
+test_and_reset(*({integer 0..255}) : 8)
+test_and_reset(*({integer 0..65535}) : 8)
+
+test_and_set(*({integer 0..255}) : 8)
+test_and_set(*({integer 0..65535}) : 8)
+```
 
 ### Rockwell 65C02
 
-- Status: Supported.
-- Documentation: TODO
+The Rockwell 65C02 is like the MOS 65C02, but also has some extra instructions.
+
+Extra Instructions:
+
+```
+goto {-128..127} if (*({integer 0..255}) : 8) $ {integer 0..7}
+goto {-128..127} if !(*({integer 0..255}) : 8) $ {integer 0..7}
+^goto {0..65535} if (*({integer 0..255}) : 8) $ {integer 0..7}
+^goto {0..65535} if !(*({integer 0..255}) : 8) $ {integer 0..7}
+
+(*({integer 0..255}) : 8) $ ({integer 0..7}) = false
+(*({integer 0..255}) : 8) $ ({integer 0..7}) = true
+```
 
 ### WDC 65C02
 
-- Status: Supported.
-- Documentation: TODO
+The WDC 65C02 is like the Rockwell 65C02 but also has some extra instructions.
+
+Extra Instructions:
+
+```
+stop_until_reset()
+wait_until_interrupt()
+```
 
 ### HuC 6280
 
-- Status: Supported.
-- Documentation: TODO
+The HuC6280 is like the Rockwell 65C02, but has some extra registers and instructions. Also, zero page instructions are at 0x2000 .. 0x20FF rather than the usual 0x00 .. 0xFF of other 6502 processors. This can be bank-switched with the `mpr1` register.
+
+Extra Registers:
+
+- `turbo_speed : bool` - CPU turbo mode setting
+- `vdc_select : u8` - VDC address select register (fast access)
+- `vdc_data_l : u8` - VDC data register low (fast access)
+- `vdc_data_h : u8` - VDC data register high (fast access) 
+- The VDC registers are also available in a memory mapped I/O registers, these registers are just for special quick-write instructions in the CPU.
+- `mpr0 : u8` - mapper register 0, maps the memory bank available at address range `0x0000 .. 0x1FFF`.
+- `mpr1 : u8` - mapper register 1, maps the memory bank available at address range `0x2000 .. 0x3FFF`. Affects zero page.
+- `mpr2 : u8` - mapper register 2, maps the memory bank available at address range `0x4000 .. 0x5FFF`.
+- `mpr3 : u8` - mapper register 3, maps the memory bank available at address range `0x6000 .. 0x7FFF`.
+- `mpr4 : u8` - mapper register 4, maps the memory bank available at address range `0x8000 .. 0x9FFF`.
+- `mpr5 : u8` - mapper register 5, maps the memory bank available at address range `0xA000 .. 0xBFFF`.
+- `mpr6 : u8` - mapper register 6, maps the memory bank available at address range `0xC000 .. 0xDFFF`.
+- `mpr7 : u8` - mapper register 7, maps the memory bank available at address range `0xE000 .. 0xFFFF`.
+
+Extra Instructions:
+
+```
+a = 0
+x = 0
+y = 0
+
+turbo_speed = false
+turbo_speed = true
+
+swap(a, x)
+swap(a, y)
+swap(x, y)
+
+*(x) : 8 += {integer 0..255}
+*(x) : 8 += *({integer 0..255}) : 8
+*(x) : 8 += *({integer 0..255} + x) : 8
+*(x) : 8 += *(*({integer 0..255} + x) : 16) : 8
+*(x) : 8 += *(*({integer 0..255}) : 16 + y) : 8
+*(x) : 8 += *({integer 0..65535}) : 8
+*(x) : 8 += *({integer 0..65535 + x}) : 8
+*(x) : 8 += *({integer 0..65535 + y}) : 8
+
+*(x) : 8 +#= {integer 0..255}
+*(x) : 8 +#= *({integer 0..255}) : 8
+*(x) : 8 +#= *({integer 0..255} + x) : 8
+*(x) : 8 +#= *(*({integer 0..255} + x) : 16) : 8
+*(x) : 8 +#= *(*({integer 0..255}) : 16 + y) : 8
+*(x) : 8 +#= *({integer 0..65535}) : 8
+*(x) : 8 +#= *({integer 0..65535 + x}) : 8
+*(x) : 8 +#= *({integer 0..65535 + y}) : 8
+
+*(x) : 8 |= {integer 0..255}
+*(x) : 8 |= *({integer 0..255}) : 8
+*(x) : 8 |= *({integer 0..255} + x) : 8
+*(x) : 8 |= *(*({integer 0..255} + x) : 16) : 8
+*(x) : 8 |= *(*({integer 0..255}) : 16 + y) : 8
+*(x) : 8 |= *({integer 0..65535}) : 8
+*(x) : 8 |= *({integer 0..65535 + x}) : 8
+*(x) : 8 |= *({integer 0..65535 + y}) : 8
+
+*(x) : 8 &= {integer 0..255}
+*(x) : 8 &= *({integer 0..255}) : 8
+*(x) : 8 &= *({integer 0..255} + x) : 8
+*(x) : 8 &= *(*({integer 0..255} + x) : 16) : 8
+*(x) : 8 &= *(*({integer 0..255}) : 16 + y) : 8
+*(x) : 8 &= *({integer 0..65535}) : 8
+*(x) : 8 &= *({integer 0..65535 + x}) : 8
+*(x) : 8 &= *({integer 0..65535 + y}) : 8
+
+*(x) : 8 ^= {integer 0..255}
+*(x) : 8 ^= *({integer 0..255}) : 8
+*(x) : 8 ^= *({integer 0..255} + x) : 8
+*(x) : 8 ^= *(*({integer 0..255} + x) : 16) : 8
+*(x) : 8 ^= *(*({integer 0..255}) : 16 + y) : 8
+*(x) : 8 ^= *({integer 0..65535}) : 8
+*(x) : 8 ^= *({integer 0..65535 + x}) : 8
+*(x) : 8 ^= *({integer 0..65535 + y}) : 8
+
+
+vdc_select = {integer 0..255}
+vdc_data_l = {integer 0..255}
+vdc_data_h = {integer 0..255}
+
+transfer_alternate_to_increment({integer 0..65535}, {integer 0..65535}, {integer 0..65535})
+transfer_increment_to_alternate({integer 0..65535}, {integer 0..65535}, {integer 0..65535})
+transfer_decrement_to_decrement({integer 0..65535}, {integer 0..65535}, {integer 0..65535})
+transfer_increment_to_increment({integer 0..65535}, {integer 0..65535}, {integer 0..65535})
+transfer_increment_to_fixed({integer 0..65535}, {integer 0..65535}, {integer 0..65535})
+
+mpr_set({integer 0..255}, a)
+mpr0 = a
+mpr1 = a
+mpr2 = a
+mpr3 = a
+mpr4 = a
+mpr5 = a
+mpr6 = a
+mpr7 = a
+a = mpr0
+a = mpr1
+a = mpr2
+a = mpr3
+a = mpr4
+a = mpr5
+a = mpr6
+a = mpr7
+
+tst({integer 0..255}, *({integer 0..255}) : 8)
+tst({integer 0..255}, *({integer 0..255} + x) : 8)
+tst({integer 0..255}, *({integer 0..65535} + x) : 8)
+tst({integer 0..255}, *({integer 0..65535} + x) : 8)
+```
 
 ### WDC 65816
 
-- Status: Supported. Missing some small improvements to make mixing register modes a bit easier, and catching runtime errors relating to addressing modes.
-- Documentation: TODO
+Documentation TODO
 
 ### SPC 700
 
-- Status: Supported.
-- Documentation: TODO
+Documentation TODO
 
 ### Zilog Z80
 
-- Status: Supported.
-- Documentation: TODO
+Documentation TODO
 
 ### Game Boy
 
-- Status: Supported.
-- Documentation: TODO
+Documentation TODO
 
+Formats
+-------
+
+### Binary
+
+The default format for any program being output. Wiz peforms no special header or footer handling.
+
+Config options:
+
+- `trim` (bool) - if `true`, then the unused portion at the end of final bank in the output will be trimmed from the file. Useful for shortening the size of binaries that are going to be embedded in another program. (Defaults to `false`)
+
+### Nintendo Entertainment System / Famicom
+
+The iNES format is an emulator format for NES ROMs that is commonly supported. It has the `.nes` file extension.
+
+Format Specifics:
+
+- 16-byte iNES header at the start of the output binary
+- PRG banks defined by `constdata` or `prgdata` bank. Padded to nearest multiple of 16 KiB.
+- CHR banks defined by `chrdata` banks. Padded to nearest multiple of 8 KiB.
+
+Config options:
+
+- `cart_type` (string) - the type of cartridge that the cart is using. It can be one of the following strings:
+
+```
+"nrom"
+"sxrom"
+"mmc1"
+"uxrom"
+"cnrom"
+"txrom"
+"mmc3"
+"mmc6"
+"exrom"
+"mmc5"
+"axrom"
+"pxrom"
+"mmc2"
+"fxrom"
+"mmc4"
+"color-dreams"
+"cprom"
+"24c02"
+"ss8806"
+"n163"
+"vrc4a"
+"vrc4c"
+"vrc2a"
+"vrc2b"
+"vrc4e"
+"vrc6a"
+"vrc4b"
+"vrc4d"
+"vrc6b"
+"bnrom"
+"rambo1"
+"gxrom"
+"mxrom"
+"after-burner"
+"fme7"
+"sunsoft5b"
+"codemasters"
+"vrc3"
+"vrc1"
+"n109"
+"vrc7"
+"txsrom"
+"tqrom"
+"24c01"
+"dxrom"
+"n118"
+"n175"
+"n340"
+"action52"
+"codemasters-quattro"
+```
+
+- `cart_type_id` (integer) - the type of cartridge that the cart is using, as an iNES mapper number. Takes precedence over `cart_type_id`, so use this if `cart_type` is not recognized. (If a cart type name is missing, feel free to request it!)
+- If neither `cart_type` nor `cart_type_id` are specified, then the cart is NROM (mapper 0). This no special memory mapper, so it is limited to a view of 32K of ROM at addresses 0x8000 .. 0xFFFF in memory.
+- `vertical_mirror` (bool) - whether or not this cart uses vertical mirroring. (Defaults to `false`)
+- `battery` (bool) - whether or not this cart uses battery backed save RAM. (Defaults to `false`)
+- `four_screen` (bool) - whether or not this cart contains RAM for extra nametables, allowing use of all four screens without PPU nametable mirroring. (Defaults to `false`)
+- `prg_ram_size` (integer) - the number of bytes to use for PRG RAM. Must be divisble by 8192 bytes, and can be no more than 2088960 bytes (8192 bytes * 255 banks). (Defaults to 0)
+
+### Game Boy
+
+The Game Boy has a standardized header format that is is contained a fixed location in ROM. The file format on disk has a `.gb` extension. Wiz will automatically fill in the necessary fields to get a basic booting Game Boy ROM. This includes the Nintendo logo image, and the checksum, necessary to get past the boot screen of the Game Boy.
+
+Format Specifics:
+
+- 0x100 .. 0x150 in the first bank of ROM will be reserved for the Game Boy header.
+- A checksum is automatically calculated and inserted into the header.
+- The program ROM is automatically padded to nearest size permitted by the Game Boy header format.
+
+Config options:
+
+- `cart_type` (string) - the type of cartridge that the cart is using. It can be one of the following strings:
+
+```
+"rom"
+"mbc1"
+"mbc1-ram"
+"mbc1-ram-battery"
+"mbc2"
+"mbc2-battery"
+"rom-ram"
+"rom-ram-battery"
+"mmm01"
+"mmm01-ram"
+"mmm01-ram-battery"
+"mbc3-timer-battery"
+"mbc3-timer-ram-battery"
+"mbc3"
+"mbc3-ram"
+"mbc3-ram-battery"
+"mbc4"
+"mbc4-ram"
+"mbc4-ram-battery"
+"mbc5"
+"mbc5-ram"
+"mbc5-ram-battery"
+"mbc5-rumble"
+"mbc5-rumble-ram"
+"mbc5-rumble-ram-battery"
+"mmm01"
+"camera"
+"tama5"
+"huc3"
+"huc1"
+```
+
+- `cart_type_id` (integer) - the type of cartridge mapper that the cart is using, as a numeric ID used by the Game Boy header format. Takes precedence over `cart_type_id`, so use this if `cart_type` is not recognized. (If a cart type name is missing, feel free to request it!)
+- If neither `cart_type` nor `cart_type_id` are specified, then the ROM has no memory bank controller, and it is limited to a view of 32K of ROM at addresses 0x0000 .. 0x7FFF in memory.
+- `title` (string) - The name of the program. The max length is 11 if there is `manufacturer` code, and 15 on legacy carts that do not have one. (Defaults to the output filename with extension removed, truncated to the maximum length requirement of the title)
+- `gbc_compatible` (bool) - Whether or not this cart is compatible with Game Boy Color features. If `true`, the cart will boot with Game Boy Color functionality when played on a Game Boy Color compatible system. A GBC-compatible game can still be played on an original DMG-compatible model of Game Boy. (Defaults to `false`)
+- `gbc_exclusive` (bool) - Whether or not this cart is exclusive to the Game Boy Color. If `true`, the cart will boot with Game Boy Color functionality when played on a Game Boy Color compatible system. Takes precedence over `gbc_compatible` if it is `true`. A GBC-exclusive game should not be played on an original DMG-compatible model of Game Boy. However, it is still up to the program to detect if it is being played on a Game Boy Color system, and stop if an incompatible system is used. (Defaults to `false`)
+- `sgb_compatible` (bool) - Whether or not this cart is compatible with Super Game Boy features. If `true`, the cart is able to use extra functionality on a Super Game Boy, allowing communication with the Super Game Boy program through the Game Boy joypad port. Most emulators will expect a SGB border to be uploaded if this flag is enabled. (Defaults to `false`)
+- `ram_size` (integer) - The amount of on-cartridge RAM that this cart has available. (Defaults to 0) Must be a size that is supported by the Game Boy header format. FIXME: 65536 byte (64 KiB) and 131072 byte (128 KiB) RAM sizes are not currently supported. Possible values include:
+
+```
+0
+2048
+8192
+32768
+65535
+131072
+```
+
+- `international` (bool) - Whether or not this game is an international release outside of Japan. (Defaults to `false`)
+- `licensee` (string) - A two-character string representing the licensee / creator of the game. (Defaults to `""`)
+- `old_licensee` (integer) - A legacy licensee code indicating the ID of the licensee / creator of this game. All newer releases have a legacy licensee code of 0x33 and will not use this field. (defaults to 0x33)
+- `version` (integer) - The version of the cart being released, which can be used to tell apart later revisions. (Defaults to 0)
+
+### Sega Master System / Game Gear
+
+The Sega Master System and Game Gear are very similar game systems, and both share the same header format. Sega Master System ROMs end in an `.sms` extension. Game Gear ROMs end in a `.gg` extension.
+
+Format specifics:
+
+- Depending on the size of the cart, there is a header at either 0x1FF0 (8 KiB ROMs), 0x3FF0 (16 KiB ROMs), or 0x7FF0 (32 KiB ROMs).
+- The program ROM is automatically padded to either 8 KiB, 16 KiB, or 32 KiB if it is not aligned to one of these sizes.
+- A checksum is automatically calculated and inserted into the header.
+
+Config Options:
+
+- `product_code` (integer) - a number between 0 and 159999 indicating the product code of this cart. (Defaults to 0)
+- `version` (integer) - a version number for this cart release, between 0 and 15. (Defaults to 0)
+- `region` - The region that this cart is being released for. (Defaults to `"international"`)
+
+```
+japan
+export
+international
+```
+
+### Super Nintendo Entertainment System / Super Famicom
+
+The SNES has a common header format found at fixed location in the ROM. The preferred format for SNES ROMs nowadays is `.sfc`, which contains no redundant copier headers to speak of, only the necessary headers to run the game.
+
+There is additionally `.smc`, a common format popularized by the Super Magicom copier. Wiz will add an extra 512 bytes to work as this SMC format.
+
+When possible prefer `.sfc`, but `.smc` is here for those who want headered ROMs.
+
+Format Specifics:
+
+- Depending on the map mode of the cart, there is a SNES header at either 0x7F00 (lorom) or 0xFF00 (hirom).
+- A checksum is automatically calculated and inserted into the header.
+- The program ROM is automatically padded to at least 128 KiB, and then to the nearest power of two from that.
+- For now, you need to import the ROM before you can use it with higan or older versions of bsnes, but maybe down the road there will be a direct export to game folders.
+
+Config options:
+
+- `map_mode` (string) - The type of memory mapping mode that this cart uses (Defaults to `"lorom"`)
+
+```
+"lorom"
+"hirom"
+"sa1"
+"sdd1"
+"exhirom"
+"spc7110"
+```
+
+- `fastrom` (bool) - Whether or not this cart uses fast ROM, which . (Defaults to `false`)
+- `expansion_type` (string) - The expansion hardware type that this cart uses. (Defaults to `"none"`)
+
+```
+"none"
+"dsp"
+"super-fx"
+"obc1"
+"sa1"
+"other"
+"custom"
+```
+
+- `maker_code` (string) - two character code used to designate the licensee / creator of the game. (Defaults to `""`)
+- `game_code` (string) - four character code used to designate this game. (Defaults to `""`)
+- `region` (string) - the region of the world that this is being released for. This region also indicates NTSC/PAL of the game. (Defaults to `"japanese"` NTSC game)
+
+```
+"ntsc"
+"pal"
+"japanese"
+"american"
+"european"
+"scandinavian"
+"french"
+"dutch"
+"spanish"
+"german"
+"italian"
+"chinese"
+"korean"
+"canadian"
+"brazilian"
+"australian"
+```
+
+- `ram_size` - the size in bytes of on-cartridge RAM that this cart uses. If non-zero, the size must be power of two and greater than 4096 bytes. (Defaults to 0)
+- `expansion_ram_size` - the size in bytes of on-cartridge RAM that the expansion uses. If non-zero, the size must be power of two and greater than 4096 bytes. (Defaults to 0)
+- `battery` (bool) - whether or not this cart uses battery backed save RAM. (Defaults to `false`)
+- `special_version` - the special version of this cart. (Defaults to 0)
+- `cart_subtype` - the sub-type identifier to use for this cart. (Defaults to 0)
+- `title` - The title of the cart, as a 21-character string. (Defaults to `""`)
 
 The License
 -----------
