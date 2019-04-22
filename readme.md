@@ -1051,14 +1051,15 @@ The MOS 6502 was a very popular 8-bit CPU used by a number of 8-bit game console
 Miscellaneous:
 
 - `sizeof(*u8) = sizeof(u16)`
-- `sizeof(far *u8) = sizeof(u24)` 
+- `sizeof(far *u8) = sizeof(u24)`
+- `carry` is the inverse of the borrow flag in subtraction/comparison (`true` when no borrow)
 
 Registers:
 
 - `a : u8` - the accumulator
 - `x : u8` - index register x
 - `y : u8` - index register y
-- `s : u8` - stack pointer register. decides the 
+- `s : u8` - stack pointer register
 - `p : u8` - processor flag register
 - `zero : bool` - the zero flag, used to indicate if the result of the last operation resulted in the value 0.
 - `carry : bool` - the carry flag, used to indicate if the last operation resulted in a carry outside of the range 0 .. 255. For addition, the `carry` flag is `true` when an addition resulted in a carry, and `false` otherwise. For subtraction and comparison, the `carry` flag is `false` when there is a borrow (left-hand side was less than the right-hand side), and `true` otherwise. The `carry` also indicates the bit shifted out from a bit-shift operation.
@@ -1069,9 +1070,9 @@ Registers:
 
 Intrinsics:
 
-- `cmp(left, right)` - compares two values, by performing a subtraction without storing the result in memory.
-- `bit(left, right)` - bitwise test between two values
-- `irqcall(status)` - manually requests an IRQ.
+- `cmp(left, right)` - compares two values, by performing a subtraction without storing the result in memory. `zero` indicates whether `left == right`, `carry` indicates whether `left >= right`.
+- `bit(mem)` - bitwise test between the accumulator and a value in memory. `zero` indicates whether `(a & mem) == 0`, `overflow` is set to `mem $ 6`, and `negative` is set to `mem $ 7`.
+- `irqcall(code)` - manually requests an IRQ, code is a parameter that is put after irqcall opcode, which can be read from the IRQ handler routine.
 - `push(value)` - pushes the given value to the stack.
 - `pop(value)` - pushes the given value to the stack.
 - `nop()` - does nothing, and uses 1 byte and 2 cycles.
@@ -1325,6 +1326,11 @@ overflow = false
 
 The MOS 65C02 is like the MOS 6502, but also has some extra instructions.
 
+Extra Intrinsics:
+
+- `test_and_reset(mem)` - like `bit(mem)`, but also uses the accumulator to turn off bits in mem, as if `mem &= ~a;` is applied.
+- `test_and_set(mem)` - like `bit(mem)`, but also uses the accumulator to turn on bits in mem, as if `mem |= a;` is applied.
+
 Extra Instructions:
 
 ```
@@ -1389,6 +1395,10 @@ goto {-128..127} if !(*({0..255} as *u8)) $ {0..7}
 
 The WDC 65C02 is like the Rockwell 65C02 but also has some extra instructions.
 
+Extra Intrinsics:
+- `stop_until_reset()` - stops execution until a hardware reset occurs.
+- `wait_until_reset()` - sleeps until a hardware interrupt occurs.
+
 Extra Instructions:
 
 ```
@@ -1415,6 +1425,17 @@ Extra Registers:
 - `mpr5 : u8` - mapper register 5, maps the memory bank available at address range `0xA000 .. 0xBFFF`.
 - `mpr6 : u8` - mapper register 6, maps the memory bank available at address range `0xC000 .. 0xDFFF`.
 - `mpr7 : u8` - mapper register 7, maps the memory bank available at address range `0xE000 .. 0xFFFF`.
+
+Extra Intrinsics
+
+- `swap(left, right)` - exchanges the values between the left and right operand.
+- `transfer_alternate_to_increment(source, dest, len)` - transfers `len` bytes of data from an alternating `source` address (`source`, `source + 1`, `source`, ...) to an incrementing `dest` address (`dest`, `dest + 1`, `dest + 2`, ...). 
+- `transfer_increment_to_alternate(source, dest, len)` - transfers `len` bytes of data from an incrementing `source` address (`source`, `source + 1`, `source + 2`, ...)  to an alternating `dest` address (`dest`, `dest + 1`, `dest`, ...). 
+- `transfer_decrement_to_decrement(source, dest, len)` - transfers `len` bytes of data from an decrementing `source` address address (`source`, `source - 1`, `source - 2`, ...) to an decrementing `dest` address (`dest`, `dest - 1`, `dest - 2`, ...). 
+- `transfer_increment_to_increment(source, dest, len)` - transfers `len` bytes of data from an incrementing `source` address address (`source`, `source + 1`, `source + 2`, ...) to an incrementing `dest` address (`dest`, `dest + 1`, `dest + 2`, ...).
+- `transfer_increment_to_fixed(source, dest, len)` - transfers `len` bytes of data from an incrementing `source` address address (`source`, `source + 1`, `source + 2`, ...) to a fixed `dest` address (`dest`, `dest`, `dest`, ...).
+- `mpr_set(mask, a)` - sets `mpr0` .. `mpr7` registers to the value in the accumulator, using `mask` to indicate which of registers are being selected to update. For N = 0 .. 7, if `mask $ N` is `true` (`(mask & (1 << N)) != 0`), then `mprN` will be set to `a`.
+- `tst(imm, mem)` - like `bit` but the `zero` flag is the result of whether `(imm & bit) == 0`.
 
 Extra Instructions:
 
@@ -1475,7 +1496,6 @@ swap(x, y)
 *(x as *u8) ^= *(({0..65535} + x) as *u8)
 *(x as *u8) ^= *(({0..65535} + y) as *u8)
 
-
 vdc_select = {0..255}
 vdc_data_l = {0..255}
 vdc_data_h = {0..255}
@@ -1510,19 +1530,171 @@ tst({0..255}, *(({0..65535} + x) as *u8))
 tst({0..255}, *(({0..65535} + x) as *u8))
 ```
 
+### Zilog Z80
+
+Miscellaneous
+
+- `sizeof(*u8) = sizeof(u16)`
+- `sizeof(far *u8) = sizeof(u24)`
+- `carry` acts as a borrow flag in subtraction/comparison
+
+Registers
+
+- `a : u8` - accumulator
+- `b : u8`, `c : u8`, `d : u8`, `e : u8`, `h : u8`, `l : u8` - general registers
+- `ixh : u8`, `ixl : u8`, `iyh : u8`, `iyl : u8` - index register sub-registers (undocumented)
+- `af : u16` - accumulator + flags pair
+- `bc : u16`, `de : u8`, `hl : u8` - general register pairs
+- `ix : u16`, `iy : u8` - index registers
+- `zero : bool` - the zero flag, used to indicate if the result of the last operation resulted in the value 0.
+- `carry : bool` - the carry flag, used to indicate if the last operation resulted in a carry outside of the range 0 .. 255. For addition, the `carry` flag is `true` when an addition resulted in a carry, and `false` otherwise. For subtraction and comparison, the `carry` flag is `true` when there is a borrow (left-hand side was less than the right-hand side), and `false` otherwise. The `carry` also indicates the bit shifted out from a bit-shift operation.
+- `overflow : bool`
+- `negative : bool`
+- `interrupt : bool` - the interrupt enable flag, used to indicate whether maskable interrupts should be activated.
+- `interrupt_mode : u8`
+- `interrupt_page : u8`
+- `memory_refresh : u8`
+
+Intrinsics
+
+- `push(value)`
+- `pop()`
+- `nop()`
+- `halt()`
+- `decimal_adjust()`
+- `swap(left, right)`
+- `swap_shadow()`
+- `load_increment()`
+- `load_decrement()`
+- `load_increment_repeat()`
+- `load_decrement_repeat()`
+- `bit`
+- `cmp`
+- `comare_increment`
+- `comare_decrement`
+- `comare_increment_repeat`
+- `comare_decrement_repeat`
+- `rotate_left_digits`
+- `rotate_right_digits`
+- `io_read`
+- `io_read_increment`
+- `io_read_decrement`
+- `io_read_increment_repeat`
+- `io_read_decrement_repeat`
+- `io_write`
+- `io_write_increment`
+- `io_write_decrement`
+- `io_write_increment_repeat`
+- `io_write_decrement_repeat`
+- `decrement_branch_not_zero`
+
+Addressing Modes
+
+- TODO
+
+Instructions
+
+```
+TODO
+```
+
+Documentation TODO
+
+### Game Boy
+
+Miscellaneous
+
+- `sizeof(*u8) = sizeof(u16)`
+- `sizeof(far *u8) = sizeof(u24)`
+- `carry` acts as a borrow flag in subtraction/comparison
+
+Registers
+
+- `a : u8` - accumulator
+- `b : u8`, `c : u8`, `d : u8`, `e : u8`, `h : u8`, `l : u8` - general registers
+- `af : u16` - accumulator + flags pair
+- `bc : u16`, `de : u8`, `hl : u8` - general register pairs
+- `zero : bool` - the zero flag, used to indicate if the result of the last operation resulted in the value 0.
+- `carry : bool` - the carry flag, used to indicate if the last operation resulted in a carry outside of the range 0 .. 255. For addition, the `carry` flag is `true` when an addition resulted in a carry, and `false` otherwise. For subtraction and comparison, the `carry` flag is `true` when there is a borrow (left-hand side was less than the right-hand side), and `false` otherwise. The `carry` also indicates the bit shifted out from a bit-shift operation.
+- `interrupt : bool` - the interrupt enable flag, used to indicate whether maskable interrupts should be activated.
+
+Intrinsics
+
+- `push(value)` - pushes a value to the stack.
+- `pop()` - pops a value from the stack.
+- `nop()` - does nothing, but takes 1 byte and 4 cycles.
+- `halt()` - halts execution until the next interrupt occurs. saves CPU and battery.
+- `stop()` - goes into a low-power sleep until a joy-pad interrupt occurs. also used after changing the Game Boy Color's speed to apply the change, by setting the joy-pad register to force an immediate wake.
+- `decimal_adjust()` - corrects the result in the accumulator after performing arithmetic on packed binary-coded decimal (BCD) values. put a call to this after an addition or subtraction involving packed BCD values.
+- `swap_digits(r)` - swaps the low and high nybbles of the register `r`.
+- `debug_break()` - emits an `ld b, b` nop opcode can be used to triggers a breakpoint in the Game Boy emulator BGB.
+- `bit(r, n)` - test bit `n` of the register `r`, and updates the `zero` flag.
+- `cmp(left, right)` - compares two values, by performing a subtraction without storing the result in memory. `zero` indicates whether `left == right`, `carry` indicates whether `left < right`.
+
+Addressing Modes
+
+- TODO
+
+Instructions
+
+```
+TODO
+```
+
+Documentation TODO
+
 ### WDC 65816
 
 Documentation TODO
 
 ### SPC 700
 
-Documentation TODO
+Miscellaneous
 
-### Zilog Z80
+- TODO
 
-Documentation TODO
+Registers
 
-### Game Boy
+- `a : u8` - accumulator
+- `x : u8` - index register x
+- `y : u8` - index register y
+- `sp : u8` - stack pointer register
+- `psw : u8` - processor status word register
+- `ya : u16` - ya register pair
+- `negative : bool`
+- `overflow : bool`
+- `direct_page : bool`
+- `interrupt : bool`
+- `zero : bool`
+- `carry : bool`
+
+Instrinsics
+
+- `push(value)`
+- `pop()`
+- `irqcall()`
+- `nop()`
+- `sleep()`
+- `stop()`
+- `swap_digits(a)`
+- `test_and_set(a, mem)`
+- `test_and_clear(a, mem)`
+- `divmod(ya, x)`
+- `decimal_adjust_add()`
+- `decimal_adjust_sub()`
+- `cmp(left, right)`
+- `compare_branch_not_equal(a, operand, destination)`
+- `decrement_branch_not_equal(operand, destination)`
+
+Addressing Modes
+
+- TODO
+
+Instructions
+
+```
+TODO
+```
 
 Documentation TODO
 
