@@ -77,7 +77,7 @@ endif
 
 .PHONY: clean all install
 	
-all: $(WIZ_OUT_DIR)/$(WIZ)
+all: $(WIZ_OUT_DIR) $(WIZ_OUT_DIR)/$(WIZ)
 
 $(WIZ_OUT_DIR):
 	mkdir $(WIZ_OUT_DIR)

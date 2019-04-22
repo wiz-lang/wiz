@@ -166,15 +166,22 @@ namespace wiz {
                 return boolean.placeholder ? "{bool}" : std::string(boolean.value ? "true" : "false");
             },
             [&](const Dereference& dereference) {
-                return "*(" + std::string(dereference.far ? "far " : "") + dereference.operand->toString() + ") : " + std::to_string(dereference.size * 8);
+                return "*("
+				+ dereference.operand->toString()
+				+ " as "
+				+ std::string(dereference.far ? "far " : "")
+				+ "*u" + std::to_string(dereference.size * 8)
+				+ ")";
             },
             [&](const Index& index) {
-                return "*(" +
-                std::string(index.far ? "far " : "")
+                return "*(("
                 + index.operand->toString()
                 + " + " + index.subscript->toString()
                 + (index.subscriptScale > 1 ? " * " + std::to_string(index.subscriptScale) : "")
-                + ") : " + std::to_string(index.size * 8);
+                + ") as "
+				+ std::string(index.far ? "far " : "")
+				+ "*u" + std::to_string(index.size * 8)
+				+ ")";
             },
             [&](const Integer& integer) {
                 return integer.placeholder ? "{integer}" : integer.value.toString();
@@ -548,15 +555,22 @@ namespace wiz {
                 return capturePattern.operandPattern->toString();
             },
             [&](const Dereference& dereferencePattern) {
-                return "*(" + std::string(dereferencePattern.far ? "far " : "") + dereferencePattern.operandPattern->toString() + ") : " + std::to_string(dereferencePattern.size * 8);
+                return "*("
+                + dereferencePattern.operandPattern->toString()
+                + " as "
+				+ std::string(dereferencePattern.far ? "far " : "")
+				+ "*u" + std::to_string(dereferencePattern.size * 8)
+				+ ")";
             },
             [&](const Index& indexPattern) {
-                return "*("
-                + std::string(indexPattern.far ? "far " : "")
+                return "*(("
                 + indexPattern.operandPattern->toString()
                 + " + " + indexPattern.subscriptPattern->toString()
                 + (indexPattern.subscriptScale > 1 ? " * " + std::to_string(indexPattern.subscriptScale) : "")
-                + ") : " + std::to_string(indexPattern.size * 8);
+                + ") as "
+				+ std::string(indexPattern.far ? "far " : "")
+				+ "*u" + std::to_string(indexPattern.size * 8)
+				+ ")";
             },
             [&](const IntegerAtLeast& atLeastPattern) {
                 return "{integer >= " + atLeastPattern.min.toString() + "}";
@@ -565,7 +579,7 @@ namespace wiz {
                 if (rangePattern.min == rangePattern.max) {
                     return rangePattern.min.toString();
                 }
-                return "{integer " + rangePattern.min.toString() + ".." + rangePattern.max.toString() + "}";
+                return "{" + rangePattern.min.toString() + ".." + rangePattern.max.toString() + "}";
             },
             [&](const Register& registerPattern) {
                 return registerPattern.definition->name.toString();

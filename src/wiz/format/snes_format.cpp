@@ -165,9 +165,9 @@ namespace wiz {
                 if (value != 0) {
                     auto logValue = log2(value);
                     if (value < 4096) {
-                        report->error("`expansion_ram_size` of \"" + std::to_string(value) + "\" is not supported (must be at least 4096 bytes)", ramSize->first->location);
+                        report->error("`ram_size` of \"" + std::to_string(value) + "\" is not supported (must be at least 4096 bytes)", ramSize->first->location);
                     } else if (value > (1U << logValue)) {
-                        report->error("`expansion_ram_size` of \"" + std::to_string(value) + "\" is not supported (must be a power-of-two)", ramSize->first->location);
+                        report->error("`ram_size` of \"" + std::to_string(value) + "\" is not supported (must be a power-of-two)", ramSize->first->location);
                     } else {
                         data[headerAddress + 0xD8] = static_cast<std::uint8_t>(log2(value) - log2(4096));
                         if (cartTypeLower >= 0x03) {

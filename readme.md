@@ -5,6 +5,17 @@ wiz
 
 Wiz is a high-level assembly language for writing homebrew software for retro console platforms.
 
+Contact
+-------
+
+- Please report issues in the GitHub issue tracker.
+- Project Website: http://wiz-lang.org/
+- Project Discord: https://discord.gg/BKnTg7N
+- Project GitHub: https://github.com/wiz-lang/wiz
+- My Twitter: https://twitter.com/eggboycolor
+- My Email: eggboycolor AT gmail DOT com
+- My Github: http://github.com/Bananattack
+
 Features
 --------
 
@@ -617,9 +628,33 @@ for x in 0 .. 255 {
 
 ### Return Statements
 
-A `return` statement is used to return from the currently executing function. If used in a function that has no return type, it cannot have a return value. If used in a function that has a return type, the return value must be of the same type.
+A `return` statement is used to return from the currently executing function.
 
-A `return` that exists outside of any function body is a low-level `return` instruction.
+```
+return;
+return if condition;
+```
+
+If used in a function that has no return type, it cannot have a return value. If used in a function that has a return type, the return value must be of the same type.
+
+Example:
+
+```
+func collect_egg() {
+    a = egg_count;
+    if a >= 5 {
+        return;
+    }
+
+    egg_count++;
+}
+
+func triple(value : u8 in b) : u8 in a {
+    return b + b + b;
+}
+```
+
+A `return` that exists outside of any function body is a low-level `return` instruction. This would pop a location from the stack and jump there.
 
 ### Tail-Call Statements
 
@@ -633,27 +668,41 @@ func call_subroutine(dest : u16 in hl) {
 
 ### Goto Statements
 
-A `goto` is a low-level form of branching which . All higher level branching constructs are internally implement
+A `goto` is a low-level form of branching which jumps to another part of the program. Most high-level control structures are internally implemented in terms of `goto`.
 
 ```
 goto destination;
 goto destination if condition;
 ```
 
-The destination of a `goto` can be a label, a function, or a function pointer expression. A `goto` always passes no arguments to its destination, so it should be used carefully. If a `goto` that passes arguments to a function is required, use a tail-call statement instead.
+The destination of a `goto` can be a label, a function, or a function pointer expression.
 
 Example:
 
 ```
+x--; goto there if zero;
+
 loop:
     goto loop;
+
+there:
 ```
+
+Code that uses `goto` should ensure that everything is already set up correctly before branching, because `goto` does not pass any arguments to its destination. If a `goto` that passes arguments to a function is required, use a tail-call statement of form `return f(arg, arg, arg)` instead.
 
 ### Break and Continue
 
 Loop statements such as `while`, `do` ... `while`, `for` have two forms of branching statements in their blocks: `break` and `continue`.
 
+```
+break;
+continue;
+break if condition;
+continue if condition;
+```
+
 A `break` statement will terminate a loop early, and jump ahead to the code that immediately follows a loop's block.
+
 A `continue` statement will skip to the next iteration of the loop. In `for` loops, this will skip to the code that performs an increment and branch. In `while` and `do` ... `while` loops, this will skip to the conditional branch of the loop.
 
 ### Functions and Labels
@@ -690,7 +739,6 @@ label:
 ```
 
 Labels or functions can be the target of call expressions, or `goto` statements.
-
 
 ### Inline Functions
 
@@ -774,9 +822,26 @@ Example:
 #[nmi] func vblank() {
     // ...
 }
+
+let INCLUDE_THIS_MESSAGE = true;
+
+#[compile_if(INCLUDE_THIS_MESSAGE)] const message = "HI THIS IS A CONDITIONALLY COMPILED MESSAGE";
+
 ```
 
-TODO: list all attributes as well as platform-specific ones
+Attributes
+
+- `compile_if(condition)` - indicates that some code should only be compiled if a particular compile-time boolean condition is `true`. If the condition is `false`, the code tagged with the attribute is not emitted.
+- `fallthrough` - indicates the function might fall through into the immediately following code, and disables the implicit return at the end of the function. Useful for tagging functions that are guaranteed to never return, or functions that are meant to fall into some other code afterwards.
+- `nmi` - indicates that a function handles a non-maskable interrupt request. All `return;` instructions will be translated into `nmireturn;` instead. (eg. `rti` on 6502, `retn` on Z80)
+- `irq` - indicates that a function handles a maskable interrupt request. All `return;` instructions will be translated into `irqreturn;` instead.  (eg. `rti` on 6502, `reti` on Z80)
+
+65816 Attributes
+
+- `mem8` - assumes the tagged statements will be using an 8-bit accumulator and main memory-related instructions. (eg. accumulator arithmetic, storing/loading from accumulator, bit-shifting accumulator/memory)
+- `mem16` - assumes the tagged statements will be using an 16-bit accumulator and main memory-related instructions.  (eg. accumulator arithmetic, storing/loading from accumulator, bit-shifting accumulator/memory)
+- `idx8` - assumes the tagged statements will be using 8-bit index registers and indexing-related instructions. (eg. indexing, storing/loading from index registers, push/pop)
+- `idx16` - assumes the tagged statements will be using 16-bit index registers and indexing-related instructions.  (eg. indexing, storing/loading from index registers, push/pop)
 
 ### Config Directives
 
@@ -926,7 +991,7 @@ typealias byte = u8;
     [expr, expr, expr] // array literal. [T; N]
     (a, b, c, d) // tuple literal (reserved but not implemented yet). (T, T2, T3, ..., TN)
 
-    a ~ b // concetenation [T; M] ~ [T; N] -> [T; M + N]
+    a ~ b // concatenation [T; M] ~ [T; N] -> [T; M + N]
 ```
 
 ### Imports
@@ -980,7 +1045,7 @@ The MOS 6502 was a very popular 8-bit CPU used by a number of 8-bit game console
 - Atari 8-bit family (400, 800, 1200, 800XL, 1200XL, etc)
 - Commodore 64
 - Commodore 128
-- Commodore VIC-@0
+- Commodore VIC-20
 - Apple II
 
 Miscellaneous:
@@ -996,7 +1061,7 @@ Registers:
 - `s : u8` - stack pointer register. decides the 
 - `p : u8` - processor flag register
 - `zero : bool` - the zero flag, used to indicate if the result of the last operation resulted in the value 0.
-- `carry : bool` - the carry flag, used to indicate if the last operation resulted in a carry outside of the range 0 .. 255. For addition, the `carry` flag is `true` when an addition resulted in a carry, and `false` otherwise. For subtraction and comparison, the `carry` flag is `false` when there is a borrow (left-hand side was less than the right-hand side), and `true` otherwise.
+- `carry : bool` - the carry flag, used to indicate if the last operation resulted in a carry outside of the range 0 .. 255. For addition, the `carry` flag is `true` when an addition resulted in a carry, and `false` otherwise. For subtraction and comparison, the `carry` flag is `false` when there is a borrow (left-hand side was less than the right-hand side), and `true` otherwise. The `carry` also indicates the bit shifted out from a bit-shift operation.
 - `negative : bool` - the negative flag, used to indicate the sign bit (bit 7) of the last operation.
 - `overflow : bool` - the overflow flag, used to indicate if the last operation resulted an arithmetic overflow. If an overflow happened, the sign bit (bit 7) of the result is flipped.
 - `decimal : bool` - the decimal flag, used to indicate whether decimal mode is active. If `true`, numbers are treated as if they are packed binary-coded decimal (BCD) format. If `false`, numbers are treated as binary numbers. Some 6502 CPUs like the 2A03/2A07 used in the NES do not have a decimal mode, so BCD arithmetic must be manually accomplished through software.
@@ -1011,115 +1076,121 @@ Intrinsics:
 - `pop(value)` - pushes the given value to the stack.
 - `nop()` - does nothing, and uses 1 byte and 2 cycles.
 
+Tests and Branches:
+
+- `a`, `x` and `y` can be used with comparison operators (`==`, `!=`, `<`, `>`, `<=`, or `>=`) inside conditional branches. A branch like `if a >= 5 { ... }` becomes `if { cmp(a, 5); } && carry { ... }`.
+- `a & mem == 0` or `a & mem != 0` can be used as a conditional branches. `if a & mem == 0 { ... }` becomes `if { bit(mem); } && zero { ... }` and `if a & mem != 0 { ... }` becomes `if { bit(mem) } && !zero { ... }` 
+- `mem $ 6` can be used as a conditional branch for testing bit 6 of memory. `if mem $ 6 { ... }` becomes `if { bit(mem); } && overflow { ... }` 
+- `mem $ 7` can be used as a conditional branch for testing bit 7 of memory. `if mem $ 7 { ... }` becomes `if { bit(mem); } && negative { ... }` 
 
 Addressing Modes:
 
-- `{integer 0..255}` - immediate
-- `*({integer 0..255}) : 8` - zero-page
-- `*({integer 0..255} + x) : 8` - zero-page indexed by x
-- `*({integer 0..255} + y) : 8` - zero-page indexed by y
-- `*(*({integer 0..255} + x) : 16) : 8` - zero-page indexed by x indirect
-- `*({integer 0..255} + y) : 8` - zero-page indexed by y
-- `*(*({integer 0..255}) : 16 + x) : 8` - zero-page indirect indexed by y
-- `*({integer 0..65535}) : 8` - absolute indexed by x
-- `*({integer 0..65535} + x) : 8` - absolute indexed by x
-- `*({integer 0..65535} + y) : 8` - absolute indexed by y
+- `{0..255}` - immediate
+- `*({0..255} as *u8)` - zero-page
+- `*(({0..255} + x) as *u8)` - zero-page indexed by x
+- `*(({0..255} + y) as *u8)` - zero-page indexed by y
+- `*(*(({0..255} + x) as *u16) as *u8)` - zero-page indexed by x indirect
+- `*(({0..255} + y) as *u8)` - zero-page indexed by y
+- `*((*({0..255} as *u16) + y) as *u8)` - zero-page indirect indexed by y
+- `*({0..65535} as *u8)` - absolute indexed by x
+- `*(({0..65535} + x) as *u8)` - absolute indexed by x
+- `*(({0..65535} + y) as *u8)` - absolute indexed by y
 
 Instructions:
 
 ```
-a = {integer 0..255}
-a = *({integer 0..255}) : 8
-a = *({integer 0..255} + x) : 8
-a = *(*({integer 0..255} + x) : 16) : 8
-a = *(*({integer 0..255}) : 16 + y) : 8
-a = *({integer 0..65535}) : 8
-a = *({integer 0..65535 + x}) : 8
-a = *({integer 0..65535 + y}) : 8
+a = {0..255}
+a = *({0..255} as *u8)
+a = *(({0..255} + x) as *u8)
+a = *(*(({0..255} + x) as *u16) as *u8)
+a = *(*(({0..255} as *u16) + y) as *u8)
+a = *({0..65535} as *u8)
+a = *(({0..65535} + x) as *u8)
+a = *(({0..65535} + y) as *u8)
 
-a += {integer 0..255}
-a += *({integer 0..255}) : 8
-a += *({integer 0..255} + x) : 8
-a += *(*({integer 0..255} + x) : 16) : 8
-a += *(*({integer 0..255}) : 16 + y) : 8
-a += *({integer 0..65535}) : 8
-a += *({integer 0..65535 + x}) : 8
-a += *({integer 0..65535 + y}) : 8
+a += {0..255}
+a += *({0..255} as *u8)
+a += *(({0..255} + x) as *u8)
+a += *(*(({0..255} + x) as *u16) as *u8)
+a += *(*(({0..255} as *u16) + y) as *u8)
+a += *({0..65535} as *u8)
+a += *(({0..65535} + x) as *u8)
+a += *(({0..65535} + y) as *u8)
 
-a +#= {integer 0..255}
-a +#= *({integer 0..255}) : 8
-a +#= *({integer 0..255} + x) : 8
-a +#= *(*({integer 0..255} + x) : 16) : 8
-a +#= *(*({integer 0..255}) : 16 + y) : 8
-a +#= *({integer 0..65535}) : 8
-a +#= *({integer 0..65535 + x}) : 8
-a +#= *({integer 0..65535 + y}) : 8
+a +#= {0..255}
+a +#= *({0..255} as *u8)
+a +#= *(({0..255} + x) as *u8)
+a +#= *(*(({0..255} + x) as *u16) as *u8)
+a +#= *(*(({0..255} as *u16) + y) as *u8)
+a +#= *({0..65535} as *u8)
+a +#= *(({0..65535} + x) as *u8)
+a +#= *(({0..65535} + y) as *u8)
 
-a -= {integer 0..255}
-a -= *({integer 0..255}) : 8
-a -= *({integer 0..255} + x) : 8
-a -= *(*({integer 0..255} + x) : 16) : 8
-a -= *(*({integer 0..255}) : 16 + y) : 8
-a -= *({integer 0..65535}) : 8
-a -= *({integer 0..65535 + x}) : 8
-a -= *({integer 0..65535 + y}) : 8
+a -= {0..255}
+a -= *({0..255} as *u8)
+a -= *(({0..255} + x) as *u8)
+a -= *(*(({0..255} + x) as *u16) as *u8)
+a -= *(*(({0..255} as *u16) + y) as *u8)
+a -= *({0..65535} as *u8)
+a -= *(({0..65535} + x) as *u8)
+a -= *(({0..65535} + y) as *u8)
 
-a -#= {integer 0..255}
-a -#= *({integer 0..255}) : 8
-a -#= *({integer 0..255} + x) : 8
-a -#= *(*({integer 0..255} + x) : 16) : 8
-a -#= *(*({integer 0..255}) : 16 + y) : 8
-a -#= *({integer 0..65535}) : 8
-a -#= *({integer 0..65535 + x}) : 8
-a -#= *({integer 0..65535 + y}) : 8
+a -#= {0..255}
+a -#= *({0..255} as *u8)
+a -#= *(({0..255} + x) as *u8)
+a -#= *(*(({0..255} + x) as *u16) as *u8)
+a -#= *(*(({0..255} as *u16) + y) as *u8)
+a -#= *({0..65535} as *u8)
+a -#= *(({0..65535} + x) as *u8)
+a -#= *(({0..65535} + y) as *u8)
 
-a |= {integer 0..255}
-a |= *({integer 0..255}) : 8
-a |= *({integer 0..255} + x) : 8
-a |= *(*({integer 0..255} + x) : 16) : 8
-a |= *(*({integer 0..255}) : 16 + y) : 8
-a |= *({integer 0..65535}) : 8
-a |= *({integer 0..65535 + x}) : 8
-a |= *({integer 0..65535 + y}) : 8
+a |= {0..255}
+a |= *({0..255} as *u8)
+a |= *(({0..255} + x) as *u8)
+a |= *(*(({0..255} + x) as *u16) as *u8)
+a |= *(*(({0..255} as *u16) + y) as *u8)
+a |= *({0..65535} as *u8)
+a |= *(({0..65535} + x) as *u8)
+a |= *(({0..65535} + y) as *u8)
 
-a &= {integer 0..255}
-a &= *({integer 0..255}) : 8
-a &= *({integer 0..255} + x) : 8
-a &= *(*({integer 0..255} + x) : 16) : 8
-a &= *(*({integer 0..255}) : 16 + y) : 8
-a &= *({integer 0..65535}) : 8
-a &= *({integer 0..65535 + x}) : 8
-a &= *({integer 0..65535 + y}) : 8
+a &= {0..255}
+a &= *({0..255} as *u8)
+a &= *(({0..255} + x) as *u8)
+a &= *(*(({0..255} + x) as *u16) as *u8)
+a &= *(*(({0..255} as *u16) + y) as *u8)
+a &= *({0..65535} as *u8)
+a &= *(({0..65535} + x) as *u8)
+a &= *(({0..65535} + y) as *u8)
 
-a ^= {integer 0..255}
-a ^= *({integer 0..255}) : 8
-a ^= *({integer 0..255} + x) : 8
-a ^= *(*({integer 0..255} + x) : 16) : 8
-a ^= *(*({integer 0..255}) : 16 + y) : 8
-a ^= *({integer 0..65535}) : 8
-a ^= *({integer 0..65535 + x}) : 8
-a ^= *({integer 0..65535 + y}) : 8
+a ^= {0..255}
+a ^= *({0..255} as *u8)
+a ^= *(({0..255} + x) as *u8)
+a ^= *(*(({0..255} + x) as *u16) as *u8)
+a ^= *(*(({0..255} as *u16) + y) as *u8)
+a ^= *({0..65535} as *u8)
+a ^= *(({0..65535} + x) as *u8)
+a ^= *(({0..65535} + y) as *u8)
 
-{integer 0..255} = a
-*({integer 0..255}) : 8 = a
-*({integer 0..255} + x) : 8 = a
-*(*({integer 0..255} + x) : 16) : 8 = a
-*(*({integer 0..255}) : 16 + y) : 8 = a
-*({integer 0..65535}) : 8 = a
-*({integer 0..65535 + x}) : 8 = a
-*({integer 0..65535 + y}) : 8 = a
+{0..255} = a
+*({0..255} as *u8) = a
+*(({0..255} + x) as *u8) = a
+*(*(({0..255} + x) as *u16) as *u8) = a
+*(*(({0..255} as *u16) + y) as *u8) = a
+*({0..65535} as *u8) = a
+*(({0..65535} + x) as *u8) = a
+*(({0..65535} + y) as *u8) = a
 
-cmp(a, {integer 0..255})
-cmp(a, *({integer 0..255}) : 8)
-cmp(a, *({integer 0..255} + x) : 8)
-cmp(a, *(*({integer 0..255} + x) : 16) : 8)
-cmp(a, *(*({integer 0..255}) : 16 + y) : 8)
-cmp(a, *({integer 0..65535}) : 8)
-cmp(a, *({integer 0..65535 + x}) : 8)
-cmp(a, *({integer 0..65535 + y}) : 8)
+cmp(a, {0..255})
+cmp(a, *({0..255} as *u8))
+cmp(a, *(({0..255} + x) as *u8))
+cmp(a, *(*(({0..255} + x) as *u16) as *u8))
+cmp(a, *(*(({0..255} as *u16) + y) as *u8))
+cmp(a, *({0..65535} as *u8))
+cmp(a, *(({0..65535} + x) as *u8))
+cmp(a, *(({0..65535} + y) as *u8))
 
-bit(*({integer 0..255}) : 8)
-bit(*({integer 0..65535}) : 8)
+bit(*({0..255} as *u8))
+bit(*({0..65535} as *u8))
 
 a = x
 x = a
@@ -1128,33 +1199,33 @@ y = a
 x = s
 s = x
 
-x = {integer 0..255};
-x = *({integer 0..255}) : 8
-x = *({integer 0..255} + y) : 8
-x = *({integer 0..65535}) : 8
-x = *({integer 0..65535} + y) : 8
+x = {0..255};
+x = *({0..255} as *u8)
+x = *(({0..255} + y) as *u8)
+x = *({0..65535} as *u8)
+x = *(({0..65535} + y) as *u8)
 
-*({integer 0..255}) : 8 = x
-*({integer 0..255} + y) : 8 = x
-*({integer 0..65535}) : 8 = x
+*({0..255} as *u8) = x
+*(({0..255} + y) as *u8) = x
+*({0..65535} as *u8) = x
 
-cmp(x, {integer 0..255})
-cmp(x, *({integer 0..255}) : 8)
-cmp(x, *({integer 0..65535}) : 8)
+cmp(x, {0..255})
+cmp(x, *({0..255} as *u8))
+cmp(x, *({0..65535} as *u8))
 
-y = {integer 0..255};
-y = *({integer 0..255}) : 8
-y = *({integer 0..255} + y) : 8
-y = *({integer 0..65535}) : 8
-y = *({integer 0..65535} + y) : 8
+y = {0..255};
+y = *({0..255} as *u8)
+y = *(({0..255} + y) as *u8)
+y = *({0..65535} as *u8)
+y = *(({0..65535} + y) as *u8)
 
-*({integer 0..255}) : 8 = y
-*({integer 0..255} + x) : 8 = y
-*({integer 0..65535}) : 8 = y
+*({0..255} as *u8) = y
+*(({0..255} + x) as *u8) = y
+*({0..65535} as *u8) = y
 
-cmp(y, {integer 0..255})
-cmp(y, *({integer 0..255}) : 8)
-cmp(y, *({integer 0..65535}) : 8)
+cmp(y, {0..255})
+cmp(y, *({0..255} as *u8))
+cmp(y, *({0..65535} as *u8))
 
 push(a)
 push(p)
@@ -1162,79 +1233,79 @@ push(p)
 a = pop()
 p = pop()
 
-++*({integer 0..255}) : 8
-++*({integer 0..255} + x) : 8
-++*({integer 0..65535}) : 8
-++*({integer 0..65535} + x) : 8
+++*({0..255} as *u8)
+++*(({0..255} + x) as *u8)
+++*({0..65535} as *u8)
+++*(({0..65535} + x) as *u8)
 ++x
 ++y
 
---*({integer 0..255}) : 8
---*({integer 0..255} + x) : 8
---*({integer 0..65535}) : 8
---*({integer 0..65535} + x) : 8
+--*({0..255} as *u8)
+--*(({0..255} + x) as *u8)
+--*({0..65535} as *u8)
+--*(({0..65535} + x) as *u8)
 --x
 --y
 
 a = ~a
 a = -a
 
-a <<= {integer 0 .. 7}
-*({integer 0..255}) : 8 <<= {integer 0 .. 7}
-*({integer 0..255} + x) : 8 <<= {integer 0 .. 7}
-*({integer 0..65535}) : 8 <<= {integer 0 .. 7}
-*({integer 0..65535} + x) : 8 <<= {integer 0 .. 7}
+a <<= {0..7}
+*({0..255} as *u8) <<= {0..7}
+*(({0..255} + x) as *u8) <<= {0..7}
+*({0..65535} as *u8) <<= {0..7}
+*(({0..65535} + x) as *u8) <<= {0..7}
 
-a <<<= {integer 0 .. 7}
-*({integer 0..255}) : 8 <<<= {integer 0 .. 7}
-*({integer 0..255} + x) : 8 <<<= {integer 0 .. 7}
-*({integer 0..65535}) : 8 <<<= {integer 0 .. 7}
-*({integer 0..65535} + x) : 8 <<<= {integer 0 .. 7}
+a <<<= {0..7}
+*({0..255} as *u8) <<<= {0..7}
+*(({0..255} + x) as *u8) <<<= {0..7}
+*({0..65535} as *u8) <<<= {0..7}
+*(({0..65535} + x) as *u8) <<<= {0..7}
 
-a >>>= {integer 0 .. 7}
-*({integer 0..255}) : 8 >>>= {integer 0 .. 7}
-*({integer 0..255} + x) : 8 >>>= {integer 0 .. 7}
-*({integer 0..65535}) : 8 >>>= {integer 0 .. 7}
-*({integer 0..65535} + x) : 8 >>>= {integer 0 .. 7}
+a >>>= {0..7}
+*({0..255} as *u8) >>>= {0..7}
+*(({0..255} + x) as *u8) >>>= {0..7}
+*({0..65535} as *u8) >>>= {0..7}
+*(({0..65535} + x) as *u8) >>>= {0..7}
 
-a <<<<#= {integer 0 .. 7}
-*({integer 0..255}) : 8 <<<<#= {integer 0 .. 7}
-*({integer 0..255} + x) : 8 <<<<#= {integer 0 .. 7}
-*({integer 0..65535}) : 8 <<<<#= {integer 0 .. 7}
-*({integer 0..65535} + x) : 8 <<<<#= {integer 0 .. 7}
+a <<<<#= {0..7}
+*({0..255} as *u8) <<<<#= {0..7}
+*(({0..255} + x) as *u8) <<<<#= {0..7}
+*({0..65535} as *u8) <<<<#= {0..7}
+*(({0..65535} + x) as *u8) <<<<#= {0..7}
 
-a >>>>#= {integer 0 .. 7}
-*({integer 0..255}) : 8 >>>>#= {integer 0 .. 7}
-*({integer 0..255} + x) : 8 >>>>#= {integer 0 .. 7}
-*({integer 0..65535}) : 8 >>>>#= {integer 0 .. 7}
-*({integer 0..65535} + x) : 8 >>>>#= {integer 0 .. 7}
+a >>>>#= {0..7}
+*({0..255} as *u8) >>>>#= {0..7}
+*(({0..255} + x) as *u8) >>>>#= {0..7}
+*({0..65535} as *u8) >>>>#= {0..7}
+*(({0..65535} + x) as *u8) >>>>#= {0..7}
 
-goto {integer -128..127} if zero
-goto {integer -128..127} if !zero
-goto {integer -128..127} if carry
-goto {integer -128..127} if !carry
-goto {integer -128..127} if negative
-goto {integer -128..127} if !negative
-goto {integer -128..127} if overflow
-goto {integer -128..127} if !overflow
+goto {-128..127} if zero
+goto {-128..127} if !zero
+goto {-128..127} if carry
+goto {-128..127} if !carry
+goto {-128..127} if negative
+goto {-128..127} if !negative
+goto {-128..127} if overflow
+goto {-128..127} if !overflow
 
-goto {integer 0..65535}
-^goto {integer 0..65535} if zero
-^goto {integer 0..65535} if !zero
-^goto {integer 0..65535} if carry
-^goto {integer 0..65535} if !carry
-^goto {integer 0..65535} if negative
-^goto {integer 0..65535} if !negative
-^goto {integer 0..65535} if overflow
-^goto {integer 0..65535} if !overflow
+goto {0..65535}
+^goto {0..65535} if zero
+^goto {0..65535} if !zero
+^goto {0..65535} if carry
+^goto {0..65535} if !carry
+^goto {0..65535} if negative
+^goto {0..65535} if !negative
+^goto {0..65535} if overflow
+^goto {0..65535} if !overflow
 
-goto *({integer 0..65535}) : 16
+goto *({0..65535} as *u16)
 
 return
 irqreturn
 nmireturn
 
-irqcall({integer 0..255})
+irqcall({0..255})
 
 nop()
 
@@ -1257,28 +1328,28 @@ The MOS 65C02 is like the MOS 6502, but also has some extra instructions.
 Extra Instructions:
 
 ```
-a = *(*({integer 0..255}) : 16) : 8
-a += *(*({integer 0..255}) : 16) : 8
-a +#= *(*({integer 0..255}) : 16) : 8
-a -= *(*({integer 0..255}) : 16) : 8
-a -#= *(*({integer 0..255}) : 16) : 8
-a |= *(*({integer 0..255}) : 16) : 8
-a &= *(*({integer 0..255}) : 16) : 8
-a ^= *(*({integer 0..255}) : 16) : 8
-*(*({integer 0..255}) : 16) : 8 = a
-cmp(a, *(*({integer 0..255}) : 16) : 8)
+a = *(*({0..255} as *u16) as *u8)
+a += *(*({0..255} as *u16) as *u8)
+a +#= *(*({0..255} as *u16) as *u8)
+a -= *(*({0..255} as *u16) as *u8)
+a -#= *(*({0..255} as *u16) as *u8)
+a |= *(*({0..255} as *u16) as *u8)
+a &= *(*({0..255} as *u16) as *u8)
+a ^= *(*({0..255} as *u16) as *u8)
+*(*({0..255} as *u16) as *u8) = a
+cmp(a, *(*({0..255} as *u16) as *u8))
 
-bit({integer 0..255})
-bit(*({integer 0..255} + x) : 8)
-bit(*({integer 0..65535} + x) : 8)
+bit({0..255})
+bit(*(({0..255} + x) as *u8))
+bit(*(({0..65535} + x) as *u8))
 
 ++a
 --a
 
 goto {-128..127}
-^goto {integer 0..65535}
+^goto {0..65535}
 
-goto *(*({integer 0..65535} + x) : 16) : 16
+goto *(({0..65535} + x) as *u16)
 
 push(x)
 push(y)
@@ -1286,16 +1357,16 @@ push(y)
 x = pop()
 y = pop()
 
-*({integer 0..255}) : 8 = 0
-*({integer 0..255} + x) : 8 = 0
-*({integer 0..65535}) : 8 = 0
-*({integer 0..65535} + x) : 8 = 0
+*({0..255} as *u8) = 0
+*(({0..255} + x) as *u8) = 0
+*({0..65535} as *u8) = 0
+*(({0..65535} + x) as *u8) = 0
 
-test_and_reset(*({integer 0..255}) : 8)
-test_and_reset(*({integer 0..65535}) : 8)
+test_and_reset(*({0..255} as *u8))
+test_and_reset(*({0..65535} as *u8))
 
-test_and_set(*({integer 0..255}) : 8)
-test_and_set(*({integer 0..65535}) : 8)
+test_and_set(*({0..255} as *u8))
+test_and_set(*({0..65535} as *u8))
 ```
 
 ### Rockwell 65C02
@@ -1305,13 +1376,13 @@ The Rockwell 65C02 is like the MOS 65C02, but also has some extra instructions.
 Extra Instructions:
 
 ```
-goto {-128..127} if (*({integer 0..255}) : 8) $ {integer 0..7}
-goto {-128..127} if !(*({integer 0..255}) : 8) $ {integer 0..7}
-^goto {0..65535} if (*({integer 0..255}) : 8) $ {integer 0..7}
-^goto {0..65535} if !(*({integer 0..255}) : 8) $ {integer 0..7}
+goto {-128..127} if *({0..255} as *u8) $ {0..7}
+goto {-128..127} if !(*({0..255} as *u8)) $ {0..7}
+^goto {0..65535} if *({0..255} as *u8) $ {0..7}
+^goto {0..65535} if !(*({0..255} as *u8)) $ {0..7}
 
-(*({integer 0..255}) : 8) $ ({integer 0..7}) = false
-(*({integer 0..255}) : 8) $ ({integer 0..7}) = true
+*({0..255} as *u8) $ {0..7} = false
+*({0..255} as *u8) $ {0..7} = true
 ```
 
 ### WDC 65C02
@@ -1359,63 +1430,63 @@ swap(a, x)
 swap(a, y)
 swap(x, y)
 
-*(x) : 8 += {integer 0..255}
-*(x) : 8 += *({integer 0..255}) : 8
-*(x) : 8 += *({integer 0..255} + x) : 8
-*(x) : 8 += *(*({integer 0..255} + x) : 16) : 8
-*(x) : 8 += *(*({integer 0..255}) : 16 + y) : 8
-*(x) : 8 += *({integer 0..65535}) : 8
-*(x) : 8 += *({integer 0..65535 + x}) : 8
-*(x) : 8 += *({integer 0..65535 + y}) : 8
+*(x as *u8) += {0..255}
+*(x as *u8) += *({0..255} as *u8)
+*(x as *u8) += *(({0..255} + x) as *u8)
+*(x as *u8) += *(*(({0..255} + x) as *u16) as *u8)
+*(x as *u8) += *(*(({0..255} as *u16) + y) as *u8)
+*(x as *u8) += *({0..65535} as *u8)
+*(x as *u8) += *(({0..65535} + x) as *u8)
+*(x as *u8) += *(({0..65535} + y) as *u8)
 
-*(x) : 8 +#= {integer 0..255}
-*(x) : 8 +#= *({integer 0..255}) : 8
-*(x) : 8 +#= *({integer 0..255} + x) : 8
-*(x) : 8 +#= *(*({integer 0..255} + x) : 16) : 8
-*(x) : 8 +#= *(*({integer 0..255}) : 16 + y) : 8
-*(x) : 8 +#= *({integer 0..65535}) : 8
-*(x) : 8 +#= *({integer 0..65535 + x}) : 8
-*(x) : 8 +#= *({integer 0..65535 + y}) : 8
+*(x as *u8) +#= {0..255}
+*(x as *u8) +#= *({0..255} as *u8)
+*(x as *u8) +#= *(({0..255} + x) as *u8)
+*(x as *u8) +#= *(*(({0..255} + x) as *u16) as *u8)
+*(x as *u8) +#= *(*(({0..255} as *u16) + y) as *u8)
+*(x as *u8) +#= *({0..65535} as *u8)
+*(x as *u8) +#= *(({0..65535} + x) as *u8)
+*(x as *u8) +#= *(({0..65535} + y) as *u8)
 
-*(x) : 8 |= {integer 0..255}
-*(x) : 8 |= *({integer 0..255}) : 8
-*(x) : 8 |= *({integer 0..255} + x) : 8
-*(x) : 8 |= *(*({integer 0..255} + x) : 16) : 8
-*(x) : 8 |= *(*({integer 0..255}) : 16 + y) : 8
-*(x) : 8 |= *({integer 0..65535}) : 8
-*(x) : 8 |= *({integer 0..65535 + x}) : 8
-*(x) : 8 |= *({integer 0..65535 + y}) : 8
+*(x as *u8) |= {0..255}
+*(x as *u8) |= *({0..255} as *u8)
+*(x as *u8) |= *(({0..255} + x) as *u8)
+*(x as *u8) |= *(*(({0..255} + x) as *u16) as *u8)
+*(x as *u8) |= *(*(({0..255} as *u16) + y) as *u8)
+*(x as *u8) |= *({0..65535} as *u8)
+*(x as *u8) |= *(({0..65535} + x) as *u8)
+*(x as *u8) |= *(({0..65535} + y) as *u8)
 
-*(x) : 8 &= {integer 0..255}
-*(x) : 8 &= *({integer 0..255}) : 8
-*(x) : 8 &= *({integer 0..255} + x) : 8
-*(x) : 8 &= *(*({integer 0..255} + x) : 16) : 8
-*(x) : 8 &= *(*({integer 0..255}) : 16 + y) : 8
-*(x) : 8 &= *({integer 0..65535}) : 8
-*(x) : 8 &= *({integer 0..65535 + x}) : 8
-*(x) : 8 &= *({integer 0..65535 + y}) : 8
+*(x as *u8) &= {0..255}
+*(x as *u8) &= *({0..255} as *u8)
+*(x as *u8) &= *(({0..255} + x) as *u8)
+*(x as *u8) &= *(*(({0..255} + x) as *u16) as *u8)
+*(x as *u8) &= *(*(({0..255} as *u16) + y) as *u8)
+*(x as *u8) &= *({0..65535} as *u8)
+*(x as *u8) &= *(({0..65535} + x) as *u8)
+*(x as *u8) &= *(({0..65535} + y) as *u8)
 
-*(x) : 8 ^= {integer 0..255}
-*(x) : 8 ^= *({integer 0..255}) : 8
-*(x) : 8 ^= *({integer 0..255} + x) : 8
-*(x) : 8 ^= *(*({integer 0..255} + x) : 16) : 8
-*(x) : 8 ^= *(*({integer 0..255}) : 16 + y) : 8
-*(x) : 8 ^= *({integer 0..65535}) : 8
-*(x) : 8 ^= *({integer 0..65535 + x}) : 8
-*(x) : 8 ^= *({integer 0..65535 + y}) : 8
+*(x as *u8) ^= {0..255}
+*(x as *u8) ^= *({0..255} as *u8)
+*(x as *u8) ^= *(({0..255} + x) as *u8)
+*(x as *u8) ^= *(*(({0..255} + x) as *u16) as *u8)
+*(x as *u8) ^= *(*(({0..255} as *u16) + y) as *u8)
+*(x as *u8) ^= *({0..65535} as *u8)
+*(x as *u8) ^= *(({0..65535} + x) as *u8)
+*(x as *u8) ^= *(({0..65535} + y) as *u8)
 
 
-vdc_select = {integer 0..255}
-vdc_data_l = {integer 0..255}
-vdc_data_h = {integer 0..255}
+vdc_select = {0..255}
+vdc_data_l = {0..255}
+vdc_data_h = {0..255}
 
-transfer_alternate_to_increment({integer 0..65535}, {integer 0..65535}, {integer 0..65535})
-transfer_increment_to_alternate({integer 0..65535}, {integer 0..65535}, {integer 0..65535})
-transfer_decrement_to_decrement({integer 0..65535}, {integer 0..65535}, {integer 0..65535})
-transfer_increment_to_increment({integer 0..65535}, {integer 0..65535}, {integer 0..65535})
-transfer_increment_to_fixed({integer 0..65535}, {integer 0..65535}, {integer 0..65535})
+transfer_alternate_to_increment({0..65535}, {0..65535}, {0..65535})
+transfer_increment_to_alternate({0..65535}, {0..65535}, {0..65535})
+transfer_decrement_to_decrement({0..65535}, {0..65535}, {0..65535})
+transfer_increment_to_increment({0..65535}, {0..65535}, {0..65535})
+transfer_increment_to_fixed({0..65535}, {0..65535}, {0..65535})
 
-mpr_set({integer 0..255}, a)
+mpr_set({0..255}, a)
 mpr0 = a
 mpr1 = a
 mpr2 = a
@@ -1433,10 +1504,10 @@ a = mpr5
 a = mpr6
 a = mpr7
 
-tst({integer 0..255}, *({integer 0..255}) : 8)
-tst({integer 0..255}, *({integer 0..255} + x) : 8)
-tst({integer 0..255}, *({integer 0..65535} + x) : 8)
-tst({integer 0..255}, *({integer 0..65535} + x) : 8)
+tst({0..255}, *({0..255} as *u8))
+tst({0..255}, *(({0..255} + x) as *u8))
+tst({0..255}, *(({0..65535} + x) as *u8))
+tst({0..255}, *(({0..65535} + x) as *u8))
 ```
 
 ### WDC 65816
@@ -1626,9 +1697,9 @@ Config Options:
 - `region` - The region that this cart is being released for. (Defaults to `"international"`)
 
 ```
-japan
-export
-international
+"japan"
+"export"
+"international"
 ```
 
 ### Super Nintendo Entertainment System / Super Famicom
@@ -1695,12 +1766,12 @@ Config options:
 "australian"
 ```
 
-- `ram_size` - the size in bytes of on-cartridge RAM that this cart uses. If non-zero, the size must be power of two and greater than 4096 bytes. (Defaults to 0)
-- `expansion_ram_size` - the size in bytes of on-cartridge RAM that the expansion uses. If non-zero, the size must be power of two and greater than 4096 bytes. (Defaults to 0)
+- `ram_size` (integer) - the size in bytes of on-cartridge RAM that this cart uses. If non-zero, the size must be power of two and greater than 4096 bytes. (Defaults to 0)
+- `expansion_ram_size` (integer) - the size in bytes of on-cartridge RAM that the expansion uses. If non-zero, the size must be power of two and greater than 4096 bytes. (Defaults to 0)
 - `battery` (bool) - whether or not this cart uses battery backed save RAM. (Defaults to `false`)
-- `special_version` - the special version of this cart. (Defaults to 0)
-- `cart_subtype` - the sub-type identifier to use for this cart. (Defaults to 0)
-- `title` - The title of the cart, as a 21-character string. (Defaults to `""`)
+- `special_version` (integer) - the special version of this cart. (Defaults to 0)
+- `cart_subtype` (integer) - the sub-type identifier to use for this cart. (Defaults to 0)
+- `title` (string) - The title of the cart, as a 21-character string. (Defaults to `""`)
 
 The License
 -----------
@@ -1762,14 +1833,3 @@ Other Notes
 - This project has existed in other forms before this release. For the old version of Wiz that was written in the D programming language, see the `release/wiz-d-legacy` branch of this repo.
 - For the even older esoteric language project that turned into Wiz, see: http://github.com/Bananattack/nel-d
 - While this project has been in development for a long time, this release is considered an "early development" build. It may contain issues and instabilities, or parts of the language that are subject to change. Help improving this is appreciated.
-
-Contact
--------
-
-- Please report issues in the GitHub issue tracker.
-- Project Website: http://wiz-lang.org/
-- Project Discord: https://discord.gg/BKnTg7N
-- Project GitHub: https://github.com/wiz-lang/wiz
-- My Twitter: https://twitter.com/eggboycolor
-- My Email: eggboycolor AT gmail DOT com
-- My Github: http://github.com/Bananattack
