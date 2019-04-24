@@ -77,8 +77,11 @@ namespace wiz {
             std::fseek(f, current, SEEK_SET);
 
             std::string result(size, '\0');
-            std::fread(&result[0], size, 1, f);
-            return result;
+            if (std::fread(&result[0], size, 1, f) == 1) {
+                return result;
+            } else {
+                return "";
+            }
         }
     }
 

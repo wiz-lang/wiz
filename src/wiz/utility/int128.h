@@ -16,9 +16,9 @@
 
 namespace wiz {
     struct Int128 {
-        static_assert(sizeof(int) <= sizeof(std::uint64_t));
-        static_assert(sizeof(long) <= sizeof(std::uint64_t));
-        static_assert(sizeof(long long) <= sizeof(std::uint64_t));
+        static_assert(sizeof(int) <= sizeof(std::uint64_t), "wiz::Int128(int) constructor assumes sizeof(int) <= sizeof(std::uint64_t) currently.");
+        static_assert(sizeof(long) <= sizeof(std::uint64_t), "wiz::Int128(long) constructor assumes sizeof(long) <= sizeof(std::uint64_t) currently.");
+        static_assert(sizeof(long long) <= sizeof(std::uint64_t), "wiz::Int128(long long) constructor assumes sizeof(long long) <= sizeof(std::uint64_t) currently.");
 
         Int128()
         : low(0), high(0) {}
