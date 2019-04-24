@@ -1,4 +1,9 @@
+config {
+    map_mode = "lorom",
+    fastrom = true,
+}
+
 bank zeropage @ 0x00 : [vardata; 256];
 bank stack @ 0x100 : [vardata; 256];
-bank prg @ 0x8000 : [constdata; 0x8000];
+bank prg @ 0x808000 : [constdata; 0x8000];
 bank far_ram @ 0xFE8000 : [vardata; 0x8000];

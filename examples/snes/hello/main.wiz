@@ -97,8 +97,6 @@ in prg {
         snes.dma.mdma_enable = a = snes.dma.ENABLE_0;
     }
 
-    far func bar() {}
-
     #[fallthrough] func main() {
         nointerrupt = true;
         decimal = false;
@@ -111,109 +109,101 @@ in prg {
 
             hardware_init();
 
-            /*a = *wow2;
-            *wow2 = a;
-            wow2[yy] = a;
-            a = wow2[yy];
-            while true {}
-            goto bar;
-            bar();
-            goto (far &main as far func);
-            goto wow3;
-            ^goto (&wow3 as func);
-            goto *(&wow3 as *func);
-            goto *((&wow3 as u16 + xx) as *func);
-            (*((&wow3 as u16 + xx) as *func))();
-            goto *(&wow4 as *far func);
-            goto wow4; // FIXME: should be equivalent to 'goto *(&wow4 as *far func);'
-*/
+            snes.rom.speed = a = snes.rom.SPEED_FAST;
 
-            w0 = xx = &spc_main[0] as u16;
-            xx = 0x200;
-            yy = spc_main.len - 2;
-            snes2spc.transfer(xx, w0, yy);
-            xx = *(&spc_main[spc_main.len - 2] as *u16);
-            snes2spc.dispatch(xx);
+            push(a = 0x80);
+            data_bank = pop(); 
 
-            snes.ppu.vram_control = a = snes.ppu.VRAM_CONTROL_INCREMENT_1 | snes.ppu.VRAM_CONTROL_SIZE_16;
-            snes.ppu.vram_address_hl = xx = 0;
+            return fast_main();
+        }
+    }
 
-            snes.dma0.control = a = snes.dma.CONTROL_MODE_AB;
-            snes.dma0.mdma_dest = a = <:&snes.ppu.vram_write_data_l;
-            snes.dma0.src_address_hl = xx = &hello_tiles_chr as u16;
-            snes.dma0.src_address_bank = 0;
-            snes.dma0.mdma_size_hl = xx = sizeof(typeof(hello_tiles_chr)) / sizeof(u16);
+    #[fallthrough, mem8, idx16] far func fast_main() {
+        w0 = xx = &spc_main[0] as u16;
+        xx = 0x200;
+        yy = spc_main.len - 2;
+        snes2spc.transfer(xx, w0, yy);
+        xx = *(&spc_main[spc_main.len - 2] as *u16);
+        snes2spc.dispatch(xx);
 
-            snes.ppu.cgram_address = 0;
+        snes.ppu.vram_control = a = snes.ppu.VRAM_CONTROL_INCREMENT_1 | snes.ppu.VRAM_CONTROL_SIZE_16;
+        snes.ppu.vram_address_hl = xx = 0;
 
-            snes.dma1.control = a = snes.dma.CONTROL_MODE_A;
-            snes.dma1.mdma_dest = a = <:&snes.ppu.cgram_write_data;
-            snes.dma1.src_address_hl = xx = &bkg_palette_data as u16;
-            snes.dma1.src_address_bank = 0;
-            snes.dma1.mdma_size_hl = xx = sizeof(typeof(bkg_palette_data));
+        snes.dma0.control = a = snes.dma.CONTROL_MODE_AB;
+        snes.dma0.mdma_dest = a = <:&snes.ppu.vram_write_data_l;
+        snes.dma0.src_address_hl = xx = &hello_tiles_chr as u16;
+        snes.dma0.src_address_bank = 0;
+        snes.dma0.mdma_size_hl = xx = sizeof(typeof(hello_tiles_chr)) / sizeof(u16);
 
-            snes.dma.mdma_enable = a = snes.dma.ENABLE_0 | snes.dma.ENABLE_1;
+        snes.ppu.cgram_address = 0;
 
-            let BG1_TILEMAP_BASE_ADDRESS = 0x1000;
-            let BG12_TILESET_BASE_ADDRESS = 0x0000;
+        snes.dma1.control = a = snes.dma.CONTROL_MODE_A;
+        snes.dma1.mdma_dest = a = <:&snes.ppu.cgram_write_data;
+        snes.dma1.src_address_hl = xx = &bkg_palette_data as u16;
+        snes.dma1.src_address_bank = 0;
+        snes.dma1.mdma_size_hl = xx = sizeof(typeof(bkg_palette_data));
 
-            let TEXT_X = 10;
-            let TEXT_Y = 13;
-            let TEXT_TILEMAP_DEST = BG1_TILEMAP_BASE_ADDRESS + TEXT_Y * 32 + TEXT_X;
+        snes.dma.mdma_enable = a = snes.dma.ENABLE_0 | snes.dma.ENABLE_1;
 
-            snes.ppu.vram_control = a = snes.ppu.VRAM_CONTROL_INCREMENT_1 | snes.ppu.VRAM_CONTROL_SIZE_8;
-            snes.ppu.vram_address_hl = xx = TEXT_TILEMAP_DEST;
+        let BG1_TILEMAP_BASE_ADDRESS = 0x1000;
+        let BG12_TILESET_BASE_ADDRESS = 0x0000;
 
-            snes.dma0.control = a = snes.dma.CONTROL_MODE_A;
-            snes.dma0.mdma_dest = a = <:&snes.ppu.vram_write_data_l;
-            snes.dma0.src_address_hl = xx = &message as u16;
-            snes.dma0.src_address_bank = 0;
-            snes.dma0.mdma_size_hl = xx = sizeof(typeof(message));
+        let TEXT_X = 10;
+        let TEXT_Y = 13;
+        let TEXT_TILEMAP_DEST = BG1_TILEMAP_BASE_ADDRESS + TEXT_Y * 32 + TEXT_X;
 
-            snes.dma.mdma_enable = a = snes.dma.ENABLE_0;
+        snes.ppu.vram_control = a = snes.ppu.VRAM_CONTROL_INCREMENT_1 | snes.ppu.VRAM_CONTROL_SIZE_8;
+        snes.ppu.vram_address_hl = xx = TEXT_TILEMAP_DEST;
 
-            snes.ppu.bg1_tilemap = a = BG1_TILEMAP_BASE_ADDRESS >> snes.ppu.BG_TILEMAP_ADDRESS_BIT_ALIGN << snes.ppu.BG_TILEMAP_ADDRESS_SHIFT_LEFT;
-            snes.ppu.bg12_tileset = a = BG12_TILESET_BASE_ADDRESS >> snes.ppu.BG_TILESET_ADDRESS_BIT_ALIGN;
-            snes.ppu.bg_mode = a = 2;
-            snes.ppu.screen_enable_mask = a = snes.ppu.SCREEN_ENABLE_BG1;
-            snes.ppu.brightness = a = 0xF;
+        snes.dma0.control = a = snes.dma.CONTROL_MODE_A;
+        snes.dma0.mdma_dest = a = <:&snes.ppu.vram_write_data_l;
+        snes.dma0.src_address_hl = xx = &message as u16;
+        snes.dma0.src_address_bank = 0;
+        snes.dma0.mdma_size_hl = xx = sizeof(typeof(message));
 
-            mosaic = 0;
+        snes.dma.mdma_enable = a = snes.dma.ENABLE_0;
 
-            while true {
-                while !snes.ppu.hvbjoy_status $ snes.ppu.HVBJOY_STATUS_VBLANK_BIT {}
+        snes.ppu.bg1_tilemap = a = BG1_TILEMAP_BASE_ADDRESS >> snes.ppu.BG_TILEMAP_ADDRESS_BIT_ALIGN << snes.ppu.BG_TILEMAP_ADDRESS_SHIFT_LEFT;
+        snes.ppu.bg12_tileset = a = BG12_TILESET_BASE_ADDRESS >> snes.ppu.BG_TILESET_ADDRESS_BIT_ALIGN;
+        snes.ppu.bg_mode = a = 2;
+        snes.ppu.screen_enable_mask = a = snes.ppu.SCREEN_ENABLE_BG1;
+        snes.ppu.brightness = a = 0xF;
 
-                snes.ppu.mosaic = a = ((mosaic >>> 4) << 4) | 0x1;
-                mosaic = a = mosaic + 0x08;
+        mosaic = 0;
 
-                a = timer;
+        while true {
+            while !snes.ppu.hvbjoy_status $ snes.ppu.HVBJOY_STATUS_VBLANK_BIT {}
 
-                mem16();
-                #[mem16] {
-                    aa &= 0xFF;
-                    yy = aa <<= 1;
-                }
-                mem8();
+            snes.ppu.mosaic = a = ((mosaic >>> 4) << 4) | 0x1;
+            mosaic = a = mosaic + 0x08;
 
-                xx = *((&sine_table as u16 + yy) as *u16);
-                w0 = xx;
+            a = timer;
 
-                mem16();
-                #[mem16] {
-                    aa = w0;
-
-                    inline for in 1 .. 10 { cmp(aa, 0x8000); aa >>>>#= 1; }
-
-                    w0 = aa;
-                }
-                mem8();
-
-                snes.ppu.bg1_scroll_y = a = <:w0;
-                snes.ppu.bg1_scroll_y = a = >:w0;
-                ++timer;
- 
-                while snes.ppu.hvbjoy_status $ snes.ppu.HVBJOY_STATUS_VBLANK_BIT {}
+            mem16();
+            #[mem16] {
+                aa &= 0xFF;
+                yy = aa <<= 1;
             }
+            mem8();
+
+            xx = *((&sine_table as u16 + yy) as *u16);
+            w0 = xx;
+
+            mem16();
+            #[mem16] {
+                aa = w0;
+
+                inline for in 1 .. 10 { cmp(aa, 0x8000); aa >>>>#= 1; }
+
+                w0 = aa;
+            }
+            mem8();
+
+            snes.ppu.bg1_scroll_y = a = <:w0;
+            snes.ppu.bg1_scroll_y = a = >:w0;
+            ++timer;
+
+            while snes.ppu.hvbjoy_status $ snes.ppu.HVBJOY_STATUS_VBLANK_BIT {}
         }
     }
 
@@ -234,5 +224,5 @@ in prg {
     const minirpg_sprites_chr = embed "minirpg_sprites.chr";
     const spc_main = embed "spc_main.bin";
 
-    const @ 0xFFFC = main;
+    const @ 0x80FFFC = main;
 }

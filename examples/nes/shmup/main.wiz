@@ -43,6 +43,23 @@ in prg {
         // Wait for the second PPU vertical blank
         do {} while !nes.ppu.status$7;
 
+        // Read PPU status to reset the PPU high/low latch.
+        a = nes.ppu.status;
+        // Now setup the PPU for copying to the nametable.
+        nes.ppu.address = a = >:nes.ppu.ADDRESS_NAMETABLE_DATA;
+        nes.ppu.address = a = <:nes.ppu.ADDRESS_NAMETABLE_DATA;
+        // Clear the nametable.
+        x = >:nes.ppu.NAMETABLE_SIZE * 2;
+        do {
+            y = 0;
+            do {
+                nes.ppu.data = a;
+                y++;
+            } while !zero;
+
+            x--;
+        } while !zero;
+
         {
             y = 0;
             x = nes.ppu.PALETTE_SIZE * nes.ppu.PALETTE_COUNT;

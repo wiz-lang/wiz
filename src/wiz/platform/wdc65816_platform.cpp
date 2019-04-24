@@ -601,8 +601,8 @@ namespace wiz {
             [](Report* report, const Bank* bank, std::vector<std::uint8_t>& buffer, const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists, SourceLocation location) {
                 buffer.insert(buffer.end(), options.opcode.begin(), options.opcode.end());
 
-                const auto base = static_cast<int>(bank->getAddress().absolutePosition.get());
-                const auto dest = static_cast<int>(captureLists[options.parameter[0]][0]->variant.get<InstructionOperand::Integer>().value);
+                const auto base = static_cast<std::int32_t>(bank->getAddress().absolutePosition.get() & 0xFFFF);
+                const auto dest = static_cast<std::int32_t>(captureLists[options.parameter[0]][0]->variant.get<InstructionOperand::Integer>().value);
                 const auto offset = dest - base - 2;
                 if (offset >= -128 && offset <= 127) {
                     buffer.push_back(offset < 0
@@ -623,7 +623,7 @@ namespace wiz {
             [](Report* report, const Bank* bank, std::vector<std::uint8_t>& buffer, const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists, SourceLocation location) {
                 buffer.insert(buffer.end(), options.opcode.begin(), options.opcode.end());
 
-                const auto base = static_cast<std::int32_t>(bank->getAddress().absolutePosition.get());
+                const auto base = static_cast<std::int32_t>(bank->getAddress().absolutePosition.get() & 0xFFFF);
                 const auto dest = static_cast<std::int32_t>(captureLists[options.parameter[0]][0]->variant.get<InstructionOperand::Integer>().value);
                 const auto offset = dest - base - 3;
                 if (offset >= -32768 && offset <= 32767) {
