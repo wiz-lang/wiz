@@ -11,43 +11,11 @@ bank chr : [chrdata; 8192];
 import "nes";
 
 in zeropage {
-    var t0, t1, t2, t3, t4, t5, t6, t7 : u8;
+    var b0, b1, b2, b3, b4, b5, b6, b7 : u8;
+    var ptr0 @ &b0, ptr2 @ &b2 : *u8;
 }
 
 in prg {
-    func load_palette() {
-        a = nes.ppu.status;
-        nes.ppu.address = a = >:nes.ppu.ADDRESS_PALETTE_DATA;
-        nes.ppu.address = a = <:nes.ppu.ADDRESS_PALETTE_DATA;
-        x = 0;
-
-        do {
-            nes.ppu.data = a = palette[x];
-            x++;
-        } while x != nes.ppu.PALETTE_SIZE * nes.ppu.PALETTE_COUNT;
-    }
-
-    func print_text() {
-        let START_X = 10;
-        let START_Y = 13;
-        let TILE_ADDRESS = nes.ppu.ADDRESS_NAMETABLE_DATA + START_Y * 32 + START_X;
-        
-        // Read PPU status to reset its state.
-        a = nes.ppu.status;
-        // Now setup the PPU for copying tiles.
-        nes.ppu.address = a = >:TILE_ADDRESS;
-        nes.ppu.address = a = <:TILE_ADDRESS;
-        
-        x = 0;
-
-        while {
-            a = message[x]; 
-        } && !zero {
-            x++;
-            nes.ppu.data = a;
-        }
-    }
-
     func main() {
         // Disable decimal arithmetic (though not actually supported on 2A03 anyway)
         decimal = false;
@@ -68,8 +36,54 @@ in prg {
             x++;
         } while x != 2;
 
-        load_palette();
-        print_text();
+        // Read PPU status to reset the PPU high/low latch.
+        a = nes.ppu.status;
+        // Now setup the PPU for copying to the nametable.
+        nes.ppu.address = a = >:nes.ppu.ADDRESS_NAMETABLE_DATA;
+        nes.ppu.address = a = <:nes.ppu.ADDRESS_NAMETABLE_DATA;
+        // Clear the nametable.
+        x = >:nes.ppu.NAMETABLE_SIZE * 2;
+        do {
+            y = 0;
+            do {
+                nes.ppu.data = a;
+                y++;
+            } while !zero;
+
+            x--;
+        } while !zero;
+
+        // Read PPU status to reset the PPU high/low latch.
+        a = nes.ppu.status;
+        // Now setup the PPU for copying to the palette.
+        nes.ppu.address = a = >:nes.ppu.ADDRESS_PALETTE_DATA;
+        nes.ppu.address = a = <:nes.ppu.ADDRESS_PALETTE_DATA;
+        // Clear the palette.
+        x = 0;            
+        do {
+            nes.ppu.data = a = palette[x];
+            x++;
+        } while x != palette.len;
+
+        {
+            let START_X = 10;
+            let START_Y = 13;
+            let TILE_ADDRESS = nes.ppu.ADDRESS_NAMETABLE_DATA + START_Y * 32 + START_X;
+
+            // Read PPU status to reset the PPU high/low latch.
+            a = nes.ppu.status;
+            // Now setup the PPU for copying to the nametable.
+            nes.ppu.address = a = >:TILE_ADDRESS;
+            nes.ppu.address = a = <:TILE_ADDRESS;            
+            // Copy the message.
+            x = 0;
+            while {
+                a = message[y];
+            } && !zero {
+                y++;
+                nes.ppu.data = a;
+            }
+        }
 
         a = nes.ppu.status; 
         nes.ppu.scroll = a = 0;
