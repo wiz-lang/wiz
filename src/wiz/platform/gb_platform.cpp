@@ -382,7 +382,7 @@ namespace wiz {
 
                     const auto sourceRegisterOperand = std::get<0>(sourceRegister);
 
-                    builtins.emplaceInstruction(InstructionSignature(InstructionType(std::get<0>(op)), 0, {sourceRegisterOperand}), encodingImplicit, InstructionOptions(opcode, {}, {}));
+                    builtins.emplaceInstruction(InstructionSignature(InstructionType(std::get<0>(op)), 0, {sourceRegisterOperand}), encodingImplicit, InstructionOptions(opcode, {}, {zero}));
                 }
             }
         }
