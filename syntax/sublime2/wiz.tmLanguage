@@ -102,7 +102,7 @@
         </dict>                
         <dict>
             <key>match</key>
-            <string>\b(bank|const|embed|enum|export|func|import|let|namespace|private|public|struct|union|var)\b</string>
+            <string>\b(bank|const|embed|enum|export|far|func|import|let|namespace|private|public|struct|union|var)\b</string>
             <key>name</key>
             <string>keyword.other.wiz</string>
         </dict>
@@ -114,7 +114,7 @@
         </dict>
         <dict>
             <key>match</key>
-            <string>\b(alignof|as|by|is|sizeof|typeof)\b</string>
+            <string>\b(alignof|as|by|is|sizeof|typeof|offsetof)\b</string>
             <key>name</key>
             <string>keyword.operator.wiz</string>
         </dict>

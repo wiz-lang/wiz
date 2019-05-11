@@ -1344,6 +1344,36 @@ namespace wiz {
                         makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(typeDefinition), expression->location),
                         ExpressionInfo::Flags {}));
             },
+            [&](const Expression::OffsetOf& offsetOf) {
+                const auto reducedTypeExpression = reduceTypeExpression(offsetOf.type.get());
+                if (!reducedTypeExpression) {
+                    return FwdUniquePtr<const Expression>();
+                }
+                if (const auto resolvedIdentifierType = reducedTypeExpression->variant.tryGet<TypeExpression::ResolvedIdentifier>()) {
+                    if (const auto structDefinition = resolvedIdentifierType->definition->variant.tryGet<Definition::Struct>()) {
+                        if (const auto memberDefinition = structDefinition->environment->findLocalMemberDefinition(offsetOf.field)) {
+                            const auto& structMemberDefinition = memberDefinition->variant.get<Definition::StructMember>();
+
+                            if (structMemberDefinition.offset.hasValue()) {
+                                return makeFwdUnique<const Expression>(Expression::IntegerLiteral(Int128(*structMemberDefinition.offset)), expression->location,
+                                    ExpressionInfo(EvaluationContext::CompileTime,
+                                        makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(builtins.getDefinition(Builtins::DefinitionType::IExpr)), expression->location),
+                                        ExpressionInfo::Flags {}));
+                            } else {
+                                report->error("offset of field `" + offsetOf.field.toString() + "` in type `" + getTypeName(reducedTypeExpression.get()) + "` could not be resolved yet", expression->location);
+                                return FwdUniquePtr<const Expression>();                
+                            }
+                        } else {
+                            report->error("`" + getTypeName(reducedTypeExpression.get()) + "` has no field named `" + offsetOf.field.toString() + "`", expression->location);
+                            return FwdUniquePtr<const Expression>();                
+                        }
+                    }
+                }
+
+                report->error("type `" + getTypeName(reducedTypeExpression.get()) + "` passed to `offsetof` is not a `struct` or `union` type", expression->location);
+
+                return FwdUniquePtr<const Expression>();                
+            },
             [&](const Expression::RangeLiteral& rangeLiteral) {
                 auto reducedStart = reduceExpression(rangeLiteral.start.get());
                 auto reducedEnd = reduceExpression(rangeLiteral.end.get());
@@ -3168,6 +3198,7 @@ namespace wiz {
                 }
                 return false;
             },
+            [&](const Expression::OffsetOf& offsetOf) { return false; },
             [&](const Expression::RangeLiteral&) { return false; },
             [&](const Expression::ResolvedIdentifier& resolvedIdentifier) {
                 const auto definition = resolvedIdentifier.definition;
@@ -4220,6 +4251,7 @@ namespace wiz {
             [&](const Expression::IntegerLiteral& integerLiteral) {
                 return makeFwdUnique<InstructionOperand>(InstructionOperand::Integer(integerLiteral.value));
             },
+            [&](const Expression::OffsetOf& offsetOf) { return FwdUniquePtr<InstructionOperand>(); },
             [&](const Expression::RangeLiteral&) { return FwdUniquePtr<InstructionOperand>(); },
             [&](const Expression::ResolvedIdentifier& resolvedIdentifier) {
                 return createOperandFromResolvedIdentifier(expression, resolvedIdentifier.definition);
@@ -4311,6 +4343,7 @@ namespace wiz {
                 [&](const Expression::FieldAccess&) { return true; },
                 [&](const Expression::Identifier&) { return true; },
                 [&](const Expression::IntegerLiteral&) { return true; },
+                [&](const Expression::OffsetOf& offsetOf) { return false; },
                 [&](const Expression::RangeLiteral&) { return true; },
                 [&](const Expression::ResolvedIdentifier&) { return true; },
                 [&](const Expression::SideEffect&) { return false; },

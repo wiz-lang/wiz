@@ -76,7 +76,8 @@ namespace wiz {
     const char* const unaryOperatorSymbols[static_cast<std::size_t>(UnaryOperatorKind::Count)] = {
         "(none)",
         "&",
-        "&",
+        "far &",
+        "~",
         "()",
         "*",
         "!",
@@ -93,7 +94,7 @@ namespace wiz {
         "(none)",
         "address-of `&`",
         "far address-of `far &`",
-        "bitwise negation `&`",
+        "bitwise negation `~`",
         "grouping `()`",
         "indirection `*`",
         "logical negation `!`",
@@ -225,6 +226,13 @@ namespace wiz {
             [&](const IntegerLiteral& integerLiteral) {
                 return makeFwdUnique<const Expression>(
                     IntegerLiteral(integerLiteral.value, integerLiteral.suffix),
+                    location, std::move(info));
+            },
+            [&](const OffsetOf& offsetOf) {
+                return makeFwdUnique<const Expression>(
+                    OffsetOf(
+                        offsetOf.type ? offsetOf.type->clone() : nullptr,
+                        offsetOf.field),
                     location, std::move(info));
             },
             [&](const RangeLiteral& rangeLiteral) {

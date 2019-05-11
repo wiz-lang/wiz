@@ -36,6 +36,7 @@ namespace wiz {
         Let,
         Namespace,
         NmiReturn,
+        OffsetOf,
         Private,
         Public,
         Return,

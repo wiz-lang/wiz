@@ -2068,6 +2068,26 @@ namespace wiz {
                         }
                         return nullptr;
                     }
+                    case Keyword::OffsetOf: {
+                        nextToken(); // IDENTIFIER (keyword `offsetof`)
+                        if (expectTokenType(TokenType::LeftParenthesis)) { // `(`
+                            auto type = parseType();
+                            if (expectTokenType(TokenType::Comma)) { // `,`
+                                // IDENTIFIER
+                                if (token.type == TokenType::Identifier && token.keyword == Keyword::None) {
+                                    StringView name = token.text;
+                                    nextToken();
+                                    expectTokenType(TokenType::RightParenthesis);
+                                    return makeFwdUnique<const Expression>(Expression::OffsetOf(std::move(type), name), location, Optional<ExpressionInfo>());
+                                } else {
+                                    reject(token, "identifier after `,`"_sv, true);
+                                    expectTokenType(TokenType::RightParenthesis);
+                                    return nullptr;
+                                }
+                            }
+                        }
+                        return nullptr;
+                    }
                     case Keyword::Embed: {
                         nextToken(); // IDENTIFIER (keyword `embed`)
                         if (token.type == TokenType::String) {

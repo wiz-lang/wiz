@@ -254,6 +254,17 @@ namespace wiz {
                 StringView suffix;
             };
 
+            struct OffsetOf {
+                OffsetOf(
+                    FwdUniquePtr<const TypeExpression> type,
+                    StringView field)
+                : type(std::move(type)),
+                field(field) {}
+
+                FwdUniquePtr<const TypeExpression> type;
+                StringView field;
+            };
+
             struct RangeLiteral {
                 RangeLiteral(
                     FwdUniquePtr<const Expression> start,
@@ -393,6 +404,7 @@ namespace wiz {
                 FieldAccess,
                 Identifier,
                 IntegerLiteral,
+                OffsetOf,
                 RangeLiteral,
                 ResolvedIdentifier,
                 SideEffect,

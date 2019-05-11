@@ -37,6 +37,7 @@ namespace wiz {
             "let",
             "namespace",
             "nmireturn",
+            "offsetof",
             "private",
             "public",
             "return",
