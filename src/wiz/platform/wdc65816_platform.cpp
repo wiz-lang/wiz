@@ -902,8 +902,8 @@ namespace wiz {
             TransferOp {patternAA, patternSS, 0, 0x3B},
             TransferOp {patternSS, patternAA, 0, 0x1B},
 
-            TransferOp {patternA, patternDirectPageRegister, 0, 0x7B},
-            TransferOp {patternDirectPageRegister, patternA, 0, 0x5B},
+            TransferOp {patternAA, patternDirectPageRegister, 0, 0x7B},
+            TransferOp {patternDirectPageRegister, patternAA, 0, 0x5B},
 
             TransferOp {patternX, patternY, modeIdx8, 0xBB},
             TransferOp {patternY, patternX, modeIdx8, 0x9B},
