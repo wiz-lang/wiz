@@ -8,6 +8,7 @@
 namespace wiz {
     namespace {
         const std::size_t SnesHeaderSize = 0x30;
+        const std::size_t SnesTitleMaxLength = 21;
         const std::size_t MinRomSize = 128 * 1024;
         //const std::size_t RomBankSize = 32 * 1024;
         const std::size_t MaxTotalRomSize = 8 * 1024U * 1024U;
@@ -112,6 +113,7 @@ namespace wiz {
         }
 
         memset(&data[headerAddress + 0xB0], 0, SnesHeaderSize);
+        memset(&data[headerAddress + 0xC0], ' ', SnesTitleMaxLength);
         data[headerAddress + 0xD6] = mapModeSetting;
         data[headerAddress + 0xDA] = 0x33;
         data[headerAddress + 0xDC] = 0xFF;
@@ -142,7 +144,7 @@ namespace wiz {
         if (const auto cartSubType = config.checkInteger(report, "cart_subtype"_sv, false)) {
             data[headerAddress + 0xBF] = static_cast<std::uint8_t>(cartSubType->second);
         }
-        if (const auto title = config.checkFixedString(report, "title"_sv, 21, false)) {
+        if (const auto title = config.checkFixedString(report, "title"_sv, SnesTitleMaxLength, false)) {
             memcpy(&data[headerAddress + 0xC0], title->second.getData(), title->second.getLength());
         }
 
