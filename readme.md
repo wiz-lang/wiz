@@ -1753,6 +1753,8 @@ Config options:
 "vrc4b"
 "vrc4d"
 "vrc6b"
+"action-53"
+"unrom512"
 "bnrom"
 "rambo1"
 "gxrom"
@@ -1765,6 +1767,7 @@ Config options:
 "vrc1"
 "n109"
 "vrc7"
+"gtrom"
 "txsrom"
 "tqrom"
 "24c01"
@@ -1836,7 +1839,7 @@ Config options:
 - `gbc_compatible` (bool) - Whether or not this cart is compatible with Game Boy Color features. If `true`, the cart will boot with Game Boy Color functionality when played on a Game Boy Color compatible system. A GBC-compatible game can still be played on an original DMG-compatible model of Game Boy. (Defaults to `false`)
 - `gbc_exclusive` (bool) - Whether or not this cart is exclusive to the Game Boy Color. If `true`, the cart will boot with Game Boy Color functionality when played on a Game Boy Color compatible system. Takes precedence over `gbc_compatible` if it is `true`. A GBC-exclusive game should not be played on an original DMG-compatible model of Game Boy. However, it is still up to the program to detect if it is being played on a Game Boy Color system, and stop if an incompatible system is used. (Defaults to `false`)
 - `sgb_compatible` (bool) - Whether or not this cart is compatible with Super Game Boy features. If `true`, the cart is able to use extra functionality on a Super Game Boy, allowing communication with the Super Game Boy program through the Game Boy joypad port. Most emulators will expect a SGB border to be uploaded if this flag is enabled. (Defaults to `false`)
-- `ram_size` (integer) - The amount of on-cartridge RAM that this cart has available. (Defaults to 0) Must be a size that is supported by the Game Boy header format. FIXME: 65536 byte (64 KiB) and 131072 byte (128 KiB) RAM sizes are not currently supported. Possible values include:
+- `ram_size` (integer) - The amount of on-cartridge RAM that this cart has available. (Defaults to 0) Must be a size that is supported by the Game Boy header format. Possible values include:
 
 ```
 0
