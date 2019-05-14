@@ -116,9 +116,14 @@ namespace wiz {
         if (const auto ramSize = config.checkInteger(report, "ram_size"_sv, false)) {
             const auto value = ramSize->second;
             
+            // See: http://gbdev.gg8.se/wiki/articles/The_Cartridge_Header#0149_-_RAM_Size
             std::uint8_t setting = 0x00;
-            if (value > Int128(32 * 1024)) {
-                report->error("`ram_size` of " + value.toString() + " is too large (max is 32 KiB)", ramSize->first->location);
+            if (value > Int128(128 * 1024)) {
+                report->error("`ram_size` of " + value.toString() + " is too large (max is 128 KiB)", ramSize->first->location);
+            } else if (Int128(64 * 1024) < value && value <= Int128(128 * 1024)) {
+                setting = 0x04; // yes, 128K is 4, but 64K is 5... they didn't really have a consistent numbering scheme for the ram size.
+            } else if (Int128(32 * 1024) < value && value <= Int128(64 * 1024)) {
+                setting = 0x05;
             } else if (Int128(8 * 1024) < value && value <= Int128(32 * 1024)) {
                 setting = 0x03;
             } else if (Int128(2 * 1024) < value && value <= Int128(8 * 1024)) {
