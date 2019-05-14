@@ -10,7 +10,7 @@ namespace sgb_util {
     // Send a single 16-byte packet to the Super Game Boy hardware.
     // Packets are 16-bytes and zero-padded as necessary. Exact structure depends on the command
     // Arguments: hl = pointer to 16-byte packet.    
-    func send_packet() {
+    func send_packet(packet_ptr : u16 in hl) {
         gb.joy.ctrl = a = 0;
         gb.joy.ctrl = a = 0x30;
 
@@ -51,11 +51,11 @@ namespace sgb_util {
     // Send multiple 16-byte SGB-formatted packets in a row.
     //
     // Arguments: hl = pointer to a sequence of 16-byte packets, terminated by a single 0xFF byte.
-    #[fallthrough] func send_packet_sequence() {
+    #[fallthrough] func send_packet_sequence(sequence_ptr : u16 in hl) {
         while true {
             a = *(hl as *u8);
             return if a == 0xFF;
-            send_packet();
+            send_packet(hl);
         }
     }
 
@@ -64,7 +64,7 @@ namespace sgb_util {
     func detect() {
         // Turn on 2P mode.
         hl = &packet_2_player_mode as u16;
-        send_packet();
+        send_packet(hl);
 
         // If joystick id != 0 in the next two reads, we successfully switched to multiplayer mode (which means we're on a Super Game Boy)
         joy.read_raw();
@@ -82,7 +82,7 @@ namespace sgb_util {
 
         // Turn off 1P mode.
         hl = &packet_1_player_mode as u16;
-        send_packet();
+        send_packet(hl);
     }
 
     const packet_1_player_mode : [u8] = [gb.super.MLT_REQ | 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];

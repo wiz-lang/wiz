@@ -12,6 +12,10 @@
 //
 // After: hl += bc, bc = 0, a is preserved.
 func memset(dest : u16 in hl, value : u8 in a, count : u16 in bc) {
+    memset_inline(dest, value, count);
+}
+
+inline func memset_inline(dest : u16 in hl, value : u8 in a, count : u16 in bc) {
     c++; b++;
     goto start;
 repeat:
@@ -20,6 +24,7 @@ start:
     c--; goto repeat if !zero;
     b--; goto repeat if !zero;
 }
+
 
 // Copies count bytes from source to destination.
 //
@@ -35,6 +40,10 @@ start:
 //
 // After: de += bc, hl += bc, bc = 0
 func memcpy(dest : u16 in de, source : u16 in hl, count : u16 in bc) {
+    memcpy_inline(dest, source, count);
+}
+
+inline func memcpy_inline(dest : u16 in de, source : u16 in hl, count : u16 in bc) {
     c++; b++;
     goto start;
 repeat:

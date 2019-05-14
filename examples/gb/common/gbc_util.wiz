@@ -2,7 +2,7 @@ import "gb";
 import "banks";
 
 namespace gbc_util {
-    in ram {
+    in hram {
         var gbc_detected : u8;
         var gba_detected : u8;
     }

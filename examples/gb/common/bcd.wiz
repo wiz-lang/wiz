@@ -5,14 +5,14 @@ namespace bcd {
     // Result:
     //      chl = a 6-digit bcd number
     // Dirty: all registers
-    func from_byte() {
+    func from_byte(value : u8 in l) {
         b = 8;
         de = 0x0000;
 
         do {
             l <<= 1;
             a = e;
-            a +#= a
+            a +#= a;
             decimal_adjust();
             e = a;
 
@@ -34,13 +34,13 @@ namespace bcd {
     // Result:
     //      chl = a 6-digit bcd number
     // Dirty: all registers
-    func from_word() {
+    func from_word(value : u16 in hl) {
         bc = 0x1000;
         de = 0x0000;
 
         do {
             l <<= 1;
-            h <<<#= 1;
+            h <<<<#= 1;
             a = e;
             a +#= a;
             decimal_adjust();
@@ -68,34 +68,34 @@ namespace bcd {
     // Result:
     //      d = number of digits (1-6)
     // Dirty: a, d
-    func get_length() {
+    func get_length(high : u8 in c, mid : u8 in h, low : u8 in l) : u8 in d {
         d = 6;
 
         a = c & 0xF0;
-        return if !zero;
+        return d if !zero;
         d--;
         a = c & 0x0F;
-        return if !zero;
+        return d if !zero;
         d--;
         a = h & 0xF0;
-        return if !zero;
+        return d if !zero;
         d--;
         a = h & 0x0F;
-        return if !zero;
+        return d if !zero;
         d--;
         a = l & 0xF0;
-        return if !zero;
+        return d if !zero;
         d--;
+        return d;
     }
 
     // Arguments:
+    //      de = destination string buffer. must be at least 7 characters: 6 digits + 0 terminator.
     //      chl = a 6-digit bcd number
-    //      de = the pointer to the start of the string area (7 characters: 6 digits + 0 terminator)
     // Dirty: all registers
-    func to_string() {
+    func to_string(dest : u16 in de, high : u8 in c, mid : u8 in h, low : u8 in l) {
         push(de);
-        get_length();
-        b = d;
+        b = d = get_length(c, h, l);
         de = pop();
 
         e = a = e + b;
@@ -103,37 +103,37 @@ namespace bcd {
         *(de as *u8) = a = 0;
 
         de--;
-        *(de as *u8) = a = l & 0x0F + '0';
+        a = l;
+        *(de as *u8) = a = (a & 0x0F) + '0';
         b--;
         return if zero;
 
         de--;
-        *(de as *u8) = a = l & 0xF0;
-        swap_digits(a);
-        a += '0';
+        a = l; swap_digits(a);
+        *(de as *u8) = a = (a & 0x0F) + '0';
         b--;
         return if zero;
 
         de--;
-        *(de as *u8) = a = h & 0x0F + '0';
+        a = h;
+        *(de as *u8) = a = (a & 0x0F) + '0';
         b--;
         return if zero;
 
         de--;
-        *(de as *u8) = a = h & 0xF0;
-        swap_digits(a);
-        a += '0';
+        a = h; swap_digits(a);
+        *(de as *u8) = a = (a & 0x0F) + '0';
         b--;
         return if zero;
 
         de--;
-        *(de as *u8) = a = c & 0x0F + '0';
+        a = c;
+        *(de as *u8) = a = (a & 0x0F) + '0';
         b--;
         return if zero;
 
         de--;
-        *(de as *u8) = a = c & 0xF0;
-        swap_digits(a);
-        a += '0';
+        a = c; swap_digits(a);
+        *(de as *u8) = a = (a & 0x0F) + '0';
     }
 }

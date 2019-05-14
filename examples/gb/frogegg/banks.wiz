@@ -4,6 +4,7 @@ bank rom @ 0x0000 : [constdata; 0x4000];
 bank rom2 @ 0x4000 : [constdata; 0x4000];
 bank ram @ 0xC000 : [vardata; 0x1000];
 bank ram2 @ 0xD000 : [vardata; 0x1000];
+bank hram @ 0xFF80 : [vardata; 128];
 
 in rom @ 0x40 {
     push(af);
