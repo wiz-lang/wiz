@@ -503,8 +503,8 @@ namespace wiz {
             builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(bit), 0, {patternAbsoluteIndexedByX}), encodingU16Operand, InstructionOptions({0x3C}, {0}, {}));
             // ++a
             // --a
-            builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternA}), encodingImplicit, InstructionOptions({0x3A}, {}, {zero}));
-            builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternA}), encodingImplicit, InstructionOptions({0x1A}, {}, {zero}));
+            builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternA}), encodingImplicit, InstructionOptions({0x1A}, {}, {zero}));
+            builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternA}), encodingImplicit, InstructionOptions({0x3A}, {}, {zero}));
             // branch always
             builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16}), encodingPCRelativeI8Operand, InstructionOptions({0x80}, {1}, {}));
             // indirect jump indexed by x

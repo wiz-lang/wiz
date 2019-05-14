@@ -52,7 +52,7 @@ namespace wiz {
         const auto patternY = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(y));
         const auto patternS = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("s"), decl)));
         const auto patternP = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("p"), decl)));
-        const auto patternDirectPageRegister = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("direct_page"), decl)));
+        const auto patternDirectPageRegister = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("direct_page"), decl)));
         const auto patternProgramBank = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("program_bank"), decl)));
         const auto patternDataBank = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("data_bank"), decl)));
 
@@ -101,6 +101,7 @@ namespace wiz {
         const auto mem8_idx16 = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("mem8_idx16"), decl);
         const auto mem16_idx8 = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("mem16_idx8"), decl);
         const auto mem16_idx16 = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("mem16_idx16"), decl);
+        const auto debug_break = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("debug_break"), decl);
 
         // Non-register operands.
         const auto patternFalse = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Boolean(false));
@@ -958,8 +959,8 @@ namespace wiz {
         builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, modeIdx16, {patternXX}), encodingImplicit, InstructionOptions({0xE8}, {}, {zero}));
         builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, modeIdx8, {patternY}), encodingImplicit, InstructionOptions({0xC8}, {}, {zero}));
         builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, modeIdx16, {patternYY}), encodingImplicit, InstructionOptions({0xC8}, {}, {zero}));
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, modeMem8, {patternA}), encodingImplicit, InstructionOptions({0x3A}, {}, {zero}));
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, modeMem16, {patternAA}), encodingImplicit, InstructionOptions({0x3A}, {}, {zero}));
+        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, modeMem8, {patternA}), encodingImplicit, InstructionOptions({0x1A}, {}, {zero}));
+        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, modeMem16, {patternAA}), encodingImplicit, InstructionOptions({0x1A}, {}, {zero}));
         // decrement
         builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, modeMem8, {patternDirectU8}), encodingU8Operand, InstructionOptions({0xC6}, {0}, {zero}));
         builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, modeMem8 | modeIdx8, {patternDirectIndexedByXU8}), encodingU8Operand, InstructionOptions({0xD6}, {0}, {zero}));
@@ -977,8 +978,8 @@ namespace wiz {
         builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, modeIdx16, {patternXX}), encodingImplicit, InstructionOptions({0xCA}, {}, {zero}));
         builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, modeIdx8, {patternY}), encodingImplicit, InstructionOptions({0x88}, {}, {zero}));
         builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, modeIdx16, {patternYY}), encodingImplicit, InstructionOptions({0x88}, {}, {zero}));
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, modeMem8, {patternA}), encodingImplicit, InstructionOptions({0x1A}, {}, {zero}));
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, modeMem16, {patternAA}), encodingImplicit, InstructionOptions({0x1A}, {}, {zero}));
+        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, modeMem8, {patternA}), encodingImplicit, InstructionOptions({0x3A}, {}, {zero}));
+        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, modeMem16, {patternAA}), encodingImplicit, InstructionOptions({0x3A}, {}, {zero}));
         // bitwise negation
         builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::BitwiseNegation, modeMem8, {patternA}), encodingImplicit, InstructionOptions({0x49, 0xFF}, {}, {}));
         builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::BitwiseNegation, modeMem16, {patternAA}), encodingImplicit, InstructionOptions({0x49, 0xFF, 0xFF}, {}, {}));
@@ -1133,6 +1134,9 @@ namespace wiz {
         builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(mem8_idx16), 0, {}), encodingImplicit, InstructionOptions({0xE2, 0x20, 0xC2, 0x10}, {}, {}));
         builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(mem16_idx8), 0, {}), encodingImplicit, InstructionOptions({0xE2, 0x10, 0xC2, 0x20}, {}, {}));
         builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(mem16_idx16), 0, {}), encodingImplicit, InstructionOptions({0xC2, 0x30}, {}, {}));
+        // wdm
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(debug_break), 0, {}), encodingImplicit, InstructionOptions({0x42, 0xEA}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(debug_break), 0, {patternImmU8}), encodingU8Operand, InstructionOptions({0x42}, {}, {}));
     }
 
     Definition* Wdc65816Platform::getPointerSizedType() const {
