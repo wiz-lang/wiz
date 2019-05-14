@@ -674,7 +674,7 @@ namespace wiz {
             });
         const auto encodingRepeatedU16Operand = builtins.emplaceInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
-                return static_cast<std::size_t>(captureLists[options.parameter[0]][0]->variant.get<InstructionOperand::Integer>().value) * (options.opcode.size() + 2);
+                return static_cast<std::size_t>(captureLists[options.parameter[1]][0]->variant.get<InstructionOperand::Integer>().value) * (options.opcode.size() + 2);
             },
             [](Report* report, const Bank* bank, std::vector<std::uint8_t>& buffer, const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists, SourceLocation location) {
                 static_cast<void>(report);
