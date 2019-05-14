@@ -1923,11 +1923,13 @@ namespace wiz {
             } else {
                 const auto low = rangeStepLiteral->value.isNegative() ? rangeEndLiteral->value : rangeStartLiteral->value;
                 const auto high = rangeStepLiteral->value.isNegative() ? rangeStartLiteral->value : rangeEndLiteral->value;
-                if (low >= high) {
+                if (low > high) {
                     return 0;
                 }
 
-                return (high - low) / rangeStepLiteral->value + Int128(1);
+                const auto step = rangeStepLiteral->value;
+
+                return (high - low) / (step.isNegative() ? -step : step) + Int128(1);
             }
         }
 
