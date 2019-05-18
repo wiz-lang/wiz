@@ -102,6 +102,7 @@ namespace wiz {
         DoubleEquals,
         LessColon,
         GreaterColon,
+        HashColon,
         Tilde,
         Ampersand,
         Caret,

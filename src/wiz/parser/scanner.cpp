@@ -825,6 +825,7 @@ namespace wiz {
                         state = State::Start;
                         switch (c) {
                             case '[': position++; return Token(TokenType::HashBracket);
+                            case ':': position++; return Token(TokenType::HashColon);
                             default: return Token(TokenType::Hash);
                         }
                         break;

@@ -4,7 +4,7 @@
 #include <wiz/utility/overload.h>
 
 namespace wiz {
-    const char* const binaryOperatorSymbols[static_cast<std::size_t>(BinaryOperatorKind::Count)] = {
+    const char* const binaryOperatorSymbols[] = {
         "(none)",
         "+",
         "+#",
@@ -38,7 +38,9 @@ namespace wiz {
         "-#",
     };
 
-    const char* const binaryOperatorNames[static_cast<std::size_t>(BinaryOperatorKind::Count)] = {
+    static_assert(sizeof(binaryOperatorSymbols) / sizeof(*binaryOperatorSymbols) == static_cast<std::size_t>(BinaryOperatorKind::Count), "`binaryOperatorSymbols` table must have an entry for every `BinaryOperatorKind`");
+
+    const char* const binaryOperatorNames[] = {
         "(none)",
         "addition `+`",
         "addition-with-carry `+#`",
@@ -72,8 +74,9 @@ namespace wiz {
         "subtraction-with-carry `-#`",
     };
 
+    static_assert(sizeof(binaryOperatorNames) / sizeof(*binaryOperatorNames) == static_cast<std::size_t>(BinaryOperatorKind::Count), "`binaryOperatorNames` table must have an entry for every `BinaryOperatorKind`");
 
-    const char* const unaryOperatorSymbols[static_cast<std::size_t>(UnaryOperatorKind::Count)] = {
+    const char* const unaryOperatorSymbols[] = {
         "(none)",
         "&",
         "far &",
@@ -88,7 +91,10 @@ namespace wiz {
         "-",
         "`<:`",
         "`>:`",
+        "`#:`",
     };
+
+    static_assert(sizeof(unaryOperatorSymbols) / sizeof(*unaryOperatorSymbols) == static_cast<std::size_t>(UnaryOperatorKind::Count), "`unaryOperatorSymbols` table must have an entry for every `UnaryOperatorKind`");
 
     const char* const unaryOperatorNames[static_cast<std::size_t>(UnaryOperatorKind::Count)] = {
         "(none)",
@@ -105,7 +111,10 @@ namespace wiz {
         "signed negation `-`",
         "low-byte access `<:`",
         "high-byte access `>:`",
+        "bank-byte access `#:`",
     };
+
+    static_assert(sizeof(unaryOperatorNames) / sizeof(*unaryOperatorNames) == static_cast<std::size_t>(UnaryOperatorKind::Count), "`unaryOperatorNames` table must have an entry for every `UnaryOperatorKind`");
 
     StringView getBinaryOperatorSymbol(BinaryOperatorKind op) {
         return StringView(binaryOperatorSymbols[static_cast<std::size_t>(op)]);

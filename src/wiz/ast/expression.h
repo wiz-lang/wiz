@@ -72,6 +72,7 @@ namespace wiz {
         SignedNegation,
         LowByte,
         HighByte,
+        BankByte,
 
         Count,
     };

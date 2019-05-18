@@ -1813,13 +1813,15 @@ namespace wiz {
                     // Byte access operators.
                     // T -> u8, where offset < sizeof(T) or T is iexpr.
                     case UnaryOperatorKind::LowByte:
-                    case UnaryOperatorKind::HighByte: {
+                    case UnaryOperatorKind::HighByte:
+                    case UnaryOperatorKind::BankByte: {
                         const auto sourceType = operand->info->type.get();
 
                         std::size_t offset;
                         switch (unaryOperator.op) {
                             case UnaryOperatorKind::LowByte: offset = 0; break;
                             case UnaryOperatorKind::HighByte: offset = 1; break;
+                            case UnaryOperatorKind::BankByte: offset = 2; break;
                             default: std::abort(); return FwdUniquePtr<const Expression>();
                         }
 

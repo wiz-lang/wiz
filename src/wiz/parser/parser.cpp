@@ -1660,6 +1660,7 @@ namespace wiz {
             case TokenType::Exclamation: op = UnaryOperatorKind::LogicalNegation; break;
             case TokenType::LessColon: op = UnaryOperatorKind::LowByte; break;
             case TokenType::GreaterColon: op = UnaryOperatorKind::HighByte; break;
+            case TokenType::HashColon: op = UnaryOperatorKind::BankByte; break;
             case TokenType::Identifier: {
                 if (token.keyword == Keyword::Far) {
                     nextToken(); // `far`

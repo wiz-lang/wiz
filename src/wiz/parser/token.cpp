@@ -6,7 +6,7 @@
 
 namespace wiz {
     namespace {
-        const char* const keywordNames[static_cast<std::size_t>(Keyword::Count)] = {
+        const char* const keywordNames[] = {
             "(no keyword)",
             "alignof",
             "as",
@@ -56,7 +56,9 @@ namespace wiz {
             "writeonly",
         };
 
-        const char* const tokenNames[static_cast<std::size_t>(TokenType::Count)] = {
+        static_assert(sizeof(keywordNames) / sizeof(*keywordNames) == static_cast<std::size_t>(Keyword::Count), "`keywordNames` table must have an entry for every `Keyword`");
+
+        const char* const tokenNames[] = {
             "nothing",
             "end-of-file",
             "invalid character",
@@ -105,6 +107,7 @@ namespace wiz {
             "`==`",
             "`<:`",
             "`>:`",
+            "`#:`",
             "`~`",
             "`&`",
             "`^`",
@@ -141,6 +144,8 @@ namespace wiz {
             "`$`",
         };
     }
+
+    static_assert(sizeof(tokenNames) / sizeof(*tokenNames) == static_cast<std::size_t>(TokenType::Count), "`tokenNames` table must have an entry for every `Token`");
 
     StringView getSimpleTokenName(Token token) {
         return StringView(tokenNames[static_cast<std::size_t>(token.type)]);
