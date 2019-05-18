@@ -5012,10 +5012,15 @@ namespace wiz {
                         raiseEmitBinaryExpressionError(dest, op, dest, right, right->location);
                         return false;
                     }
+                    if (dest->info->flags.contains<ExpressionInfo::Flag::WriteOnly>()) {
+                        report->error(getBinaryOperatorName(op).toString() + " expression cannot be done in-place because destination is `writeonly`, so it would require a temporary", right->location);
+                        return false;
+                    }
+
                     return true;
                 }
 
-                report->error("sub-expression would require a temporary", right->location);
+                report->error(getBinaryOperatorName(op).toString() + " expression would require a temporary", right->location);
                 return false;
             }
         } else if (const auto unaryOperator = source->variant.tryGet<Expression::UnaryOperator>()) {
@@ -5033,6 +5038,12 @@ namespace wiz {
                     raiseEmitUnaryExpressionError(dest, op, dest, operand->location);
                     return false;
                 }
+
+                if (dest->info->flags.contains<ExpressionInfo::Flag::WriteOnly>()) {
+                    report->error(getUnaryOperatorName(op).toString() + " expression cannot be done in-place because destination is `writeonly`, so it would require a temporary", operand->location);
+                    return false;
+                }
+
                 return true;
             }
         } else if (const auto call = source->variant.tryGet<Expression::Call>()) {
