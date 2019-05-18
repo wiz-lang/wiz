@@ -3200,7 +3200,7 @@ namespace wiz {
                 }
                 return false;
             },
-            [&](const Expression::OffsetOf& offsetOf) { return false; },
+            [&](const Expression::OffsetOf&) { return false; },
             [&](const Expression::RangeLiteral&) { return false; },
             [&](const Expression::ResolvedIdentifier& resolvedIdentifier) {
                 const auto definition = resolvedIdentifier.definition;
@@ -4253,7 +4253,7 @@ namespace wiz {
             [&](const Expression::IntegerLiteral& integerLiteral) {
                 return makeFwdUnique<InstructionOperand>(InstructionOperand::Integer(integerLiteral.value));
             },
-            [&](const Expression::OffsetOf& offsetOf) { return FwdUniquePtr<InstructionOperand>(); },
+            [&](const Expression::OffsetOf&) { return FwdUniquePtr<InstructionOperand>(); },
             [&](const Expression::RangeLiteral&) { return FwdUniquePtr<InstructionOperand>(); },
             [&](const Expression::ResolvedIdentifier& resolvedIdentifier) {
                 return createOperandFromResolvedIdentifier(expression, resolvedIdentifier.definition);
@@ -4345,7 +4345,7 @@ namespace wiz {
                 [&](const Expression::FieldAccess&) { return true; },
                 [&](const Expression::Identifier&) { return true; },
                 [&](const Expression::IntegerLiteral&) { return true; },
-                [&](const Expression::OffsetOf& offsetOf) { return false; },
+                [&](const Expression::OffsetOf&) { return false; },
                 [&](const Expression::RangeLiteral&) { return true; },
                 [&](const Expression::ResolvedIdentifier&) { return true; },
                 [&](const Expression::SideEffect&) { return false; },
