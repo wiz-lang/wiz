@@ -9,22 +9,25 @@ namespace wiz {
     }
 
     FwdUniquePtr<const TypeExpression> TypeExpression::clone() const {
-        return variant.visitWithUserdata(this, makeOverload(
-            [](const TypeExpression* self, const Array& arrayType) {
+        switch (variant.index()) {
+            case VariantType::typeIndexOf<Array>(): {
+                const auto& arrayType = variant.get<Array>();
                 return makeFwdUnique<const TypeExpression>(
                     Array(
                         arrayType.elementType ? arrayType.elementType->clone() : nullptr,
                         arrayType.size ? arrayType.size->clone() : nullptr),
-                    self->location);
-            },
-            [](const TypeExpression* self, const DesignatedStorage& dsType) {
+                    location);
+            }
+            case VariantType::typeIndexOf<DesignatedStorage>(): {
+                const auto& dsType = variant.get<DesignatedStorage>();
                 return makeFwdUnique<const TypeExpression>(
                     DesignatedStorage(
                         dsType.elementType ? dsType.elementType->clone() : nullptr,
                         dsType.holder ? dsType.holder->clone() : nullptr),
-                    self->location);
-            },
-            [](const TypeExpression* self, const Function& functionType) {
+                    location);
+            }
+            case VariantType::typeIndexOf<Function>(): {
+                const auto& functionType = variant.get<Function>();
                 std::vector<FwdUniquePtr<const TypeExpression>> clonedParameterTypes;
                 clonedParameterTypes.reserve(functionType.parameterTypes.size());
                 for (const auto& parameterType : functionType.parameterTypes) {
@@ -35,26 +38,30 @@ namespace wiz {
                         functionType.far,
                         std::move(clonedParameterTypes),
                         functionType.returnType ? functionType.returnType->clone() : nullptr),
-                    self->location);
-            },
-            [](const TypeExpression* self, const Identifier& identifierType) {
+                    location);
+            }
+            case VariantType::typeIndexOf<Identifier>(): {
+                const auto& identifierType = variant.get<Identifier>();
                 return makeFwdUnique<const TypeExpression>(
                     Identifier(identifierType.pieces),
-                    self->location);             
-            },
-            [](const TypeExpression* self, const Pointer& pointerType) {
+                    location);             
+            }
+            case VariantType::typeIndexOf<Pointer>(): {
+                const auto& pointerType = variant.get<Pointer>();
                 return makeFwdUnique<const TypeExpression>(
                     Pointer(
                         pointerType.elementType ? pointerType.elementType->clone() : nullptr,
                         pointerType.qualifiers),
-                    self->location);
-            },
-            [](const TypeExpression* self, const ResolvedIdentifier& resolvedIdentifierType) {
+                    location);
+            }
+            case VariantType::typeIndexOf<ResolvedIdentifier>(): {
+                const auto& resolvedIdentifierType = variant.get<ResolvedIdentifier>();
                 return makeFwdUnique<const TypeExpression>(
                     ResolvedIdentifier(resolvedIdentifierType.definition),
-                    self->location);
-            },
-            [](const TypeExpression* self, const Tuple& tupleType) {
+                    location);
+            }
+            case VariantType::typeIndexOf<Tuple>(): {
+                const auto& tupleType = variant.get<Tuple>();
                 std::vector<FwdUniquePtr<const TypeExpression>> clonedElementTypes;
                 clonedElementTypes.reserve(tupleType.elementTypes.size());
                 for (const auto& elementType : tupleType.elementTypes) {
@@ -62,13 +69,15 @@ namespace wiz {
                 }
                 return makeFwdUnique<const TypeExpression>(
                     Tuple(std::move(clonedElementTypes)),
-                    self->location);
-            },
-            [](const TypeExpression* self, const TypeOf& typeOf) {
+                    location);
+            }
+            case VariantType::typeIndexOf<TypeOf>(): {
+                const auto& typeOf = variant.get<TypeOf>();
                 return makeFwdUnique<const TypeExpression>(
                     TypeOf(typeOf.expression->clone()),
-                    self->location);
+                    location);
             }
-        ));
+            default: std::abort(); return nullptr;
+        }
     }
 }

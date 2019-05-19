@@ -272,8 +272,10 @@ namespace wiz {
     }
 
     FwdUniquePtr<const TypeExpression> Compiler::reduceTypeExpression(const TypeExpression* typeExpression) {
-        return typeExpression->variant.visit(makeOverload(
-            [&](const TypeExpression::Array& arrayType) {
+        const auto& variant = typeExpression->variant;
+        switch (variant.index()) {
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Array>(): {
+                const auto& arrayType = variant.get<TypeExpression::Array>();
                 auto reducedElementType = reduceTypeExpression(arrayType.elementType.get());
                 auto reducedSize = arrayType.size != nullptr ? reduceExpression(arrayType.size.get()) : nullptr;
                 if (reducedElementType != nullptr && (arrayType.size == nullptr || reducedSize != nullptr)) {
@@ -281,19 +283,20 @@ namespace wiz {
                         if (const auto sizeLiteral = reducedSize->variant.tryGet<Expression::IntegerLiteral>()) {
                             if (sizeLiteral->value.isNegative()) {
                                 report->error("array size must be a non-negative integer, but got size of `" + sizeLiteral->value.toString() + "` instead", reducedSize->location);
-                                return FwdUniquePtr<const TypeExpression>();
+                                return nullptr;
                             }
                         } else {
                             report->error("array size must be a compile-time integer literal", reducedSize->location);
-                            return FwdUniquePtr<const TypeExpression>();
+                            return nullptr;
                         }
                     }
                     return makeFwdUnique<const TypeExpression>(TypeExpression::Array(std::move(reducedElementType), std::move(reducedSize)), typeExpression->location);
                 } else {
-                    return FwdUniquePtr<const TypeExpression>();
+                    return nullptr;
                 }
-            },
-            [&](const TypeExpression::DesignatedStorage& designatedStorageType) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::DesignatedStorage>(): {
+                const auto& designatedStorageType = variant.get<TypeExpression::DesignatedStorage>();
                 auto reducedElementType = reduceTypeExpression(designatedStorageType.elementType.get());
                 auto reducedHolder = reduceExpression(designatedStorageType.holder.get());
 
@@ -306,30 +309,31 @@ namespace wiz {
                             + "` for `" + getTypeName(reducedElementType.get())
                             + " in <designated storage>` type",
                             reducedHolder->location);
-                        return FwdUniquePtr<const TypeExpression>();
+                        return nullptr;
                     }
 
                     if (!reducedHolder->info->flags.contains<ExpressionInfo::Flag::LValue>()) {
                         report->error("holder for designated storage type must be valid L-value", reducedHolder->location);
-                        return FwdUniquePtr<const TypeExpression>();
+                        return nullptr;
                     }
                     if (reducedHolder->info->flags.contains<ExpressionInfo::Flag::Const>()) {
                         report->error("holder for designated storage type cannot be `const`", reducedHolder->location);
-                        return FwdUniquePtr<const TypeExpression>();
+                        return nullptr;
                     }
                     if (reducedHolder->info->flags.contains<ExpressionInfo::Flag::WriteOnly>()) {
                         report->error("holder for designated storage type cannot be `writeonly`", reducedHolder->location);
-                        return FwdUniquePtr<const TypeExpression>();
+                        return nullptr;
                     }
 
                     return makeFwdUnique<const TypeExpression>(TypeExpression::DesignatedStorage(std::move(reducedElementType), std::move(reducedHolder)), typeExpression->location);
                 }
-                return FwdUniquePtr<const TypeExpression>();
-            },
-            [&](const TypeExpression::Function& funcType) {
+                return nullptr;
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Function>(): {
+                const auto& funcType = variant.get<TypeExpression::Function>();
                 auto reducedReturnType = reduceTypeExpression(funcType.returnType.get());
                 if (reducedReturnType == nullptr) {
-                    return FwdUniquePtr<const TypeExpression>();
+                    return nullptr;
                 }
 
                 std::vector<FwdUniquePtr<const TypeExpression>> reducedParameterTypes;
@@ -337,22 +341,23 @@ namespace wiz {
                 for (const auto& parameterType : funcType.parameterTypes) {
                     auto reducedParameterType = reduceTypeExpression(parameterType.get());
                     if (reducedParameterType == nullptr) {
-                        return FwdUniquePtr<const TypeExpression>();
+                        return nullptr;
                     }                    
                     reducedParameterTypes.push_back(std::move(reducedParameterType));
                 }
                 return makeFwdUnique<const TypeExpression>(TypeExpression::Function(funcType.far, std::move(reducedParameterTypes), std::move(reducedReturnType)), typeExpression->location);
-            },
-            [&](const TypeExpression::Identifier& identifierType) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Identifier>(): {
+                const auto& identifierType = variant.get<TypeExpression::Identifier>();
                 const auto& pieces = identifierType.pieces;
                 const auto resolveResult = resolveIdentifier(pieces, typeExpression->location);
 
                 if (resolveResult.first == nullptr) {
-                    return FwdUniquePtr<const TypeExpression>();
+                    return nullptr;
                 }
                 if (resolveResult.second < pieces.size() - 1) {
                     raiseUnresolvedIdentifierError(pieces, resolveResult.second, typeExpression->location);
-                    return FwdUniquePtr<const TypeExpression>();
+                    return nullptr;
                 }
 
                 const auto definition = resolveResult.first;
@@ -362,60 +367,67 @@ namespace wiz {
                 } else if (const auto typeAlias = definition->variant.tryGet<Definition::TypeAlias>()) {                  
                     if (typeAlias->resolvedType == nullptr) {
                         report->error("encountered a reference to typealias `" + text::join(pieces.begin(), pieces.end(), ".") + "` before its underlying type was known", typeExpression->location);
-                        return FwdUniquePtr<const TypeExpression>();
+                        return nullptr;
                     } else {
                         return typeAlias->resolvedType->clone(); 
                     }
                 } else {
                     report->error("`" + text::join(pieces.begin(), pieces.end(), ".") + "` is not a valid type", typeExpression->location);
-                    return FwdUniquePtr<const TypeExpression>();
+                    return nullptr;
                 }
-            },
-            [&](const TypeExpression::Pointer& pointerType) {            
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Pointer>(): {
+                const auto& pointerType = variant.get<TypeExpression::Pointer>();
                 auto reducedElementType = reduceTypeExpression(pointerType.elementType.get());
                 if (reducedElementType != nullptr) { 
                     return makeFwdUnique<const TypeExpression>(TypeExpression::Pointer(std::move(reducedElementType), pointerType.qualifiers), typeExpression->location);
                 } else {
-                    return FwdUniquePtr<const TypeExpression>();
+                    return nullptr;
                 }
-            },
-            [&](const TypeExpression::ResolvedIdentifier& resolvedIdentifier) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::ResolvedIdentifier>(): {
+                const auto& resolvedIdentifier = variant.get<TypeExpression::ResolvedIdentifier>();
                 return makeFwdUnique<const TypeExpression>(resolvedIdentifier, typeExpression->location);
-            },
-            [&](const TypeExpression::Tuple& tupleType) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Tuple>(): {
+                const auto& tupleType = variant.get<TypeExpression::Tuple>();
                 std::vector<FwdUniquePtr<const TypeExpression>> reducedElementTypes;
                 reducedElementTypes.reserve(tupleType.elementTypes.size());
                 for (const auto& elementType : tupleType.elementTypes) {
                     auto reducedElementType = reduceTypeExpression(elementType.get());
                     if (reducedElementType == nullptr) {
-                        return FwdUniquePtr<const TypeExpression>();
+                        return nullptr;
                     }                    
                     reducedElementTypes.push_back(std::move(reducedElementType));
                 }
                 return makeFwdUnique<const TypeExpression>(TypeExpression::Tuple(std::move(reducedElementTypes)), typeExpression->location);            
-            },
-            [&](const TypeExpression::TypeOf& typeOf) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::TypeOf>(): {
+                const auto& typeOf = variant.get<TypeExpression::TypeOf>();
                 auto reducedExpression = reduceExpression(typeOf.expression.get());    
                 if (reducedExpression == nullptr) {
-                    return FwdUniquePtr<const TypeExpression>();
+                    return nullptr;
                 }
                 return reducedExpression->info->type->clone();
             }
-        ));
+            default: std::abort(); return nullptr;
+        }
     }
 
     FwdUniquePtr<const Expression> Compiler::reduceExpression(const Expression* expression) {
-        auto result = expression->variant.visit(makeOverload(
-            [&](const Expression::ArrayComprehension& arrayComprehension) {
+        const auto& variant = expression->variant;
+        switch (variant.index()) {
+            case Expression::VariantType::typeIndexOf<Expression::ArrayComprehension>(): {
+                const auto& arrayComprehension = variant.get<Expression::ArrayComprehension>();
                 auto reducedSequence = reduceExpression(arrayComprehension.sequence.get());
                 if (reducedSequence == nullptr) {
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
 
                 const auto length = tryGetSequenceLiteralLength(reducedSequence.get());
                 if (!length.hasValue()) {
                     report->error("source for array comprehension must be a valid compile-time sequence", expression->location);
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
 
                 std::vector<FwdUniquePtr<const Expression>> computedItems;
@@ -442,7 +454,7 @@ namespace wiz {
                         } else if (!isTypeEquivalent(computedItem->info->type.get(), elementType)) {
                             if (!canNarrowExpression(computedItem.get(), elementType)) {
                                 report->error("array element of type `" + getTypeName(computedItem->info->type.get()) + "` at iteration " + std::to_string(i) + " does not match first element type `" + getTypeName(elementType) + "` in comprehension", computedItem->location);
-                                return FwdUniquePtr<const Expression>();
+                                return nullptr;
                             }
 
                             computedItem = createConvertedExpression(computedItem.get(), elementType);
@@ -450,28 +462,29 @@ namespace wiz {
 
                         computedItems.push_back(std::move(computedItem));
                     } else {
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
                 }
 
                 return createArrayLiteralExpression(std::move(computedItems), elementType, expression->location);
-            },
-            [&](const Expression::ArrayPadLiteral& arrayPadLiteral) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::ArrayPadLiteral>(): {
+                const auto& arrayPadLiteral = variant.get<Expression::ArrayPadLiteral>();
                 auto reducedValueExpression = reduceExpression(arrayPadLiteral.valueExpression.get());
                 auto reducedSizeExpression = reduceExpression(arrayPadLiteral.sizeExpression.get());
 
                 if (reducedValueExpression == nullptr || reducedSizeExpression == nullptr) {
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
 
                 const auto reducedSizeLiteral = reducedSizeExpression->variant.tryGet<Expression::IntegerLiteral>();
                 if (reducedSizeLiteral == nullptr) {
                     report->error("array pad size must be a compile-time integer literal", expression->location);
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
                 if (reducedSizeLiteral->value >= Int128(SIZE_MAX)) {
                     report->error("array pad size of `" + reducedSizeLiteral->value.toString() + "` is too big.", expression->location);
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
 
                 const auto length = static_cast<std::size_t>(reducedSizeLiteral->value);
@@ -488,8 +501,9 @@ namespace wiz {
                 }
 
                 return createArrayLiteralExpression(std::move(items), elementType, expression->location);
-            },
-            [&](const Expression::ArrayLiteral& arrayLiteral) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::ArrayLiteral>(): {
+                const auto& arrayLiteral = variant.get<Expression::ArrayLiteral>();
                 const auto& items = arrayLiteral.items;
 
                 std::vector<FwdUniquePtr<const Expression>> reducedItems;
@@ -507,7 +521,7 @@ namespace wiz {
                         } else if (!isTypeEquivalent(reducedItem->info->type.get(), elementType)) {
                             if (!canNarrowExpression(reducedItem.get(), elementType)) {
                                 report->error("array element of type `" + getTypeName(reducedItem->info->type.get()) + "` at index " + std::to_string(i) + " does not match first element type `" + getTypeName(elementType) + "`", reducedItem->location);
-                                return FwdUniquePtr<const Expression>();
+                                return nullptr;
                             }
 
                             reducedItem = createConvertedExpression(reducedItem.get(), elementType);
@@ -515,50 +529,51 @@ namespace wiz {
 
                         reducedItems.push_back(std::move(reducedItem));
                     } else {
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
                 }
 
                 return createArrayLiteralExpression(std::move(reducedItems), elementType, expression->location);
-            },
-            [&](const Expression::BinaryOperator& binaryOperator) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::BinaryOperator>(): {
+                const auto& binaryOperator = variant.get<Expression::BinaryOperator>();
                 const auto op = binaryOperator.op;
                 auto left = reduceExpression(binaryOperator.left.get());
                 auto right = reduceExpression(binaryOperator.right.get());
                 if (!left || !right) {
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
 
                 if (op == BinaryOperatorKind::Indexing || op == BinaryOperatorKind::BitIndexing) {
                     if (right->info->flags.contains<ExpressionInfo::Flag::WriteOnly>()) {
                         report->error("subscript of " + getBinaryOperatorName(op).toString() + " cannot be `writeonly`", right->location);
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
                 } else if (op == BinaryOperatorKind::Assignment) {
                     if (right->info->flags.contains<ExpressionInfo::Flag::WriteOnly>()) {
                         report->error("right-hand side of assignment `=` cannot be `writeonly`", right->location);
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
                 } else {
                     if (left->info->flags.contains<ExpressionInfo::Flag::WriteOnly>() || right->info->flags.contains<ExpressionInfo::Flag::WriteOnly>()) {
                         report->error("operand to " + getBinaryOperatorName(op).toString() + " cannot be `writeonly`", expression->location);
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
                 }
 
                 // attempt to reduce expression if possible, and return expression if typed.
                 switch (op) {
-                    default: case BinaryOperatorKind::None: std::abort(); return FwdUniquePtr<const Expression>();
+                    default: case BinaryOperatorKind::None: std::abort(); return nullptr;
 
                     // Run-time assignment. (T, T) -> T (returns left-hand side lvalue)
                     case BinaryOperatorKind::Assignment: {
                         if (!left->info->flags.contains<ExpressionInfo::Flag::LValue>()) {
                             report->error("left-hand side of assignment `=` must be valid L-value", expression->location);
-                            return FwdUniquePtr<const Expression>();
+                            return nullptr;
                         }
                         if (left->info->flags.contains<ExpressionInfo::Flag::Const>()) {
                             report->error("left-hand side of assignment `=` cannot be `const`", expression->location);
-                            return FwdUniquePtr<const Expression>();
+                            return nullptr;
                         }
 
                         if (const auto resultType = findCompatibleAssignmentType(right.get(), left->info->type.get())) {
@@ -569,7 +584,7 @@ namespace wiz {
                         }
 
                         report->error("left-hand side of type `" + getTypeName(left->info->type.get()) + "` cannot be assigned `" + getTypeName(right->info->type.get()) + "` expression", expression->location);
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
 
                     // Run-time arithmetic. (integer, integer) -> integer
@@ -584,7 +599,7 @@ namespace wiz {
                                 ExpressionInfo(EvaluationContext::RunTime, resultType->clone(), ExpressionInfo::Flags {}));
                         } else {
                             report->error(getBinaryOperatorName(op).toString() + " is not defined between provided operand types `" + getTypeName(left->info->type.get()) + "` and `" + getTypeName(right->info->type.get()) + "`", expression->location);
-                            return FwdUniquePtr<const Expression>();
+                            return nullptr;
                         }
                     }
     
@@ -677,12 +692,12 @@ namespace wiz {
                                 return createArrayLiteralExpression(std::move(reducedItems), elementType, expression->location);
                             } else {
                                 report->error(getBinaryOperatorName(op).toString() + " is only defined between compile-time array literals", expression->location);
-                                return FwdUniquePtr<const Expression>();
+                                return nullptr;
                             }
                         }
                         
                         report->error(getBinaryOperatorName(op).toString() + " is not defined between provided operand types `" + getTypeName(left->info->type.get()) + "` and `" + getTypeName(right->info->type.get()) + "`", expression->location);
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
 
                     // Fixed bit-width arithmetic. (integer, integer) -> integer, where integer bit count is bounded.
@@ -707,11 +722,11 @@ namespace wiz {
 
                                         if (indexValue.isNegative()) {
                                             report->error("indexing by negative integer `" + indexValue.toString() + "`", expression->location);
-                                            return FwdUniquePtr<const Expression>();
+                                            return nullptr;
                                         }
                                         if (indexValue >= Int128(items.size())) {
                                             report->error("indexing by `" + indexValue.toString() + "` exceeds array length of `" + std::to_string(items.size()) + "`", expression->location);
-                                            return FwdUniquePtr<const Expression>();
+                                            return nullptr;
                                         }
 
                                         std::size_t index = static_cast<std::size_t>(indexValue);
@@ -721,11 +736,11 @@ namespace wiz {
 
                                         if (indexValue.isNegative()) {
                                             report->error("indexing by negative integer `" + indexValue.toString() + "`", expression->location);
-                                            return FwdUniquePtr<const Expression>();
+                                            return nullptr;
                                         }
                                         if (indexValue >= Int128(stringLiteral.getLength())) {
                                             report->error("indexing by `" + indexValue.toString() + "` exceeds array length of `" + std::to_string(stringLiteral.getLength()) + "`", expression->location);
-                                            return FwdUniquePtr<const Expression>();
+                                            return nullptr;
                                         }
 
                                         std::size_t index = static_cast<std::size_t>(indexValue);
@@ -781,7 +796,7 @@ namespace wiz {
 
                                 if (left->info->type->variant.get<TypeExpression::Array>().elementType == nullptr) {
                                     report->error("array has unknown element type", expression->location);
-                                    return FwdUniquePtr<const Expression>();
+                                    return nullptr;
                                 }
 
                                 auto resultType = left->info->type->variant.get<TypeExpression::Array>().elementType->clone();
@@ -797,11 +812,11 @@ namespace wiz {
 
                                     if (indexValue.isNegative()) {
                                         report->error("indexing by negative integer `" + indexValue.toString() + "`", expression->location);
-                                        return FwdUniquePtr<const Expression>();
+                                        return nullptr;
                                     }
                                     if (indexValue >= Int128(items.size())) {
                                         report->error("indexing by `" + indexValue.toString() + "` exceeds tuple length of `" + std::to_string(items.size()) + "`", expression->location);
-                                        return FwdUniquePtr<const Expression>();
+                                        return nullptr;
                                     }
 
                                     std::size_t index = static_cast<std::size_t>(indexValue);
@@ -809,7 +824,7 @@ namespace wiz {
                                 }
 
                                 report->error("tuple index must be a compile-time integer literal", expression->location);
-                                return FwdUniquePtr<const Expression>();
+                                return nullptr;
                             } else if (const auto pointerType = left->info->type->variant.tryGet<TypeExpression::Pointer>()) {
                                 const auto flags = ExpressionInfo::Flags { ExpressionInfo::Flag::LValue }
                                     | (pointerType->qualifiers.contains<PointerQualifier::Const>() ? ExpressionInfo::Flags { ExpressionInfo::Flag::Const } : ExpressionInfo::Flags {})
@@ -828,27 +843,27 @@ namespace wiz {
                                             const auto indexValue = indexLiteral->value;
                                             if (indexValue.isNegative()) {
                                                 report->error("indexing by negative integer `" + indexValue.toString() + "`", expression->location);
-                                                return FwdUniquePtr<const Expression>();
+                                                return nullptr;
                                             }
                                             if (indexValue >= Int128(*length)) {
                                                 report->error("indexing by `" + indexValue.toString() + "` exceeds range length of `" + std::to_string(*length) + "`", expression->location);
-                                                return FwdUniquePtr<const Expression>();
+                                                return nullptr;
                                             }
                                             return getSequenceLiteralItem(left.get(), static_cast<std::size_t>(indexValue));
                                         } else {
                                             report->error("range index must be a compile-time integer literal", expression->location);
-                                            return FwdUniquePtr<const Expression>();
+                                            return nullptr;
                                         }
                                     } else {
                                         report->error("range must known at compile-time", expression->location);
-                                        return FwdUniquePtr<const Expression>();
+                                        return nullptr;
                                     }
                                 }
                             }
                         }
                            
                         report->error(getBinaryOperatorName(op).toString() + " is not defined between provided operand types `" + getTypeName(left->info->type.get()) + "` and `" + getTypeName(right->info->type.get()) + "`", expression->location);
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
 
                     // Bit Indexing. (integer, integer) -> bool
@@ -887,7 +902,7 @@ namespace wiz {
                         }
                            
                         report->error(getBinaryOperatorName(op).toString() + " is not defined between provided operand types `" + getTypeName(left->info->type.get()) + "` and `" + getTypeName(right->info->type.get()) + "`", expression->location);
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
 
                     // Comparisons. (T, T) -> bool
@@ -907,22 +922,24 @@ namespace wiz {
                         return simplifyBinaryLogicalExpression(expression, op, std::move(left), std::move(right));
                     }
                 }
-            },
-            [&](const Expression::BooleanLiteral& booleanLiteral) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::BooleanLiteral>(): {
+                const auto& booleanLiteral = variant.get<Expression::BooleanLiteral>();
                 return makeFwdUnique<const Expression>(Expression::BooleanLiteral(booleanLiteral.value), expression->location,
                     ExpressionInfo(EvaluationContext::CompileTime,
                         makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(builtins.getDefinition(Builtins::DefinitionType::Bool)), expression->location),
                         ExpressionInfo::Flags {}));
-            },
-            [&](const Expression::Call& call) { 
+            }
+            case Expression::VariantType::typeIndexOf<Expression::Call>(): {
+                const auto& call = variant.get<Expression::Call>();
                 auto function = reduceExpression(call.function.get());
                 if (!function) {
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
 
                 if (function->info->flags.contains<ExpressionInfo::Flag::WriteOnly>()) {
                     report->error("operand of function call cannot be `writeonly`", function->location);
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
 
                 std::vector<FwdUniquePtr<const Expression>> reducedArguments;
@@ -932,17 +949,17 @@ namespace wiz {
                 for (std::size_t i = 0; i != callArguments.size(); ++i) {
                     auto& argument = callArguments[i];
                     if (!argument) {
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
 
                     auto reducedArgument = reduceExpression(argument.get());
                     if (!reducedArgument) {
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
 
                     if (reducedArgument->info->flags.contains<ExpressionInfo::Flag::WriteOnly>()) {
                         report->error("argument #" + std::to_string(i) + " of function call cannot be `writeonly`", reducedArgument->location);
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
 
                     reducedArguments.push_back(std::move(reducedArgument));
@@ -953,7 +970,7 @@ namespace wiz {
                     if (const auto letDefinition = definition->variant.tryGet<Definition::Let>()) {
                         if (call.inlined) {
                             report->error("`inline` keyword cannot be applied to a `let` function call.", expression->location);
-                            return FwdUniquePtr<const Expression>();
+                            return nullptr;
                         }
 
                         const auto& parameters = letDefinition->parameters;
@@ -968,7 +985,7 @@ namespace wiz {
                                 + " argument" + (got != 1 ? "s" : "")
                                 + " instead", expression->location);
 
-                            return FwdUniquePtr<const Expression>();
+                            return nullptr;
                         }
 
                         FwdUniquePtr<const Expression> result;
@@ -983,7 +1000,7 @@ namespace wiz {
                                         ExpressionInfo::Flags {}));
                             } else {
                                 report->error("`" + definition->name.toString() + "` argument #1 must be a compile-time string literal", expression->location);
-                                return FwdUniquePtr<const Expression>();
+                                return nullptr;
                             }
                         } else if (definition == builtins.getDefinition(Builtins::DefinitionType::GetDef)) {
                             if (const auto key = reducedArguments[0]->variant.tryGet<Expression::StringLiteral>()) {
@@ -997,7 +1014,7 @@ namespace wiz {
                                 }
                             } else {
                                 report->error("`" + definition->name.toString() + "` argument #1 must be a compile-time string literal", expression->location);
-                                return FwdUniquePtr<const Expression>();
+                                return nullptr;
                             }
                         } else {
                             // Create a temporary scope with a bunch of temporary let declarations representing the arguments.
@@ -1009,7 +1026,7 @@ namespace wiz {
 
                             for (std::size_t i = 0; i != parameters.size(); ++i) {
                                 if (scope->emplaceDefinition(report, Definition::Let({}, reducedArguments[i].get()), parameters[i], definition->declaration) == nullptr) {
-                                    return FwdUniquePtr<const Expression>();
+                                    return nullptr;
                                 }
                             }
 
@@ -1047,7 +1064,7 @@ namespace wiz {
                                 reducedArguments[i] = createConvertedExpression(reducedArgument.get(), resultType);
                             } else {
                                 report->error("argument of type `" + getTypeName(parameterType.get()) + "` cannot be assigned `" + getTypeName(reducedArgument->info->type.get()) + "` expression", expression->location);
-                                return FwdUniquePtr<const Expression>();
+                                return nullptr;
                             }
                         }
 
@@ -1058,7 +1075,7 @@ namespace wiz {
                     } else if (const auto loadIntrinsic = definition->variant.tryGet<Definition::BuiltinLoadIntrinsic>()) {
                         if (call.inlined) {
                             report->error("`inline` keyword is not valid for instrinsics.", expression->location);
-                            return FwdUniquePtr<const Expression>();
+                            return nullptr;
                         }
 
                         return makeFwdUnique<const Expression>(
@@ -1070,7 +1087,7 @@ namespace wiz {
                     } else if (definition->variant.is<Definition::BuiltinVoidIntrinsic>()) {
                         if (call.inlined) {
                             report->error("`inline` keyword is not valid for instrinsics.", expression->location);
-                            return FwdUniquePtr<const Expression>();
+                            return nullptr;
                         }
 
                         return makeFwdUnique<const Expression>(
@@ -1081,7 +1098,7 @@ namespace wiz {
                                 ExpressionInfo::Flags {}));
                     } else {
                         report->error("expression is not callable", expression->location);
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
                 } else {
                     if (const auto functionType = function->info->type->variant.tryGet<TypeExpression::Function>()) {
@@ -1089,7 +1106,7 @@ namespace wiz {
 
                         if (call.inlined) {
                             report->error("`inline` keyword cannot be used on function expressions, only functions themselves.", expression->location);
-                            return FwdUniquePtr<const Expression>();
+                            return nullptr;
                         }
 
                         if (functionType->parameterTypes.size() != reducedArguments.size()) {
@@ -1112,7 +1129,7 @@ namespace wiz {
                                 reducedArguments[i] = createConvertedExpression(reducedArgument.get(), resultType);
                             } else {
                                 report->error("argument of type `" + getTypeName(parameterType.get()) + "` cannot be assigned `" + getTypeName(reducedArgument->info->type.get()) + "` expression", expression->location);
-                                return FwdUniquePtr<const Expression>();
+                                return nullptr;
                             }
                         }
 
@@ -1123,16 +1140,17 @@ namespace wiz {
                     }
 
                     report->error("expression is not callable", expression->location);
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
 
-            },
-            [&](const Expression::Cast& cast) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::Cast>(): {
+                const auto& cast = variant.get<Expression::Cast>();
                 auto operand = reduceExpression(cast.operand.get());
                 auto destType = reduceTypeExpression(cast.type.get());
 
                 if (operand == nullptr || destType == nullptr) {
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
 
                 // TODO: bool -> integer type cast.
@@ -1148,7 +1166,7 @@ namespace wiz {
                     if (const auto funcDefinition = resolvedIdentifier->definition->variant.tryGet<Definition::Func>()) {
                         if (funcDefinition->inlined) {
                             report->error("`" + resolvedIdentifier->definition->name.toString() + "` is an `inline func` so it cannot be casted", expression->location);
-                            return FwdUniquePtr<const Expression>();
+                            return nullptr;
                         }
 
                         if (funcDefinition->address.hasValue() && funcDefinition->address.get().absolutePosition.hasValue()) {
@@ -1182,7 +1200,7 @@ namespace wiz {
                             }
                         } else {
                             report->error("TODO: integer literal cast from `" + getTypeName(sourceType.get()) + "` to `" + getTypeName(destType.get()) + "`", expression->location);
-                            return FwdUniquePtr<const Expression>();
+                            return nullptr;
                         }
                     } else if (isPointerLikeType(destType.get())) {
                         const auto destFar = isFarType(destType.get());
@@ -1212,9 +1230,10 @@ namespace wiz {
                 }
 
                 report->error("cannot cast expression from `" + getTypeName(sourceType.get()) + "` to `" + getTypeName(destType.get()) + "`", expression->location);
-                return FwdUniquePtr<const Expression>();
-            },
-            [&](const Expression::Embed& embed) {
+                return nullptr;
+            }
+            case Expression::VariantType::typeIndexOf<Expression::Embed>(): {
+                const auto& embed = variant.get<Expression::Embed>();
                 Optional<StringView> data;
                 StringView displayPath;
                 StringView canonicalPath;
@@ -1248,37 +1267,39 @@ namespace wiz {
                     return createStringLiteralExpression(*data, expression->location);
                 } else {
                     report->error("could not open file \"" + text::escape(embed.originalPath, '\"') + "\" referenced by `embed` expression", expression->location);
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
-            },
-            [&](const Expression::FieldAccess& fieldAccess) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::FieldAccess>(): {
+                const auto& fieldAccess = variant.get<Expression::FieldAccess>();
                 auto operand = reduceExpression(fieldAccess.operand.get());
                 if (operand == nullptr) {
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
                 if (const auto typeOf = operand->variant.tryGet<Expression::TypeOf>()) {
                     const auto& typeExpression = typeOf->expression->info->type;
                     if (auto member = resolveTypeMemberExpression(typeExpression.get(), fieldAccess.field)) {
                         return member;
                     } else {
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
                 } else {
                     if (auto member = resolveValueMemberExpression(operand.get(), fieldAccess.field)) {
                         return member;
                     } else {
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
                 }
-            },
-            [&](const Expression::Identifier& identifier) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::Identifier>(): {
+                const auto& identifier = variant.get<Expression::Identifier>();
                 const auto& pieces = identifier.pieces;
                 const auto resolveResult = resolveIdentifier(pieces, expression->location);
                 const auto definition = resolveResult.first;
                 auto pieceIndex = resolveResult.second;
 
                 if (definition == nullptr) {
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
 
                 FwdUniquePtr<const Expression> currentExpression;
@@ -1292,7 +1313,7 @@ namespace wiz {
                     if (auto member = resolveTypeMemberExpression(resolvedType.get(), field)) {
                         currentExpression = std::move(member);
                     } else {
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
 
                     if (pieceIndex == pieces.size() - 1) {
@@ -1303,21 +1324,22 @@ namespace wiz {
                 }
 
                 if (currentExpression == nullptr) {
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 } else if (pieceIndex < pieces.size() - 1) {
                     ++pieceIndex;
                     for (; pieceIndex < pieces.size(); ++pieceIndex) {
                         if (auto member = resolveValueMemberExpression(currentExpression.get(), pieces[pieceIndex])) {
                             currentExpression = std::move(member);
                         } else {
-                            return FwdUniquePtr<const Expression>();
+                            return nullptr;
                         }
                     }
                 }
 
                 return currentExpression;
-            },
-            [&](const Expression::IntegerLiteral& integerLiteral) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::IntegerLiteral>(): {
+                const auto& integerLiteral = variant.get<Expression::IntegerLiteral>();
                 if (expression->info.hasValue()) {
                     return expression->clone();
                 }
@@ -1327,13 +1349,13 @@ namespace wiz {
                     typeDefinition = builtins.getBuiltinScope()->findLocalMemberDefinition(integerLiteral.suffix);
                     if (typeDefinition == nullptr || !typeDefinition->variant.is<Definition::BuiltinIntegerType>()) {
                         report->error("unrecognized integer literal suffix `" + integerLiteral.suffix.toString() + "`", expression->location);
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
 
                     const auto& builtinIntegerType = typeDefinition->variant.get<Definition::BuiltinIntegerType>();
                     if (integerLiteral.value < builtinIntegerType.min || integerLiteral.value > builtinIntegerType.max) {
                         report->error("integer literal `" + integerLiteral.value.toString() + "` with `" + integerLiteral.suffix.toString() + "` suffix is outside valid range `" + builtinIntegerType.min.toString() + "` .. `" + builtinIntegerType.max.toString() + "`", expression->location);
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
                 } else {
                     typeDefinition = builtins.getDefinition(Builtins::DefinitionType::IExpr);               
@@ -1343,11 +1365,12 @@ namespace wiz {
                     ExpressionInfo(EvaluationContext::CompileTime,
                         makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(typeDefinition), expression->location),
                         ExpressionInfo::Flags {}));
-            },
-            [&](const Expression::OffsetOf& offsetOf) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::OffsetOf>(): {
+                const auto& offsetOf = variant.get<Expression::OffsetOf>();
                 const auto reducedTypeExpression = reduceTypeExpression(offsetOf.type.get());
                 if (!reducedTypeExpression) {
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
                 if (const auto resolvedIdentifierType = reducedTypeExpression->variant.tryGet<TypeExpression::ResolvedIdentifier>()) {
                     if (const auto structDefinition = resolvedIdentifierType->definition->variant.tryGet<Definition::Struct>()) {
@@ -1361,20 +1384,21 @@ namespace wiz {
                                         ExpressionInfo::Flags {}));
                             } else {
                                 report->error("offset of field `" + offsetOf.field.toString() + "` in type `" + getTypeName(reducedTypeExpression.get()) + "` could not be resolved yet", expression->location);
-                                return FwdUniquePtr<const Expression>();                
+                                return nullptr;                
                             }
                         } else {
                             report->error("`" + getTypeName(reducedTypeExpression.get()) + "` has no field named `" + offsetOf.field.toString() + "`", expression->location);
-                            return FwdUniquePtr<const Expression>();                
+                            return nullptr;                
                         }
                     }
                 }
 
                 report->error("type `" + getTypeName(reducedTypeExpression.get()) + "` passed to `offsetof` is not a `struct` or `union` type", expression->location);
 
-                return FwdUniquePtr<const Expression>();                
-            },
-            [&](const Expression::RangeLiteral& rangeLiteral) {
+                return nullptr;                
+            }
+            case Expression::VariantType::typeIndexOf<Expression::RangeLiteral>(): {
+                const auto& rangeLiteral = variant.get<Expression::RangeLiteral>();
                 auto reducedStart = reduceExpression(rangeLiteral.start.get());
                 auto reducedEnd = reduceExpression(rangeLiteral.end.get());
                 auto reducedStep = rangeLiteral.step != nullptr
@@ -1384,32 +1408,31 @@ namespace wiz {
                             makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(builtins.getDefinition(Builtins::DefinitionType::IExpr)), expression->location),
                             ExpressionInfo::Flags {}));
                 if (!reducedStart || !reducedEnd || !reducedStep) {
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
                 if (!reducedStart->variant.is<Expression::IntegerLiteral>()) {
                     report->error("range start must be a compile-time integer literal", reducedStart->location);
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
                 if (!reducedEnd->variant.is<Expression::IntegerLiteral>()) {
                     report->error("range end must be a compile-time integer literal", reducedEnd->location);
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
                 if (!reducedStep->variant.is<Expression::IntegerLiteral>()) {
                     report->error("range step must be a compile-time integer literal", reducedStep->location);
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
                 return makeFwdUnique<const Expression>(Expression::RangeLiteral(std::move(reducedStart), std::move(reducedEnd), std::move(reducedStep)), expression->location,
                     ExpressionInfo(EvaluationContext::CompileTime,
                         makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(builtins.getDefinition(Builtins::DefinitionType::Range)), expression->location),
                         ExpressionInfo::Flags {}));
-            },
-            [&](const Expression::ResolvedIdentifier&) {
-                return expression->clone();
-            },
-            [&](const Expression::SideEffect& sideEffect) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::ResolvedIdentifier>(): return expression->clone();
+            case Expression::VariantType::typeIndexOf<Expression::SideEffect>(): {
+                const auto& sideEffect = variant.get<Expression::SideEffect>();
                 auto reducedResult = reduceExpression(sideEffect.result.get());
                 if (reducedResult == nullptr) {
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
                 auto resultType = reducedResult->info->type->clone();
 
@@ -1417,14 +1440,16 @@ namespace wiz {
                     Expression::SideEffect(sideEffect.statement->clone(), std::move(reducedResult)), expression->location,
                     ExpressionInfo(EvaluationContext::RunTime, std::move(resultType),
                     ExpressionInfo::Flags {}));
-            },
-            [&](const Expression::StringLiteral& stringLiteral) { 
+            }
+            case Expression::VariantType::typeIndexOf<Expression::StringLiteral>(): {
+                const auto& stringLiteral = variant.get<Expression::StringLiteral>();
                 return createStringLiteralExpression(stringLiteral.value, expression->location);
-            },
-            [&](const Expression::StructLiteral& structLiteral) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::StructLiteral>(): {
+                const auto& structLiteral = variant.get<Expression::StructLiteral>();
                 auto reducedTypeExpression = reduceTypeExpression(structLiteral.type.get());
                 if (reducedTypeExpression == nullptr) {
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
 
                 Definition* definition = nullptr;
@@ -1435,7 +1460,7 @@ namespace wiz {
                 }
                 if (definition == nullptr) {
                     report->error("struct literal is invalid for non-struct type `" + getTypeName(reducedTypeExpression.get()) + "`", expression->location);
-                    return FwdUniquePtr<const Expression>();                    
+                    return nullptr;                    
                 }
                 
                 const auto& structDefinition = definition->variant.get<Definition::Struct>();
@@ -1488,7 +1513,7 @@ namespace wiz {
                 }
 
                 if (invalidLiteral) {
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
 
                 if (structDefinition.kind == StructKind::Struct) {
@@ -1511,8 +1536,9 @@ namespace wiz {
                     ExpressionInfo(context,
                         std::move(reducedTypeExpression),
                         ExpressionInfo::Flags {}));                
-            },
-            [&](const Expression::TupleLiteral& tupleLiteral) {                
+            }
+            case Expression::VariantType::typeIndexOf<Expression::TupleLiteral>(): {
+                const auto& tupleLiteral = variant.get<Expression::TupleLiteral>();
                 std::vector<FwdUniquePtr<const Expression>> reducedItems;
                 std::vector<FwdUniquePtr<const TypeExpression>> reducedItemTypes;
 
@@ -1526,7 +1552,7 @@ namespace wiz {
                     if (reducedItem != nullptr) {
                         reducedItems.push_back(std::move(reducedItem));
                     } else {
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
                 }
 
@@ -1536,11 +1562,12 @@ namespace wiz {
                     ExpressionInfo(EvaluationContext::CompileTime,
                         makeFwdUnique<const TypeExpression>(TypeExpression::Tuple(std::move(reducedItemTypes)), expression->location),
                         ExpressionInfo::Flags {}));
-            },
-            [&](const Expression::TypeOf& typeOf) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::TypeOf>(): {
+                const auto& typeOf = variant.get<Expression::TypeOf>();
                 auto reducedExpression = reduceExpression(typeOf.expression.get());
                 if (!reducedExpression) {
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
                 return makeFwdUnique<const Expression>(
                     Expression::TypeOf(std::move(reducedExpression)),
@@ -1548,14 +1575,15 @@ namespace wiz {
                     ExpressionInfo(EvaluationContext::CompileTime,
                         makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(builtins.getDefinition(Builtins::DefinitionType::TypeOf)), expression->location),
                         ExpressionInfo::Flags {}));
-            },
-            [&](const Expression::TypeQuery& typeQuery) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::TypeQuery>(): {
+                const auto& typeQuery = variant.get<Expression::TypeQuery>();
                 auto reducedType = reduceTypeExpression(typeQuery.type.get());
                 if (!reducedType) {
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }    
                 switch (typeQuery.kind) {
-                    case TypeQueryKind::None: default: std::abort(); return FwdUniquePtr<const Expression>();
+                    case TypeQueryKind::None: default: std::abort(); return nullptr;
                     case TypeQueryKind::SizeOf: {
                         const auto storageSize = calculateStorageSize(reducedType.get(), "`sizeof`"_sv);
                         if (storageSize.hasValue()) {
@@ -1564,19 +1592,20 @@ namespace wiz {
                                     makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(builtins.getDefinition(Builtins::DefinitionType::IExpr)), expression->location),
                                     ExpressionInfo::Flags {}));
                         }
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
                     case TypeQueryKind::AlignOf: {
                         report->error("TODO: alignof support.", expression->location);
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
                 }
-            },
-            [&](const Expression::UnaryOperator& unaryOperator) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::UnaryOperator>(): {
+                const auto& unaryOperator = variant.get<Expression::UnaryOperator>();
                 const auto op = unaryOperator.op;
                 auto operand = reduceExpression(unaryOperator.operand.get());
                 if (!operand) {
-                    return FwdUniquePtr<const Expression>();
+                    return nullptr;
                 }
 
                 if (op != UnaryOperatorKind::Indirection
@@ -1587,12 +1616,12 @@ namespace wiz {
                 && op != UnaryOperatorKind::HighByte) {
                     if (operand->info->flags.contains<ExpressionInfo::Flag::WriteOnly>()) {
                         report->error("operand to " + getUnaryOperatorName(op).toString() + " cannot be `writeonly`", operand->location);
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
                 }
 
                 switch (op) {
-                    default: case UnaryOperatorKind::None: std::abort(); return FwdUniquePtr<const Expression>();
+                    default: case UnaryOperatorKind::None: std::abort(); return nullptr;
                     
                     // Increment operations.
                     // T -> T
@@ -1623,7 +1652,7 @@ namespace wiz {
                         }
 
                         report->error(getUnaryOperatorName(unaryOperator.op).toString() + " is not defined for provided operand type `" + getTypeName(operand->info->type.get()) + "`", expression->location);
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
 
                     // Address-of operator. Compile-time or link-time.
@@ -1694,7 +1723,7 @@ namespace wiz {
                             } else if (const auto funcDefinition = resolvedIdentifier->definition->variant.tryGet<Definition::Func>()) {
                                 if (funcDefinition->inlined) {
                                     report->error("`" + resolvedIdentifier->definition->name.toString() + "` is an `inline func` so it has no address that can be taken with " + getUnaryOperatorName(unaryOperator.op).toString(), expression->location);
-                                    return FwdUniquePtr<const Expression>();
+                                    return nullptr;
                                 }
 
                                 auto resultType = makeFwdUnique<const TypeExpression>(
@@ -1715,7 +1744,7 @@ namespace wiz {
                             }
                         }
                         report->error(getUnaryOperatorName(unaryOperator.op).toString() + " cannot be used on provided expression", expression->location);
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
 
                     // Bitwise negation:
@@ -1755,7 +1784,7 @@ namespace wiz {
                         }
                            
                         report->error(getUnaryOperatorName(unaryOperator.op).toString() + " is not defined for provided operand type `" + getTypeName(resultType) + "`", expression->location);
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
 
                     // Expression grouping. Returns the operand directly and removes itself from the tree.
@@ -1791,7 +1820,7 @@ namespace wiz {
                                         if (const auto builtinIntegerType = typeDefinition->variant.tryGet<Definition::BuiltinIntegerType>()) {
                                             if (value < builtinIntegerType->min || value > builtinIntegerType->max) {
                                                 report->error(getUnaryOperatorName(unaryOperator.op).toString() + " resulted in `" + getTypeName(resultType) + "` value of `" + value.toString() + "` outside valid range `" + builtinIntegerType->min.toString() + "` .. `" + builtinIntegerType->max.toString() + "`", expression->location);
-                                                return FwdUniquePtr<const Expression>();
+                                                return nullptr;
                                             }
                                         }
                                     }
@@ -1801,13 +1830,13 @@ namespace wiz {
                                         ExpressionInfo(EvaluationContext::CompileTime, resultType->clone(), ExpressionInfo::Flags {}));
                                 } else {
                                     report->error(getUnaryOperatorName(unaryOperator.op).toString() + " resulted in overflow", expression->location);
-                                    return FwdUniquePtr<const Expression>();
+                                    return nullptr;
                                 }
                             }
                         }
                            
                         report->error(getUnaryOperatorName(unaryOperator.op).toString() + " is not defined for provided operand type `" + getTypeName(operand->info->type.get()) + "`", expression->location);
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
 
                     // Byte access operators.
@@ -1822,7 +1851,7 @@ namespace wiz {
                             case UnaryOperatorKind::LowByte: offset = 0; break;
                             case UnaryOperatorKind::HighByte: offset = 1; break;
                             case UnaryOperatorKind::BankByte: offset = 2; break;
-                            default: std::abort(); return FwdUniquePtr<const Expression>();
+                            default: std::abort(); return nullptr;
                         }
 
                         Optional<std::size_t> storageSize;
@@ -1835,14 +1864,14 @@ namespace wiz {
                         if (needsStorageSizeCheck) {
                             storageSize = calculateStorageSize(sourceType, "operand"_sv);
                             if (!storageSize.hasValue()) {
-                                return FwdUniquePtr<const Expression>();
+                                return nullptr;
                             }
                         }
 
                         if ((!isIntegerType(sourceType) && !isEnumType(sourceType) && !isPointerLikeType(sourceType))
                         || (storageSize.hasValue() && offset >= *storageSize)) {
                             report->error(getUnaryOperatorName(unaryOperator.op).toString() + " is not defined for provided operand type `" + getTypeName(operand->info->type.get()) + "`", expression->location);
-                            return FwdUniquePtr<const Expression>();
+                            return nullptr;
                         }
 
                         auto resultType = makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(builtins.getDefinition(Builtins::DefinitionType::U8)), expression->location);
@@ -1866,7 +1895,7 @@ namespace wiz {
                             } else if (const auto funcDefinition = resolvedIdentifier->definition->variant.tryGet<Definition::Func>()) {
                                 if (funcDefinition->inlined) {
                                     report->error("`" + resolvedIdentifier->definition->name.toString() + "` is an `inline func` so it cannot be used with " + getUnaryOperatorName(unaryOperator.op).toString(), expression->location);
-                                    return FwdUniquePtr<const Expression>();
+                                    return nullptr;
                                 }
 
                                 if (funcDefinition->address.hasValue() && funcDefinition->address.get().absolutePosition.hasValue()) {
@@ -1901,9 +1930,8 @@ namespace wiz {
                     }
                 }
             }
-        ));
-
-        return result;
+            default: std::abort(); return nullptr;
+        }
     }
 
     Optional<std::size_t> Compiler::tryGetSequenceLiteralLength(const Expression* expression) const {
@@ -2038,7 +2066,7 @@ namespace wiz {
                     varDefinition->modifiers.contains<Modifier::Const>() ? "const"
                     : varDefinition->modifiers.contains<Modifier::WriteOnly>() ? "writeonly"
                     : "var") + " " + getResolvedIdentifierName(definition, pieces) + "` before its type was known", location);
-                return FwdUniquePtr<const Expression>();
+                return nullptr;
             }
             if (const auto designatedStorageType = varDefinition->resolvedType->variant.tryGet<TypeExpression::DesignatedStorage>()) {
                 return designatedStorageType->holder->clone();
@@ -2058,7 +2086,7 @@ namespace wiz {
         } else if (const auto funcDefinition = definition->variant.tryGet<Definition::Func>()) {
             if (funcDefinition->resolvedSignatureType == nullptr) {
                 report->error("encountered a reference to func `" + getResolvedIdentifierName(definition, pieces) + "` before its type was known", location);
-                return FwdUniquePtr<const Expression>();
+                return nullptr;
             }
 
             auto context = EvaluationContext::LinkTime;
@@ -2085,7 +2113,7 @@ namespace wiz {
         } else if (const auto enumMemberDefinition = definition->variant.tryGet<Definition::EnumMember>()) {
             if (enumMemberDefinition->reducedExpression == nullptr) {
                 report->error("encountered a reference to enum value `" + getResolvedIdentifierName(definition, pieces) + "` before its value was known", location);
-                return FwdUniquePtr<const Expression>();
+                return nullptr;
             }
             return enumMemberDefinition->reducedExpression->clone();
         }
@@ -2331,7 +2359,7 @@ namespace wiz {
         }
                            
         report->error(getUnaryOperatorName(UnaryOperatorKind::LogicalNegation).toString() + " is not defined for provided operand type `" + getTypeName(resultType) + "`", expression->location);
-        return FwdUniquePtr<const Expression>();
+        return nullptr;
     }
 
     FwdUniquePtr<const Expression> Compiler::simplifyBinaryArithmeticExpression(const Expression* expression, BinaryOperatorKind op, FwdUniquePtr<const Expression> left, FwdUniquePtr<const Expression> right) {
@@ -2356,7 +2384,7 @@ namespace wiz {
                             if (const auto builtinIntegerType = typeDefinition->variant.tryGet<Definition::BuiltinIntegerType>()) {
                                 if (value < builtinIntegerType->min || value > builtinIntegerType->max) {
                                     report->error(getBinaryOperatorName(op).toString() + " resulted in `" + getTypeName(resultType) + "` value of `" + value.toString() + "` outside valid range `" + builtinIntegerType->min.toString() + "` .. `" + builtinIntegerType->max.toString() + "`", expression->location);
-                                    return FwdUniquePtr<const Expression>();
+                                    return nullptr;
                                 }
                             }
                         }
@@ -2365,19 +2393,18 @@ namespace wiz {
                     }
                     case Int128::CheckedArithmeticResult::OverflowError: {
                         report->error(getBinaryOperatorName(op).toString() + " resulted in overflow", right->location);
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
                     case Int128::CheckedArithmeticResult::DivideByZeroError: {
                         report->error(getBinaryOperatorName(op).toString() + " by zero", right->location);
-                        return FwdUniquePtr<const Expression>();
+                        return nullptr;
                     }
                     default: std::abort();
                 }
             }
         }
-        // TODO: check for pointer types compatible with `+`, and do pointer addition rules.
         report->error(getBinaryOperatorName(op).toString() + " is not defined between provided operand types `" + getTypeName(left->info->type.get()) + "` and `" + getTypeName(right->info->type.get()) + "`", expression->location);
-        return FwdUniquePtr<const Expression>();
+        return nullptr;
     }
 
     FwdUniquePtr<const Expression> Compiler::simplifyBinaryLogicalExpression(const Expression* expression, BinaryOperatorKind op, FwdUniquePtr<const Expression> left, FwdUniquePtr<const Expression> right) {
@@ -2450,7 +2477,7 @@ namespace wiz {
         }
 
         report->error(getBinaryOperatorName(op).toString() + " is not defined between provided operand types `" + getTypeName(left->info->type.get()) + "` and `" + getTypeName(right->info->type.get()) + "`", expression->location);
-        return FwdUniquePtr<const Expression>();
+        return nullptr;
     }
 
     FwdUniquePtr<const Expression> Compiler::simplifyBinaryRotateExpression(const Expression* expression, BinaryOperatorKind op, FwdUniquePtr<const Expression> left, FwdUniquePtr<const Expression> right) {
@@ -2491,7 +2518,7 @@ namespace wiz {
             }            
         }
         report->error(getBinaryOperatorName(op).toString() + " is not defined between provided operand types `" + getTypeName(left->info->type.get()) + "` and `" + getTypeName(right->info->type.get()) + "`", expression->location);
-        return FwdUniquePtr<const Expression>();
+        return nullptr;
     }
 
     FwdUniquePtr<const Expression> Compiler::simplifyBinaryComparisonExpression(const Expression* expression, BinaryOperatorKind op, FwdUniquePtr<const Expression> left, FwdUniquePtr<const Expression> right) {
@@ -2549,7 +2576,7 @@ namespace wiz {
         }
 
         report->error(getBinaryOperatorName(op).toString() + " is not defined between provided operand types `" + getTypeName(left->info->type.get()) + "` and `" + getTypeName(right->info->type.get()) + "`", expression->location);
-        return FwdUniquePtr<const Expression>();
+        return nullptr;
     }
 
     bool Compiler::isTypeDefinition(const Definition* definition) const {
@@ -2877,8 +2904,10 @@ namespace wiz {
             return isTypeEquivalent(leftTypeExpression, rightDesignatedStorageType->elementType.get());
         }
 
-        return leftTypeExpression->variant.visit(makeOverload(
-            [&](const TypeExpression::Array& leftArrayType) { 
+        const auto& leftVariant = leftTypeExpression->variant;
+        switch (leftVariant.index()) {
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Array>(): {
+                const auto& leftArrayType = leftVariant.get<TypeExpression::Array>();
                 if (const auto rightArrayType = rightTypeExpression->variant.tryGet<TypeExpression::Array>()) {
 
                     if (leftArrayType.size && rightArrayType->size) {
@@ -2892,11 +2921,13 @@ namespace wiz {
                     return isTypeEquivalent(leftArrayType.elementType.get(), rightArrayType->elementType.get());
                 }
                 return false;
-            },
-            [&](const TypeExpression::DesignatedStorage& leftDesignatedStorageType) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::DesignatedStorage>(): {
+                const auto& leftDesignatedStorageType = leftVariant.get<TypeExpression::DesignatedStorage>();
                 return isTypeEquivalent(leftDesignatedStorageType.elementType.get(), rightTypeExpression);
-            },
-            [&](const TypeExpression::Function& leftFunctionType) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Function>(): {
+                const auto& leftFunctionType = leftVariant.get<TypeExpression::Function>();
                 if (const auto rightFunctionType = rightTypeExpression->variant.tryGet<TypeExpression::Function>()) {
                     const auto& leftParameterTypes = leftFunctionType.parameterTypes;
                     const auto& rightParameterTypes = rightFunctionType->parameterTypes;
@@ -2915,25 +2946,25 @@ namespace wiz {
                     return true;
                 }
                 return false;
-            },
-            [&](const TypeExpression::Identifier&) {
-                std::abort();
-                return false;
-            },
-            [&](const TypeExpression::Pointer& leftPointerType) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Identifier>(): std::abort(); return false;
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Pointer>(): {
+                const auto& leftPointerType = leftVariant.get<TypeExpression::Pointer>();
                 if (const auto rightPointerType = rightTypeExpression->variant.tryGet<TypeExpression::Pointer>()) {
                     return isTypeEquivalent(leftPointerType.elementType.get(), rightPointerType->elementType.get())
                         && leftPointerType.qualifiers == rightPointerType->qualifiers;
                 }
                 return false;
-            },
-            [&](const TypeExpression::ResolvedIdentifier& leftResolvedIdentifierType) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::ResolvedIdentifier>(): {
+                const auto& leftResolvedIdentifierType = leftVariant.get<TypeExpression::ResolvedIdentifier>();
                 if (const auto rightResolvedIdentifierType = rightTypeExpression->variant.tryGet<TypeExpression::ResolvedIdentifier>()) {
                     return leftResolvedIdentifierType.definition == rightResolvedIdentifierType->definition;
                 }
                 return false;
-            },
-            [&](const TypeExpression::Tuple& leftTuple) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Tuple>(): {
+                const auto& leftTuple = leftVariant.get<TypeExpression::Tuple>();
                 if (const auto rightTuple = rightTypeExpression->variant.tryGet<TypeExpression::Tuple>()) {
                     const auto& leftElementTypes = leftTuple.elementTypes;
                     const auto& rightElementTypes = rightTuple->elementTypes;
@@ -2949,9 +2980,10 @@ namespace wiz {
                     return true;
                 }
                 return false;
-            },
-            [&](const TypeExpression::TypeOf&) { return false; }
-        ));
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::TypeOf>():  return false;
+            default: std::abort(); return false;
+        }
     }
 
     std::string Compiler::getTypeName(const TypeExpression* typeExpression) const {
@@ -2959,8 +2991,10 @@ namespace wiz {
             return "<unknown type>";
         }
 
-        return typeExpression->variant.visit(makeOverload(
-            [&](const TypeExpression::Array& arrayType) {
+        const auto& variant = typeExpression->variant;
+        switch (variant.index()) {
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Array>(): {
+                const auto& arrayType = variant.get<TypeExpression::Array>();
                 std::string result = "[" + getTypeName(arrayType.elementType.get());
                 if (arrayType.size != nullptr) {
                     result += "; ";
@@ -2971,11 +3005,13 @@ namespace wiz {
                     }
                 }
                 return result + "]";
-            },
-            [&](const TypeExpression::DesignatedStorage& designatedStorageType) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::DesignatedStorage>(): {
+                const auto& designatedStorageType = variant.get<TypeExpression::DesignatedStorage>();
                 return getTypeName(designatedStorageType.elementType.get()) + " in <designated storage>";
-            },
-            [&](const TypeExpression::Function& functionType) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Function>(): {
+                const auto& functionType = variant.get<TypeExpression::Function>();
                 auto result = std::string(functionType.far ? "far " : "") + "func";
                 const auto& parameterTypes = functionType.parameterTypes;
                 if (parameterTypes.size() > 0) {
@@ -2992,12 +3028,14 @@ namespace wiz {
                     result += " : " + getTypeName(functionType.returnType.get());
                 }
                 return result;
-            },
-            [&](const TypeExpression::Identifier& identifierType) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Identifier>(): {
+                const auto& identifierType = variant.get<TypeExpression::Identifier>();
                 const auto& pieces = identifierType.pieces;
                 return text::join(pieces.begin(), pieces.end(), ".");
-            },
-            [&](const TypeExpression::Pointer& pointerType) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Pointer>(): {
+                const auto& pointerType = variant.get<TypeExpression::Pointer>();
                 return 
                     std::string(pointerType.qualifiers.contains<PointerQualifier::Far>() ? "far " : "")
                     + "*"
@@ -3005,25 +3043,28 @@ namespace wiz {
                         : pointerType.qualifiers.contains<PointerQualifier::WriteOnly>() ? "writeonly "
                         : "")
                     + getTypeName(pointerType.elementType.get());
-            },
-            [&](const TypeExpression::ResolvedIdentifier& resolvedIdentifierType) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::ResolvedIdentifier>(): {
+                const auto& resolvedIdentifierType = variant.get<TypeExpression::ResolvedIdentifier>();
                 const auto& pieces = resolvedIdentifierType.pieces;
                 if (pieces.size() > 0) {
                     return text::join(pieces.begin(), pieces.end(), ".");
                 }
                 return resolvedIdentifierType.definition->name.toString();
-            },
-            [&](const TypeExpression::Tuple& tuple) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Tuple>(): {
+                const auto& tupleType = variant.get<TypeExpression::Tuple>();
                 std::string result = "(";
-                const auto& elementTypes = tuple.elementTypes;
+                const auto& elementTypes = tupleType.elementTypes;
                 for (std::size_t i = 0; i != elementTypes.size(); ++i) {
                     result += (i != 0 ? ", " : "") + getTypeName(elementTypes[i].get());
                 }
                 result += ")";
                 return result;
-            },
-            [&](const TypeExpression::TypeOf&) { return std::string("`typeof`"); }
-        ));
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::TypeOf>(): return "`typeof`";
+            default: std::abort(); return "";
+        }
     }
 
     Optional<std::size_t> Compiler::calculateStorageSize(const TypeExpression* typeExpression, StringView description) const {
@@ -3031,8 +3072,10 @@ namespace wiz {
             return Optional<std::size_t>();
         }
 
-        return typeExpression->variant.visit(makeOverload(
-            [&](const TypeExpression::Array& arrayType) {
+        const auto& variant = typeExpression->variant;
+        switch (variant.index()) {
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Array>(): {
+                const auto& arrayType = variant.get<TypeExpression::Array>();
                 if (arrayType.size != nullptr) {
                     const auto elementSize = calculateStorageSize(arrayType.elementType.get(), description);
                     if (elementSize.hasValue()) {
@@ -3052,23 +3095,21 @@ namespace wiz {
                     report->error("could not resolve length for implicitly-sized array used for " + description.toString(), typeExpression->location);
                 }
                 return Optional<std::size_t>();
-            },
-            [&](const TypeExpression::DesignatedStorage&) {
-                return Optional<std::size_t>();
-            },
-            [&](const TypeExpression::Function& functionType) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::DesignatedStorage>(): return Optional<std::size_t>();
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Function>(): {
+                const auto& functionType = variant.get<TypeExpression::Function>();
                 const auto pointerSizedType = functionType.far ? platform->getFarPointerSizedType() : platform->getPointerSizedType();
                 return Optional<std::size_t>(pointerSizedType->variant.get<Definition::BuiltinIntegerType>().size);
-            },
-            [&](const TypeExpression::Identifier&) {
-                std::abort();
-                return Optional<std::size_t>();
-            },
-            [&](const TypeExpression::Pointer& pointerType) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Identifier>(): std::abort(); return Optional<std::size_t>();
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Pointer>(): {
+                const auto& pointerType = variant.get<TypeExpression::Pointer>();
                 const auto pointerSizedType = pointerType.qualifiers.contains<PointerQualifier::Far>() ? platform->getFarPointerSizedType() : platform->getPointerSizedType();
                 return Optional<std::size_t>(pointerSizedType->variant.get<Definition::BuiltinIntegerType>().size);
-            },
-            [&](const TypeExpression::ResolvedIdentifier& resolvedIdentifierType) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::ResolvedIdentifier>(): {
+                const auto& resolvedIdentifierType = variant.get<TypeExpression::ResolvedIdentifier>();
                 const auto definition = resolvedIdentifierType.definition;
                 if (resolvedIdentifierType.definition->variant.is<Definition::BuiltinBoolType>()) {
                     return Optional<std::size_t>(1);
@@ -3085,10 +3126,11 @@ namespace wiz {
                 }
                 report->error("type `" + definition->name.toString() + "` has unknown storage size, so it cannot be used for " + description.toString(), typeExpression->location);
                 return Optional<std::size_t>();
-            },
-            [&](const TypeExpression::Tuple& tuple) {
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Tuple>(): {
+                const auto& tupleType = variant.get<TypeExpression::Tuple>();
                 std::size_t result = 0;
-                const auto& elementTypes = tuple.elementTypes;
+                const auto& elementTypes = tupleType.elementTypes;
 
                 for (std::size_t i = 0; i != elementTypes.size(); ++i) {
                     auto elementSize = calculateStorageSize(elementTypes[i].get(), description);
@@ -3105,9 +3147,10 @@ namespace wiz {
                 }
 
                 return Optional<std::size_t>(result);
-            },                        
-            [&](const TypeExpression::TypeOf&) { return Optional<std::size_t>(); }
-        ));
+            }
+            case TypeExpression::VariantType::typeIndexOf<TypeExpression::TypeOf>(): return Optional<std::size_t>();
+            default: std::abort(); return Optional<std::size_t>();
+        }
     }
 
     Optional<std::size_t> Compiler::resolveExplicitAddressExpression(const Expression* expression) {
@@ -3176,35 +3219,40 @@ namespace wiz {
         // NOTE: this requires a fully-reduced literal value expression.
         // All identifiers, operators, embeds, etc. must be substituted with a reduced literal values.
         // Otherwise, it cannot be serialized.
-        return expression->variant.visit(makeOverload(
-            [&](const Expression::ArrayComprehension&) { return false; },
-            [&](const Expression::ArrayPadLiteral&) { return false; },
-            [&](const Expression::ArrayLiteral& arrayLiteral) {
+        const auto& variant = expression->variant;
+        switch (variant.index()) {
+            case Expression::VariantType::typeIndexOf<Expression::ArrayComprehension>(): return false;
+            case Expression::VariantType::typeIndexOf<Expression::ArrayPadLiteral>(): return false;
+            case Expression::VariantType::typeIndexOf<Expression::ArrayLiteral>(): {
+                const auto& arrayLiteral = variant.get<Expression::ArrayLiteral>();
                 for (const auto& item : arrayLiteral.items) {
                     if (!serializeConstantInitializer(item.get(), result)) {
                         return false;
                     }
                 }
                 return true;
-            },
-            [&](const Expression::BinaryOperator&) { return false; },
-            [&](const Expression::BooleanLiteral& booleanLiteral) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::BinaryOperator>(): return false;
+            case Expression::VariantType::typeIndexOf<Expression::BooleanLiteral>(): {
+                const auto& booleanLiteral = variant.get<Expression::BooleanLiteral>();
                 return serializeInteger(Int128(booleanLiteral.value ? 1 : 0), 1, result);
-            },
-            [&](const Expression::Call&) { return false; },
-            [&](const Expression::Cast&) { return false; },
-            [&](const Expression::Embed&) { return false; },
-            [&](const Expression::FieldAccess&) { return false; },
-            [&](const Expression::Identifier&) { return false; },
-            [&](const Expression::IntegerLiteral& integerLiteral) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::Call>(): return false;
+            case Expression::VariantType::typeIndexOf<Expression::Cast>(): return false;
+            case Expression::VariantType::typeIndexOf<Expression::Embed>(): return false;
+            case Expression::VariantType::typeIndexOf<Expression::FieldAccess>(): return false;
+            case Expression::VariantType::typeIndexOf<Expression::Identifier>(): std::abort(); return false;
+            case Expression::VariantType::typeIndexOf<Expression::IntegerLiteral>(): {
+                const auto& integerLiteral = variant.get<Expression::IntegerLiteral>();
                 if (const auto storageSize = calculateStorageSize(expression->info->type.get(), "integer literal"_sv)) {
                     return serializeInteger(integerLiteral.value, *storageSize, result);
                 }
                 return false;
-            },
-            [&](const Expression::OffsetOf&) { return false; },
-            [&](const Expression::RangeLiteral&) { return false; },
-            [&](const Expression::ResolvedIdentifier& resolvedIdentifier) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::OffsetOf>(): std::abort(); return false;
+            case Expression::VariantType::typeIndexOf<Expression::RangeLiteral>(): return false;
+            case Expression::VariantType::typeIndexOf<Expression::ResolvedIdentifier>(): {
+                const auto& resolvedIdentifier = variant.get<Expression::ResolvedIdentifier>();
                 const auto definition = resolvedIdentifier.definition;
 
                 Optional<std::size_t> absolutePosition;
@@ -3222,17 +3270,19 @@ namespace wiz {
                     return serializeInteger(Int128(*absolutePosition), platform->getPointerSizedType()->variant.get<Definition::BuiltinIntegerType>().size, result);
                 }
                 return false;
-            },
-            [&](const Expression::SideEffect&) { return false; },
-            [&](const Expression::StringLiteral& stringLiteral) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::SideEffect>(): return false;
+            case Expression::VariantType::typeIndexOf<Expression::StringLiteral>(): {
+                const auto& stringLiteral = variant.get<Expression::StringLiteral>();
                 const auto data = stringLiteral.value.getData();
                 const auto len = stringLiteral.value.getLength();
                 for (std::size_t i = 0; i != len; ++i) {
                     result.push_back(data[i]);
                 }
                 return true;
-            },
-            [&](const Expression::StructLiteral& structLiteral) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::StructLiteral>(): {
+                const auto& structLiteral = variant.get<Expression::StructLiteral>();
                 const auto definition = structLiteral.type->variant.get<TypeExpression::ResolvedIdentifier>().definition;
                 const auto& structDefinition = definition->variant.get<Definition::Struct>();                
                 const auto sizeBefore = result.size();
@@ -3265,8 +3315,9 @@ namespace wiz {
                 }
 
                 return true;
-            },
-            [&](const Expression::TupleLiteral& tupleLiteral) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::TupleLiteral>(): {
+                const auto& tupleLiteral = variant.get<Expression::TupleLiteral>();
                 // TODO: alignment/padding as required for tuples.
                 for (const auto& item : tupleLiteral.items) {
                     if (!serializeConstantInitializer(item.get(), result)) {
@@ -3274,11 +3325,12 @@ namespace wiz {
                     }
                 }
                 return true;
-            },
-            [&](const Expression::TypeOf&) { return false; },
-            [&](const Expression::TypeQuery&) { return false; },
-            [&](const Expression::UnaryOperator&) { return false; }
-        ));
+            }
+            case Expression::VariantType::typeIndexOf<Expression::TypeOf>(): return false;
+            case Expression::VariantType::typeIndexOf<Expression::TypeQuery>(): std::abort(); return false;
+            case Expression::VariantType::typeIndexOf<Expression::UnaryOperator>(): return false;
+            default: std::abort(); return false;
+        }
     }
 
 
@@ -4075,7 +4127,7 @@ namespace wiz {
         } else if (resolvedTypeDefinition->variant.is<Definition::BuiltinBoolType>()) {
             return makeFwdUnique<InstructionOperand>(InstructionOperand::Boolean(false, true));
         } 
-        return FwdUniquePtr<InstructionOperand>();
+        return nullptr;
     }
 
     FwdUniquePtr<InstructionOperand> Compiler::createPlaceholderFromTypeExpression(const TypeExpression* typeExpression) const {
@@ -4155,12 +4207,12 @@ namespace wiz {
     }
 
     FwdUniquePtr<InstructionOperand> Compiler::createOperandFromRunTimeExpression(const Expression* expression, bool quiet) const {
-        // TODO: handle link-time expressions as a single unit and stop recursing / reading children.
-        return expression->variant.visit(makeOverload(
-            [&](const Expression::ArrayComprehension&) { return FwdUniquePtr<InstructionOperand>(); },
-            [&](const Expression::ArrayPadLiteral&) { return FwdUniquePtr<InstructionOperand>(); },
-            [&](const Expression::ArrayLiteral&) { return FwdUniquePtr<InstructionOperand>(); },
-            [&](const Expression::BinaryOperator& binaryOperator) {
+        const auto& variant = expression->variant;
+        switch (variant.index()){
+            case Expression::VariantType::typeIndexOf<Expression::ArrayComprehension>(): return nullptr;
+            case Expression::VariantType::typeIndexOf<Expression::ArrayPadLiteral>(): return nullptr;
+            case Expression::VariantType::typeIndexOf<Expression::BinaryOperator>(): {
+                const auto& binaryOperator = variant.get<Expression::BinaryOperator>();
                 if (binaryOperator.op == BinaryOperatorKind::Indexing) {
                     const auto indexLiteral = binaryOperator.right->variant.tryGet<Expression::IntegerLiteral>();
 
@@ -4173,7 +4225,7 @@ namespace wiz {
                                 createPlaceholderFromResolvedTypeDefinition(far ? platform->getFarPointerSizedType() : platform->getPointerSizedType()),
                                 *indirectionSize));
                         }
-                        return FwdUniquePtr<InstructionOperand>();
+                        return nullptr;
                     }
                     if (const auto indirectionSize = calculateStorageSize(expression->info->type.get(), "operand"_sv)) {
                         if (auto operand = createOperandFromExpression(binaryOperator.left.get(), quiet)) {
@@ -4189,7 +4241,7 @@ namespace wiz {
                             }
                         }
                     }
-                    return FwdUniquePtr<InstructionOperand>();
+                    return nullptr;
                 } else if (binaryOperator.op == BinaryOperatorKind::BitIndexing) {
                     auto operand = createOperandFromExpression(binaryOperator.left.get(), quiet);
                     auto subscript = createOperandFromExpression(binaryOperator.right.get(), quiet);
@@ -4215,13 +4267,15 @@ namespace wiz {
                     }
                 }
 
-                return FwdUniquePtr<InstructionOperand>();
-            },
-            [&](const Expression::BooleanLiteral& booleanLiteral) {
+                return nullptr;
+            }
+            case Expression::VariantType::typeIndexOf<Expression::BooleanLiteral>(): {
+                const auto& booleanLiteral = variant.get<Expression::BooleanLiteral>();
                 return makeFwdUnique<InstructionOperand>(InstructionOperand::Boolean(booleanLiteral.value));
-            },
-            [&](const Expression::Call&) { return FwdUniquePtr<InstructionOperand>(); },
-            [&](const Expression::Cast& cast) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::Call>(): return nullptr;
+            case Expression::VariantType::typeIndexOf<Expression::Cast>(): {
+                const auto& cast = variant.get<Expression::Cast>();
                 const auto sourceType = cast.operand->info->type.get();
                 const auto destType = expression->info->type.get();
                 if (const auto sourceExpressionSize = calculateStorageSize(sourceType, "left-hand side of cast expression"_sv)) {
@@ -4247,26 +4301,29 @@ namespace wiz {
                         }
                     }
                 }
-                return FwdUniquePtr<InstructionOperand>();
-            },
-            [&](const Expression::Embed&) { return FwdUniquePtr<InstructionOperand>(); },
-            [&](const Expression::FieldAccess&) { return FwdUniquePtr<InstructionOperand>();  },
-            [&](const Expression::Identifier&) { return FwdUniquePtr<InstructionOperand>(); },
-            [&](const Expression::IntegerLiteral& integerLiteral) {
+                return nullptr;
+            }
+            case Expression::VariantType::typeIndexOf<Expression::Embed>(): return nullptr;
+            case Expression::VariantType::typeIndexOf<Expression::FieldAccess>(): return nullptr;
+            case Expression::VariantType::typeIndexOf<Expression::Identifier>(): return nullptr;
+            case Expression::VariantType::typeIndexOf<Expression::IntegerLiteral>(): {
+                const auto& integerLiteral = variant.get<Expression::IntegerLiteral>();
                 return makeFwdUnique<InstructionOperand>(InstructionOperand::Integer(integerLiteral.value));
-            },
-            [&](const Expression::OffsetOf&) { return FwdUniquePtr<InstructionOperand>(); },
-            [&](const Expression::RangeLiteral&) { return FwdUniquePtr<InstructionOperand>(); },
-            [&](const Expression::ResolvedIdentifier& resolvedIdentifier) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::OffsetOf>(): return nullptr;
+            case Expression::VariantType::typeIndexOf<Expression::RangeLiteral>(): return nullptr;
+            case Expression::VariantType::typeIndexOf<Expression::ResolvedIdentifier>(): {
+                const auto& resolvedIdentifier = variant.get<Expression::ResolvedIdentifier>();
                 return createOperandFromResolvedIdentifier(expression, resolvedIdentifier.definition);
-            },
-            [&](const Expression::SideEffect&) { return FwdUniquePtr<InstructionOperand>(); },
-            [&](const Expression::StringLiteral&) { return FwdUniquePtr<InstructionOperand>(); },
-            [&](const Expression::StructLiteral&) { return FwdUniquePtr<InstructionOperand>(); },
-            [&](const Expression::TupleLiteral&) { return FwdUniquePtr<InstructionOperand>(); },
-            [&](const Expression::TypeOf&) { return FwdUniquePtr<InstructionOperand>(); },
-            [&](const Expression::TypeQuery&) { return FwdUniquePtr<InstructionOperand>(); },
-            [&](const Expression::UnaryOperator& unaryOperator) {
+            }
+            case Expression::VariantType::typeIndexOf<Expression::SideEffect>(): return nullptr;
+            case Expression::VariantType::typeIndexOf<Expression::StringLiteral>(): return nullptr;
+            case Expression::VariantType::typeIndexOf<Expression::StructLiteral>(): return nullptr;
+            case Expression::VariantType::typeIndexOf<Expression::TupleLiteral>(): return nullptr;
+            case Expression::VariantType::typeIndexOf<Expression::TypeOf>(): return nullptr;
+            case Expression::VariantType::typeIndexOf<Expression::TypeQuery>(): return nullptr;
+            case Expression::VariantType::typeIndexOf<Expression::UnaryOperator>(): {
+                const auto& unaryOperator = variant.get<Expression::UnaryOperator>();
                 if (auto operand = createOperandFromExpression(unaryOperator.operand.get(), quiet)) {
                     switch (unaryOperator.op) {
                         case UnaryOperatorKind::Indirection: {
@@ -4306,16 +4363,17 @@ namespace wiz {
                                     std::move(operand),
                                     *indirectionSize));
                             }
-                            return FwdUniquePtr<InstructionOperand>();
+                            return nullptr;
                         }
                         default: {
                             return makeFwdUnique<InstructionOperand>(InstructionOperand::Unary(unaryOperator.op, std::move(operand)));
                         }
                     }
                 }
-                return FwdUniquePtr<InstructionOperand>();
+                return nullptr;
             }
-        ));
+            default: std::abort(); return nullptr;
+        }
     }
 
     FwdUniquePtr<InstructionOperand> Compiler::createOperandFromExpression(const Expression* expression, bool quiet) const {
@@ -4328,41 +4386,45 @@ namespace wiz {
 
     bool Compiler::isLeafExpression(const Expression* expression) const {
         if (expression->info->context == EvaluationContext::RunTime) {
-            return expression->variant.visit(makeOverload(
-                [&](const Expression::ArrayComprehension&) { return true; },
-                [&](const Expression::ArrayPadLiteral&) { return true; },
-                [&](const Expression::ArrayLiteral&) { return true; },
-                [&](const Expression::BinaryOperator& binaryOperator) {
+            const auto& variant = expression->variant;
+            switch (variant.index()){
+                case Expression::VariantType::typeIndexOf<Expression::ArrayComprehension>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::ArrayPadLiteral>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::ArrayLiteral>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::BinaryOperator>(): {
+                    const auto& binaryOperator = variant.get<Expression::BinaryOperator>();
                     const auto op = binaryOperator.op;
                     if (op == BinaryOperatorKind::BitIndexing
                     || op == BinaryOperatorKind::Indexing) {
                         return true;
                     }
                     return false;
-                },
-                [&](const Expression::BooleanLiteral&) { return true; },
-                [&](const Expression::Call&) { return false; },
-                [&](const Expression::Cast&) { return true; },
-                [&](const Expression::Embed&) { return true; },
-                [&](const Expression::FieldAccess&) { return true; },
-                [&](const Expression::Identifier&) { return true; },
-                [&](const Expression::IntegerLiteral&) { return true; },
-                [&](const Expression::OffsetOf&) { return false; },
-                [&](const Expression::RangeLiteral&) { return true; },
-                [&](const Expression::ResolvedIdentifier&) { return true; },
-                [&](const Expression::SideEffect&) { return false; },
-                [&](const Expression::StringLiteral&) { return true; },
-                [&](const Expression::StructLiteral&) { return true; },
-                [&](const Expression::TupleLiteral&) { return true; },
-                [&](const Expression::TypeOf&) { return false; },
-                [&](const Expression::TypeQuery&) { return false; },
-                [&](const Expression::UnaryOperator& unaryOperator) {
+                }
+                case Expression::VariantType::typeIndexOf<Expression::BooleanLiteral>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::Call>(): return false;
+                case Expression::VariantType::typeIndexOf<Expression::Cast>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::Embed>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::FieldAccess>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::Identifier>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::IntegerLiteral>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::OffsetOf>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::RangeLiteral>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::ResolvedIdentifier>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::SideEffect>(): return false;
+                case Expression::VariantType::typeIndexOf<Expression::StringLiteral>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::StructLiteral>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::TupleLiteral>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::TypeOf>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::TypeQuery>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::UnaryOperator>(): {
+                    const auto& unaryOperator = variant.get<Expression::UnaryOperator>();
                     if (unaryOperator.op == UnaryOperatorKind::Indirection) {
                         return true;
                     }
                     return false;
                 }
-            ));
+                default: std::abort(); return false;
+            }
         } else {
             return true;
         }
