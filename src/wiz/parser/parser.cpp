@@ -2193,11 +2193,26 @@ namespace wiz {
     FwdUniquePtr<const TypeExpression> Parser::parseType() {
         const auto location = scanner->getLocation();
 
+        auto type = parseInnerType();
+
+        if (report->alive()) {
+            if (token.keyword == Keyword::In) {
+                // (`in` expr)?
+                nextToken(); // IDENTIFIER (keyword `in`)
+                auto holder = parseLogicalOr(ExpressionParseOptions());
+                type = makeFwdUnique<const TypeExpression>(TypeExpression::DesignatedStorage(std::move(type), std::move(holder)), location);
+            }
+        }
+
+        return type;
+    }
+
+    FwdUniquePtr<const TypeExpression> Parser::parseInnerType() {
         // type = ((`[` type (`;` expr)? `]`) | (IDENTIFIER (`.` IDENTIFIER)*)) `*`* (`in` expr)?
-        FwdUniquePtr<const TypeExpression> type;
+        const auto location = scanner->getLocation();
         
         if (token.keyword == Keyword::Func) {
-            type = parseFunctionType(false);
+            return parseFunctionType(false);
         } else if (token.keyword == Keyword::TypeOf) {
             nextToken(); // IDENTIFIER (keyword `typeof`)
             if (!expectTokenType(TokenType::LeftParenthesis)) { // `(`
@@ -2207,7 +2222,7 @@ namespace wiz {
             auto expression = parseExpression();
             expectTokenType(TokenType::RightParenthesis);
 
-            type = makeFwdUnique<const TypeExpression>(TypeExpression::TypeOf(std::move(expression)), location);            
+            return makeFwdUnique<const TypeExpression>(TypeExpression::TypeOf(std::move(expression)), location);            
         } else if (token.keyword == Keyword::Void) {
             nextToken(); // IDENTIFIER (keyword `void`)
             return makeFwdUnique<const TypeExpression>(TypeExpression::Tuple({}), location);
@@ -2215,25 +2230,25 @@ namespace wiz {
             nextToken(); // `far`           
 
             if (token.keyword == Keyword::Func) {
-                type = parseFunctionType(true);
+                return parseFunctionType(true);
             } else if (token.type == TokenType::Asterisk) {    
-                type = parsePointerType(PointerQualifiers { PointerQualifier::Far });
+                return parsePointerType(PointerQualifiers { PointerQualifier::Far });
             } else {
                 reject(token, "pointer `*` type or function `func` type after `far`"_sv, true);
                 return nullptr;
             }
         } else if (token.keyword == Keyword::None && token.type == TokenType::Identifier) {
             auto qualifiedIdentifier = parseQualifiedIdentifier();
-            type = makeFwdUnique<const TypeExpression>(TypeExpression::Identifier(qualifiedIdentifier), location);
+            return makeFwdUnique<const TypeExpression>(TypeExpression::Identifier(qualifiedIdentifier), location);
         } else if (token.type == TokenType::LeftParenthesis) {
             // `(` (type `,`)* `)`
             nextToken(); // `(`
 
             if (token.type == TokenType::RightParenthesis) {
                 nextToken(); // `)`
-                type = makeFwdUnique<const TypeExpression>(TypeExpression::Tuple({}), location);
+                return makeFwdUnique<const TypeExpression>(TypeExpression::Tuple({}), location);
             } else {
-                type = parseType();  // type
+                auto type = parseInnerType();  // type
 
                 if (token.type == TokenType::Comma) {
                     nextToken(); // `,`
@@ -2243,7 +2258,7 @@ namespace wiz {
                     if (token.type != TokenType::RightParenthesis) {
                         // type (`,` type )* `)`
                         while (report->alive()) {
-                            tupleTypes.push_back(parseType()); // type
+                            tupleTypes.push_back(parseInnerType()); // type
 
                             // (`,` type)*
                             if (token.type == TokenType::Comma) {
@@ -2260,12 +2275,14 @@ namespace wiz {
                     type = makeFwdUnique<const TypeExpression>(TypeExpression::Tuple(std::move(tupleTypes)), location);
                 }
                 expectTokenType(TokenType::RightParenthesis); // `)`
+
+                return type;
             }
         } else if (token.type == TokenType::LeftBracket) {
             // `[` type (`;` expr)? `]`
             nextToken(); // `[`
 
-            auto elementType = parseType();
+            auto elementType = parseInnerType();
 
             FwdUniquePtr<const Expression> size;
             if (token.type == TokenType::Semicolon) {
@@ -2275,23 +2292,13 @@ namespace wiz {
             }
 
             expectTokenType(TokenType::RightBracket); // `]`
-            type = makeFwdUnique<const TypeExpression>(TypeExpression::Array(std::move(elementType), std::move(size)), location);
+            return makeFwdUnique<const TypeExpression>(TypeExpression::Array(std::move(elementType), std::move(size)), location);
         } else if (token.type == TokenType::Asterisk) {
-            type = parsePointerType(PointerQualifiers {});
+            return parsePointerType(PointerQualifiers {});
         } else {
             reject(token, "type name"_sv, true);
             return nullptr;
         }
-
-        if (report->alive()) {
-            if (token.keyword == Keyword::In) {
-                // (`in` expr)?
-                nextToken(); // IDENTIFIER (keyword `in`)
-                auto holder = parseLogicalOr(ExpressionParseOptions());
-                type = makeFwdUnique<const TypeExpression>(TypeExpression::DesignatedStorage(std::move(type), std::move(holder)), location);
-            }
-        }
-        return type;
     }
 
     FwdUniquePtr<const TypeExpression> Parser::parseFunctionType(bool far) {
@@ -2365,7 +2372,7 @@ namespace wiz {
             default: break;
         }
 
-        auto elementType = parseType();
+        auto elementType = parseInnerType();
         return makeFwdUnique<const TypeExpression>(TypeExpression::Pointer(std::move(elementType), qualifiers), location);
     }
 }

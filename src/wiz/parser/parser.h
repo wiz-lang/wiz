@@ -107,6 +107,7 @@ namespace wiz {
             FwdUniquePtr<const Expression> parseIntegerLiteral(int radix);
             std::vector<StringView> parseQualifiedIdentifier();
             FwdUniquePtr<const TypeExpression> parseType();
+            FwdUniquePtr<const TypeExpression> parseInnerType();
             FwdUniquePtr<const TypeExpression> parseFunctionType(bool far);
             FwdUniquePtr<const TypeExpression> parsePointerType(PointerQualifiers qualifiers);
 

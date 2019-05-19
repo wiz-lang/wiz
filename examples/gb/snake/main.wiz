@@ -66,17 +66,20 @@ in rom @ 0x150 {
         memset(&gb.ram.map as u16 + (32 * 17), a, 20);
 
         // Draw vertical walls.
-        hl = &gb.ram.map as u16 + 32;
-        bc = 32;
+        var ptr : *u8 in hl;
+        var stride : u16 in bc;
+
+        ptr = &gb.ram.map[32];
+        stride = 32;
         inline for let i in 1 .. 17 {
-            *(hl as *u8) = a;
-            hl += bc;
+            *ptr = a;
+            ptr = (ptr as u16 + stride) as *u8;
         }
-        
-        hl = &gb.ram.map as u16 + 32 + 19;
+
+        ptr = &gb.ram.map[32 + 19];
         inline for let i in 1 .. 17 {
-            *(hl as *u8) = a;
-            hl += bc;
+            *ptr = a;
+            ptr = (ptr as u16 + stride) as *u8;
         }
 
         // Turn the screen back on, with backgrounds enabled using tileset 2.

@@ -301,10 +301,13 @@ namespace wiz {
                 auto reducedHolder = reduceExpression(designatedStorageType.holder.get());
 
                 if (reducedElementType != nullptr && reducedHolder != nullptr) {
-                    if (!isTypeEquivalent(reducedElementType.get(), reducedHolder->info->type.get())) {
+                    const auto elementSize = calculateStorageSize(reducedElementType.get(), "designated storage element type"_sv);
+                    const auto holderSize = calculateStorageSize(reducedHolder->info->type.get(), "designated storage holder"_sv);
+
+                    if (!elementSize.hasValue() || !holderSize.hasValue() || *elementSize != *holderSize) {
                         report->error("holder expression of type `"
                             + getTypeName(reducedHolder->info->type.get())
-                            + "` does not match required element type `"
+                            + "` is not compatible with element type `"
                             + getTypeName(reducedElementType.get())
                             + "` for `" + getTypeName(reducedElementType.get())
                             + " in <designated storage>` type",
@@ -2069,7 +2072,11 @@ namespace wiz {
                 return nullptr;
             }
             if (const auto designatedStorageType = varDefinition->resolvedType->variant.tryGet<TypeExpression::DesignatedStorage>()) {
-                return designatedStorageType->holder->clone();
+                return designatedStorageType->holder->cloneWithInfo(ExpressionInfo(
+                    EvaluationContext::RunTime,
+                    designatedStorageType->elementType->clone(),
+                    designatedStorageType->holder->info->flags
+                ));
             }
             return makeFwdUnique<const Expression>(Expression::ResolvedIdentifier(definition, pieces), location,
                 ExpressionInfo(
@@ -2901,7 +2908,10 @@ namespace wiz {
         }
 
         if (const auto rightDesignatedStorageType = rightTypeExpression->variant.tryGet<TypeExpression::DesignatedStorage>()) {
-            return isTypeEquivalent(leftTypeExpression, rightDesignatedStorageType->elementType.get());
+            const auto leftSize = calculateStorageSize(leftTypeExpression, ""_sv);
+            const auto rightSize = calculateStorageSize(rightDesignatedStorageType->elementType.get(), ""_sv);
+
+            return leftSize.hasValue() && rightSize.hasValue() && *leftSize == *rightSize;
         }
 
         const auto& leftVariant = leftTypeExpression->variant;
@@ -2924,7 +2934,10 @@ namespace wiz {
             }
             case TypeExpression::VariantType::typeIndexOf<TypeExpression::DesignatedStorage>(): {
                 const auto& leftDesignatedStorageType = leftVariant.get<TypeExpression::DesignatedStorage>();
-                return isTypeEquivalent(leftDesignatedStorageType.elementType.get(), rightTypeExpression);
+                const auto leftSize = calculateStorageSize(leftDesignatedStorageType.elementType.get(), ""_sv);
+                const auto rightSize = calculateStorageSize(rightTypeExpression, ""_sv);
+
+                return leftSize.hasValue() && rightSize.hasValue() && *leftSize == *rightSize;
             }
             case TypeExpression::VariantType::typeIndexOf<TypeExpression::Function>(): {
                 const auto& leftFunctionType = leftVariant.get<TypeExpression::Function>();
@@ -3089,10 +3102,14 @@ namespace wiz {
                             }
                         }
 
-                        report->error("array length of `" + arraySize.toString() + "` is too large to be used for " + description.toString(), typeExpression->location);
+                        if (description.getLength() > 0) {
+                            report->error("array length of `" + arraySize.toString() + "` is too large to be used for " + description.toString(), typeExpression->location);
+                        }
                     }
                 } else {
-                    report->error("could not resolve length for implicitly-sized array used for " + description.toString(), typeExpression->location);
+                    if (description.getLength() > 0) {
+                        report->error("could not resolve length for implicitly-sized array used for " + description.toString(), typeExpression->location);
+                    }
                 }
                 return Optional<std::size_t>();
             }
@@ -3124,7 +3141,10 @@ namespace wiz {
                         return Optional<std::size_t>(structType->size);
                     }
                 }
-                report->error("type `" + definition->name.toString() + "` has unknown storage size, so it cannot be used for " + description.toString(), typeExpression->location);
+
+                if (description.getLength() > 0) {
+                    report->error("type `" + definition->name.toString() + "` has unknown storage size, so it cannot be used for " + description.toString(), typeExpression->location);
+                }
                 return Optional<std::size_t>();
             }
             case TypeExpression::VariantType::typeIndexOf<TypeExpression::Tuple>(): {
@@ -3136,7 +3156,9 @@ namespace wiz {
                     auto elementSize = calculateStorageSize(elementTypes[i].get(), description);
                     if (elementSize.hasValue()) {
                         if (SIZE_MAX - result < elementSize.get()) {
-                            report->error("tuple size is too large to be calculated for " + description.toString(), typeExpression->location);
+                            if (description.getLength() > 0) {
+                                report->error("tuple size is too large to be calculated for " + description.toString(), typeExpression->location);
+                            }
                             return Optional<std::size_t>();
                         } else {
                             result += elementSize.get();
@@ -5115,6 +5137,14 @@ namespace wiz {
 
     bool Compiler::emitAssignmentExpressionIr(const Expression* dest, const Expression* source, SourceLocation location) {
         if (isLeafExpression(source)) {
+            if (const auto cast = source->variant.tryGet<Expression::Cast>()) {
+                const auto originalSize = calculateStorageSize(cast->operand->info->type.get(), ""_sv);
+                const auto castedSize = calculateStorageSize(source->info->type.get(), ""_sv);
+                if (originalSize.hasValue() && castedSize.hasValue() && *originalSize == *castedSize) {
+                    return emitAssignmentExpressionIr(dest, cast->operand.get(), location);
+                }
+            }
+
             if (!emitLoadExpressionIr(dest, source, dest->location)) {
                 raiseEmitLoadError(dest, source, dest->location);
                 return false;
