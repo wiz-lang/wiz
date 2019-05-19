@@ -158,23 +158,26 @@ namespace wiz {
     }
 
     FwdUniquePtr<const Expression> Expression::cloneWithInfo(Optional<ExpressionInfo> info) const {
-        return variant.visit(makeOverload(
-            [&](const ArrayComprehension& arrayComprehension) {
+        switch (variant.index()) {
+            case VariantType::typeIndexOf<ArrayComprehension>(): {
+                const auto& arrayComprehension = variant.get<ArrayComprehension>();
                 return makeFwdUnique<const Expression>(
                     ArrayComprehension(
                         arrayComprehension.expression ? arrayComprehension.expression->clone() : nullptr,
                         arrayComprehension.name,
                         arrayComprehension.sequence ? arrayComprehension.sequence->clone() : nullptr),
                     location, std::move(info));
-            },
-            [&](const ArrayPadLiteral& arrayPadLiteral) {
+            }
+            case VariantType::typeIndexOf<ArrayPadLiteral>(): {
+                const auto& arrayPadLiteral = variant.get<ArrayPadLiteral>();
                 return makeFwdUnique<const Expression>(
                     ArrayPadLiteral(
                         arrayPadLiteral.valueExpression ? arrayPadLiteral.valueExpression->clone() : nullptr,
                         arrayPadLiteral.sizeExpression ? arrayPadLiteral.sizeExpression->clone() : nullptr),
                     location, std::move(info));
-            },
-            [&](const ArrayLiteral& arrayLiteral) {
+            }
+            case VariantType::typeIndexOf<ArrayLiteral>(): {
+                const auto& arrayLiteral = variant.get<ArrayLiteral>();
                 std::vector<FwdUniquePtr<const Expression>> clonedItems;
                 for (const auto& item : arrayLiteral.items) {
                     clonedItems.push_back(item ? item->clone() : nullptr);
@@ -182,20 +185,23 @@ namespace wiz {
                 return makeFwdUnique<const Expression>(
                     ArrayLiteral(std::move(clonedItems)),
                     location, std::move(info));
-            },
-            [&](const BinaryOperator& binaryOperator) {
+            }
+            case VariantType::typeIndexOf<BinaryOperator>(): {
+                const auto& binaryOperator = variant.get<BinaryOperator>();
                 return makeFwdUnique<const Expression>(
                     BinaryOperator(binaryOperator.op,
                         binaryOperator.left ? binaryOperator.left->clone() : nullptr,
                         binaryOperator.right ? binaryOperator.right->clone() : nullptr),
                     location, std::move(info));
-            },
-            [&](const BooleanLiteral& booleanLiteral) {
+            }
+            case VariantType::typeIndexOf<BooleanLiteral>(): {
+                const auto& booleanLiteral = variant.get<BooleanLiteral>();
                 return makeFwdUnique<const Expression>(
                     BooleanLiteral(booleanLiteral.value),
                     location, std::move(info));
-            },
-            [&](const Call& call) {
+            }
+            case VariantType::typeIndexOf<Call>(): {
+                const auto& call = variant.get<Call>();
                 std::vector<FwdUniquePtr<const Expression>> clonedArguments;
                 for (const auto& argument : call.arguments) {
                     clonedArguments.push_back(argument ? argument->clone() : nullptr);
@@ -206,70 +212,81 @@ namespace wiz {
                         call.function ? call.function->clone() : nullptr,
                         std::move(clonedArguments)),
                     location, std::move(info));
-            },
-            [&](const Cast& cast) {
+            }
+            case VariantType::typeIndexOf<Cast>(): {
+                const auto& cast = variant.get<Cast>();
                 return makeFwdUnique<const Expression>(
                     Cast(
                         cast.operand ? cast.operand->clone() : nullptr,
                         cast.type ? cast.type->clone() : nullptr),
                     location, std::move(info));
-            },
-            [&](const Embed& embed) {
+            }
+            case VariantType::typeIndexOf<Embed>(): {
+                const auto& embed = variant.get<Embed>();
                 return makeFwdUnique<const Expression>(
                     Embed(
                         embed.originalPath),
                     location, std::move(info));
-            },
-            [&](const FieldAccess& fieldAccess) {
+            }
+            case VariantType::typeIndexOf<FieldAccess>(): {
+                const auto& fieldAccess = variant.get<FieldAccess>();
                 return makeFwdUnique<const Expression>(
                     FieldAccess(
                         fieldAccess.operand ? fieldAccess.operand->clone() : nullptr,
                         fieldAccess.field),
                     location, std::move(info));
-            },
-            [&](const Identifier& identifier) {
+            }
+            case VariantType::typeIndexOf<Identifier>(): {
+                const auto& identifier = variant.get<Identifier>();
                 return makeFwdUnique<const Expression>(
                     Identifier(identifier.pieces),
                     location, std::move(info));
-            },
-            [&](const IntegerLiteral& integerLiteral) {
+            }
+            case VariantType::typeIndexOf<IntegerLiteral>(): {
+                const auto& integerLiteral = variant.get<IntegerLiteral>();
                 return makeFwdUnique<const Expression>(
                     IntegerLiteral(integerLiteral.value, integerLiteral.suffix),
                     location, std::move(info));
-            },
-            [&](const OffsetOf& offsetOf) {
+            }
+            case VariantType::typeIndexOf<OffsetOf>(): {
+                const auto& offsetOf = variant.get<OffsetOf>();
                 return makeFwdUnique<const Expression>(
                     OffsetOf(
                         offsetOf.type ? offsetOf.type->clone() : nullptr,
                         offsetOf.field),
                     location, std::move(info));
-            },
-            [&](const RangeLiteral& rangeLiteral) {
+            }
+            case VariantType::typeIndexOf<RangeLiteral>(): {
+                const auto& rangeLiteral = variant.get<RangeLiteral>();
                 return makeFwdUnique<const Expression>(
                     RangeLiteral(
                         rangeLiteral.start ? rangeLiteral.start->clone() : nullptr,
                         rangeLiteral.end ? rangeLiteral.end->clone() : nullptr,
                         rangeLiteral.step ? rangeLiteral.step->clone() : nullptr),
                     location, std::move(info));
-            },
-            [&](const ResolvedIdentifier& resolvedIdentifier) {
+            }
+            case VariantType::typeIndexOf<ResolvedIdentifier>(): {
+                const auto& resolvedIdentifier = variant.get<ResolvedIdentifier>();
                 return makeFwdUnique<const Expression>(
                     ResolvedIdentifier(resolvedIdentifier.definition, resolvedIdentifier.pieces),
                     location, std::move(info));
-            },
-            [&](const SideEffect& sideEffect) {
+            }
+            case VariantType::typeIndexOf<SideEffect>(): {
+                const auto& sideEffect = variant.get<SideEffect>();
                 return makeFwdUnique<const Expression>(
                     SideEffect(
                         sideEffect.statement ? sideEffect.statement->clone() : nullptr,
                         sideEffect.result ? sideEffect.result->clone() : nullptr),
                     location, std::move(info));
-            },
-            [&](const StringLiteral& stringLiteral) {
+            }
+            case VariantType::typeIndexOf<StringLiteral>(): {
+                const auto& stringLiteral = variant.get<StringLiteral>();
                 return makeFwdUnique<const Expression>(
                     StringLiteral(stringLiteral.value),
                     location, std::move(info));
-            },
-            [&](const StructLiteral& structLiteral) {
+            }
+            case VariantType::typeIndexOf<StructLiteral>(): {
+                const auto& structLiteral = variant.get<StructLiteral>();
                 std::unordered_map<StringView, std::unique_ptr<const StructLiteral::Item>> clonedItems;
                 for (const auto& it : structLiteral.items) {
                     const auto& name = it.first; 
@@ -282,8 +299,9 @@ namespace wiz {
                 return makeFwdUnique<const Expression>(
                     StructLiteral(structLiteral.type->clone(), std::move(clonedItems)),
                     location, std::move(info));
-            },
-            [&](const TupleLiteral& tupleLiteral) {
+            }
+            case VariantType::typeIndexOf<TupleLiteral>(): {
+                const auto& tupleLiteral = variant.get<TupleLiteral>();
                 std::vector<FwdUniquePtr<const Expression>> clonedItems;
                 for (const auto& item : tupleLiteral.items) {
                     clonedItems.push_back(item ? item->clone() : nullptr);
@@ -291,23 +309,27 @@ namespace wiz {
                 return makeFwdUnique<const Expression>(
                     TupleLiteral(std::move(clonedItems)),
                     location, std::move(info));
-            },
-            [&](const TypeOf& typeOf) {
+            }
+            case VariantType::typeIndexOf<TypeOf>(): {
+                const auto& typeOf = variant.get<TypeOf>();
                 return makeFwdUnique<const Expression>(
                     TypeOf(typeOf.expression->clone()),
                     location, std::move(info));
-            },
-            [&](const TypeQuery& typeQuery) {
+            }
+            case VariantType::typeIndexOf<TypeQuery>(): {
+                const auto& typeQuery = variant.get<TypeQuery>();
                 return makeFwdUnique<const Expression>(
                     TypeQuery(typeQuery.kind, typeQuery.type->clone()),
                     location, std::move(info));
-            },
-            [&](const UnaryOperator& unaryOperator) {
+            }
+            case VariantType::typeIndexOf<UnaryOperator>(): {
+                const auto& unaryOperator = variant.get<UnaryOperator>();
                 return makeFwdUnique<const Expression>(
                     UnaryOperator(unaryOperator.op,
                         unaryOperator.operand ? unaryOperator.operand->clone() : nullptr),
                     location, std::move(info));
             }
-        ));
+            default: std::abort(); break;
+        }
     }
 }
