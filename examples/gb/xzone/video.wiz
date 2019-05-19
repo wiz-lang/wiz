@@ -13,7 +13,7 @@ namespace video {
 
     func init() {
         redraw = a = 0;
-        memset(&oam_buffer as u16, 0, 160);
+        memset(&oam_buffer[0], 0, 160);
     }
 
     func wait() {

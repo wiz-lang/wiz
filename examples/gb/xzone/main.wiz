@@ -39,8 +39,8 @@ in rom @ 0x150 {
         oam.clear();
 
         // Fill in some very crappy striped tile patterns.
-        memcpy(&gb.ram.tile as u16, &mask_tileset as u16, sizeof(typeof(mask_tileset)));
-        memset(&gb.ram.map as u16, 0, 1024);
+        memcpy(&gb.ram.tile[0], &mask_tileset[0], sizeof(typeof(mask_tileset)));
+        memset(&gb.ram.map[0], 0, 1024);
 
         hl = &gb.ram.map as u16;
         b = 0;
@@ -178,7 +178,7 @@ in rom @ 0x150 {
     }
 
     func draw_sprites() {
-        memset(&video.oam_buffer as u16, 0, 160);
+        memset(&video.oam_buffer[0], 0, 160);
 
         hl = &video.oam_buffer as u16;
         *(hl++ as *u8) = a = 0x50;

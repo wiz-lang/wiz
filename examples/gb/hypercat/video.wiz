@@ -47,7 +47,7 @@ namespace video {
     }
 
     func oam_buffer_clear() {
-        memset(&oam_buffer_data as u16, 0, oam_buffer_data.len);
+        memset(&oam_buffer_data[0], 0, oam_buffer_data.len);
 
         <:oam_buffer_ptr = a = <:&oam_buffer_data;
         >:oam_buffer_ptr = a = >:&oam_buffer_data;

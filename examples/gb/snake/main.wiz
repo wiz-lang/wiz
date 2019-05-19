@@ -53,17 +53,17 @@ in rom @ 0x150 {
         }
 
         // Fill in some very crappy striped tile patterns.
-        memset(&gb.ram.tile as u16, 0b11111111, 16);
-        memset(hl, 0b10101010, 16);
-        memset(hl, 0b10001000, 16);
-        memset(hl, 0b00000000, 16);
+        memset(&gb.ram.tile[0], 0b11111111, 16);
+        memset(hl as *u8, 0b10101010, 16);
+        memset(hl as *u8, 0b10001000, 16);
+        memset(hl as *u8, 0b00000000, 16);
 
         // Clear screen.
-        memset(&gb.ram.map as u16 + 32, 3, 1024 - 64);
+        memset(&gb.ram.map[32], 3, 1024 - 64);
 
         // Draw horizontal walls.
-        memset(&gb.ram.map as u16, 0, 20);
-        memset(&gb.ram.map as u16 + (32 * 17), a, 20);
+        memset(&gb.ram.map[0], 0, 20);
+        memset(&gb.ram.map[32 * 17], a, 20);
 
         // Draw vertical walls.
         var ptr : *u8 in hl;

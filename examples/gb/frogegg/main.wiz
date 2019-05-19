@@ -58,11 +58,11 @@ in rom @ 0x150 {
             gb.color.palette.bg.data = a = 0b01111111;
         }
 
-        memcpy(&gb.ram.tile as u16, &sprites_chr as u16, sizeof(typeof(sprites_chr)));
-        memcpy(&gb.ram.tile as u16 + 0x1000, &tiles_chr as u16, sizeof(typeof(tiles_chr)));
+        memcpy(&gb.ram.tile[0], &sprites_chr[0], sizeof(typeof(sprites_chr)));
+        memcpy(&gb.ram.tile[0x1000], &tiles_chr[0], sizeof(typeof(tiles_chr)));
 
         // Clear screen.
-        memset(&gb.ram.map as u16, 4, 1024);
+        memset(&gb.ram.map[0], 4, 1024);
 
         level_system.load(&level1_data as u16);
 

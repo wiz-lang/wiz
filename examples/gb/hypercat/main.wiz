@@ -44,10 +44,10 @@ in rom @ 0x150 {
         gb.mono.palette.obj2 = a = 0b00011111;
 
         // Initialize tileset.
-        memcpy(&gb.ram.tile as u16, &art.sprite_tileset as u16, art.sprite_tileset.len);
-        memcpy(&gb.ram.tile as u16 + 0x1000, &art.background_tileset as u16, art.background_tileset.len);
-        memset(&gb.ram.map as u16, 26, 1024);
-        memset(&gb.ram.map2 as u16, 26, 1024);
+        memcpy(&gb.ram.tile[0], &art.sprite_tileset[0], art.sprite_tileset.len);
+        memcpy(&gb.ram.tile[0x1000], &art.background_tileset[0], art.background_tileset.len);
+        memset(&gb.ram.map[0], 26, 1024);
+        memset(&gb.ram.map2[0], 26, 1024);
         oam.clear();
 
         // Enable some basic interrupts.
@@ -91,7 +91,7 @@ in rom @ 0x150 {
 
     func game_mode() {
         video.disable();
-        memset(&gb.ram.map as u16, 26, 1024);
+        memset(&gb.ram.map[0], 26, 1024);
 
         text.print(&text.string.love as u16, &gb.ram.map as u16 + 32 * 1 + 1);
         text.print(&text.string.food as u16, &gb.ram.map as u16 + 32 * 2 + 1);

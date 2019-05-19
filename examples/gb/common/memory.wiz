@@ -11,15 +11,15 @@
 // bc = byte count
 //
 // After: hl += bc, bc = 0, a is preserved.
-func memset(dest : u16 in hl, value : u8 in a, count : u16 in bc) {
+func memset(dest : *u8 in hl, value : u8 in a, count : u16 in bc) {
     memset_inline(dest, value, count);
 }
 
-inline func memset_inline(dest : u16 in hl, value : u8 in a, count : u16 in bc) {
+inline func memset_inline(dest : *u8 in hl, value : u8 in a, count : u16 in bc) {
     c++; b++;
     goto start;
 repeat:
-    *(hl++ as *u8) = a;
+    *dest++ = value;
 start:
     c--; goto repeat if !zero;
     b--; goto repeat if !zero;
@@ -39,15 +39,15 @@ start:
 // bc = byte count
 //
 // After: de += bc, hl += bc, bc = 0
-func memcpy(dest : u16 in de, source : u16 in hl, count : u16 in bc) {
+func memcpy(dest : *u8 in de, source : *u8 in hl, count : u16 in bc) {
     memcpy_inline(dest, source, count);
 }
 
-inline func memcpy_inline(dest : u16 in de, source : u16 in hl, count : u16 in bc) {
+inline func memcpy_inline(dest : *u8 in de, source : *u8 in hl, count : u16 in bc) {
     c++; b++;
     goto start;
 repeat:
-    *(de as *u8) = a = *(hl++ as *u8);
+    *dest = a = *source++;
     de++;
 start:
     c--; goto repeat if !zero;
