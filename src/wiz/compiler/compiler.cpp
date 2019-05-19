@@ -6162,7 +6162,6 @@ namespace wiz {
                     break;
                 }
                 case IrNode::VariantType::typeIndexOf<IrNode::PopRelocation>(): {
-                    const auto& pushRelocation = variant.get<IrNode::PopRelocation>();
                     currentBank = bankStack.back();
                     bankStack.pop_back();
                     break;
