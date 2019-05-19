@@ -42,7 +42,8 @@ in rom @ 0x150 {
         memcpy(&gb.ram.tile[0], &mask_tileset[0], sizeof(typeof(mask_tileset)));
         memset(&gb.ram.map[0], 0, 1024);
 
-        hl = &gb.ram.map as u16;
+        var dest : *u8 in hl;
+        dest = &gb.ram.map[0];
         b = 0;
         do {
             c = 0;
@@ -65,7 +66,7 @@ in rom @ 0x150 {
                     }
                 }
 
-                *(hl++ as *u8) = a = d;
+                *dest++ = a = d;
 
                 c++;
                 a = c;
@@ -75,7 +76,7 @@ in rom @ 0x150 {
             a = b;
         } while a != 10;
 
-        hl = &gb.ram.map as u16 + 10 * 32;
+        dest = &gb.ram.map[10 * 32];
         b = 0;
         do {
             c = 0;
@@ -99,7 +100,7 @@ in rom @ 0x150 {
                     }
                 }
 
-                *(hl++ as *u8) = a = d;
+                *dest++ = a = d;
 
                 c++;
                 a = c;
@@ -180,57 +181,58 @@ in rom @ 0x150 {
     func draw_sprites() {
         memset(&video.oam_buffer[0], 0, 160);
 
-        hl = &video.oam_buffer as u16;
-        *(hl++ as *u8) = a = 0x50;
-        *(hl++ as *u8) = a = 0x2F;
-        *(hl++ as *u8) = a = 0x10;
-        *(hl++ as *u8) = a = 0x0;
-        *(hl++ as *u8) = a = 0x50;
-        *(hl++ as *u8) = a = 0x37;
-        *(hl++ as *u8) = a = 0x11;
-        *(hl++ as *u8) = a = 0x0;
-        *(hl++ as *u8) = a = 0x58;
-        *(hl++ as *u8) = a = 0x2F;
-        *(hl++ as *u8) = a = 0x20;
-        *(hl++ as *u8) = a = 0x0;
-        *(hl++ as *u8) = a = 0x58;
-        *(hl++ as *u8) = a = 0x37;
-        *(hl++ as *u8) = a = 0x21;
-        *(hl++ as *u8) = a = 0x0;
+        var dest : *u8 in hl;
+        dest = &video.oam_buffer[0];        
+        *dest++ = a = 0x50;
+        *dest++ = a = 0x2F;
+        *dest++ = a = 0x10;
+        *dest++ = a = 0x0;
+        *dest++ = a = 0x50;
+        *dest++ = a = 0x37;
+        *dest++ = a = 0x11;
+        *dest++ = a = 0x0;
+        *dest++ = a = 0x58;
+        *dest++ = a = 0x2F;
+        *dest++ = a = 0x20;
+        *dest++ = a = 0x0;
+        *dest++ = a = 0x58;
+        *dest++ = a = 0x37;
+        *dest++ = a = 0x21;
+        *dest++ = a = 0x0;
 
-        *(hl++ as *u8) = a = 0x50;
-        *(hl++ as *u8) = a = 0x4F;
-        *(hl++ as *u8) = a = 0x10;
-        *(hl++ as *u8) = a = 0x80;
-        *(hl++ as *u8) = a = 0x50;
-        *(hl++ as *u8) = a = 0x57;
-        *(hl++ as *u8) = a = 0x11;
-        *(hl++ as *u8) = a = 0x80;
-        *(hl++ as *u8) = a = 0x58;
-        *(hl++ as *u8) = a = 0x4F;
-        *(hl++ as *u8) = a = 0x20;
-        *(hl++ as *u8) = a = 0x80;
-        *(hl++ as *u8) = a = 0x58;
-        *(hl++ as *u8) = a = 0x57;
-        *(hl++ as *u8) = a = 0x21;
-        *(hl++ as *u8) = a = 0x80;
+        *dest++ = a = 0x50;
+        *dest++ = a = 0x4F;
+        *dest++ = a = 0x10;
+        *dest++ = a = 0x80;
+        *dest++ = a = 0x50;
+        *dest++ = a = 0x57;
+        *dest++ = a = 0x11;
+        *dest++ = a = 0x80;
+        *dest++ = a = 0x58;
+        *dest++ = a = 0x4F;
+        *dest++ = a = 0x20;
+        *dest++ = a = 0x80;
+        *dest++ = a = 0x58;
+        *dest++ = a = 0x57;
+        *dest++ = a = 0x21;
+        *dest++ = a = 0x80;
 
-        *(hl++ as *u8) = a = 0x50;
-        *(hl++ as *u8) = a = 0x6F;
-        *(hl++ as *u8) = a = 0x10;
-        *(hl++ as *u8) = a = 0x0;
-        *(hl++ as *u8) = a = 0x50;
-        *(hl++ as *u8) = a = 0x77;
-        *(hl++ as *u8) = a = 0x11;
-        *(hl++ as *u8) = a = 0x0;
-        *(hl++ as *u8) = a = 0x58;
-        *(hl++ as *u8) = a = 0x6F;
-        *(hl++ as *u8) = a = 0x20;
-        *(hl++ as *u8) = a = 0x0;
-        *(hl++ as *u8) = a = 0x58;
-        *(hl++ as *u8) = a = 0x77;
-        *(hl++ as *u8) = a = 0x21;
-        *(hl++ as *u8) = a = 0x0;        
+        *dest++ = a = 0x50;
+        *dest++ = a = 0x6F;
+        *dest++ = a = 0x10;
+        *dest++ = a = 0x0;
+        *dest++ = a = 0x50;
+        *dest++ = a = 0x77;
+        *dest++ = a = 0x11;
+        *dest++ = a = 0x0;
+        *dest++ = a = 0x58;
+        *dest++ = a = 0x6F;
+        *dest++ = a = 0x20;
+        *dest++ = a = 0x0;
+        *dest++ = a = 0x58;
+        *dest++ = a = 0x77;
+        *dest++ = a = 0x21;
+        *dest++ = a = 0x0;        
     }
 
     #[irq]
