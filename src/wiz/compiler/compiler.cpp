@@ -3438,8 +3438,10 @@ namespace wiz {
     }
 
     bool Compiler::reserveDefinitions(const Statement* statement) {
-        statement->variant.visit(makeOverload(
-            [&](const Statement::Attribution& attributedStatement) {
+        const auto& variant = statement->variant;
+        switch (variant.index()) {
+            case Statement::VariantType::typeIndexOf<Statement::Attribution>(): {
+                const auto& attributedStatement = variant.get<Statement::Attribution>();
                 const auto body = attributedStatement.body.get();
 
                 bool isFunc = body->variant.is<Statement::Func>();
@@ -3524,33 +3526,41 @@ namespace wiz {
                     reserveDefinitions(attributedStatement.body.get());
                 }
                 popAttributeList();
-            },
-            [&](const Statement::Bank& bankDeclaration) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Bank>(): {
+                const auto& bankDeclaration = variant.get<Statement::Bank>();
                 const auto& names = bankDeclaration.names;
                 const auto& addresses = bankDeclaration.addresses;
                 const auto typeExpression = bankDeclaration.typeExpression.get();
                 for (std::size_t i = 0, size = names.size(); i != size; ++i) {
                     definitionsToResolve.push_back(currentScope->emplaceDefinition(report, Definition::Bank(addresses[i].get(), typeExpression), names[i], statement));
                 }
-            },
-            [&](const Statement::Block& blockStatement) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Block>(): {
+                const auto& blockStatement = variant.get<Statement::Block>();
                 enterScope(getOrCreateStatementScope(StringView(), statement, currentScope));
                 for (const auto& item : blockStatement.items) {
                     reserveDefinitions(item.get());
                 }
                 exitScope();
-            },
-            [&](const Statement::Config&) {},
-            [&](const Statement::DoWhile& doWhileStatement) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Config>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::DoWhile>(): {
+                const auto& doWhileStatement = variant.get<Statement::DoWhile>();
                 reserveDefinitions(doWhileStatement.body.get());
-            },
-            [&](const Statement::Enum& enumDeclaration) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Enum>(): {
+                const auto& enumDeclaration = variant.get<Statement::Enum>();
                 const auto scope = getOrCreateStatementScope(StringView(), statement, currentScope);
 
                 auto definition = currentScope->emplaceDefinition(report, Definition::Enum(enumDeclaration.underlyingTypeExpression.get(), scope), enumDeclaration.name, statement);
 
                 if (definition == nullptr) {
-                    return;
+                    break;
                 }
 
                 definitionsToResolve.push_back(definition);
@@ -3579,9 +3589,11 @@ namespace wiz {
                 }
 
                 exitScope();
-            },
-            [&](const Statement::ExpressionStatement&) {},
-            [&](const Statement::File& file) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::ExpressionStatement>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::File>(): {
+                const auto& file = variant.get<Statement::File>();
                 const auto outerScope = currentScope;
                 enterScope(getOrCreateStatementScope(StringView(), statement, builtins.getBuiltinScope()));
                 bindModuleScope(file.expandedPath, currentScope);
@@ -3592,11 +3604,15 @@ namespace wiz {
                     outerScope->addRecursiveImport(currentScope);
                 }
                 exitScope();
-            },
-            [&](const Statement::For& forStatement) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::For>(): {
+                const auto& forStatement = variant.get<Statement::For>();
                 reserveDefinitions(forStatement.body.get());
-            },
-            [&](const Statement::Func& funcDeclaration) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Func>(): {
+                const auto& funcDeclaration = variant.get<Statement::Func>();
                 const auto oldFunction = currentFunction;
                 const auto onExit = makeScopeGuard([&]() {
                     currentFunction = oldFunction;
@@ -3630,7 +3646,7 @@ namespace wiz {
                 definitionsToResolve.push_back(definition);
 
                 if (definition == nullptr) {
-                    return;
+                    break;
                 }
 
                 auto& funcDefinition = definition->variant.get<Definition::Func>();
@@ -3643,19 +3659,25 @@ namespace wiz {
 
                 currentFunction = definition;
                 reserveDefinitions(body);
-            },
-            [&](const Statement::If& ifStatement) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::If>(): {
+                const auto& ifStatement = variant.get<Statement::If>();
                 reserveDefinitions(ifStatement.body.get());
                 if (ifStatement.alternative) {
                     reserveDefinitions(ifStatement.alternative.get());
                 }
-            },
-            [&](const Statement::In& inStatement) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::In>(): {
+                const auto& inStatement = variant.get<Statement::In>();
                 bindStatementScope(inStatement.body.get(), currentScope);
                 reserveDefinitions(inStatement.body.get());
-            },
-            [&](const Statement::InlineFor&) {},
-            [&](const Statement::ImportReference& importReference) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::InlineFor>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::ImportReference>(): {
+                const auto& importReference = variant.get<Statement::ImportReference>();
                 if (currentScope != nullptr) {                    
                     if (const auto moduleScope = findModuleScope(importReference.expandedPath)) {
                         currentScope->addRecursiveImport(moduleScope);
@@ -3663,23 +3685,29 @@ namespace wiz {
                         report->error("import reference appeared before a file node actually registered the module", statement->location, ReportErrorFlags(ReportErrorFlagType::InternalError));
                     }
                 }
-            },
-            [&](const Statement::InternalDeclaration&) {},
-            [&](const Statement::Branch&) {},
-            [&](const Statement::Label& labelDeclaration) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::InternalDeclaration>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::Branch>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::Label>(): {
+                const auto& labelDeclaration = variant.get<Statement::Label>();
                 auto definition = currentScope->emplaceDefinition(report, Definition::Func(true, false, labelDeclaration.far, BranchKind::None, builtins.getUnitTuple(), currentScope, nullptr), labelDeclaration.name, statement);
 
                 if (definition == nullptr) {
-                    return;
+                    break;
                 }
 
                 auto& func = definition->variant.get<Definition::Func>();
                 func.resolvedSignatureType = makeFwdUnique<const TypeExpression>(TypeExpression::Function(labelDeclaration.far, {}, func.returnTypeExpression->clone()), func.returnTypeExpression->location);
-            },
-            [&](const Statement::Let& letDeclaration) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Let>(): {
+                const auto& letDeclaration = variant.get<Statement::Let>();
                 currentScope->emplaceDefinition(report, Definition::Let(letDeclaration.parameters, letDeclaration.value.get()), letDeclaration.name, statement);
-            },
-            [&](const Statement::Namespace& namespaceDeclaration) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Namespace>(): {
+                const auto& namespaceDeclaration = variant.get<Statement::Namespace>();
                 SymbolTable* scope = nullptr;
                 if (const auto definition = currentScope->findLocalMemberDefinition(namespaceDeclaration.name)) {
                     if (const auto ns = definition->variant.tryGet<Definition::Namespace>()) {
@@ -3688,7 +3716,7 @@ namespace wiz {
                     } else {
                         // If another symbol with the same name exists, but it is not a namespace, trigger a duplicate key error.
                         currentScope->emplaceDefinition(report, Definition::Namespace(nullptr), namespaceDeclaration.name, statement);
-                        return;
+                        break;
                     }
                 } else {
                     scope = getOrCreateStatementScope(namespaceDeclaration.name, statement, currentScope);
@@ -3706,15 +3734,17 @@ namespace wiz {
                 bindStatementScope(namespaceDeclaration.body.get(), scope);
                 reserveDefinitions(namespaceDeclaration.body.get());
                 exitScope();
-            },
-            [&](const Statement::Struct& structDeclaration) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Struct>(): {
+                const auto& structDeclaration = variant.get<Statement::Struct>();
                 const auto scope = getOrCreateStatementScope(StringView(), statement, currentScope);
 
                 auto definition = currentScope->emplaceDefinition(report, Definition::Struct(structDeclaration.kind, scope), structDeclaration.name, statement);
                 definitionsToResolve.push_back(definition);
 
                 if (definition == nullptr) {
-                    return;
+                    break;
                 }
 
                 auto& structDefinition = definition->variant.get<Definition::Struct>();
@@ -3727,22 +3757,30 @@ namespace wiz {
                 }
 
                 exitScope();
-            },
-            [&](const Statement::TypeAlias& typeAliasDeclaration) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::TypeAlias>(): {
+                const auto& typeAliasDeclaration = variant.get<Statement::TypeAlias>();
                 definitionsToResolve.push_back(currentScope->emplaceDefinition(report, Definition::TypeAlias(typeAliasDeclaration.typeExpression.get()), typeAliasDeclaration.name, statement));
-            },
-            [&](const Statement::Var& varDeclaration) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Var>(): {
+                const auto& varDeclaration = variant.get<Statement::Var>();
                 const auto& names = varDeclaration.names;
                 const auto& addresses = varDeclaration.addresses;
                 const auto typeExpression = varDeclaration.typeExpression.get();
                 for (std::size_t i = 0, size = names.size(); i != size; ++i) {
                     definitionsToResolve.push_back(currentScope->emplaceDefinition(report, Definition::Var(varDeclaration.modifiers, currentFunction, addresses[i].get(), typeExpression), names[i], statement));
                 }
-            },
-            [&](const Statement::While& whileStatement) {
-                reserveDefinitions(whileStatement.body.get());
+                break;
             }
-        ));
+            case Statement::VariantType::typeIndexOf<Statement::While>(): {
+                const auto& whileStatement = variant.get<Statement::While>();
+                reserveDefinitions(whileStatement.body.get());
+                break;
+            }
+            default: std::abort(); return false;
+        }
 
         return statement == program.get() ? report->validate() : report->alive();
     }
@@ -3935,35 +3973,52 @@ namespace wiz {
     }
 
     bool Compiler::reserveVariableStorage(const Statement* statement) {
-        statement->variant.visit(makeOverload(
-            [&](const Statement::Attribution& attributedStatement) {
+        const auto& variant = statement->variant;
+        switch (variant.index()) {
+            case Statement::VariantType::typeIndexOf<Statement::Attribution>(): {
+                const auto& attributedStatement = variant.get<Statement::Attribution>();
                 pushAttributeList(statementAttributeLists[statement]);
                 if (checkConditionalCompilationAttributes()) {
                     reserveVariableStorage(attributedStatement.body.get());
                 }
                 popAttributeList();
-            },
-            [&](const Statement::Bank&) {},
-            [&](const Statement::Block& blockStatement) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Bank>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::Block>(): {
+                const auto& blockStatement = variant.get<Statement::Block>();
                 enterScope(getOrCreateStatementScope(StringView(), statement, currentScope));
                 for (const auto& item : blockStatement.items) {
                     reserveVariableStorage(item.get());
                 }
                 exitScope();
-            },
-            [&](const Statement::Config&) {},
-            [&](const Statement::DoWhile& doWhileStatement) { reserveVariableStorage(doWhileStatement.body.get()); },
-            [&](const Statement::Enum&) {},
-            [&](const Statement::ExpressionStatement&) {},
-            [&](const Statement::File& file) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Config>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::DoWhile>(): {
+                const auto& doWhileStatement = variant.get<Statement::DoWhile>();
+                reserveVariableStorage(doWhileStatement.body.get());
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Enum>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::ExpressionStatement>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::File>(): {
+                const auto& file = variant.get<Statement::File>();
                 enterScope(findStatementScope(statement));
                 for (const auto& item : file.items) {
                     reserveVariableStorage(item.get());
                 }
                 exitScope();
-            },
-            [&](const Statement::For& forStatement) { reserveVariableStorage(forStatement.body.get()); },
-            [&](const Statement::Func& funcDeclaration) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::For>(): {
+                const auto& forStatement = variant.get<Statement::For>();
+                reserveVariableStorage(forStatement.body.get());
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Func>(): {
+                const auto& funcDeclaration = variant.get<Statement::Func>();
+
                 auto& funcDefinition = currentScope->findLocalMemberDefinition(funcDeclaration.name)->variant.get<Definition::Func>();                
                 
                 for (auto& parameter : funcDefinition.parameters) {
@@ -3972,20 +4027,24 @@ namespace wiz {
                     if (parameterVarDefinition.enclosingFunction != nullptr) {
                         if (!parameterVarDefinition.typeExpression->variant.is<TypeExpression::DesignatedStorage>()) {
                             report->error("function parameter `" + parameter->name.toString() + "` must have a designated storage type", statement->location);
-                            return;
+                            break;
                         }
                     }
                 }
 
-                reserveVariableStorage(funcDeclaration.body.get());            
-            },
-            [&](const Statement::If& ifStatement) {
+                reserveVariableStorage(funcDeclaration.body.get());   
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::If>(): {
+                const auto& ifStatement = variant.get<Statement::If>();
                 reserveVariableStorage(ifStatement.body.get());
                 if (ifStatement.alternative) {
                     reserveVariableStorage(ifStatement.alternative.get());
                 }
-            },
-            [&](const Statement::In& inStatement) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::In>(): {
+                const auto& inStatement = variant.get<Statement::In>();
                 bankStack.push_back(currentBank);
 
                 const auto result = handleInStatement(inStatement.pieces, inStatement.dest.get(), statement->location);
@@ -3995,21 +4054,25 @@ namespace wiz {
 
                 currentBank = bankStack.back();
                 bankStack.pop_back();
-            },
-            [&](const Statement::InlineFor&) {},
-            [&](const Statement::ImportReference&) {},
-            [&](const Statement::InternalDeclaration&) {},
-            [&](const Statement::Branch&) {},
-            [&](const Statement::Label&) {},
-            [&](const Statement::Let&) {},
-            [&](const Statement::Namespace& namespaceDeclaration) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::InlineFor>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::ImportReference>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::InternalDeclaration>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::Branch>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::Label>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::Let>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::Namespace>(): {
+                const auto& namespaceDeclaration = variant.get<Statement::Namespace>();
                 enterScope(findStatementScope(namespaceDeclaration.body.get()));
                 reserveVariableStorage(namespaceDeclaration.body.get());
                 exitScope();
-            },
-            [&](const Statement::Struct&) {},
-            [&](const Statement::TypeAlias&) {},
-            [&](const Statement::Var& varDeclaration) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Struct>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::TypeAlias>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::Var>(): {
+                const auto& varDeclaration = variant.get<Statement::Var>();
                 const auto& names = varDeclaration.names;
                 const auto bank = currentBank;
                 const auto description = statement->getDescription();
@@ -4017,7 +4080,7 @@ namespace wiz {
                 if (varDeclaration.value != nullptr) {
                     if (names.size() != 1) {
                         report->error(description.toString() + " with initializer must contain exactly one declaration.", statement->location);
-                        return;
+                        break;
                     }
 
                     auto name = varDeclaration.names[0];
@@ -4025,26 +4088,26 @@ namespace wiz {
 
                     if (bank == nullptr || !isBankKindStored(bank->getKind())) {
                         report->error(description.toString() + " with initializer " + (bank == nullptr ? "must be inside an `in` statement" : "is not allowed in bank `" + bank->getName().toString() + "`"), statement->location);
-                        return;
+                        break;
                     }
 
                     if (varDefinition.enclosingFunction != nullptr) {
                         report->error("local " + description.toString() + " with initializer is not currently supported", statement->location);
-                        return;
+                        break;
                     }
 
                     if (auto reducedValue = reduceExpression(varDeclaration.value.get())) {
                         if (const auto declarationType = varDefinition.reducedTypeExpression.get()) {
                             if (declarationType->variant.is<TypeExpression::DesignatedStorage>()) {
                                 report->error(description.toString() + " cannot have type `" + getTypeName(varDefinition.reducedTypeExpression.get()) + "`", statement->location);
-                                return;
+                                break;
                             }
 
                             if (const auto compatibleInitializerType = findCompatibleAssignmentType(reducedValue.get(), declarationType)) {
                                 varDefinition.initializerExpression = createConvertedExpression(reducedValue.get(), compatibleInitializerType);
                             } else {
                                 report->error(description.toString() + " of type `" + getTypeName(varDefinition.reducedTypeExpression.get()) + "` cannot be initialized with `" + getTypeName(reducedValue->info->type.get()) + "` expression", statement->location);
-                                return;
+                                break;
                             }
                         } else {
                             varDefinition.initializerExpression = std::move(reducedValue);
@@ -4054,7 +4117,7 @@ namespace wiz {
                             if (const auto arrayType = varDefinition.initializerExpression->info->type->variant.tryGet<TypeExpression::Array>()) {
                                 if (arrayType->elementType == nullptr) {
                                     report->error("array has unknown element type", statement->location);
-                                    return;
+                                    break;
                                 }
                             }
                         }
@@ -4068,7 +4131,7 @@ namespace wiz {
 
                     if (!varDefinition.resolvedType) {
                         report->error("could not resolve declaration type", statement->location);
-                        return;
+                        break;
                     }
 
                     if (varDefinition.resolvedType->variant.is<TypeExpression::DesignatedStorage>()) {
@@ -4078,7 +4141,7 @@ namespace wiz {
                     } else {
                         const auto storageSize = calculateStorageSize(varDefinition.resolvedType, description);
                         if (!storageSize.hasValue()) {
-                            return;
+                            break;
                         }
 
                         varDefinition.storageSize = storageSize;
@@ -4095,26 +4158,32 @@ namespace wiz {
                             } else if (varDefinition.enclosingFunction == nullptr) {
                                 if (bank == nullptr) {
                                     report->error(statement->getDescription().toString() + " of `" + names[i].toString() + (names.size() > 1 ? ", ..." : "") + "` must be inside an `in` statement, have an explicit address `@`, or have a designated storage type", statement->location);
-                                    return;
+                                    break;
                                 }
 
                                 if (!isBankKindStored(bank->getKind())) {
                                     varDefinition.address = bank->getAddress();
 
                                     if (!bank->reserveRam(report, description, statement, statement->location, storageSize.get())) {
-                                        return;
+                                        break;
                                     }
                                 }
                             } else {
                                 report->error("local " + statement->getDescription().toString() + " of `" + names[i].toString() + (names.size() > 1 ? ", ..." : "") + "` must have an explicit address, or have a designated storage type", statement->location);
-                                return;
+                                break;
                             }
                         }
                     }
                 }
-            },
-            [&](const Statement::While& whileStatement) { reserveVariableStorage(whileStatement.body.get()); }
-        ));
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::While>(): {
+                const auto& whileStatement = variant.get<Statement::While>();
+                reserveVariableStorage(whileStatement.body.get());
+                break;
+            }
+            default: std::abort(); return false;
+        }
 
         return statement == program.get() ? report->validate() : report->alive();
     }
@@ -5567,33 +5636,41 @@ namespace wiz {
     }
 
     bool Compiler::emitStatementIr(const Statement* statement) {
-        statement->variant.visit(makeOverload(
-            [&](const Statement::Attribution& attributedStatement) {
+        const auto& variant = statement->variant;
+        switch (variant.index()) {
+            case Statement::VariantType::typeIndexOf<Statement::Attribution>(): {
+                const auto& attributedStatement = variant.get<Statement::Attribution>();
                 pushAttributeList(statementAttributeLists[statement]);
                 if (checkConditionalCompilationAttributes()) {
                     emitStatementIr(attributedStatement.body.get());
                 }
                 popAttributeList();
-            },
-            [&](const Statement::Bank&) {},
-            [&](const Statement::Block& blockStatement) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Bank>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::Block>(): {
+                const auto& blockStatement = variant.get<Statement::Block>();
                 enterScope(getOrCreateStatementScope(StringView(), statement, currentScope));
                 for (const auto& item : blockStatement.items) {
                     emitStatementIr(item.get());
                 }
                 exitScope();
-            },
-            [&](const Statement::Config& configStatement) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Config>(): {
+                const auto& configStatement = variant.get<Statement::Config>();
                 for (const auto& item : configStatement.items) {
                     if (auto reducedValue = reduceExpression(item->value.get())) {
                         config->add(report, item->name, std::move(reducedValue));
                     }
                 }
-            },
-            [&](const Statement::DoWhile& doWhileStatement) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::DoWhile>(): {
+                const auto& doWhileStatement = variant.get<Statement::DoWhile>();
                 if (currentBank == nullptr) {
                     report->error(statement->getDescription().toString() + " must be inside an `in` statement", statement->location);
-                    return;
+                    break;
                 }
 
                 const auto oldContinueLabel = continueLabel;
@@ -5605,7 +5682,7 @@ namespace wiz {
 
                 const auto reducedCondition = addToExpressionPool(reduceExpression(doWhileStatement.condition.get()));
                 if (!reducedCondition) {
-                    return;
+                    break;
                 }
 
                 const auto beginLabelDefinition = createAnonymousLabelDefinition();                
@@ -5619,37 +5696,43 @@ namespace wiz {
                 emitStatementIr(doWhileStatement.body.get());
                 if (!emitBranchIr(doWhileStatement.distanceHint, BranchKind::Goto, beginLabelReferenceExpression, nullptr, false, reducedCondition, reducedCondition->location)) {
                     report->error("could not generate branch instruction for " + statement->getDescription().toString(), statement->location);
-                    return;
+                    break;
                 }
                 emplaceIrNode(IrNode::Label(endLabelDefinition), reducedCondition->location);
-            },
-            [&](const Statement::Enum&) {},
-            [&](const Statement::ExpressionStatement& expressionStatement) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Enum>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::ExpressionStatement>(): {
+                const auto& expressionStatement = variant.get<Statement::ExpressionStatement>();
                 if (currentBank == nullptr) {
                     report->error(statement->getDescription().toString() + " must be inside an `in` statement", statement->location);
-                    return;
+                    break;
                 }
 
                 auto reducedExpression = addToExpressionPool(reduceExpression(expressionStatement.expression.get()));
                 if (!reducedExpression) {
-                    return;
+                    break;
                 }
 
                 if (!emitExpressionStatementIr(reducedExpression, reducedExpression->location)) {
                     report->error("could not generate code for statement", statement->location);
                 }
-            },
-            [&](const Statement::File& file) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::File>(): {
+                const auto& file = variant.get<Statement::File>();
                 enterScope(findStatementScope(statement));
                 for (const auto& item : file.items) {
                     emitStatementIr(item.get());
                 }
                 exitScope();
-            },
-            [&](const Statement::For& forStatement) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::For>(): {
+                const auto& forStatement = variant.get<Statement::For>();
                 if (currentBank == nullptr) {
                     report->error(statement->getDescription().toString() + " must be inside an `in` statement", statement->location);
-                    return;
+                    break;
                 }
 
                 const auto oldContinueLabel = continueLabel;
@@ -5662,11 +5745,11 @@ namespace wiz {
                 const auto reducedCounter = addToExpressionPool(reduceExpression(forStatement.counter.get()));
                 const auto reducedSequence = addToExpressionPool(reduceExpression(forStatement.sequence.get()));
                 if (!reducedCounter || !reducedSequence) {
-                    return;
+                    break;
                 }
                 if (!reducedSequence->variant.is<Expression::RangeLiteral>() || reducedSequence->info->context == EvaluationContext::RunTime) {
                     report->error("`for` loop range must be a compile-time range literal.", statement->location);
-                    return;
+                    break;
                 }
 
                 const auto& rangeLiteral = reducedSequence->variant.tryGet<Expression::RangeLiteral>();
@@ -5674,7 +5757,7 @@ namespace wiz {
                 const auto counterBuiltinIntegerType = counterResolvedIdentifierType ? counterResolvedIdentifierType->definition->variant.tryGet<Definition::BuiltinIntegerType>() : nullptr;
                 if (!counterBuiltinIntegerType) {
                     report->error("`for` loop counter start must be a sized integer type.", statement->location);
-                    return;
+                    break;
                 }
 
                 const auto rangeStart = rangeLiteral->start->variant.tryGet<Expression::IntegerLiteral>();
@@ -5683,19 +5766,19 @@ namespace wiz {
 
                 if (!rangeStart) {
                     report->error("`for` loop range start must be a compile-time integer literal.", statement->location);
-                    return;
+                    break;
                 }
                 if (!rangeEnd) {
                     report->error("`for` loop range end must be a compile-time integer literal.", statement->location);
-                    return;
+                    break;
                 }
                 if (!rangeStep) {
                     report->error("`for` loop range step must be a compile-time integer literal.", statement->location);
-                    return;
+                    break;
                 }
                 if (rangeStep->value.isZero()) {
                     report->error("`for` loop range step must be non-zero.", statement->location);
-                    return;
+                    break;
                 }
                 
                 const auto beginLabelDefinition = createAnonymousLabelDefinition();
@@ -5728,7 +5811,7 @@ namespace wiz {
                     if (incrementInstruction) {
                         if ((rangeStep->value.isPositive() && rangeStart->value > rangeEnd->value)
                         || (rangeStep->value.isNegative() && rangeStart->value < rangeEnd->value)) {
-                            return;
+                            break;
                         }
 
                         if ((rangeStep->value.isPositive() && rangeEnd->value == counterBuiltinIntegerType->max)
@@ -5770,47 +5853,51 @@ namespace wiz {
                             ? " by `" + rangeStep->value.toString() + "`"
                             : "")
                         + " is not supported.", reducedSequence->location);
-                    return;
+                    break;
                 }
 
                 if (!incrementInstruction) {
                     report->error("could not generate increment instruction for " + statement->getDescription().toString(), statement->location);
-                    return;
+                    break;
                 }               
 
                 if (!emitExpressionStatementIr(reducedInitAssignment, reducedInitAssignment->location)) {
                     report->error("could not generate initial assignment instruction for " + statement->getDescription().toString(), statement->location);
-                    return;
+                    break;
                 }
                 emplaceIrNode(IrNode::Label(beginLabelDefinition), statement->location);
                 emitStatementIr(forStatement.body.get());
                 emplaceIrNode(IrNode::Code(incrementInstruction, std::move(incrementOperandRoots)), reducedCondition->location);
                 if (!emitBranchIr(forStatement.distanceHint, BranchKind::Goto, beginLabelReferenceExpression, nullptr, conditionNegated, reducedCondition, reducedCondition->location)) {
                     report->error("could not generate branch instruction for " + statement->getDescription().toString(), statement->location);
-                    return;
+                    break;
                 }
                 emplaceIrNode(IrNode::Label(endLabelDefinition), reducedCondition->location);
-            },
-            [&](const Statement::Func& funcDeclaration) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Func>(): {
+                const auto& funcDeclaration = variant.get<Statement::Func>();
                 auto definition = currentScope->findLocalMemberDefinition(funcDeclaration.name);
                 auto& funcDefinition = definition->variant.get<Definition::Func>();
 
                 if (funcDefinition.inlined) {
                     //report->error("TODO: `inline func`", statement->location);
-                    return;
+                    break;
                 } else {
                     emitFunctionIr(definition, statement->location);
                 }
-            },
-            [&](const Statement::If& ifStatement) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::If>(): {
+                const auto& ifStatement = variant.get<Statement::If>();
                 if (currentBank == nullptr) {
                     report->error(statement->getDescription().toString() + " must be inside an `in` statement", statement->location);
-                    return;
+                    break;
                 }
 
                 const auto reducedCondition = addToExpressionPool(reduceExpression(ifStatement.condition.get()));
                 if (!reducedCondition) {
-                    return;
+                    break;
                 }
 
                 if (const auto booleanLiteral = reducedCondition->variant.tryGet<Expression::BooleanLiteral>()) {
@@ -5822,7 +5909,7 @@ namespace wiz {
                         }
                     }
 
-                    return;
+                    break;
                 }
 
                 const auto endLabelDefinition = createAnonymousLabelDefinition();
@@ -5832,14 +5919,14 @@ namespace wiz {
 
                 if (!emitBranchIr(ifStatement.distanceHint, BranchKind::Goto, elseLabelReferenceExpression, nullptr, true, reducedCondition, statement->location)) {
                     report->error("could not generate branch instruction for " + statement->getDescription().toString(), statement->location);
-                    return;
+                    break;
                 }
 
                 emitStatementIr(ifStatement.body.get());
                 if (ifStatement.alternative) {
                     if (!emitBranchIr(ifStatement.distanceHint, BranchKind::Goto, endLabelReferenceExpression, nullptr, false, nullptr, statement->location)) {
                         report->error("could not generate branch instruction for " + statement->getDescription().toString(), statement->location);
-                        return;
+                        break;
                     }
                     emplaceIrNode(IrNode::Label(elseLabelDefinition), statement->location);
                     emitStatementIr(ifStatement.alternative.get());
@@ -5847,8 +5934,10 @@ namespace wiz {
                     emplaceIrNode(IrNode::Label(elseLabelDefinition), statement->location);
                 }
                 emplaceIrNode(IrNode::Label(endLabelDefinition), statement->location);
-            },
-            [&](const Statement::In& inStatement) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::In>(): {
+                const auto& inStatement = variant.get<Statement::In>();
                 bankStack.push_back(currentBank);
 
                 const auto result = handleInStatement(inStatement.pieces, inStatement.dest.get(), statement->location);
@@ -5860,11 +5949,13 @@ namespace wiz {
 
                 currentBank = bankStack.back();
                 bankStack.pop_back();
-            },
-            [&](const Statement::InlineFor& inlineForStatement) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::InlineFor>(): {
+                const auto& inlineForStatement = variant.get<Statement::InlineFor>();
                 if (currentBank == nullptr) {
                     report->error(statement->getDescription().toString() + " must be inside an `in` statement", statement->location);
-                    return;
+                    break;
                 }
 
                 const auto oldContinueLabel = continueLabel;
@@ -5876,13 +5967,13 @@ namespace wiz {
 
                 auto reducedSequence = reduceExpression(inlineForStatement.sequence.get());
                 if (reducedSequence == nullptr) {
-                    return;
+                    break;
                 }
 
                 const auto length = tryGetSequenceLiteralLength(reducedSequence.get());
                 if (!length.hasValue()) {
                     report->error("source for array comprehension must be a valid compile-time sequence", statement->location);
-                    return;
+                    break;
                 }
 
                 enterScope(getOrCreateStatementScope(StringView(), statement, currentScope));
@@ -5925,20 +6016,22 @@ namespace wiz {
                 emplaceIrNode(IrNode::Label(endLabelDefinition), statement->location);
 
                 exitScope();
-            },
-            [&](const Statement::ImportReference&) {},
-            [&](const Statement::InternalDeclaration&) {},
-            [&](const Statement::Branch& branch) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::ImportReference>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::InternalDeclaration>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::Branch>(): {
+                const auto& branch = variant.get<Statement::Branch>();
                 if (currentBank == nullptr) {
                     report->error(statement->getDescription().toString() + " must be inside an `in` statement", statement->location);
-                    return;
+                    break;
                 }
 
                 const Expression* reducedDestination = nullptr;
                 if (branch.destination) {
                     reducedDestination = addToExpressionPool(reduceExpression(branch.destination.get()));
                     if (!reducedDestination) {
-                        return;
+                        break;
                     }
                 }
 
@@ -5946,7 +6039,7 @@ namespace wiz {
                 if (branch.returnValue) {
                     reducedReturnValue = addToExpressionPool(reduceExpression(branch.returnValue.get()));
                     if (!reducedReturnValue) {
-                        return;
+                        break;
                     }
                 }
 
@@ -5954,49 +6047,57 @@ namespace wiz {
                 if (branch.condition) {
                     reducedCondition = addToExpressionPool(reduceExpression(branch.condition.get()));
                     if (!reducedCondition) {
-                        return;
+                        break;
                     }
                 }            
 
                 if (!emitBranchIr(branch.distanceHint, branch.kind, reducedDestination, reducedReturnValue, false, reducedCondition, statement->location)) {
                     report->error("branch instruction could not be generated", statement->location);
                 }
-            },
-            [&](const Statement::Label& labelDeclaration) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Label>(): {
+                const auto& labelDeclaration = variant.get<Statement::Label>();
                 if (currentBank == nullptr) {
                     report->error(statement->getDescription().toString() + " must be inside an `in` statement", statement->location);
-                    return;
+                    break;
                 }
 
                 emplaceIrNode(IrNode::Label(currentScope->findLocalMemberDefinition(labelDeclaration.name)), statement->location);
-            },
-            [&](const Statement::Let&) {},
-            [&](const Statement::Namespace& namespaceDeclaration) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Let>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::Namespace>(): {
+                const auto& namespaceDeclaration = variant.get<Statement::Namespace>();
                 enterScope(findStatementScope(namespaceDeclaration.body.get()));
                 emitStatementIr(namespaceDeclaration.body.get());
                 exitScope();
-            },
-            [&](const Statement::Struct&) {},
-            [&](const Statement::TypeAlias&) {},
-            [&](const Statement::Var& varDeclaration) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::Struct>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::TypeAlias>(): break;
+            case Statement::VariantType::typeIndexOf<Statement::Var>(): {
+                const auto& varDeclaration = variant.get<Statement::Var>();
                 for (const auto& name : varDeclaration.names) {
                     auto definition = currentScope->findLocalMemberDefinition(name);
                     auto& varDefinition = definition->variant.get<Definition::Var>();
 
                     if (!varDefinition.modifiers.contains<Modifier::Extern>() && currentBank == nullptr && varDefinition.addressExpression == nullptr) {
                         report->error(statement->getDescription().toString() + " must be inside an `in` statement", statement->location);
-                        return;
+                        break;
                     }
 
                     if (!varDefinition.modifiers.contains<Modifier::Extern>() && varDefinition.enclosingFunction == nullptr && currentBank != nullptr && isBankKindStored(currentBank->getKind())) {
                         emplaceIrNode(IrNode::Var(definition), statement->location);
                     }
                 }
-            },
-            [&](const Statement::While& whileStatement) {
+                break;
+            }
+            case Statement::VariantType::typeIndexOf<Statement::While>(): {
+                const auto& whileStatement = variant.get<Statement::While>();
                 if (currentBank == nullptr) {
                     report->error(statement->getDescription().toString() + " must be inside an `in` statement", statement->location);
-                    return;
+                    break;
                 }
 
                 const auto oldContinueLabel = continueLabel;
@@ -6009,7 +6110,7 @@ namespace wiz {
                 const auto reducedCondition = addToExpressionPool(reduceExpression(whileStatement.condition.get()));
                 if (!reducedCondition) {
                     report->error("could not generate branch instruction for " + statement->getDescription().toString(), statement->location);
-                    return;
+                    break;
                 }
 
                 const auto beginLabelDefinition = createAnonymousLabelDefinition();                
@@ -6022,15 +6123,17 @@ namespace wiz {
 
                 emplaceIrNode(IrNode::Label(beginLabelDefinition), statement->location);
                 if (!emitBranchIr(whileStatement.distanceHint, BranchKind::Goto, endLabelReferenceExpression, nullptr, true, reducedCondition, statement->location)) {
-                    return;
+                    break;
                 }
                 emitStatementIr(whileStatement.body.get());
                 if (!emitBranchIr(whileStatement.distanceHint, BranchKind::Goto, beginLabelReferenceExpression, nullptr, false, nullptr, statement->location)) {
-                    return;
+                    break;
                 }
                 emplaceIrNode(IrNode::Label(endLabelDefinition), statement->location);
+                break;
             }
-        ));
+            default: std::abort(); return false;
+        }
 
         return statement == program.get() ? report->validate() : report->alive();
     }
@@ -6046,25 +6149,32 @@ namespace wiz {
         // First pass: calculate data/instruction sizes, assign labels.
         for (std::size_t i = 0; i != irNodes.size(); ++i) {
             const auto& irNode = irNodes[i];
-
-            irNode->variant.visit(makeOverload(
-                [&](const IrNode::PushRelocation& pushRelocation) {
+            const auto& variant = irNode->variant;
+            switch (variant.index()) {
+                case IrNode::VariantType::typeIndexOf<IrNode::PushRelocation>(): {
+                    const auto& pushRelocation = variant.get<IrNode::PushRelocation>();
                     bankStack.push_back(currentBank);
                     currentBank = pushRelocation.bank;
 
                     if (const auto address = pushRelocation.address.tryGet()) {
                         currentBank->absoluteSeek(report, *address, irNode->location);
                     }
-                },
-                [&](const IrNode::PopRelocation&) {
+                    break;
+                }
+                case IrNode::VariantType::typeIndexOf<IrNode::PopRelocation>(): {
+                    const auto& pushRelocation = variant.get<IrNode::PopRelocation>();
                     currentBank = bankStack.back();
                     bankStack.pop_back();
-                },
-                [&](const IrNode::Label& label) {
+                    break;
+                }
+                case IrNode::VariantType::typeIndexOf<IrNode::Label>(): {
+                    const auto& label = variant.get<IrNode::Label>();
                     auto& funcDefinition = label.definition->variant.get<Definition::Func>();
                     funcDefinition.address = currentBank->getAddress();                    
-                },
-                [&](const IrNode::Code& code) {
+                    break;
+                }
+                case IrNode::VariantType::typeIndexOf<IrNode::Code>(): {
+                    const auto& code = variant.get<IrNode::Code>();
                     const auto& instruction = code.instruction;
                     if (instruction->signature.extract(code.operandRoots, captureLists)) {
                         bool removed = false;
@@ -6108,8 +6218,10 @@ namespace wiz {
                     } else {
                         report->error("failed to extract instruction capture list during instruction selection pass", irNode->location, ReportErrorFlags { ReportErrorFlagType::InternalError });
                     }
-                },
-                [&](const IrNode::Var& var) {  
+                    break;
+                }
+                case IrNode::VariantType::typeIndexOf<IrNode::Var>(): {
+                    const auto& var = variant.get<IrNode::Var>();
                     auto& varDefinition = var.definition->variant.get<Definition::Var>();
 
                     Optional<std::size_t> oldPosition;
@@ -6121,7 +6233,7 @@ namespace wiz {
                             oldPosition = currentBank->getRelativePosition();
                             currentBank->absoluteSeek(report, address.get(), irNode->location);
                         } else {
-                            return;
+                            break;
                         }
 
                         exitScope();
@@ -6130,14 +6242,16 @@ namespace wiz {
                     varDefinition.address = currentBank->getAddress();
  
                     if (!currentBank->reserveRom(report, "constant data"_sv, irNode.get(), irNode->location, varDefinition.storageSize.get())) {
-                        return;
+                        break;
                     }
  
                     if (oldPosition.hasValue()) {
                         currentBank->setRelativePosition(oldPosition.get());
                     }
+                    break;
                 }
-            ));
+                default: std::abort(); return false;
+            }
         }
 
         for (auto it = irNodeIndexesToRemove.rbegin(); it != irNodeIndexesToRemove.rend(); ++it) {
@@ -6160,20 +6274,25 @@ namespace wiz {
 
         // Second pass: resolve all link-time expressions, write the instructions into the correct banks.
         for (const auto& irNode : irNodes) {
-            irNode->variant.visit(makeOverload(
-                [&](const IrNode::PushRelocation& pushRelocation) {
+            const auto& variant = irNode->variant;
+            switch (variant.index()) {
+                case IrNode::VariantType::typeIndexOf<IrNode::PushRelocation>(): {
+                    const auto& pushRelocation = variant.get<IrNode::PushRelocation>();
                     bankStack.push_back(currentBank);
                     currentBank = pushRelocation.bank;
 
                     if (const auto address = pushRelocation.address.tryGet()) {
                         currentBank->absoluteSeek(report, *address, irNode->location);
                     }
-                },
-                [&](const IrNode::PopRelocation&) {
+                    break;
+                }
+                case IrNode::VariantType::typeIndexOf<IrNode::PopRelocation>(): {
                     currentBank = bankStack.back();
                     bankStack.pop_back();
-                },
-                [&](const IrNode::Label& label) {
+                    break;
+                }
+                case IrNode::VariantType::typeIndexOf<IrNode::Label>(): {
+                    const auto& label = variant.get<IrNode::Label>();
                     Address labelAddress;
 
                     auto& funcDefinition = label.definition->variant.get<Definition::Func>();
@@ -6199,14 +6318,18 @@ namespace wiz {
 
                         report->error(message, irNode->location, ReportErrorFlags { ReportErrorFlagType::InternalError });
                     }
-                },
-                [&](const IrNode::Code& code) {
+                    break;
+                }
+                case IrNode::VariantType::typeIndexOf<IrNode::Code>(): {
+                    const auto& code = variant.get<IrNode::Code>();
                     const auto& instruction = code.instruction;
 
                     tempOperandRoots.clear();
                     tempExpressions.clear();
 
-                    for (std::size_t i = 0; i != code.operandRoots.size(); ++i) {
+                    bool failed = false;
+
+                    for (std::size_t i = 0; i != code.operandRoots.size() && !failed; ++i) {
                         const auto& operandRoot = code.operandRoots[i];
                         if (const auto expression = operandRoot.expression) {
                             if (auto reducedExpression = reduceExpression(expression)) {
@@ -6215,27 +6338,35 @@ namespace wiz {
                                     tempExpressions.push_back(std::move(reducedExpression));
                                 } else {
                                     report->error("failed to create operand for reduced expresion", irNode->location, ReportErrorFlags { ReportErrorFlagType::InternalError });
-                                    return;
+                                    failed = true;
+                                    break;
                                 }
                             } else {
-                                return;
+                                failed = true;
+                                break;
                             }
                         } else {
                             tempOperandRoots.push_back(InstructionOperandRoot(nullptr, operandRoot.operand->clone()));
                         }
                     }
 
+                    if (failed) {
+                        break;
+                    }
+
                     if (instruction->signature.extract(tempOperandRoots, captureLists)) {
                         tempBuffer.clear();
                         instruction->encoding->write(report, currentBank, tempBuffer, instruction->options, captureLists, irNode->location);
                         if (!currentBank->write(report, "code"_sv, irNode.get(), irNode->location, tempBuffer)) {
-                            return;
+                            break;
                         }
                     } else {
                         report->error("failed to extract instruction capture list during generation pass", irNode->location, ReportErrorFlags { ReportErrorFlagType::InternalError });
                     }
-                },
-                [&](const IrNode::Var& var) {
+                    break;
+                }
+                case IrNode::VariantType::typeIndexOf<IrNode::Var>(): {
+                    const auto& var = variant.get<IrNode::Var>();
                     auto& varDefinition = var.definition->variant.get<Definition::Var>();
 
                     Optional<std::size_t> oldPosition;
@@ -6261,21 +6392,23 @@ namespace wiz {
                     if (hasInitializer) {
                         if (!serializeConstantInitializer(finalInitializerExpression, tempBuffer)) {
                             report->error("constant initializer could not be resolved at compile-time", irNode->location, ReportErrorFlags { ReportErrorFlagType::Fatal });
-                            return;
+                            break;
                         }
                     } else {
                         tempBuffer.resize(varDefinition.storageSize.get());
                     }
 
                     if (!currentBank->write(report, "constant data"_sv, irNode.get(), irNode->location, tempBuffer)) {
-                        return;
+                        break;
                     }
  
                     if (oldPosition.hasValue()) {
                         currentBank->setRelativePosition(oldPosition.get());
                     }
+                    break;
                 }
-            ));
+                default: std::abort(); return false;
+            }
         }
 
         return report->validate();
