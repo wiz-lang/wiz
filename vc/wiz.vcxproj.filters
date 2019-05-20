@@ -222,6 +222,9 @@
     <ClInclude Include="..\src\wiz\platform\pokemon_mini_platform.h">
       <Filter>Header Files\platform</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\wiz\utility\macros.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\wiz\parser\parser.cpp">
