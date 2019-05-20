@@ -56,9 +56,9 @@ endif
 
 ifeq ($(PLATFORM),native)
 ifeq ($(CFG),release)
-	CXX_FLAGS := -D_POSIX_SOURCE -O2 -std=c++17 -MMD -Wall -Werror -Wextra -Wold-style-cast -Wnon-virtual-dtor -fno-exceptions
+	CXX_FLAGS := -D_POSIX_SOURCE -Os -std=c++17 -MMD -Wall -Werror -Wextra -Wold-style-cast -Wnon-virtual-dtor -fno-exceptions -fno-rtti
 else ifeq ($(CFG),debug)
-	CXX_FLAGS := -D_POSIX_SOURCE -DWIZ_DEBUG -g -std=c++17 -MMD -Wall -Werror -Wextra -Wold-style-cast -Wnon-virtual-dtor -fno-exceptions
+	CXX_FLAGS := -D_POSIX_SOURCE -DWIZ_DEBUG -g -std=c++17 -MMD -Wall -Werror -Wextra -Wold-style-cast -Wnon-virtual-dtor -fno-exceptions -fno-rtti
 endif
 	LXXFLAGS := -lm
 	INCLUDES := -I$(WIZ_SRC)
@@ -69,7 +69,7 @@ else ifeq ($(PLATFORM),emcc)
 	CC := emcc
 	CXX := em++
 	CXX_FLAGS := -Oz -std=c++1z -MMD -Wall -Werror -Wextra -Wold-style-cast -Wnon-virtual-dtor -fno-exceptions
-	LXXFLAGS := -lm --bind --memory-init-file 0 -s NO_FILESYSTEM=1 -s DISABLE_EXCEPTION_CATCHING=1 --pre-js $(WIZ_PRE_JS)
+	LXXFLAGS := -lm --bind --memory-init-file 0 -s NO_FILESYSTEM=1 -s INLINING_LIMIT=1 -s DISABLE_EXCEPTION_CATCHING=1 --pre-js $(WIZ_PRE_JS)
 	INCLUDES := -I$(WIZ_SRC)
 else
 $(error Unknown PLATFORM value "$(PLATFORM)")

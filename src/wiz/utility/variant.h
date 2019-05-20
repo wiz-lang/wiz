@@ -7,6 +7,8 @@
 #include <utility>
 #include <tuple>
 
+#include <wiz/utility/macros.h>
+
 namespace wiz {
     namespace detail {
 #if __cplusplus >= 201703L || _MSC_VER >= 1910
@@ -225,50 +227,50 @@ namespace wiz {
                 return *this;
             }
 
-            int index() const {
+            WIZ_FORCE_INLINE int index() const {
                 return tag;
             }
 
             template <typename U>
-            bool is() const {
+            WIZ_FORCE_INLINE bool is() const {
                 return typeIndexOf<U>() == tag;
             }
 
             template <typename U>
-            U& get() & {
+            WIZ_FORCE_INLINE U& get() & {
                 static_cast<void>(typeIndexOf<U>());
                 assert(is<U>());
                 return *reinterpret_cast<std::add_pointer_t<U>>(&data);
             }
 
             template <typename U>
-            const U& get() const & {
+            WIZ_FORCE_INLINE const U& get() const & {
                 static_cast<void>(typeIndexOf<U>());
                 assert(is<U>());
                 return *reinterpret_cast<std::add_pointer_t<const U>>(&data);
             }
 
             template <typename U>
-            U&& get() && {
+            WIZ_FORCE_INLINE U&& get() && {
                 static_cast<void>(typeIndexOf<U>());
                 assert(is<U>());
                 return std::move(*reinterpret_cast<std::add_pointer_t<U>>(&data));
             }
 
             template <typename U>
-            const U&& get() const && {
+            WIZ_FORCE_INLINE const U&& get() const && {
                 static_cast<void>(typeIndexOf<U>());
                 assert(is<U>());
                 return std::move(*reinterpret_cast<std::add_pointer_t<const U>>(&data));
             }
 
             template <typename U>
-            std::add_pointer_t<U> tryGet() {
+            WIZ_FORCE_INLINE std::add_pointer_t<U> tryGet() {
                 return is<U>() ? &get<U>() : nullptr;
             }
 
             template <typename U>
-            std::add_pointer_t<const U> tryGet() const {
+            WIZ_FORCE_INLINE std::add_pointer_t<const U> tryGet() const {
                 return is<U>() ? &get<U>() : nullptr;
             }
 

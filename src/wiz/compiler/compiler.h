@@ -35,6 +35,7 @@ namespace wiz {
     struct Definition;
     struct Expression;
     struct TypeExpression;
+    struct PlatformTestAndBranch;
 
     class Compiler {
         public:
@@ -157,6 +158,8 @@ namespace wiz {
             bool emitAssignmentExpressionIr(const Expression* dest, const Expression* source, SourceLocation location);
             bool emitExpressionStatementIr(const Expression* expression, SourceLocation location);
             bool emitReturnAssignmentIr(const TypeExpression* returnType, const Expression* returnValue, SourceLocation location);
+
+            std::unique_ptr<PlatformTestAndBranch> getTestAndBranch(BinaryOperatorKind op, bool isSigned, const Expression* left, const Expression* right, std::size_t distanceHint) const;
             bool emitBranchIr(std::size_t distanceHint, BranchKind kind, const Expression* destination, const Expression* returnValue, bool negated, const Expression* condition, SourceLocation location);
             bool hasUnconditionalReturn(const Statement* statement) const;
             bool emitFunctionIr(Definition* definition, SourceLocation location);

@@ -762,13 +762,15 @@ namespace wiz {
                                                         | (left->info->flags.contains<ExpressionInfo::Flag::Far>() ? PointerQualifiers { PointerQualifier::Far } : PointerQualifiers {})
                                                     ),
                                                     resultType->location);
+                                                const auto pointerSizedType = left->info->flags.contains<ExpressionInfo::Flag::Far>() ? platform->getFarPointerSizedType() : platform->getPointerSizedType();
+                                                const auto mask = Int128((1U << (8U * pointerSizedType->variant.get<Definition::BuiltinIntegerType>().size)) - 1);
 
                                                 if (const auto elementSize = calculateStorageSize(resultType.get(), "operand"_sv)) {
                                                     return makeFwdUnique<const Expression>(
                                                         Expression::UnaryOperator(
                                                             UnaryOperatorKind::Indirection,
                                                             makeFwdUnique<const Expression>(
-                                                                Expression::IntegerLiteral(Int128(varDefinition->address->absolutePosition.get()) + indexValue * Int128(*elementSize)), expression->location,
+                                                                Expression::IntegerLiteral((Int128(varDefinition->address->absolutePosition.get()) + indexValue * Int128(*elementSize)) & mask), expression->location,
                                                                 ExpressionInfo(EvaluationContext::CompileTime, std::move(addressType), ExpressionInfo::Flags {}))),
                                                         expression->location,
                                                         ExpressionInfo(EvaluationContext::RunTime, std::move(resultType), flags));
@@ -783,13 +785,15 @@ namespace wiz {
                                                 | (left->info->flags.contains<ExpressionInfo::Flag::WriteOnly>() ? PointerQualifiers { PointerQualifier::WriteOnly } : PointerQualifiers {})
                                                 | (left->info->flags.contains<ExpressionInfo::Flag::Far>() ? PointerQualifiers { PointerQualifier::Far } : PointerQualifiers {})),
                                             resultType->location);
+                                        const auto pointerSizedType = left->info->flags.contains<ExpressionInfo::Flag::Far>() ? platform->getFarPointerSizedType() : platform->getPointerSizedType();
+                                        const auto mask = Int128((1U << (8U * pointerSizedType->variant.get<Definition::BuiltinIntegerType>().size)) - 1);
 
                                         if (const auto elementSize = calculateStorageSize(resultType.get(), "operand"_sv)) {
                                             return makeFwdUnique<const Expression>(
                                                 Expression::UnaryOperator(
                                                     UnaryOperatorKind::Indirection,
                                                     makeFwdUnique<const Expression>(
-                                                        Expression::IntegerLiteral(addressLiteral->value + indexValue * Int128(*elementSize)), expression->location,
+                                                        Expression::IntegerLiteral((addressLiteral->value + indexValue * Int128(*elementSize)) & mask), expression->location,
                                                         ExpressionInfo(EvaluationContext::CompileTime, std::move(addressType), ExpressionInfo::Flags {}))),
                                                 expression->location,
                                                 ExpressionInfo(EvaluationContext::RunTime, std::move(resultType), flags));
@@ -1737,7 +1741,7 @@ namespace wiz {
 
                                 if (funcDefinition->address.hasValue() && funcDefinition->address.get().absolutePosition.hasValue()) {
                                     return makeFwdUnique<const Expression>(
-                                        Expression::IntegerLiteral(Int128(funcDefinition->address->absolutePosition.get())), expression->location,
+                                        Expression::IntegerLiteral(Int128(funcDefinition->address->absolutePosition.get()) & mask), expression->location,
                                         ExpressionInfo(EvaluationContext::CompileTime, std::move(resultType), op == UnaryOperatorKind::FarAddressOf ? ExpressionInfo::Flags { ExpressionInfo::Flag::Far } : ExpressionInfo::Flags {}));
                                 } else {
                                     return makeFwdUnique<const Expression>(
@@ -5271,6 +5275,7 @@ namespace wiz {
         return false;
     }
 
+
     bool Compiler::emitBranchIr(std::size_t distanceHint, BranchKind kind, const Expression* destination, const Expression* returnValue, bool negated, const Expression* condition, SourceLocation location) {
         switch (kind) {
             case BranchKind::Continue: {
@@ -5510,7 +5515,8 @@ namespace wiz {
                         }
                     }
                     default: {
-                        report->error(getBinaryOperatorName(op).toString() + " operator is not allowed in conditional", condition->location);
+                        const auto failingOperator = negated ? getBinaryOperatorLogicalNegation(op) : op;
+                        report->error(getBinaryOperatorName(failingOperator).toString() + " operator is not allowed in conditional", condition->location);
                     }
                 }
             } else if (const auto booleanLiteral = condition->variant.tryGet<Expression::BooleanLiteral>()) {

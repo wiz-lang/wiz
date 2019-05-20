@@ -602,9 +602,15 @@ namespace wiz {
                 return false;
             }
             case VariantType::typeIndexOf<IntegerAtLeast>(): return matches(operand);
-            case VariantType::typeIndexOf<IntegerRange>(): return matches(operand);
+            case VariantType::typeIndexOf<IntegerRange>(): {
+                auto matched = matches(operand);
+                if (matched) {
+                    return true;
+                }
+                return false;
+            }
             case VariantType::typeIndexOf<Register>(): return matches(operand);
-                case VariantType::typeIndexOf<Unary>(): {
+            case VariantType::typeIndexOf<Unary>(): {
                 const auto& unPattern = variant.get<Unary>();
                 if (const auto unOperand = operand.variant.tryGet<InstructionOperand::Unary>()) {
                     return unPattern.kind == unOperand->kind
