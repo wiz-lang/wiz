@@ -2536,8 +2536,8 @@ namespace wiz {
         const auto leftContext = left->info->context;
         const auto rightContext = right->info->context;
 
-        if (const auto resultType = findCompatibleBinaryArithmeticExpressionType(left.get(), right.get())) {
-            static_cast<void>(resultType);
+        if (const auto commonType = findCompatibleBinaryArithmeticExpressionType(left.get(), right.get())) {
+            static_cast<void>(commonType);
 
             if (leftContext == EvaluationContext::RunTime || rightContext == EvaluationContext::RunTime) {
                 return makeFwdUnique<const Expression>(
@@ -2588,6 +2588,18 @@ namespace wiz {
 
         report->error(getBinaryOperatorName(op).toString() + " is not defined between provided operand types `" + getTypeName(left->info->type.get()) + "` and `" + getTypeName(right->info->type.get()) + "`", expression->location);
         return nullptr;
+    }
+
+    bool Compiler::isSimpleCast(const Expression* expression) const {
+        if (const auto cast = expression->variant.tryGet<Expression::Cast>()) {
+            const auto originalSize = calculateStorageSize(cast->operand->info->type.get(), ""_sv);
+            const auto castedSize = calculateStorageSize(expression->info->type.get(), ""_sv);
+            if (originalSize.hasValue() && castedSize.hasValue() && *originalSize == *castedSize) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     bool Compiler::isTypeDefinition(const Definition* definition) const {
@@ -5141,12 +5153,8 @@ namespace wiz {
 
     bool Compiler::emitAssignmentExpressionIr(const Expression* dest, const Expression* source, SourceLocation location) {
         if (isLeafExpression(source)) {
-            if (const auto cast = source->variant.tryGet<Expression::Cast>()) {
-                const auto originalSize = calculateStorageSize(cast->operand->info->type.get(), ""_sv);
-                const auto castedSize = calculateStorageSize(source->info->type.get(), ""_sv);
-                if (originalSize.hasValue() && castedSize.hasValue() && *originalSize == *castedSize) {
-                    return emitAssignmentExpressionIr(dest, cast->operand.get(), location);
-                }
+            if (isSimpleCast(source)) {
+                return emitAssignmentExpressionIr(dest, source->variant.get<Expression::Cast>().operand.get(), location);
             }
 
             if (!emitLoadExpressionIr(dest, source, dest->location)) {
@@ -5275,6 +5283,26 @@ namespace wiz {
         return false;
     }
 
+    std::unique_ptr<PlatformTestAndBranch> Compiler::getTestAndBranch(BinaryOperatorKind op, const Expression* left, const Expression* right, std::size_t distanceHint) const {
+        auto innerLeft = left;
+        auto innerRight = right;
+        while (isSimpleCast(innerLeft)) {
+            innerLeft = left->variant.get<Expression::Cast>().operand.get();
+        }        
+        while (isSimpleCast(innerRight)) {
+            innerRight = right->variant.get<Expression::Cast>().operand.get();
+        } 
+        
+        if (const auto commonType = findCompatibleBinaryArithmeticExpressionType(left, right)) {
+            const auto definition = tryGetResolvedIdentifierTypeDefinition(commonType);
+            return platform->getTestAndBranch(*this, definition, op, innerLeft, innerRight, distanceHint);
+        } else if (isBooleanType(left->info->type.get()) && isBooleanType(right->info->type.get())) {
+            const auto definition = tryGetResolvedIdentifierTypeDefinition(left->info->type.get());
+            return platform->getTestAndBranch(*this, definition, op, innerLeft, innerRight, distanceHint);
+        } else {
+            return nullptr;
+        }
+    }
 
     bool Compiler::emitBranchIr(std::size_t distanceHint, BranchKind kind, const Expression* destination, const Expression* returnValue, bool negated, const Expression* condition, SourceLocation location) {
         switch (kind) {
@@ -5401,7 +5429,7 @@ namespace wiz {
                 const auto left = binaryOperator->left.get();
                 const auto right = binaryOperator->right.get();
 
-                auto testAndBranch = platform->getTestAndBranch(*this, op, left, right, distanceHint);
+                auto testAndBranch = getTestAndBranch(op, left, right, distanceHint);
 
                 // If failed to find a test-and-branch, try "flipping" the comparison.
                 // a == b -> b == a, a < b -> b > a, a <= b -> b >= a.
@@ -5410,19 +5438,19 @@ namespace wiz {
                         case BinaryOperatorKind::Equal:
                         case BinaryOperatorKind::NotEqual:
                         {
-                            testAndBranch = platform->getTestAndBranch(*this, op, right, left, distanceHint);
+                            testAndBranch = getTestAndBranch(op, right, left, distanceHint);
                             break;
                         }
                         case BinaryOperatorKind::LessThan:
                         case BinaryOperatorKind::GreaterThan:
                         {
-                            testAndBranch = platform->getTestAndBranch(*this, op == BinaryOperatorKind::LessThan ? BinaryOperatorKind::GreaterThan : BinaryOperatorKind::LessThan, right, left, distanceHint);
+                            testAndBranch = getTestAndBranch(op == BinaryOperatorKind::LessThan ? BinaryOperatorKind::GreaterThan : BinaryOperatorKind::LessThan, right, left, distanceHint);
                             break;
                         }
                         case BinaryOperatorKind::LessThanOrEqual:
                         case BinaryOperatorKind::GreaterThanOrEqual:
                         {
-                            testAndBranch = platform->getTestAndBranch(*this, op == BinaryOperatorKind::LessThanOrEqual ? BinaryOperatorKind::GreaterThanOrEqual : BinaryOperatorKind::LessThanOrEqual, right, left, distanceHint);
+                            testAndBranch = getTestAndBranch(op == BinaryOperatorKind::LessThanOrEqual ? BinaryOperatorKind::GreaterThanOrEqual : BinaryOperatorKind::LessThanOrEqual, right, left, distanceHint);
                             break;
                         }
                         default: break;

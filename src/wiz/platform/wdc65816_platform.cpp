@@ -1147,7 +1147,7 @@ namespace wiz {
         return farPointerSizedType;
     }
 
-    std::unique_ptr<PlatformTestAndBranch> Wdc65816Platform::getTestAndBranch(const Compiler& compiler, BinaryOperatorKind op, const Expression* left, const Expression* right, std::size_t distanceHint) const {
+    std::unique_ptr<PlatformTestAndBranch> Wdc65816Platform::getTestAndBranch(const Compiler& compiler, const Definition* type, BinaryOperatorKind op, const Expression* left, const Expression* right, std::size_t distanceHint) const {
         static_cast<void>(compiler);
         static_cast<void>(distanceHint);
 
@@ -1202,51 +1202,119 @@ namespace wiz {
             }
             case BinaryOperatorKind::LessThan: 
             case BinaryOperatorKind::GreaterThanOrEqual: {
-                // left == right -> { cmp(left, right); } && !carry
-                if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
-                    const auto definition = leftRegister->definition;
-                    if (definition == a || definition == x || definition == y || definition == aa || definition == xx || definition == yy) {
-                        return std::make_unique<PlatformTestAndBranch>(
-                            InstructionType::VoidIntrinsic(cmp),
-                            std::vector<const Expression*> {left, right},
-                            std::vector<PlatformBranch> { PlatformBranch(carry, op == BinaryOperatorKind::GreaterThanOrEqual, true) }
-                        );
+                if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
+                    if (integerType->min.isNegative()) {
+                        // left < 0 -> { cmp(left, right); } && negative
+                        // left >= 0 -> { cmp(left, right); } && !negative
+                        if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                            const auto definition = leftRegister->definition;
+                            if (definition == a || definition == x || definition == y || definition == aa || definition == xx || definition == yy) {
+                                if (const auto rightImmediate = right->variant.tryGet<Expression::IntegerLiteral>()) {
+                                    if (rightImmediate->value.isZero()) {
+                                        return std::make_unique<PlatformTestAndBranch>(
+                                            InstructionType::VoidIntrinsic(cmp),
+                                            std::vector<const Expression*> {left, right},
+                                            std::vector<PlatformBranch> { PlatformBranch(negative, op == BinaryOperatorKind::LessThan, true) }
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // left < right -> { cmp(left, right); } && !carry
+                        // left >= right -> { cmp(left, right); } && carry
+                        if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                            const auto definition = leftRegister->definition;
+                            if (definition == a || definition == x || definition == y || definition == aa || definition == xx || definition == yy) {
+                                return std::make_unique<PlatformTestAndBranch>(
+                                    InstructionType::VoidIntrinsic(cmp),
+                                    std::vector<const Expression*> {left, right},
+                                    std::vector<PlatformBranch> { PlatformBranch(carry, op == BinaryOperatorKind::GreaterThanOrEqual, true) }
+                                );
+                            }
+                        }
                     }
                 }
 
                 return nullptr;
             }
             case BinaryOperatorKind::LessThanOrEqual: {
-                // left == right -> { cmp(left, right); } && (zero || !carry)
-                if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
-                    const auto definition = leftRegister->definition;
-                    if (definition == a || definition == x || definition == y || definition == aa || definition == xx || definition == yy) {
-                        return std::make_unique<PlatformTestAndBranch>(
-                            InstructionType::VoidIntrinsic(cmp),
-                            std::vector<const Expression*> {left, right},
-                            std::vector<PlatformBranch> {
-                                PlatformBranch(zero, true, true),
-                                PlatformBranch(carry, false, true)
+                if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
+                    // left <= 0 -> { cmp(left, right); } && (zero || negative)
+                    if (integerType->min.isNegative()) {
+                        if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                            const auto definition = leftRegister->definition;
+                            if (definition == a || definition == x || definition == y || definition == aa || definition == xx || definition == yy) {
+                                if (const auto rightImmediate = right->variant.tryGet<Expression::IntegerLiteral>()) {
+                                    if (rightImmediate->value.isZero()) {
+                                        return std::make_unique<PlatformTestAndBranch>(
+                                            InstructionType::VoidIntrinsic(cmp),
+                                            std::vector<const Expression*> {left, right},
+                                            std::vector<PlatformBranch> {
+                                                PlatformBranch(zero, true, true),
+                                                PlatformBranch(negative, true, true)
+                                            }
+                                        );
+                                    }
+                                }
                             }
-                        );
+                        }
+                    }
+                } else {
+                    // left <= right -> { cmp(left, right); } && (zero || !carry)
+                    if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                        const auto definition = leftRegister->definition;
+                        if (definition == a || definition == x || definition == y || definition == aa || definition == xx || definition == yy) {
+                            return std::make_unique<PlatformTestAndBranch>(
+                                InstructionType::VoidIntrinsic(cmp),
+                                std::vector<const Expression*> {left, right},
+                                std::vector<PlatformBranch> {
+                                    PlatformBranch(zero, true, true),
+                                    PlatformBranch(carry, false, true)
+                                }
+                            );
+                        }
                     }
                 }
 
                 return nullptr;
             }
             case BinaryOperatorKind::GreaterThan: {
-                // left == right -> { cmp(left, right); } && !zero && carry
-                if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
-                    const auto definition = leftRegister->definition;
-                    if (definition == a || definition == x || definition == y || definition == aa || definition == xx || definition == yy) {
-                        return std::make_unique<PlatformTestAndBranch>(
-                            InstructionType::VoidIntrinsic(cmp),
-                            std::vector<const Expression*> {left, right},
-                            std::vector<PlatformBranch> {
-                                PlatformBranch(zero, true, false),
-                                PlatformBranch(carry, true, true)
+                if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
+                    // left > 0 -> { cmp(left, right); } && !zero && !negative
+                    if (integerType->min.isNegative()) {
+                        if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                            const auto definition = leftRegister->definition;
+                            if (definition == a || definition == x || definition == y || definition == aa || definition == xx || definition == yy) {
+                                if (const auto rightImmediate = right->variant.tryGet<Expression::IntegerLiteral>()) {
+                                    if (rightImmediate->value.isZero()) {
+                                        return std::make_unique<PlatformTestAndBranch>(
+                                            InstructionType::VoidIntrinsic(cmp),
+                                            std::vector<const Expression*> {left, right},
+                                            std::vector<PlatformBranch> {
+                                                PlatformBranch(zero, true, false),
+                                                PlatformBranch(negative, false, true)
+                                            }
+                                        );
+                                    }
+                                }
                             }
-                        );
+                        }
+                    }
+                } else {
+                    // left > right -> { cmp(left, right); } && !zero && carry
+                    if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                        const auto definition = leftRegister->definition;
+                        if (definition == a || definition == x || definition == y || definition == aa || definition == xx || definition == yy) {
+                            return std::make_unique<PlatformTestAndBranch>(
+                                InstructionType::VoidIntrinsic(cmp),
+                                std::vector<const Expression*> {left, right},
+                                std::vector<PlatformBranch> {
+                                    PlatformBranch(zero, true, false),
+                                    PlatformBranch(carry, true, true)
+                                }
+                            );
+                        }
                     }
                 }
 

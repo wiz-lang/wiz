@@ -20,6 +20,7 @@ namespace wiz {
 
     class Builtins;
 
+    struct Expression;
     struct InstructionType;
     struct InstructionOperand;
 
@@ -60,7 +61,7 @@ namespace wiz {
             virtual void reserveDefinitions(Builtins& builtins) = 0;
             virtual Definition* getPointerSizedType() const = 0;
             virtual Definition* getFarPointerSizedType() const = 0;
-            virtual std::unique_ptr<PlatformTestAndBranch> getTestAndBranch(const Compiler& compiler, BinaryOperatorKind op, const Expression* left, const Expression* right, std::size_t distanceHint) const = 0;
+            virtual std::unique_ptr<PlatformTestAndBranch> getTestAndBranch(const Compiler& compiler, const Definition* type, BinaryOperatorKind op, const Expression* left, const Expression* right, std::size_t distanceHint) const = 0;
             virtual Definition* getZeroFlag() const = 0;
             virtual Int128 getPlaceholderValue() const = 0;
     };

@@ -5,8 +5,6 @@
 #include <wiz/utility/variant.h>
 
 namespace wiz {
-    struct Expression;
-
     class PokemonMiniPlatform : public Platform {
         public:
             PokemonMiniPlatform();
@@ -15,7 +13,7 @@ namespace wiz {
             void reserveDefinitions(Builtins& builtins) override;
             Definition* getPointerSizedType() const override;
             Definition* getFarPointerSizedType() const override;
-            std::unique_ptr<PlatformTestAndBranch> getTestAndBranch(const Compiler& compiler, BinaryOperatorKind op, const Expression* left, const Expression* right, std::size_t distanceHint) const override;
+            std::unique_ptr<PlatformTestAndBranch> getTestAndBranch(const Compiler& compiler, const Definition* type, BinaryOperatorKind op, const Expression* left, const Expression* right, std::size_t distanceHint) const override;
             Definition* getZeroFlag() const override;
             Int128 getPlaceholderValue() const override;
 

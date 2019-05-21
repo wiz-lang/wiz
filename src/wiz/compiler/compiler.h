@@ -105,6 +105,7 @@ namespace wiz {
             FwdUniquePtr<const Expression> simplifyBinaryLogicalExpression(const Expression* expression, BinaryOperatorKind op, FwdUniquePtr<const Expression> left, FwdUniquePtr<const Expression> right);
             FwdUniquePtr<const Expression> simplifyBinaryRotateExpression(const Expression* expression, BinaryOperatorKind op, FwdUniquePtr<const Expression> left, FwdUniquePtr<const Expression> right);
             FwdUniquePtr<const Expression> simplifyBinaryComparisonExpression(const Expression* expression, BinaryOperatorKind op, FwdUniquePtr<const Expression> left, FwdUniquePtr<const Expression> right);
+            bool isSimpleCast(const Expression* expression) const;
             bool isTypeDefinition(const Definition* definition) const;
             Definition* tryGetResolvedIdentifierTypeDefinition(const TypeExpression* typeExpression) const;
             bool isIntegerType(const TypeExpression* typeExpression) const;
@@ -159,7 +160,7 @@ namespace wiz {
             bool emitExpressionStatementIr(const Expression* expression, SourceLocation location);
             bool emitReturnAssignmentIr(const TypeExpression* returnType, const Expression* returnValue, SourceLocation location);
 
-            std::unique_ptr<PlatformTestAndBranch> getTestAndBranch(BinaryOperatorKind op, bool isSigned, const Expression* left, const Expression* right, std::size_t distanceHint) const;
+            std::unique_ptr<PlatformTestAndBranch> getTestAndBranch(BinaryOperatorKind op, const Expression* left, const Expression* right, std::size_t distanceHint) const;
             bool emitBranchIr(std::size_t distanceHint, BranchKind kind, const Expression* destination, const Expression* returnValue, bool negated, const Expression* condition, SourceLocation location);
             bool hasUnconditionalReturn(const Statement* statement) const;
             bool emitFunctionIr(Definition* definition, SourceLocation location);

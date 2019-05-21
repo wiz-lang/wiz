@@ -4,9 +4,11 @@
 #include <memory>
 
 #include <wiz/ast/expression.h>
+#include <wiz/ast/type_expression.h>
 #include <wiz/ast/statement.h>
 #include <wiz/compiler/bank.h>
 #include <wiz/compiler/builtins.h>
+#include <wiz/compiler/compiler.h>
 #include <wiz/compiler/definition.h>
 #include <wiz/compiler/instruction.h>
 #include <wiz/compiler/symbol_table.h>
@@ -32,6 +34,13 @@ namespace wiz {
         const auto u24Type = builtins.getDefinition(Builtins::DefinitionType::U24);
         const auto boolType = builtins.getDefinition(Builtins::DefinitionType::Bool);
 
+        bitIndex7Expression = makeFwdUnique<Expression>(
+            Expression::IntegerLiteral(Int128(7)),
+            decl->location, 
+            ExpressionInfo(EvaluationContext::CompileTime, 
+                makeFwdUnique<TypeExpression>(TypeExpression::ResolvedIdentifier(u8Type), decl->location),
+                ExpressionInfo::Flags {}));
+
         pointerSizedType = u16Type;
         farPointerSizedType = u24Type;
 
@@ -53,8 +62,6 @@ namespace wiz {
         zero = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("zero"), decl);
         const auto patternZero = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(zero));
         const auto patternCarry = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(carry));
-        const auto patternOverflow = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("overflow"), decl)));
-        const auto patternNegative = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("negative"), decl)));
         const auto patternInterrupt = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("interrupt"), decl)));
 
         // Intrinsics.
@@ -482,10 +489,6 @@ namespace wiz {
         builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternZero, patternTrue}), encodingU16Operand, InstructionOptions({0xCA}, {1}, {}));
         builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternCarry, patternFalse}), encodingU16Operand, InstructionOptions({0xD2}, {1}, {}));
         builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternCarry, patternTrue}), encodingU16Operand, InstructionOptions({0xDA}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternOverflow, patternFalse}), encodingU16Operand, InstructionOptions({0xE2}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternOverflow, patternTrue}), encodingU16Operand, InstructionOptions({0xEA}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternNegative, patternFalse}), encodingU16Operand, InstructionOptions({0xF2}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternNegative, patternTrue}), encodingU16Operand, InstructionOptions({0xFA}, {1}, {}));
         // jp hl
         builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternHL}), encodingImplicit, InstructionOptions({0xE9}, {}, {}));
         // call abs
@@ -495,10 +498,6 @@ namespace wiz {
         builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternImmU16, patternZero, patternTrue}), encodingU16Operand, InstructionOptions({0xCC}, {1}, {}));
         builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternImmU16, patternCarry, patternFalse}), encodingU16Operand, InstructionOptions({0xD4}, {1}, {}));
         builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternImmU16, patternCarry, patternTrue}), encodingU16Operand, InstructionOptions({0xDC}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternImmU16, patternOverflow, patternFalse}), encodingU16Operand, InstructionOptions({0xE4}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternImmU16, patternOverflow, patternTrue}), encodingU16Operand, InstructionOptions({0xEC}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternImmU16, patternNegative, patternFalse}), encodingU16Operand, InstructionOptions({0xF4}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternImmU16, patternNegative, patternTrue}), encodingU16Operand, InstructionOptions({0xFC}, {1}, {}));
         // ret
         builtins.emplaceInstruction(InstructionSignature(BranchKind::Return, 0, {patternAtLeast0}), encodingImplicit, InstructionOptions({0xC9}, {1}, {}));
         // ret cond
@@ -506,10 +505,6 @@ namespace wiz {
         builtins.emplaceInstruction(InstructionSignature(BranchKind::Return, 0, {patternAtLeast0, patternZero, patternTrue}), encodingImplicit, InstructionOptions({0xC8}, {1}, {}));
         builtins.emplaceInstruction(InstructionSignature(BranchKind::Return, 0, {patternAtLeast0, patternCarry, patternFalse}), encodingImplicit, InstructionOptions({0xD0}, {1}, {}));
         builtins.emplaceInstruction(InstructionSignature(BranchKind::Return, 0, {patternAtLeast0, patternCarry, patternTrue}), encodingImplicit, InstructionOptions({0xD8}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Return, 0, {patternAtLeast0, patternOverflow, patternFalse}), encodingImplicit, InstructionOptions({0xE0}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Return, 0, {patternAtLeast0, patternOverflow, patternTrue}), encodingImplicit, InstructionOptions({0xE8}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Return, 0, {patternAtLeast0, patternNegative, patternFalse}), encodingImplicit, InstructionOptions({0xF0}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Return, 0, {patternAtLeast0, patternNegative, patternTrue}), encodingImplicit, InstructionOptions({0xF8}, {1}, {}));
         // reti
         builtins.emplaceInstruction(InstructionSignature(BranchKind::IrqReturn, 0, {patternAtLeast0}), encodingImplicit, InstructionOptions({0xD9}, {}, {}));
         // rst n
@@ -531,7 +526,7 @@ namespace wiz {
         return farPointerSizedType;
     }
 
-    std::unique_ptr<PlatformTestAndBranch> GameBoyPlatform::getTestAndBranch(const Compiler& compiler, BinaryOperatorKind op, const Expression* left, const Expression* right, std::size_t distanceHint) const {
+    std::unique_ptr<PlatformTestAndBranch> GameBoyPlatform::getTestAndBranch(const Compiler& compiler, const Definition* type, BinaryOperatorKind op, const Expression* left, const Expression* right, std::size_t distanceHint) const {
         static_cast<void>(compiler);
         static_cast<void>(distanceHint);
 
@@ -565,13 +560,35 @@ namespace wiz {
             case BinaryOperatorKind::LessThan:
             case BinaryOperatorKind::GreaterThanOrEqual: {
                 // a == right -> { cmp(a, right); } && carry
-                if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
-                    if (leftRegister->definition == a) {
-                        return std::make_unique<PlatformTestAndBranch>(
-                            InstructionType::VoidIntrinsic(cmp),
-                            std::vector<const Expression*> {left, right},
-                            std::vector<PlatformBranch> { PlatformBranch(carry, op == BinaryOperatorKind::LessThan, true) }
-                        );
+                if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
+                    if (integerType->min.isNegative()) {
+                        if (const auto rightImmediate = right->variant.tryGet<Expression::IntegerLiteral>()) {
+                            if (rightImmediate->value.isZero()) {
+                                // left < 0 -> { bit(left, 7); } && !zero
+                                // left >= 0 -> { bit(left, 7); } && zero
+                                std::vector<InstructionOperandRoot> operandRoots;
+                                operandRoots.push_back(InstructionOperandRoot(left, compiler.createOperandFromExpression(left, true)));
+                                operandRoots.push_back(InstructionOperandRoot(bitIndex7Expression.get(), compiler.createOperandFromExpression(bitIndex7Expression.get(), true)));
+
+                                if (auto instruction = compiler.getBuiltins().selectInstruction(InstructionType::VoidIntrinsic(bit), 0, operandRoots)) {
+                                    return std::make_unique<PlatformTestAndBranch>(
+                                        InstructionType::VoidIntrinsic(bit),
+                                        std::vector<const Expression*> {left, bitIndex7Expression.get()},
+                                        std::vector<PlatformBranch> { PlatformBranch(zero, op != BinaryOperatorKind::LessThan, true) }
+                                    );
+                                }
+                            }
+                        }
+                    } else {
+                        if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                            if (leftRegister->definition == a) {
+                                return std::make_unique<PlatformTestAndBranch>(
+                                    InstructionType::VoidIntrinsic(cmp),
+                                    std::vector<const Expression*> {left, right},
+                                    std::vector<PlatformBranch> { PlatformBranch(carry, op == BinaryOperatorKind::LessThan, true) }
+                                );
+                            }
+                        }
                     }
                 }
 
@@ -579,16 +596,20 @@ namespace wiz {
             }
             case BinaryOperatorKind::LessThanOrEqual: {
                 // a == right -> { cmp(a, right); } && (zero || carry)
-                if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
-                    if (leftRegister->definition == a) {
-                        return std::make_unique<PlatformTestAndBranch>(
-                            InstructionType::VoidIntrinsic(cmp),
-                            std::vector<const Expression*> {left, right},
-                            std::vector<PlatformBranch> {
-                                PlatformBranch(zero, true, true),
-                                PlatformBranch(carry, true, true)
+                if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
+                    if (integerType->min.isPositive()) {
+                        if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                            if (leftRegister->definition == a) {
+                                return std::make_unique<PlatformTestAndBranch>(
+                                    InstructionType::VoidIntrinsic(cmp),
+                                    std::vector<const Expression*> {left, right},
+                                    std::vector<PlatformBranch> {
+                                        PlatformBranch(zero, true, true),
+                                        PlatformBranch(carry, true, true)
+                                    }
+                                );
                             }
-                        );
+                        }
                     }
                 }
 
@@ -596,16 +617,20 @@ namespace wiz {
             }
             case BinaryOperatorKind::GreaterThan: {
                 // a == right -> { cmp(a, right); } && !zero && !carry
-                if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
-                    if (leftRegister->definition == a) {
-                        return std::make_unique<PlatformTestAndBranch>(
-                            InstructionType::VoidIntrinsic(cmp),
-                            std::vector<const Expression*> {left, right},
-                            std::vector<PlatformBranch> {
-                                PlatformBranch(zero, true, false),
-                                PlatformBranch(carry, false, true)
+                if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
+                    if (integerType->min.isPositive()) {
+                        if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                            if (leftRegister->definition == a) {
+                                return std::make_unique<PlatformTestAndBranch>(
+                                    InstructionType::VoidIntrinsic(cmp),
+                                    std::vector<const Expression*> {left, right},
+                                    std::vector<PlatformBranch> {
+                                        PlatformBranch(zero, true, false),
+                                        PlatformBranch(carry, false, true)
+                                    }
+                                );
                             }
-                        );
+                        }
                     }
                 }
 

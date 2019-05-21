@@ -5,6 +5,8 @@
 #include <utility>
 #include <type_traits>
 
+#include <wiz/utility/macros.h>
+
 namespace wiz {
 
     template <typename T>
@@ -74,59 +76,59 @@ namespace wiz {
                 return *this;
             }
 
-            explicit operator bool() const {
+            WIZ_FORCE_INLINE explicit operator bool() const {
                 return hasValue_;
             }
 
-            T& operator *() & {
+            WIZ_FORCE_INLINE T& operator *() & {
                 return get();
             }
 
-            const T& operator *() const & {
+            WIZ_FORCE_INLINE const T& operator *() const & {
                 return get();
             }
 
-            T&& operator *() && {
+            WIZ_FORCE_INLINE T&& operator *() && {
                 return get();
             }
 
-            const T&& operator *() const && {
+            WIZ_FORCE_INLINE const T&& operator *() const && {
                 return get();
             }
 
-            T* operator ->() {
+            WIZ_FORCE_INLINE T* operator ->() {
                 return &get();
             }
 
-            const T* operator ->() const {
+            WIZ_FORCE_INLINE const T* operator ->() const {
                 return &get();
             }
 
-            bool hasValue() const {
+            WIZ_FORCE_INLINE bool hasValue() const {
                 return hasValue_;
             }
 
-            T& get() & {
+            WIZ_FORCE_INLINE T& get() & {
                 assert(hasValue_);
                 return *reinterpret_cast<std::add_pointer_t<T>>(&data);
             }
 
-            const T& get() const & {
+            WIZ_FORCE_INLINE const T& get() const & {
                 assert(hasValue_);
                 return *reinterpret_cast<std::add_pointer_t<const T>>(&data);
             }
 
-            T&& get() && {
+            WIZ_FORCE_INLINE T&& get() && {
                 assert(hasValue_);
                 return std::move(*reinterpret_cast<std::add_pointer_t<T>>(&data));
             }
 
-            const T&& get() const && {
+            WIZ_FORCE_INLINE const T&& get() const && {
                 assert(hasValue_);
                 return std::move(*reinterpret_cast<std::add_pointer_t<const T>>(&data));
             }
 
-            T getOrDefault(T defaultValue) const {
+            WIZ_FORCE_INLINE T getOrDefault(T defaultValue) const {
                 if (hasValue()) {
                     return get();
                 } else {
@@ -134,14 +136,14 @@ namespace wiz {
                 }
             }
 
-            std::add_pointer_t<T> tryGet() {
+            WIZ_FORCE_INLINE std::add_pointer_t<T> tryGet() {
                 if (hasValue()) {
                     return &get();
                 }
                 return nullptr;
             }
 
-            std::add_pointer_t<const T> tryGet() const {
+            WIZ_FORCE_INLINE std::add_pointer_t<const T> tryGet() const {
                 if (hasValue()) {
                     return &get();
                 }

@@ -761,7 +761,7 @@ namespace wiz {
         return farPointerSizedType;
     }
 
-    std::unique_ptr<PlatformTestAndBranch> PokemonMiniPlatform::getTestAndBranch(const Compiler& compiler, BinaryOperatorKind op, const Expression* left, const Expression* right, std::size_t distanceHint) const {
+    std::unique_ptr<PlatformTestAndBranch> PokemonMiniPlatform::getTestAndBranch(const Compiler& compiler, const Definition* type, BinaryOperatorKind op, const Expression* left, const Expression* right, std::size_t distanceHint) const {
         static_cast<void>(compiler);
         static_cast<void>(op);
         static_cast<void>(left);
