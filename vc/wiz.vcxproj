@@ -82,6 +82,7 @@
     <ClInclude Include="..\src\wiz\utility\string_view.h" />
     <ClInclude Include="..\src\wiz\utility\text.h" />
     <ClInclude Include="..\src\wiz\utility\tty.h" />
+    <ClInclude Include="..\src\wiz\utility\unique_ptr.h" />
     <ClInclude Include="..\src\wiz\utility\variant.h" />
     <ClInclude Include="..\src\wiz\utility\win32.h" />
     <ClInclude Include="..\src\wiz\utility\writer.h" />
@@ -271,7 +272,6 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <ExceptionHandling>false</ExceptionHandling>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -328,7 +328,6 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <ExceptionHandling>false</ExceptionHandling>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

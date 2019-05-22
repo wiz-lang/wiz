@@ -5,6 +5,8 @@
 #include <utility>
 #include <type_traits>
 
+#include <wiz/utility/unique_ptr.h>
+
 namespace wiz {
     template <typename T>
     struct FwdDeleter {        
@@ -17,7 +19,8 @@ namespace wiz {
     // Usually this is the implementation:
     // template<> void FwdDeleter<T>::operator()(const T* ptr) { delete ptr; }
     template <typename T>
-    using FwdUniquePtr = std::unique_ptr<T, FwdDeleter<std::remove_cv_t<T>>>;
+    using FwdUniquePtr = UniquePtr<T, FwdDeleter<std::remove_cv_t<T>>>;
+    //using FwdUniquePtr = std::unique_ptr<T, FwdDeleter<std::remove_cv_t<T>>>;
 
     template <typename T, typename... Args>
     FwdUniquePtr<T> makeFwdUnique(Args&&... args) {

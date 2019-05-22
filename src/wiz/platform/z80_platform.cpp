@@ -957,7 +957,7 @@ namespace wiz {
                                         operandRoots.push_back(InstructionOperandRoot(left, compiler.createOperandFromExpression(left, true)));
                                         operandRoots.push_back(InstructionOperandRoot(bitIndex7Expression.get(), compiler.createOperandFromExpression(bitIndex7Expression.get(), true)));
 
-                                        if (auto instruction = compiler.getBuiltins().selectInstruction(InstructionType::VoidIntrinsic(bit), 0, operandRoots)) {
+                                        if (compiler.getBuiltins().selectInstruction(InstructionType::VoidIntrinsic(bit), 0, operandRoots)) {
                                             return std::make_unique<PlatformTestAndBranch>(
                                                 InstructionType::VoidIntrinsic(bit),
                                                 std::vector<const Expression*> {left, bitIndex7Expression.get()},
