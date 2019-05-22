@@ -24,7 +24,7 @@ namespace wiz {
             UniquePtrBase(CompatiblePointerType ptr)
             : ptr(ptr) {}
 
-	        template<typename CompatiblePointerType, typename CompatibleDeleterType>
+            template<typename CompatiblePointerType, typename CompatibleDeleterType>
             UniquePtrBase(CompatiblePointerType ptr, CompatibleDeleterType&&)
             : ptr(ptr) {}
 
@@ -57,7 +57,7 @@ namespace wiz {
             UniquePtrBase(CompatiblePointerType ptr)
             : ptr(ptr), del() {}
 
-	        template<typename CompatiblePointerType, typename CompatibleDeleterType>
+            template<typename CompatiblePointerType, typename CompatibleDeleterType>
             UniquePtrBase(CompatiblePointerType ptr, CompatibleDeleterType&& del)
             : ptr(ptr), del(std::forward<CompatibleDeleterType>(del)) {}
 
@@ -110,7 +110,7 @@ namespace wiz {
             UniquePtr(UniquePtr&& other) 
             : UniquePtrBase<T, Deleter>(other.release(), std::forward<Deleter>(other.deleter())) {}
 
-        	template<typename CompatiblePointerType, typename CompatibleDeleterType>
+            template<typename CompatiblePointerType, typename CompatibleDeleterType>
             UniquePtr(UniquePtr<CompatiblePointerType, CompatibleDeleterType>&& other)
             : UniquePtrBase<T, Deleter>(other.release(), std::forward<CompatibleDeleterType>(other.deleter())) {}
 
@@ -120,7 +120,7 @@ namespace wiz {
 
             UniquePtr& operator =(const UniquePtr&) = delete;
 
-            UniquePtr& operator =(std::nullptr_t) {
+            WIZ_FORCE_INLINE UniquePtr& operator =(std::nullptr_t) {
                 this->pointer() = nullptr;
                 return *this;
             }
