@@ -6,6 +6,8 @@
 #include <cstring>
 #include <string>
 
+#include <wiz/utility/macros.h>
+
 namespace wiz {
     class StringView {
         public:
@@ -24,23 +26,23 @@ namespace wiz {
             constexpr StringView(const char* text, std::size_t length)
             : data(text), length(length) {}
 
-            constexpr const char* getData() const {
+            WIZ_FORCE_INLINE constexpr const char* getData() const {
                 return data;
             }
 
-            constexpr std::size_t getLength() const {
+            WIZ_FORCE_INLINE constexpr std::size_t getLength() const {
                 return length;
             }
 
-            constexpr const char* begin() const {
+            WIZ_FORCE_INLINE constexpr const char* begin() const {
                 return data;
             }
 
-            constexpr const char* end() const {
+            WIZ_FORCE_INLINE constexpr const char* end() const {
                 return data + length;
             }
 
-            std::string toString() const {
+            WIZ_FORCE_INLINE std::string toString() const {
                 return std::string(data, data + length);
             }
 
@@ -163,37 +165,37 @@ namespace wiz {
                 && find(sub, length - sub.getLength()) == length - sub.getLength();
             }
 
-            StringView& operator=(const StringView& other) {
+            WIZ_FORCE_INLINE StringView& operator=(const StringView& other) {
                 data = other.data;
                 length = other.length;
                 return *this;
             }
 
-            constexpr const char& operator [](std::size_t index) const {
+            WIZ_FORCE_INLINE constexpr const char& operator [](std::size_t index) const {
                 return data[index];
             }
 
-            constexpr bool operator ==(const StringView& other) const {
+            WIZ_FORCE_INLINE constexpr bool operator ==(const StringView& other) const {
                 return compare(other) == 0;
             }
 
-            constexpr bool operator !=(const StringView& other) const {
+            WIZ_FORCE_INLINE constexpr bool operator !=(const StringView& other) const {
                 return compare(other) != 0;
             }
 
-            constexpr bool operator <(const StringView& other) const {
+            WIZ_FORCE_INLINE constexpr bool operator <(const StringView& other) const {
                 return compare(other) < 0;
             }
 
-            constexpr bool operator >(const StringView& other) const {
+            WIZ_FORCE_INLINE constexpr bool operator >(const StringView& other) const {
                 return compare(other) > 0;
             }
 
-            constexpr bool operator <=(const StringView& other) const {
+            WIZ_FORCE_INLINE constexpr bool operator <=(const StringView& other) const {
                 return compare(other) <= 0;
             }
 
-            constexpr bool operator >=(const StringView& other) const {
+            WIZ_FORCE_INLINE constexpr bool operator >=(const StringView& other) const {
                 return compare(other) >= 0;
             }
 

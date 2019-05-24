@@ -3,20 +3,41 @@
 
 #include <cstddef>
 #include <string>
+#include <vector>
 #include <unordered_set>
+#include <memory>
+
+#include <wiz/utility/macros.h>
 #include <wiz/utility/string_view.h>
 
 namespace wiz {
     class StringPool {
         public:
-            template <typename T>
-            StringView intern(T&& source) {
-                const auto result = items.emplace(std::forward<T>(source)).first;
-                return StringView(result->data(), result->length());
+            WIZ_FORCE_INLINE StringView intern(const char* source) {
+                return intern(StringView(source));
+            }
+
+            WIZ_FORCE_INLINE StringView intern(const std::string& source) {
+                return intern(StringView(source));
+            }
+
+            StringView intern(StringView source) {
+                const auto match = views.find(source);
+
+                if (match != views.end()) {
+                    return *match;
+                } else {
+                    strings.push_back(std::make_unique<std::string>(source.getData(), source.getLength()));
+
+                    const auto view = StringView(*strings.back());
+                    views.insert(view);
+                    return view;
+                }
             }
 
         private:
-            std::unordered_set<std::string> items;
+            std::vector<std::unique_ptr<std::string>> strings;
+            std::unordered_set<StringView> views;
     };
 }
 
