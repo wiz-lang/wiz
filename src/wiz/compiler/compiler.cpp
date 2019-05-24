@@ -69,6 +69,10 @@ namespace wiz {
         return builtins;
     }
 
+    std::uint32_t Compiler::getModeFlags() const {
+        return modeFlags;
+    }
+
     SymbolTable* Compiler::getOrCreateStatementScope(StringView name, const Statement* statement, SymbolTable* parentScope) {
         auto& statementScopes = currentInlineSite->statementScopes;
         const auto match = statementScopes.find(statement);

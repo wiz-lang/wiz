@@ -8,6 +8,7 @@
 #include <wiz/ast/statement.h>
 #include <wiz/compiler/bank.h>
 #include <wiz/compiler/builtins.h>
+#include <wiz/compiler/compiler.h>
 #include <wiz/compiler/definition.h>
 #include <wiz/compiler/instruction.h>
 #include <wiz/compiler/symbol_table.h>
@@ -859,19 +860,30 @@ namespace wiz {
             case BinaryOperatorKind::GreaterThanOrEqual: {
                 if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
                     if (integerType->min.isNegative()) {
-                        // left < 0 -> { cmp(left, 0); } && negative
-                        // left >+ 0 -> { cmp(left, 0); } && !negative
-                        if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
-                            const auto definition = leftRegister->definition;
-                            if (definition == a || definition == x || definition == y) {
-                                if (const auto rightImmediate = right->variant.tryGet<Expression::IntegerLiteral>()) {
-                                    if (rightImmediate->value.isZero()) {
+                        // left < 0 -> { cmp(left, right); } && negative
+                        // left >= 0 -> { cmp(left, right); } && !negative
+                        if (const auto rightImmediate = right->variant.tryGet<Expression::IntegerLiteral>()) {
+                            if (rightImmediate->value.isZero()) {
+                                if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                                    const auto definition = leftRegister->definition;
+                                    if (definition == a || definition == x || definition == y) {
                                         return std::make_unique<PlatformTestAndBranch>(
                                             InstructionType::VoidIntrinsic(cmp),
                                             std::vector<const Expression*> {left, right},
                                             std::vector<PlatformBranch> { PlatformBranch(negative, op == BinaryOperatorKind::LessThan, true) }
                                         );
                                     }
+                                }
+
+                                std::vector<InstructionOperandRoot> operandRoots;
+                                operandRoots.push_back(InstructionOperandRoot(left, compiler.createOperandFromExpression(left, true)));
+
+                                if (compiler.getBuiltins().selectInstruction(InstructionType::VoidIntrinsic(bit), compiler.getModeFlags(), operandRoots)) {
+                                    return std::make_unique<PlatformTestAndBranch>(
+                                        InstructionType::VoidIntrinsic(bit),
+                                        std::vector<const Expression*> {left},
+                                        std::vector<PlatformBranch> { PlatformBranch(negative, op == BinaryOperatorKind::LessThan, true) }
+                                    );
                                 }
                             }
                         }

@@ -55,6 +55,7 @@ namespace wiz {
             const Statement* getProgram() const;
             const std::vector<std::unique_ptr<Bank>>& getRegisteredBanks() const;
             const Builtins& getBuiltins() const;
+            std::uint32_t getModeFlags() const;
 
             FwdUniquePtr<InstructionOperand> createOperandFromExpression(const Expression* expression, bool quiet) const;
         private:
