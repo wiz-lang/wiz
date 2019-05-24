@@ -80,8 +80,10 @@ namespace wiz {
         // Intrinsics.
         cmp = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("cmp"), decl);
         bit = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("bit"), decl);
-        const auto push = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("push"), decl);
-        const auto pop = scope->emplaceDefinition(nullptr, Definition::BuiltinLoadIntrinsic(u8Type), stringPool->intern("pop"), decl);
+        const auto push8 = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("push8"), decl);
+        const auto pop8 = scope->emplaceDefinition(nullptr, Definition::BuiltinLoadIntrinsic(u8Type), stringPool->intern("pop8"), decl);
+        const auto push16 = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("push16"), decl);
+        const auto pop16 = scope->emplaceDefinition(nullptr, Definition::BuiltinLoadIntrinsic(u16Type), stringPool->intern("pop16"), decl);
         const auto irqcall = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("irqcall"), decl);
         const auto copcall = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("copcall"), decl);
         const auto nop = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("nop"), decl);
@@ -917,31 +919,29 @@ namespace wiz {
             builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, std::get<2>(op), {left, right}), encodingImplicit, InstructionOptions({std::get<3>(op)}, {}, {}));
         }
         // push
-        // TODO: separate into push8 and push16, so the type checker works
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), 0, {patternImmU16}), encodingU16Operand, InstructionOptions({0xF4}, {0}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), 0, {patternDirectU16}), encodingU8Operand, InstructionOptions({0xD4}, {0}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), 0, {patternImmU16}), encodingPCRelativeI16Operand, InstructionOptions({0x62}, {0}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), modeMem8, {patternA}), encodingImplicit, InstructionOptions({0x48}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), modeMem16, {patternAA}), encodingImplicit, InstructionOptions({0x48}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), 0, {patternP}), encodingImplicit, InstructionOptions({0x08}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), modeIdx8, {patternX}), encodingImplicit, InstructionOptions({0xDA}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), modeIdx16, {patternXX}), encodingImplicit, InstructionOptions({0xDA}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), modeIdx8, {patternY}), encodingImplicit, InstructionOptions({0x5A}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), modeIdx16, {patternYY}), encodingImplicit, InstructionOptions({0x5A}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), 0, {patternDirectPageRegister}), encodingImplicit, InstructionOptions({0x0B}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), 0, {patternDataBank}), encodingImplicit, InstructionOptions({0x8B}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), 0, {patternProgramBank}), encodingImplicit, InstructionOptions({0x4B}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push16), 0, {patternImmU16}), encodingU16Operand, InstructionOptions({0xF4}, {0}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push16), 0, {patternDirectU16}), encodingU8Operand, InstructionOptions({0xD4}, {0}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push16), 0, {patternImmU16}), encodingPCRelativeI16Operand, InstructionOptions({0x62}, {0}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push8), modeMem8, {patternA}), encodingImplicit, InstructionOptions({0x48}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push16), modeMem16, {patternAA}), encodingImplicit, InstructionOptions({0x48}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push8), 0, {patternP}), encodingImplicit, InstructionOptions({0x08}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push8), modeIdx8, {patternX}), encodingImplicit, InstructionOptions({0xDA}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push16), modeIdx16, {patternXX}), encodingImplicit, InstructionOptions({0xDA}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push8), modeIdx8, {patternY}), encodingImplicit, InstructionOptions({0x5A}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push16), modeIdx16, {patternYY}), encodingImplicit, InstructionOptions({0x5A}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push16), 0, {patternDirectPageRegister}), encodingImplicit, InstructionOptions({0x0B}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push8), 0, {patternDataBank}), encodingImplicit, InstructionOptions({0x8B}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push8), 0, {patternProgramBank}), encodingImplicit, InstructionOptions({0x4B}, {}, {}));
         // pop
-        // TODO: separate into pop8 and pop16, so the type checker works
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop), modeMem8, {patternA}), encodingImplicit, InstructionOptions({0x68}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop), modeMem16, {patternAA}), encodingImplicit, InstructionOptions({0x68}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop), 0, {patternP}), encodingImplicit, InstructionOptions({0x28}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop), modeIdx8, {patternX}), encodingImplicit, InstructionOptions({0xFA}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop), modeIdx16, {patternXX}), encodingImplicit, InstructionOptions({0xFA}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop), modeIdx8, {patternY}), encodingImplicit, InstructionOptions({0x7A}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop), modeIdx16, {patternYY}), encodingImplicit, InstructionOptions({0x7A}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop), 0, {patternDirectPageRegister}), encodingImplicit, InstructionOptions({0x2B}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop), 0, {patternDataBank}), encodingImplicit, InstructionOptions({0xAB}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop8), modeMem8, {patternA}), encodingImplicit, InstructionOptions({0x68}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop16), modeMem16, {patternAA}), encodingImplicit, InstructionOptions({0x68}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop8), 0, {patternP}), encodingImplicit, InstructionOptions({0x28}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop8), modeIdx8, {patternX}), encodingImplicit, InstructionOptions({0xFA}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop16), modeIdx16, {patternXX}), encodingImplicit, InstructionOptions({0xFA}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop8), modeIdx8, {patternY}), encodingImplicit, InstructionOptions({0x7A}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop16), modeIdx16, {patternYY}), encodingImplicit, InstructionOptions({0x7A}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop16), 0, {patternDirectPageRegister}), encodingImplicit, InstructionOptions({0x2B}, {}, {}));
+        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop8), 0, {patternDataBank}), encodingImplicit, InstructionOptions({0xAB}, {}, {}));
         // increment
         builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, modeMem8, {patternDirectU8}), encodingU8Operand, InstructionOptions({0xE6}, {0}, {zero}));
         builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, modeMem8 | modeIdx8, {patternDirectIndexedByXU8}), encodingU8Operand, InstructionOptions({0xF6}, {0}, {zero}));

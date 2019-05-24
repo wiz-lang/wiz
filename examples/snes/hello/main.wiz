@@ -111,9 +111,8 @@ in prg {
 
             snes.rom.speed = a = snes.rom.SPEED_FAST;
 
-            push(a = 0x80);
-            data_bank = pop(); 
-
+            push8(a = #:fast_main);
+            data_bank = pop8();
             return fast_main();
         }
     }
