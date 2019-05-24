@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <vector>
-#include <functional>
 #include <type_traits>
 
 #include <wiz/ast/expression.h>

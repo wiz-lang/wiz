@@ -131,7 +131,7 @@ namespace wiz {
                 auto logValue = log2(value);
                 if (value < 4096) {
                     report->error("`expansion_ram_size` of \"" + std::to_string(value) + "\" is not supported (must be at least 4096 bytes)", expansionRamSize->first->location);
-                } else if (value > (1U << logValue)) {
+                } else if (value > (static_cast<std::size_t>(1) << logValue)) {
                     report->error("`expansion_ram_size` of \"" + std::to_string(value) + "\" is not supported (must be a power-of-two)", expansionRamSize->first->location);
                 } else {
                     data[headerAddress + 0xBD] = static_cast<std::uint8_t>(log2(value) - log2(4096));
@@ -168,7 +168,7 @@ namespace wiz {
                     auto logValue = log2(value);
                     if (value < 4096) {
                         report->error("`ram_size` of \"" + std::to_string(value) + "\" is not supported (must be at least 4096 bytes)", ramSize->first->location);
-                    } else if (value > (1U << logValue)) {
+                    } else if (value > (static_cast<std::size_t>(1) << logValue)) {
                         report->error("`ram_size` of \"" + std::to_string(value) + "\" is not supported (must be a power-of-two)", ramSize->first->location);
                     } else {
                         data[headerAddress + 0xD8] = static_cast<std::uint8_t>(log2(value) - log2(4096));
@@ -205,9 +205,9 @@ namespace wiz {
         {
             // Round size up to nearest power-of-two.
             auto logDataSize = log2(data.size());
-            if (data.size() > (1U << logDataSize)) {
+            if (data.size() > (static_cast<std::size_t>(1) << logDataSize)) {
                 ++logDataSize;
-                data.resize(1U << logDataSize, 0xFF);
+                data.resize(static_cast<std::size_t>(1) << logDataSize, 0xFF);
             }
 
             if (data.size() <= MaxTotalRomSize) {
@@ -232,7 +232,7 @@ namespace wiz {
 
         {
             const auto dataSize = data.size();
-            const auto wholeSize = 1U << log2(dataSize);
+            const auto wholeSize = static_cast<std::size_t>(1) << log2(dataSize);
 
             std::uint16_t checksum = 0;
             for (std::size_t i = 0; i != wholeSize; ++i) {
@@ -241,7 +241,7 @@ namespace wiz {
 
             const auto remainderSize = dataSize - wholeSize;
             if (remainderSize != 0) {
-                const auto repeatSize = 1U << log2(remainderSize);
+                const auto repeatSize = static_cast<std::size_t>(1) << log2(remainderSize);
                 const auto repeatCount = repeatSize != 0 ? remainderSize / repeatSize : 0;
 
                 std::uint16_t repeatChecksum = 0;

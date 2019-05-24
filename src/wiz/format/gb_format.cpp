@@ -148,9 +148,9 @@ namespace wiz {
 
         // Round size up to nearest power-of-two.
         auto logDataSize = log2(data.size());
-        if (data.size() > (1U << logDataSize)) {
+        if (data.size() > (static_cast<std::size_t>(1) << logDataSize)) {
             ++logDataSize;
-            data.resize(1U << logDataSize, 0xFF);
+            data.resize(static_cast<std::size_t>(1) << logDataSize, 0xFF);
         }
 
         if (data.size() <= MaxTotalRomSize) {

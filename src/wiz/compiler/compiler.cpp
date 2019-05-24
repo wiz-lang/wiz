@@ -6212,7 +6212,7 @@ namespace wiz {
         }
         
         std::vector<std::vector<const InstructionOperand*>> captureLists;
-        std::set<int> irNodeIndexesToRemove;
+        std::set<std::size_t> irNodeIndexesToRemove;
 
         // First pass: calculate data/instruction sizes, assign labels.
         for (std::size_t i = 0; i != irNodes.size(); ++i) {

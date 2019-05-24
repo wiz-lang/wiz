@@ -1,7 +1,6 @@
 #ifndef WIZ_UTILITY_STRING_VIEW_H
 #define WIZ_UTILITY_STRING_VIEW_H
 
-#include <functional>
 #include <cstddef>
 #include <cstring>
 #include <string>
