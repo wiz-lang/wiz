@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include <functional>
 #include <type_traits>
 
 #include <wiz/utility/fwd_unique_ptr.h>
@@ -374,15 +373,18 @@ namespace wiz {
         std::vector<Definition*> affectedFlags;
     };
 
+    using InstructionSizeFunc = std::size_t (*)(const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists);
+    using InstructionWriteFunc = bool (*)(Report* report, const Bank* bank, std::vector<std::uint8_t>& buffer, const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists, SourceLocation location);
+
     struct InstructionEncoding {
         InstructionEncoding(
-            const std::function<std::size_t(const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists)> calculateSize,
-            const std::function<bool(Report* report, const Bank* bank, std::vector<std::uint8_t>& buffer, const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists, SourceLocation location)> write)
+            InstructionSizeFunc calculateSize,
+            InstructionWriteFunc write)
         : calculateSize(calculateSize),
         write(write) {}
         
-        std::function<std::size_t(const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists)> calculateSize;
-        std::function<bool(Report* report, const Bank* bank, std::vector<std::uint8_t>& buffer, const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists, SourceLocation location)> write;
+        InstructionSizeFunc calculateSize;
+        InstructionWriteFunc write;
     };
 
     struct InstructionType {
