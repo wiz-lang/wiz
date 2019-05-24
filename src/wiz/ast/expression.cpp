@@ -154,10 +154,10 @@ namespace wiz {
     }
 
     FwdUniquePtr<const Expression> Expression::clone() const {
-        return cloneWithInfo(info ? info->clone() : Optional<ExpressionInfo>());
+        return clone(location, info ? info->clone() : Optional<ExpressionInfo>());
     }
 
-    FwdUniquePtr<const Expression> Expression::cloneWithInfo(Optional<ExpressionInfo> info) const {
+    FwdUniquePtr<const Expression> Expression::clone(SourceLocation location, Optional<ExpressionInfo> info) const {
         switch (variant.index()) {
             case VariantType::typeIndexOf<ArrayComprehension>(): {
                 const auto& arrayComprehension = variant.get<ArrayComprehension>();

@@ -2064,7 +2064,9 @@ namespace wiz {
                 }
                 exitScope();
 
-                return result;
+                return result != nullptr
+                    ? result->clone(location, ExpressionInfo(result->info->context, result->info->type->clone(), result->info->flags))
+                    : nullptr;
             } else {
                 return makeFwdUnique<const Expression>(Expression::ResolvedIdentifier(definition, pieces), location,
                     ExpressionInfo(EvaluationContext::CompileTime,
@@ -2080,7 +2082,7 @@ namespace wiz {
                 return nullptr;
             }
             if (const auto designatedStorageType = varDefinition->resolvedType->variant.tryGet<TypeExpression::DesignatedStorage>()) {
-                return designatedStorageType->holder->cloneWithInfo(ExpressionInfo(
+                return designatedStorageType->holder->clone(location, ExpressionInfo(
                     EvaluationContext::RunTime,
                     designatedStorageType->elementType->clone(),
                     designatedStorageType->holder->info->flags
@@ -2885,7 +2887,8 @@ namespace wiz {
                     || (!sourcePointerType->qualifiers.contains<PointerQualifier::Const>() && destinationPointerType->qualifiers.contains<PointerQualifier::WriteOnly>()))
                 && (sourcePointerType->qualifiers.contains<PointerQualifier::Far>() == destinationPointerType->qualifiers.contains<PointerQualifier::Far>()
                     || !destinationPointerType->qualifiers.contains<PointerQualifier::Far>())) {
-                    return sourceExpression->cloneWithInfo(
+                    return sourceExpression->clone(
+                        sourceExpression->location,
                         ExpressionInfo(
                             sourceExpression->info->context,
                             destinationType->clone(),

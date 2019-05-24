@@ -380,7 +380,7 @@ namespace wiz {
             info(std::move(info)) {}
 
             FwdUniquePtr<const Expression> clone() const;
-            FwdUniquePtr<const Expression> cloneWithInfo(Optional<ExpressionInfo> info) const;
+            FwdUniquePtr<const Expression> clone(SourceLocation location, Optional<ExpressionInfo> info) const;
 
             enum class EvaluationContext {
                 // Has not been determined yet.
