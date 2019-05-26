@@ -365,7 +365,7 @@ namespace wiz {
         const std::uint8_t prefixBit = 0xCB;
 
         // Register info.
-        using RegisterInfo = std::tuple<InstructionOperandPattern*, std::uint8_t, std::size_t>;
+        using RegisterInfo = std::tuple<const InstructionOperandPattern*, std::uint8_t, std::size_t>;
         const RegisterInfo generalRegisters[] {
             RegisterInfo {patternB, 0, SIZE_MAX},
             RegisterInfo {patternC, 1, SIZE_MAX},
@@ -382,7 +382,7 @@ namespace wiz {
             RegisterInfo {patternHL, 2, 2},
             RegisterInfo {patternSP, 3, SIZE_MAX},
         };
-        using PrefixSet = std::tuple<std::uint8_t, std::vector<InstructionOperandPattern*>>;
+        using PrefixSet = std::tuple<std::uint8_t, std::vector<const InstructionOperandPattern*>>;
         const PrefixSet prefixSets[] {
             PrefixSet {prefixIX, {patternIXH, patternIXL, patternIX, patternIndexIX}},
             PrefixSet {prefixIY, {patternIYH, patternIYL, patternIY, patternIndexIY}},

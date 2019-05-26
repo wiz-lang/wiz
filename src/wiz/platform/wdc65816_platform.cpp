@@ -725,11 +725,11 @@ namespace wiz {
 
         struct ArithmeticOperandSignature {
             ArithmeticOperandSignature(
-                InstructionOperandPattern* mem8Idx8Pattern,
-                InstructionOperandPattern* mem8Idx16Pattern,
+                const InstructionOperandPattern* mem8Idx8Pattern,
+                const InstructionOperandPattern* mem8Idx16Pattern,
                 const InstructionEncoding* mem8Encoding,
-                InstructionOperandPattern* mem16Idx8Pattern,
-                InstructionOperandPattern* mem16Idx16Pattern,
+                const InstructionOperandPattern* mem16Idx8Pattern,
+                const InstructionOperandPattern* mem16Idx16Pattern,
                 const InstructionEncoding* mem16Encoding,
                 std::uint8_t baseOpcode)
             : mem8Idx8Pattern(mem8Idx8Pattern),
@@ -740,11 +740,11 @@ namespace wiz {
             mem16Encoding(mem16Encoding),
             baseOpcode(baseOpcode) {}
 
-            InstructionOperandPattern* mem8Idx8Pattern;
-            InstructionOperandPattern* mem8Idx16Pattern;
+            const InstructionOperandPattern* mem8Idx8Pattern;
+            const InstructionOperandPattern* mem8Idx16Pattern;
             const InstructionEncoding* mem8Encoding;
-            InstructionOperandPattern* mem16Idx8Pattern;
-            InstructionOperandPattern* mem16Idx16Pattern;
+            const InstructionOperandPattern* mem16Idx8Pattern;
+            const InstructionOperandPattern* mem16Idx16Pattern;
             const InstructionEncoding* mem16Encoding;
             std::uint8_t baseOpcode;
         };
@@ -877,7 +877,7 @@ namespace wiz {
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), modeIdx16, {patternYY, patternDirectU16}), encodingU8Operand, InstructionOptions({0xC4}, {1}, {}));
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), modeIdx16, {patternYY, patternAbsoluteU16}), encodingU16Operand, InstructionOptions({0xCC}, {1}, {}));
         // transfer instructions
-        using TransferOp = std::tuple<InstructionOperandPattern*, InstructionOperandPattern*, std::uint32_t, std::uint8_t>;
+        using TransferOp = std::tuple<const InstructionOperandPattern*, const InstructionOperandPattern*, std::uint32_t, std::uint8_t>;
         const TransferOp transferOps[] {
             TransferOp {patternA, patternX, modeMem8 | modeIdx8, 0x8A},
             TransferOp {patternX, patternA, modeMem8 | modeIdx8, 0xAA},

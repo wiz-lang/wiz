@@ -456,14 +456,14 @@ namespace wiz {
         InstructionSignature(
             const InstructionType& type,
             std::uint32_t requiredModeFlags,
-            const std::vector<InstructionOperandPattern*>& operandPatterns)
+            const std::vector<const InstructionOperandPattern*>& operandPatterns)
         : type(type),
         requiredModeFlags(requiredModeFlags),
         operandPatterns(operandPatterns) {}
 
         InstructionType type;
         std::uint32_t requiredModeFlags;
-        std::vector<InstructionOperandPattern*> operandPatterns;
+        std::vector<const InstructionOperandPattern*> operandPatterns;
 
         int compare(const InstructionSignature& other) const;
         bool isSubsetOf(const InstructionSignature& other) const;

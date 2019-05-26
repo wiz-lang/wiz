@@ -259,7 +259,7 @@ namespace wiz {
         const std::uint8_t prefixBit = 0xCB;
 
         // Register info.
-        using RegisterInfo = std::tuple<InstructionOperandPattern*, std::uint8_t>;
+        using RegisterInfo = std::tuple<const InstructionOperandPattern*, std::uint8_t>;
         const RegisterInfo generalRegisters[] {
             RegisterInfo {patternB, 0},
             RegisterInfo {patternC, 1},

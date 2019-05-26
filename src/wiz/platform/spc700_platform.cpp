@@ -488,7 +488,7 @@ namespace wiz {
                 {BinaryOperatorKind::Subtraction, {0x80, 0xA0}},
             };
 
-            using ArithmeticOperandSignature = std::tuple<InstructionOperandPattern*, InstructionOperandPattern*, const InstructionEncoding*, std::uint8_t, std::vector<std::size_t>>;
+            using ArithmeticOperandSignature = std::tuple<const InstructionOperandPattern*, const InstructionOperandPattern*, const InstructionEncoding*, std::uint8_t, std::vector<std::size_t>>;
             const ArithmeticOperandSignature arithmeticOperandSignatures[] {
                 ArithmeticOperandSignature {patternA, patternImmU8, encodingU8Operand, 0x08, {1}},
                 ArithmeticOperandSignature {patternA, patternXIndirectU8, encodingImplicit, 0x06, {}},

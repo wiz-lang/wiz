@@ -81,18 +81,18 @@ namespace wiz {
             ~Builtins();
 
             template <typename... Args>
-            InstructionOperandPattern* createInstructionOperandPattern(Args&&... args) {
-                return addInstructionOperandPattern(makeFwdUnique<InstructionOperandPattern>(std::forward<Args>(args)...));
+            const InstructionOperandPattern* createInstructionOperandPattern(Args&&... args) {
+                return addInstructionOperandPattern(makeFwdUnique<const InstructionOperandPattern>(std::forward<Args>(args)...));
             }
 
             template <typename... Args>
-            InstructionEncoding* createInstructionEncoding(Args&&... args) {
-                return addInstructionEncoding(makeFwdUnique<InstructionEncoding>(std::forward<Args>(args)...));
+            const InstructionEncoding* createInstructionEncoding(Args&&... args) {
+                return addInstructionEncoding(makeFwdUnique<const InstructionEncoding>(std::forward<Args>(args)...));
             }
 
             template <typename... Args>
-            Instruction* createInstruction(Args&&... args) {
-                return addInstruction(makeFwdUnique<Instruction>(std::forward<Args>(args)...));
+            const Instruction* createInstruction(Args&&... args) {
+                return addInstruction(makeFwdUnique<const Instruction>(std::forward<Args>(args)...));
             }
 
             StringPool* getStringPool() const;
@@ -104,14 +104,14 @@ namespace wiz {
             void addDefineInteger(StringView key, Int128 value);
             void addDefineBoolean(StringView key, bool value);
 
-            ArrayView<FwdUniquePtr<InstructionOperandPattern>> getInstructionOperandPatterns() const;
-            InstructionOperandPattern* addInstructionOperandPattern(FwdUniquePtr<InstructionOperandPattern> uniquePattern);
+            ArrayView<FwdUniquePtr<const InstructionOperandPattern>> getInstructionOperandPatterns() const;
+            const InstructionOperandPattern* addInstructionOperandPattern(FwdUniquePtr<const InstructionOperandPattern> uniquePattern);
 
-            ArrayView<FwdUniquePtr<InstructionEncoding>> getInstructionEncodings() const;
-            InstructionEncoding* addInstructionEncoding(FwdUniquePtr<InstructionEncoding> uniqueEncoding);
+            ArrayView<FwdUniquePtr<const InstructionEncoding>> getInstructionEncodings() const;
+            const InstructionEncoding* addInstructionEncoding(FwdUniquePtr<const InstructionEncoding> uniqueEncoding);
 
-            ArrayView<FwdUniquePtr<Instruction>> getInstructions() const;
-            Instruction* addInstruction(FwdUniquePtr<Instruction> uniqueInstruction);
+            ArrayView<FwdUniquePtr<const Instruction>> getInstructions() const;
+            const Instruction* addInstruction(FwdUniquePtr<const Instruction> uniqueInstruction);
             std::vector<const Instruction*> findAllInstructionsByType(const InstructionType& instructionType) const;
             std::vector<const Instruction*> findAllSpecializationsByInstruction(const Instruction* instruction) const;
             const Instruction* selectInstruction(const InstructionType& instructionType, std::uint32_t modeFlags, const std::vector<InstructionOperandRoot>& operandRoots) const;
@@ -156,9 +156,9 @@ namespace wiz {
             Definition* getDef = nullptr;
             FwdUniquePtr<const TypeExpression> unitTuple;
 
-            std::vector<FwdUniquePtr<InstructionOperandPattern>> instructionOperandPatterns;
-            std::vector<FwdUniquePtr<InstructionEncoding>> instructionEncodings;
-            std::vector<FwdUniquePtr<Instruction>> instructions;
+            std::vector<FwdUniquePtr<const InstructionOperandPattern>> instructionOperandPatterns;
+            std::vector<FwdUniquePtr<const InstructionEncoding>> instructionEncodings;
+            std::vector<FwdUniquePtr<const Instruction>> instructions;
             std::unordered_map<InstructionType, std::vector<const Instruction*>> primaryInstructionsByInstructionTypes;
             std::unordered_map<const Instruction*, std::vector<const Instruction*>> specializationsByInstructions;
 

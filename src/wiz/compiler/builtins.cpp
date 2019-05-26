@@ -130,31 +130,31 @@ namespace wiz {
                     ExpressionInfo::Flags {})));
     }
 
-    ArrayView<FwdUniquePtr<InstructionOperandPattern>> Builtins::getInstructionOperandPatterns() const {
-        return ArrayView<FwdUniquePtr<InstructionOperandPattern>>(instructionOperandPatterns);
+    ArrayView<FwdUniquePtr<const InstructionOperandPattern>> Builtins::getInstructionOperandPatterns() const {
+        return ArrayView<FwdUniquePtr<const InstructionOperandPattern>>(instructionOperandPatterns);
     }
 
-    InstructionOperandPattern* Builtins::addInstructionOperandPattern(FwdUniquePtr<InstructionOperandPattern> uniquePattern) {
+    const InstructionOperandPattern* Builtins::addInstructionOperandPattern(FwdUniquePtr<const InstructionOperandPattern> uniquePattern) {
         auto result = uniquePattern.get();
         instructionOperandPatterns.push_back(std::move(uniquePattern));
         return result;
     }
 
-    ArrayView<FwdUniquePtr<InstructionEncoding>> Builtins::getInstructionEncodings() const {
-        return ArrayView<FwdUniquePtr<InstructionEncoding>>(instructionEncodings);
+    ArrayView<FwdUniquePtr<const InstructionEncoding>> Builtins::getInstructionEncodings() const {
+        return ArrayView<FwdUniquePtr<const InstructionEncoding>>(instructionEncodings);
     }
 
-    InstructionEncoding* Builtins::addInstructionEncoding(FwdUniquePtr<InstructionEncoding> uniqueEncoding) {
+    const InstructionEncoding* Builtins::addInstructionEncoding(FwdUniquePtr<const InstructionEncoding> uniqueEncoding) {
         auto result = uniqueEncoding.get();
         instructionEncodings.push_back(std::move(uniqueEncoding));
         return result;
     }
 
-    ArrayView<FwdUniquePtr<Instruction>> Builtins::getInstructions() const {
-        return ArrayView<FwdUniquePtr<Instruction>>(instructions);
+    ArrayView<FwdUniquePtr<const Instruction>> Builtins::getInstructions() const {
+        return ArrayView<FwdUniquePtr<const Instruction>>(instructions);
     }
 
-    Instruction* Builtins::addInstruction(FwdUniquePtr<Instruction> uniqueInstruction) {
+    const Instruction* Builtins::addInstruction(FwdUniquePtr<const Instruction> uniqueInstruction) {
         auto& instruction = *uniqueInstruction;
         instructions.push_back(std::move(uniqueInstruction));
 
