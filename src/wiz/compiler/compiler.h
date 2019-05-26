@@ -84,7 +84,7 @@ namespace wiz {
             Definition* createAnonymousLabelDefinition();
 
             template <typename... Args>
-            IrNode* emplaceIrNode(Args&&... args) {
+            IrNode* createIrNode(Args&&... args) {
                 return addIrNode(makeFwdUnique<IrNode>(std::forward<Args>(args)...));
             }
 

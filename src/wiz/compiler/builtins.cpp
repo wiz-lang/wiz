@@ -37,31 +37,31 @@ namespace wiz {
     defines(std::move(defines_)),
     scope(std::make_unique<SymbolTable>(nullptr, StringView())),
     declaration(makeFwdUnique<const Statement>(Statement::InternalDeclaration(), SourceLocation(stringPool->intern("<internal>")))),
-    boolType(scope->emplaceDefinition(nullptr, Definition::BuiltinBoolType(), stringPool->intern("bool"), declaration.get())), 
-    u8Type(scope->emplaceDefinition(nullptr, Definition::BuiltinIntegerType(Int128(0), Int128(UINT8_MAX), 1), stringPool->intern("u8"), declaration.get())),
-    u16Type(scope->emplaceDefinition(nullptr, Definition::BuiltinIntegerType(Int128(0), Int128(UINT16_MAX), 2), stringPool->intern("u16"), declaration.get())),
-    u24Type(scope->emplaceDefinition(nullptr, Definition::BuiltinIntegerType(Int128(0), Int128(0xFFFFFFU), 3), stringPool->intern("u24"), declaration.get())),
-    u32Type(scope->emplaceDefinition(nullptr, Definition::BuiltinIntegerType(Int128(0), Int128(UINT32_MAX), 4), stringPool->intern("u32"), declaration.get())),
-    u64Type(scope->emplaceDefinition(nullptr, Definition::BuiltinIntegerType(Int128(0), Int128(UINT64_MAX), 8), stringPool->intern("u64"), declaration.get())),
-    i8Type(scope->emplaceDefinition(nullptr, Definition::BuiltinIntegerType(Int128(INT8_MIN), Int128(INT8_MAX), 1), stringPool->intern("i8"), declaration.get())), 
-    i16Type(scope->emplaceDefinition(nullptr, Definition::BuiltinIntegerType(Int128(INT16_MIN), Int128(INT16_MAX), 2), stringPool->intern("i16"), declaration.get())),
-    i24Type(scope->emplaceDefinition(nullptr, Definition::BuiltinIntegerType(Int128(-0x800000), Int128(0x7FFFFF), 3), stringPool->intern("i24"), declaration.get())),
-    i32Type(scope->emplaceDefinition(nullptr, Definition::BuiltinIntegerType(Int128(INT32_MIN), Int128(INT32_MAX), 4), stringPool->intern("i32"), declaration.get())),
-    i64Type(scope->emplaceDefinition(nullptr, Definition::BuiltinIntegerType(Int128(INT64_MIN), Int128(INT64_MAX), 8), stringPool->intern("i64"), declaration.get())),
-    iexprType(scope->emplaceDefinition(nullptr, Definition::BuiltinIntegerExpressionType(), stringPool->intern("iexpr"), declaration.get())),    
-    letType(scope->emplaceDefinition(nullptr, Definition::BuiltinLetType(), stringPool->intern("let"), declaration.get())),
-    rangeType(scope->emplaceDefinition(nullptr, Definition::BuiltinRangeType(), stringPool->intern("range"), declaration.get())),
-    intrinsicType(scope->emplaceDefinition(nullptr, Definition::BuiltinIntrinsicType(), stringPool->intern("intrinsic"), declaration.get())),
-    typeofType(scope->emplaceDefinition(nullptr, Definition::BuiltinTypeOfType(), stringPool->intern("typeof"), declaration.get())),
-    hasDef(scope->emplaceDefinition(nullptr, Definition::Let(std::vector<StringView> {stringPool->intern("key")}, nullptr), stringPool->intern("__has"), declaration.get())),
-    getDef(scope->emplaceDefinition(nullptr, Definition::Let(std::vector<StringView> {stringPool->intern("key"), stringPool->intern("fallback")}, nullptr), stringPool->intern("__get"), declaration.get())),
+    boolType(scope->createDefinition(nullptr, Definition::BuiltinBoolType(), stringPool->intern("bool"), declaration.get())), 
+    u8Type(scope->createDefinition(nullptr, Definition::BuiltinIntegerType(Int128(0), Int128(UINT8_MAX), 1), stringPool->intern("u8"), declaration.get())),
+    u16Type(scope->createDefinition(nullptr, Definition::BuiltinIntegerType(Int128(0), Int128(UINT16_MAX), 2), stringPool->intern("u16"), declaration.get())),
+    u24Type(scope->createDefinition(nullptr, Definition::BuiltinIntegerType(Int128(0), Int128(0xFFFFFFU), 3), stringPool->intern("u24"), declaration.get())),
+    u32Type(scope->createDefinition(nullptr, Definition::BuiltinIntegerType(Int128(0), Int128(UINT32_MAX), 4), stringPool->intern("u32"), declaration.get())),
+    u64Type(scope->createDefinition(nullptr, Definition::BuiltinIntegerType(Int128(0), Int128(UINT64_MAX), 8), stringPool->intern("u64"), declaration.get())),
+    i8Type(scope->createDefinition(nullptr, Definition::BuiltinIntegerType(Int128(INT8_MIN), Int128(INT8_MAX), 1), stringPool->intern("i8"), declaration.get())), 
+    i16Type(scope->createDefinition(nullptr, Definition::BuiltinIntegerType(Int128(INT16_MIN), Int128(INT16_MAX), 2), stringPool->intern("i16"), declaration.get())),
+    i24Type(scope->createDefinition(nullptr, Definition::BuiltinIntegerType(Int128(-0x800000), Int128(0x7FFFFF), 3), stringPool->intern("i24"), declaration.get())),
+    i32Type(scope->createDefinition(nullptr, Definition::BuiltinIntegerType(Int128(INT32_MIN), Int128(INT32_MAX), 4), stringPool->intern("i32"), declaration.get())),
+    i64Type(scope->createDefinition(nullptr, Definition::BuiltinIntegerType(Int128(INT64_MIN), Int128(INT64_MAX), 8), stringPool->intern("i64"), declaration.get())),
+    iexprType(scope->createDefinition(nullptr, Definition::BuiltinIntegerExpressionType(), stringPool->intern("iexpr"), declaration.get())),    
+    letType(scope->createDefinition(nullptr, Definition::BuiltinLetType(), stringPool->intern("let"), declaration.get())),
+    rangeType(scope->createDefinition(nullptr, Definition::BuiltinRangeType(), stringPool->intern("range"), declaration.get())),
+    intrinsicType(scope->createDefinition(nullptr, Definition::BuiltinIntrinsicType(), stringPool->intern("intrinsic"), declaration.get())),
+    typeofType(scope->createDefinition(nullptr, Definition::BuiltinTypeOfType(), stringPool->intern("typeof"), declaration.get())),
+    hasDef(scope->createDefinition(nullptr, Definition::Let(std::vector<StringView> {stringPool->intern("key")}, nullptr), stringPool->intern("__has"), declaration.get())),
+    getDef(scope->createDefinition(nullptr, Definition::Let(std::vector<StringView> {stringPool->intern("key"), stringPool->intern("fallback")}, nullptr), stringPool->intern("__get"), declaration.get())),
     unitTuple(makeFwdUnique<TypeExpression>(TypeExpression::Tuple({}), declaration->location)) {
-        scope->emplaceDefinition(nullptr, Definition::Namespace(scope.get()), stringPool->intern("wiz"), declaration.get());
-        scope->emplaceDefinition(nullptr, Definition::BuiltinBankType(BankKind::UninitializedRam), stringPool->intern("vardata"), declaration.get());
-        scope->emplaceDefinition(nullptr, Definition::BuiltinBankType(BankKind::InitializedRam), stringPool->intern("varinitdata"), declaration.get());
-        scope->emplaceDefinition(nullptr, Definition::BuiltinBankType(BankKind::DataRom), stringPool->intern("constdata"), declaration.get());
-        scope->emplaceDefinition(nullptr, Definition::BuiltinBankType(BankKind::ProgramRom), stringPool->intern("prgdata"), declaration.get());
-        scope->emplaceDefinition(nullptr, Definition::BuiltinBankType(BankKind::CharacterRom), stringPool->intern("chrdata"), declaration.get());
+        scope->createDefinition(nullptr, Definition::Namespace(scope.get()), stringPool->intern("wiz"), declaration.get());
+        scope->createDefinition(nullptr, Definition::BuiltinBankType(BankKind::UninitializedRam), stringPool->intern("vardata"), declaration.get());
+        scope->createDefinition(nullptr, Definition::BuiltinBankType(BankKind::InitializedRam), stringPool->intern("varinitdata"), declaration.get());
+        scope->createDefinition(nullptr, Definition::BuiltinBankType(BankKind::DataRom), stringPool->intern("constdata"), declaration.get());
+        scope->createDefinition(nullptr, Definition::BuiltinBankType(BankKind::ProgramRom), stringPool->intern("prgdata"), declaration.get());
+        scope->createDefinition(nullptr, Definition::BuiltinBankType(BankKind::CharacterRom), stringPool->intern("chrdata"), declaration.get());
 
         addDefineInteger("__version"_sv, Int128(version::ID));
 

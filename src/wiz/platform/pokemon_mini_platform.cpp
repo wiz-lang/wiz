@@ -41,125 +41,125 @@ namespace wiz {
         farPointerSizedType = u24Type;
 
         // Registers.
-        a = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("a"), decl);
-        ba = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("ba"), decl);
-        hl = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("hl"), decl);
-        x = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("x"), decl);
-        y = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("y"), decl);
-        sp = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("sp"), decl);
-        const auto patternA = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(a));
-        const auto patternB = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("b"), decl)));
-        const auto patternH = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("h"), decl)));
-        const auto patternL = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("l"), decl)));
-        const auto patternXI = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("xi"), decl)));
-        const auto patternYI = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("yi"), decl)));
-        const auto patternI = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("i"), decl)));
-        const auto patternN = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("n"), decl)));
-        const auto patternU = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("u"), decl)));
-        const auto patternV = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("v"), decl)));
-        const auto patternF = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("f"), decl)));
-        const auto patternBA = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(ba));
-        const auto patternHL = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(hl));
-        const auto patternX = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(x));
-        const auto patternY = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(y));
-        const auto patternSP = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(sp));
-        const auto patternPC = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("pc"), decl)));
-        const auto patternYIY = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u24Type), stringPool->intern("xix"), decl)));
-        const auto patternXIX = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u24Type), stringPool->intern("yiy"), decl)));
-        carry = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("carry"), decl);
-        zero = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("zero"), decl);
-        overflow = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("overflow"), decl);
-        negative = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("negative"), decl);
-        const auto patternZero = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(zero));
-        const auto patternCarry = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(carry));
-        const auto patternOverflow = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(overflow));
-        const auto patternNegative = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(negative));
+        a = scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("a"), decl);
+        ba = scope->createDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("ba"), decl);
+        hl = scope->createDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("hl"), decl);
+        x = scope->createDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("x"), decl);
+        y = scope->createDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("y"), decl);
+        sp = scope->createDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("sp"), decl);
+        const auto patternA = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(a));
+        const auto patternB = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("b"), decl)));
+        const auto patternH = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("h"), decl)));
+        const auto patternL = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("l"), decl)));
+        const auto patternXI = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("xi"), decl)));
+        const auto patternYI = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("yi"), decl)));
+        const auto patternI = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("i"), decl)));
+        const auto patternN = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("n"), decl)));
+        const auto patternU = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("u"), decl)));
+        const auto patternV = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("v"), decl)));
+        const auto patternF = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("f"), decl)));
+        const auto patternBA = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(ba));
+        const auto patternHL = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(hl));
+        const auto patternX = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(x));
+        const auto patternY = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(y));
+        const auto patternSP = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(sp));
+        const auto patternPC = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("pc"), decl)));
+        const auto patternYIY = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u24Type), stringPool->intern("xix"), decl)));
+        const auto patternXIX = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u24Type), stringPool->intern("yiy"), decl)));
+        carry = scope->createDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("carry"), decl);
+        zero = scope->createDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("zero"), decl);
+        overflow = scope->createDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("overflow"), decl);
+        negative = scope->createDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("negative"), decl);
+        const auto patternZero = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(zero));
+        const auto patternCarry = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(carry));
+        const auto patternOverflow = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(overflow));
+        const auto patternNegative = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(negative));
 
         // Intrinsics.
-        const auto push = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("push"), decl);
-        const auto pop = scope->emplaceDefinition(nullptr, Definition::BuiltinLoadIntrinsic(u16Type), stringPool->intern("pop"), decl);
-        const auto nop = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("nop"), decl);
-        const auto swap = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("swap"), decl);
-        const auto swap_digits = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("swap_digits"), decl);
-        const auto pack_digits = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("pack_digits"), decl);
-        const auto unpack_digits = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("unpack_digits"), decl);
-        const auto sign_extend = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("sign_extend"), decl);
-        const auto halt = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("halt"), decl);
-        const auto stop = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("stop"), decl);
-        const auto divmod = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("divmod"), decl);
-        const auto push_registers = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("push_registers"), decl);
-        const auto push_registers_ex = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("push_registers_ex"), decl);
-        const auto pop_registers = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("pop_registers"), decl);
-        const auto pop_registers_ex = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("pop_registers_ex"), decl);
-        test = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("test"), decl);
-        cmp = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("cmp"), decl);
+        const auto push = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("push"), decl);
+        const auto pop = scope->createDefinition(nullptr, Definition::BuiltinLoadIntrinsic(u16Type), stringPool->intern("pop"), decl);
+        const auto nop = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("nop"), decl);
+        const auto swap = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("swap"), decl);
+        const auto swap_digits = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("swap_digits"), decl);
+        const auto pack_digits = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("pack_digits"), decl);
+        const auto unpack_digits = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("unpack_digits"), decl);
+        const auto sign_extend = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("sign_extend"), decl);
+        const auto halt = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("halt"), decl);
+        const auto stop = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("stop"), decl);
+        const auto divmod = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("divmod"), decl);
+        const auto push_registers = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("push_registers"), decl);
+        const auto push_registers_ex = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("push_registers_ex"), decl);
+        const auto pop_registers = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("pop_registers"), decl);
+        const auto pop_registers_ex = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("pop_registers_ex"), decl);
+        test = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("test"), decl);
+        cmp = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("cmp"), decl);
 
         // Non-register operands.
-        const auto patternFalse = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Boolean(false));
-        const auto patternTrue = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Boolean(true));
-        const auto patternAtLeast0 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::IntegerAtLeast(Int128(0)));
-        const auto patternAtLeast1 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::IntegerAtLeast(Int128(1)));
-        const auto patternHLIndirect = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, patternHL->clone(), 1));
-        const auto patternXIXIndirect = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, patternXIX->clone(), 1));
-        const auto patternYIYIndirect = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, patternYIY->clone(), 1));
-        const auto patternImmU8 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::IntegerRange(Int128(0), Int128(0xFF)));
-        const auto patternImmU16 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::IntegerRange(Int128(0), Int128(0xFFFF)));
-        const auto patternImmI8 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::IntegerRange(Int128(-0x80), Int128(0x7F)));
+        const auto patternFalse = builtins.createInstructionOperandPattern(InstructionOperandPattern::Boolean(false));
+        const auto patternTrue = builtins.createInstructionOperandPattern(InstructionOperandPattern::Boolean(true));
+        const auto patternAtLeast0 = builtins.createInstructionOperandPattern(InstructionOperandPattern::IntegerAtLeast(Int128(0)));
+        const auto patternAtLeast1 = builtins.createInstructionOperandPattern(InstructionOperandPattern::IntegerAtLeast(Int128(1)));
+        const auto patternHLIndirect = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, patternHL->clone(), 1));
+        const auto patternXIXIndirect = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, patternXIX->clone(), 1));
+        const auto patternYIYIndirect = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, patternYIY->clone(), 1));
+        const auto patternImmU8 = builtins.createInstructionOperandPattern(InstructionOperandPattern::IntegerRange(Int128(0), Int128(0xFF)));
+        const auto patternImmU16 = builtins.createInstructionOperandPattern(InstructionOperandPattern::IntegerRange(Int128(0), Int128(0xFFFF)));
+        const auto patternImmI8 = builtins.createInstructionOperandPattern(InstructionOperandPattern::IntegerRange(Int128(-0x80), Int128(0x7F)));
         const auto patternNRelativeU8Indirect
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Index(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Index(
                 false,
                 patternN->clone(),
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
                     patternImmU8->clone())),
                 1, 1));
         const auto patternXIXPlusLIndirect
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Index(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Index(
                 false,
                 patternXIX->clone(),
                 patternL->clone(),
                 1, 1));
         const auto patternYIYPlusLIndirect
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Index(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Index(
                 false,
                 patternYIY->clone(),
                 patternL->clone(),
                 1, 1));
         const auto patternXIXRelativeI8Indirect
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Index(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Index(
                 false,
                 patternXIX->clone(),
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
                     patternImmI8->clone())),
                 1, 1));
         const auto patternYIYRelativeI8Indirect
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Index(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Index(
                 false,
                 patternYIY->clone(),
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
                     patternImmI8->clone())),
                 1, 1));
         const auto patternSPRelativeI8Indirect
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Index(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Index(
                 false,
                 patternSP->clone(),
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
                     patternImmI8->clone())),
                 1, 1));
         const auto patternAbsU8
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(
                 false,
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
                     patternImmU16->clone())),
                 1));
         const auto patternAbsU16
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(
                 false,
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
                     patternImmU16->clone())),
                 2));
 
         // Instruction encodings.
-        const auto encodingImplicit = builtins.emplaceInstructionEncoding(
+        const auto encodingImplicit = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 static_cast<void>(captureLists);
                 return options.opcode.size();
@@ -173,7 +173,7 @@ namespace wiz {
                 buffer.insert(buffer.end(), options.opcode.begin(), options.opcode.end());
                 return true;
             });
-        const auto encodingU8Operand = builtins.emplaceInstructionEncoding(
+        const auto encodingU8Operand = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 static_cast<void>(captureLists);
                 return options.opcode.size() + 1;
@@ -187,7 +187,7 @@ namespace wiz {
                 buffer.push_back(static_cast<std::uint8_t>(captureLists[options.parameter[0]][0]->variant.get<InstructionOperand::Integer>().value));
                 return true;
             });
-        const auto encodingU16Operand = builtins.emplaceInstructionEncoding(
+        const auto encodingU16Operand = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 static_cast<void>(captureLists);
                 return options.opcode.size() + 2;
@@ -203,7 +203,7 @@ namespace wiz {
                 buffer.push_back(static_cast<std::uint8_t>((value >> 8) & 0xFF));
                 return true;
             });
-        const auto encodingU8OperandU8Operand = builtins.emplaceInstructionEncoding(
+        const auto encodingU8OperandU8Operand = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 static_cast<void>(captureLists);
                 return options.opcode.size() + 2;
@@ -218,7 +218,7 @@ namespace wiz {
                 buffer.push_back(static_cast<std::uint8_t>(captureLists[options.parameter[1]][0]->variant.get<InstructionOperand::Integer>().value));
                 return true;
             });
-        const auto encodingPCRelativeI8Operand = builtins.emplaceInstructionEncoding(
+        const auto encodingPCRelativeI8Operand = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 static_cast<void>(captureLists);
                 return options.opcode.size() + 1;
@@ -240,7 +240,7 @@ namespace wiz {
                 }
                 return true;
             });
-        const auto encodingPCRelativeI16Operand = builtins.emplaceInstructionEncoding(
+        const auto encodingPCRelativeI16Operand = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 static_cast<void>(captureLists);
                 return options.opcode.size() + 2;
@@ -265,7 +265,7 @@ namespace wiz {
                     return false;
                 }
             });
-        const auto encodingI8Operand = builtins.emplaceInstructionEncoding(
+        const auto encodingI8Operand = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 static_cast<void>(captureLists);
                 return options.opcode.size() + 1;
@@ -287,7 +287,7 @@ namespace wiz {
                 }
                 return true;
             });
-        const auto encodingRepeatedImplicit = builtins.emplaceInstructionEncoding(
+        const auto encodingRepeatedImplicit = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 return static_cast<std::size_t>(captureLists[options.parameter[0]][0]->variant.get<InstructionOperand::Integer>().value) * options.opcode.size();
             },
@@ -302,7 +302,7 @@ namespace wiz {
                 }
                 return true;
             });
-        const auto encodingRepeatedU8Operand = builtins.emplaceInstructionEncoding(
+        const auto encodingRepeatedU8Operand = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 return static_cast<std::size_t>(captureLists[options.parameter[1]][0]->variant.get<InstructionOperand::Integer>().value) * (options.opcode.size() + 1);
             },
@@ -343,9 +343,9 @@ namespace wiz {
 
                     const auto opcode = static_cast<std::uint8_t>(0x40 | (std::get<1>(destOperand) << 3) | std::get<2>(sourceOperand));
                     if (std::get<0>(destOperand) == patternNRelativeU8Indirect || std::get<0>(sourceOperand) == patternNRelativeU8Indirect) {
-                        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {std::get<0>(destOperand), std::get<0>(sourceOperand)}), encodingU8Operand, InstructionOptions({opcode}, {1}, {}));
+                        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {std::get<0>(destOperand), std::get<0>(sourceOperand)}), encodingU8Operand, InstructionOptions({opcode}, {1}, {}));
                     } else {
-                        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {std::get<0>(destOperand), std::get<0>(sourceOperand)}), encodingImplicit, InstructionOptions({opcode}, {}, {}));
+                        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {std::get<0>(destOperand), std::get<0>(sourceOperand)}), encodingImplicit, InstructionOptions({opcode}, {}, {}));
                     }
                 }
             }
@@ -591,7 +591,7 @@ namespace wiz {
                         } else if (operand) {
                             encoding = encodingU8Operand;
                         }
-                        builtins.emplaceInstruction(InstructionSignature(op.type, 0, {patternA, operand}), encoding, InstructionOptions({static_cast<std::uint8_t>(op.accumulatorByTermOpcode | index)}, {1}, {}));
+                        builtins.createInstruction(InstructionSignature(op.type, 0, {patternA, operand}), encoding, InstructionOptions({static_cast<std::uint8_t>(op.accumulatorByTermOpcode | index)}, {1}, {}));
                         ++index;
                     }
                 }
@@ -605,7 +605,7 @@ namespace wiz {
                         } else if (operand) {
                             encoding = encodingU8Operand;
                         }
-                        builtins.emplaceInstruction(InstructionSignature(op.type, 0, {patternA, operand}), encoding, InstructionOptions({0xCE, static_cast<std::uint8_t>(op.accumulatorByTermOpcode | index)}, {1}, {}));
+                        builtins.createInstruction(InstructionSignature(op.type, 0, {patternA, operand}), encoding, InstructionOptions({0xCE, static_cast<std::uint8_t>(op.accumulatorByTermOpcode | index)}, {1}, {}));
                         ++index;
                     }
                 }
@@ -613,20 +613,20 @@ namespace wiz {
                 if (op.reg16ByImmU16Opcode != 0xFF) {
                     std::uint8_t index = 0;
                     for (const auto& operand : reg16OpImmU16TermSources) {
-                        builtins.emplaceInstruction(InstructionSignature(op.type, 0, {operand, patternImmU16}), encodingU16Operand, InstructionOptions({0xCE, static_cast<std::uint8_t>(op.reg16ByImmU16Opcode | index)}, {1}, {}));
+                        builtins.createInstruction(InstructionSignature(op.type, 0, {operand, patternImmU16}), encodingU16Operand, InstructionOptions({0xCE, static_cast<std::uint8_t>(op.reg16ByImmU16Opcode | index)}, {1}, {}));
                         ++index;
                     }
                 }
 
                 if (op.spByImmU16Opcode != 0xFF) {
-                    builtins.emplaceInstruction(InstructionSignature(op.type, 0, {patternSP, patternImmU16}), encodingU16Operand, InstructionOptions({0xCF, op.spByImmU16Opcode}, {1}, {}));
+                    builtins.createInstruction(InstructionSignature(op.type, 0, {patternSP, patternImmU16}), encodingU16Operand, InstructionOptions({0xCF, op.spByImmU16Opcode}, {1}, {}));
                 }
 
                 {
                     std::uint8_t index = 0;
                     for (const auto& operand : hlIndirectOpTermDests) {
                         const auto encoding = operand == patternImmU8 ? encodingImplicit : encodingU8Operand;
-                        builtins.emplaceInstruction(InstructionSignature(op.type, 0, {patternHLIndirect, operand}), encoding, InstructionOptions({0xCE, static_cast<std::uint8_t>(op.hlIndirectByTermOpcode | index)}, {1}, {}));
+                        builtins.createInstruction(InstructionSignature(op.type, 0, {patternHLIndirect, operand}), encoding, InstructionOptions({0xCE, static_cast<std::uint8_t>(op.hlIndirectByTermOpcode | index)}, {1}, {}));
                         ++index;
                     }
                 }
@@ -635,7 +635,7 @@ namespace wiz {
                     std::uint8_t index = 0;
                     for (const auto& operand : hlIndirectOpTermDests) {
                         const auto encoding = operand == patternImmU8 ? encodingImplicit : encodingU8Operand;
-                        builtins.emplaceInstruction(InstructionSignature(op.type, 0, {patternHLIndirect, operand}), encoding, InstructionOptions({0xCE, static_cast<std::uint8_t>(op.hlIndirectByTermOpcode | index)}, {1}, {}));
+                        builtins.createInstruction(InstructionSignature(op.type, 0, {patternHLIndirect, operand}), encoding, InstructionOptions({0xCE, static_cast<std::uint8_t>(op.hlIndirectByTermOpcode | index)}, {1}, {}));
                         ++index;
                     }
                 }

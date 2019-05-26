@@ -442,7 +442,7 @@ namespace wiz {
 
                 auto scope = std::make_unique<SymbolTable>(currentScope, StringView());
                 auto tempDeclaration = makeFwdUnique<const Statement>(Statement::InternalDeclaration(), expression->location);
-                auto tempDefinition = scope->emplaceDefinition(report, Definition::Let({}, nullptr), arrayComprehension.name, tempDeclaration.get());
+                auto tempDefinition = scope->createDefinition(report, Definition::Let({}, nullptr), arrayComprehension.name, tempDeclaration.get());
                 auto& tempLetDefinition = tempDefinition->variant.get<Definition::Let>();
 
                 const TypeExpression* elementType = nullptr;
@@ -1036,7 +1036,7 @@ namespace wiz {
                             argumentBindings.reserve(parameters.size());
 
                             for (std::size_t i = 0; i != parameters.size(); ++i) {
-                                if (scope->emplaceDefinition(report, Definition::Let({}, reducedArguments[i].get()), parameters[i], definition->declaration) == nullptr) {
+                                if (scope->createDefinition(report, Definition::Let({}, reducedArguments[i].get()), parameters[i], definition->declaration) == nullptr) {
                                     return nullptr;
                                 }
                             }
@@ -3579,7 +3579,7 @@ namespace wiz {
                 const auto& addresses = bankDeclaration.addresses;
                 const auto typeExpression = bankDeclaration.typeExpression.get();
                 for (std::size_t i = 0, size = names.size(); i != size; ++i) {
-                    definitionsToResolve.push_back(currentScope->emplaceDefinition(report, Definition::Bank(addresses[i].get(), typeExpression), names[i], statement));
+                    definitionsToResolve.push_back(currentScope->createDefinition(report, Definition::Bank(addresses[i].get(), typeExpression), names[i], statement));
                 }
                 break;
             }
@@ -3602,7 +3602,7 @@ namespace wiz {
                 const auto& enumDeclaration = variant.get<Statement::Enum>();
                 const auto scope = getOrCreateStatementScope(StringView(), statement, currentScope);
 
-                auto definition = currentScope->emplaceDefinition(report, Definition::Enum(enumDeclaration.underlyingTypeExpression.get(), scope), enumDeclaration.name, statement);
+                auto definition = currentScope->createDefinition(report, Definition::Enum(enumDeclaration.underlyingTypeExpression.get(), scope), enumDeclaration.name, statement);
 
                 if (definition == nullptr) {
                     break;
@@ -3628,7 +3628,7 @@ namespace wiz {
                         expression = previousExpression;
                     }
 
-                    auto enumMemberDefinition = currentScope->emplaceDefinition(report, Definition::EnumMember(expression, offset), item->name, statement);
+                    auto enumMemberDefinition = currentScope->createDefinition(report, Definition::EnumMember(expression, offset), item->name, statement);
                     enumDefinition.members.push_back(enumMemberDefinition);
                     ++offset;
                 }
@@ -3687,7 +3687,7 @@ namespace wiz {
                 }
 
                 auto body = funcDeclaration.body.get();
-                auto definition = currentScope->emplaceDefinition(report, Definition::Func(fallthrough, funcDeclaration.inlined, funcDeclaration.far, returnKind, funcDeclaration.returnTypeExpression.get(), currentScope, body), funcDeclaration.name, statement);
+                auto definition = currentScope->createDefinition(report, Definition::Func(fallthrough, funcDeclaration.inlined, funcDeclaration.far, returnKind, funcDeclaration.returnTypeExpression.get(), currentScope, body), funcDeclaration.name, statement);
                 definitionsToResolve.push_back(definition);
 
                 if (definition == nullptr) {
@@ -3698,7 +3698,7 @@ namespace wiz {
 
                 enterScope(getOrCreateStatementScope(StringView(), body, currentScope));
                 for (const auto& parameter : funcDeclaration.parameters) {
-                    funcDefinition.parameters.push_back(currentScope->emplaceDefinition(report, Definition::Var(Modifiers {}, definition, nullptr, parameter->typeExpression.get()), parameter->name, statement));
+                    funcDefinition.parameters.push_back(currentScope->createDefinition(report, Definition::Var(Modifiers {}, definition, nullptr, parameter->typeExpression.get()), parameter->name, statement));
                 }
                 exitScope();
 
@@ -3736,7 +3736,7 @@ namespace wiz {
             case Statement::VariantType::typeIndexOf<Statement::Branch>(): break;
             case Statement::VariantType::typeIndexOf<Statement::Label>(): {
                 const auto& labelDeclaration = variant.get<Statement::Label>();
-                auto definition = currentScope->emplaceDefinition(report, Definition::Func(true, false, labelDeclaration.far, BranchKind::None, builtins.getUnitTuple(), currentScope, nullptr), labelDeclaration.name, statement);
+                auto definition = currentScope->createDefinition(report, Definition::Func(true, false, labelDeclaration.far, BranchKind::None, builtins.getUnitTuple(), currentScope, nullptr), labelDeclaration.name, statement);
 
                 if (definition == nullptr) {
                     break;
@@ -3748,7 +3748,7 @@ namespace wiz {
             }
             case Statement::VariantType::typeIndexOf<Statement::Let>(): {
                 const auto& letDeclaration = variant.get<Statement::Let>();
-                currentScope->emplaceDefinition(report, Definition::Let(letDeclaration.parameters, letDeclaration.value.get()), letDeclaration.name, statement);
+                currentScope->createDefinition(report, Definition::Let(letDeclaration.parameters, letDeclaration.value.get()), letDeclaration.name, statement);
                 break;
             }
             case Statement::VariantType::typeIndexOf<Statement::Namespace>(): {
@@ -3760,12 +3760,12 @@ namespace wiz {
                         scope = ns->environment;
                     } else {
                         // If another symbol with the same name exists, but it is not a namespace, trigger a duplicate key error.
-                        currentScope->emplaceDefinition(report, Definition::Namespace(nullptr), namespaceDeclaration.name, statement);
+                        currentScope->createDefinition(report, Definition::Namespace(nullptr), namespaceDeclaration.name, statement);
                         break;
                     }
                 } else {
                     scope = getOrCreateStatementScope(namespaceDeclaration.name, statement, currentScope);
-                    currentScope->emplaceDefinition(report, Definition::Namespace(scope), namespaceDeclaration.name, statement);
+                    currentScope->createDefinition(report, Definition::Namespace(scope), namespaceDeclaration.name, statement);
 
                     const auto importedDefinitions = currentScope->findImportedMemberDefinitions(namespaceDeclaration.name);
                     for (const auto importedDefinition : importedDefinitions) {
@@ -3785,7 +3785,7 @@ namespace wiz {
                 const auto& structDeclaration = variant.get<Statement::Struct>();
                 const auto scope = getOrCreateStatementScope(StringView(), statement, currentScope);
 
-                auto definition = currentScope->emplaceDefinition(report, Definition::Struct(structDeclaration.kind, scope), structDeclaration.name, statement);
+                auto definition = currentScope->createDefinition(report, Definition::Struct(structDeclaration.kind, scope), structDeclaration.name, statement);
                 definitionsToResolve.push_back(definition);
 
                 if (definition == nullptr) {
@@ -3797,7 +3797,7 @@ namespace wiz {
                 enterScope(scope);
 
                 for (const auto& item : structDeclaration.items) {
-                    auto structMemberDefinition = currentScope->emplaceDefinition(report, Definition::StructMember(item->typeExpression.get()), item->name, statement);
+                    auto structMemberDefinition = currentScope->createDefinition(report, Definition::StructMember(item->typeExpression.get()), item->name, statement);
                     structDefinition.members.push_back(structMemberDefinition);
                 }
 
@@ -3806,7 +3806,7 @@ namespace wiz {
             }
             case Statement::VariantType::typeIndexOf<Statement::TypeAlias>(): {
                 const auto& typeAliasDeclaration = variant.get<Statement::TypeAlias>();
-                definitionsToResolve.push_back(currentScope->emplaceDefinition(report, Definition::TypeAlias(typeAliasDeclaration.typeExpression.get()), typeAliasDeclaration.name, statement));
+                definitionsToResolve.push_back(currentScope->createDefinition(report, Definition::TypeAlias(typeAliasDeclaration.typeExpression.get()), typeAliasDeclaration.name, statement));
                 break;
             }
             case Statement::VariantType::typeIndexOf<Statement::Var>(): {
@@ -3815,7 +3815,7 @@ namespace wiz {
                 const auto& addresses = varDeclaration.addresses;
                 const auto typeExpression = varDeclaration.typeExpression.get();
                 for (std::size_t i = 0, size = names.size(); i != size; ++i) {
-                    definitionsToResolve.push_back(currentScope->emplaceDefinition(report, Definition::Var(varDeclaration.modifiers, currentFunction, addresses[i].get(), typeExpression), names[i], statement));
+                    definitionsToResolve.push_back(currentScope->createDefinition(report, Definition::Var(varDeclaration.modifiers, currentFunction, addresses[i].get(), typeExpression), names[i], statement));
                 }
                 break;
             }
@@ -4562,7 +4562,7 @@ namespace wiz {
         operandRoots.push_back(InstructionOperandRoot(source, std::move(sourceOperand)));
 
         if (const auto instruction = builtins.selectInstruction(InstructionType(BinaryOperatorKind::Assignment), modeFlags, operandRoots)) {
-            emplaceIrNode(IrNode::Code(instruction, std::move(operandRoots)), location);
+            createIrNode(IrNode::Code(instruction, std::move(operandRoots)), location);
             return true;
         } else {
             return false;
@@ -4591,7 +4591,7 @@ namespace wiz {
         }            
 
         if (const auto instruction = builtins.selectInstruction(InstructionType(op), modeFlags, operandRoots)) {
-            emplaceIrNode(IrNode::Code(instruction, std::move(operandRoots)), location);
+            createIrNode(IrNode::Code(instruction, std::move(operandRoots)), location);
             return true;
         } else {
             return false;
@@ -4623,7 +4623,7 @@ namespace wiz {
         }
 
         if (const auto instruction = builtins.selectInstruction(InstructionType(op), modeFlags, operandRoots)) {
-            emplaceIrNode(
+            createIrNode(
                 IrNode::Code(instruction, std::move(operandRoots)),
                 location);
             return true;
@@ -4718,7 +4718,7 @@ namespace wiz {
                     }
 
                     if (const auto instruction = builtins.selectInstruction(InstructionType(kind), modeFlags, operandRoots)) {
-                        emplaceIrNode(IrNode::Code(instruction, std::move(operandRoots)), function->location);
+                        createIrNode(IrNode::Code(instruction, std::move(operandRoots)), function->location);
                     } else {
                         return false;
                     }
@@ -4784,7 +4784,7 @@ namespace wiz {
                     modeFlags,
                     operandRoots)
                 ) {
-                    emplaceIrNode(IrNode::Code(instruction, std::move(operandRoots)), function->location);
+                    createIrNode(IrNode::Code(instruction, std::move(operandRoots)), function->location);
                     return true;
                 } else {
                     raiseEmitIntrinsicError(InstructionType(InstructionType::VoidIntrinsic(definition)), operandRoots, location);
@@ -4842,7 +4842,7 @@ namespace wiz {
                     modeFlags,
                     operandRoots)
                 ) {
-                    emplaceIrNode(IrNode::Code(instruction, std::move(operandRoots)), location);
+                    createIrNode(IrNode::Code(instruction, std::move(operandRoots)), location);
                     return true;
                 } else {
                     raiseEmitIntrinsicError(InstructionType(InstructionType::LoadIntrinsic(definition)), operandRoots, location);
@@ -4875,7 +4875,7 @@ namespace wiz {
             }
 
             if (const auto instruction = builtins.selectInstruction(InstructionType(kind), modeFlags, operandRoots)) {
-                emplaceIrNode(IrNode::Code(instruction, std::move(operandRoots)), function->location);
+                createIrNode(IrNode::Code(instruction, std::move(operandRoots)), function->location);
 
                 if (resultDestination != nullptr) {
                     const auto returnType = functionType->returnType.get();
@@ -5388,7 +5388,7 @@ namespace wiz {
                             && emitBranchIr(distanceHint, returnKind, nullptr, nullptr, false, nullptr, location);
 
                         currentFunction = oldFunction;
-                        emplaceIrNode(IrNode::Label(failureLabelDefinition), location);
+                        createIrNode(IrNode::Label(failureLabelDefinition), location);
                         return result;
                     }
 
@@ -5485,7 +5485,7 @@ namespace wiz {
                             }
 
                             if (const auto instruction = builtins.selectInstruction(testAndBranch->testInstructionType, modeFlags, operandRoots)) {
-                                emplaceIrNode(IrNode::Code(instruction, std::move(operandRoots)), location);
+                                createIrNode(IrNode::Code(instruction, std::move(operandRoots)), location);
                                 return true;
                             }
                         }
@@ -5493,7 +5493,7 @@ namespace wiz {
                         return false;
                     } else {
                         if (const auto testInstruction = builtins.selectInstruction(testAndBranch->testInstructionType, modeFlags, operandRoots)) {
-                            emplaceIrNode(IrNode::Code(testInstruction, std::move(operandRoots)), location);
+                            createIrNode(IrNode::Code(testInstruction, std::move(operandRoots)), location);
                         } else {
                             return false;
                         }
@@ -5509,7 +5509,7 @@ namespace wiz {
                             }
                         }
 
-                        emplaceIrNode(IrNode::Label(failureLabelDefinition), location);
+                        createIrNode(IrNode::Label(failureLabelDefinition), location);
                         return true;
                     }
                 }
@@ -5525,7 +5525,7 @@ namespace wiz {
                                 return false;
                             }
 
-                            emplaceIrNode(IrNode::Label(failureLabelDefinition), location);
+                            createIrNode(IrNode::Label(failureLabelDefinition), location);
                             return true;
                         } else {
                             return emitBranchIr(distanceHint, kind, destination, returnValue, !negated, binaryOperator->left.get(), condition->location)
@@ -5545,7 +5545,7 @@ namespace wiz {
                                 return false;
                             }
 
-                            emplaceIrNode(IrNode::Label(failureLabelDefinition), location);
+                            createIrNode(IrNode::Label(failureLabelDefinition), location);
                             return true;
                         }
                     }
@@ -5583,7 +5583,7 @@ namespace wiz {
                     operandRoots.push_back(InstructionOperandRoot(nullptr, makeFwdUnique<InstructionOperand>(InstructionOperand::Boolean(!negated))));                    
 
                     if (const auto instruction = builtins.selectInstruction(InstructionType(kind), modeFlags, operandRoots)) {
-                        emplaceIrNode(IrNode::Code(instruction, std::move(operandRoots)), location);
+                        createIrNode(IrNode::Code(instruction, std::move(operandRoots)), location);
                         return true;
                     } else {
                         return false;
@@ -5620,7 +5620,7 @@ namespace wiz {
             }
 
             if (const auto instruction = builtins.selectInstruction(InstructionType(kind), modeFlags, operandRoots)) {
-                emplaceIrNode(IrNode::Code(instruction, std::move(operandRoots)), location);
+                createIrNode(IrNode::Code(instruction, std::move(operandRoots)), location);
                 return true;
             } else {
                 return false;
@@ -5676,7 +5676,7 @@ namespace wiz {
         }
 
         if (!funcDefinition.inlined) {
-            emplaceIrNode(IrNode::Label(currentFunction), location);
+            createIrNode(IrNode::Label(currentFunction), location);
         }
 
         funcDefinition.hasUnconditionalReturn = funcDefinition.hasUnconditionalReturn || hasUnconditionalReturn(funcDefinition.body);
@@ -5700,7 +5700,7 @@ namespace wiz {
         }
 
         if (returnLabel != nullptr) {
-            emplaceIrNode(IrNode::Label(returnLabel), location);
+            createIrNode(IrNode::Label(returnLabel), location);
         }
 
         return true;
@@ -5763,13 +5763,13 @@ namespace wiz {
                 continueLabel = beginLabelDefinition;
                 breakLabel = endLabelDefinition;
 
-                emplaceIrNode(IrNode::Label(beginLabelDefinition), statement->location);
+                createIrNode(IrNode::Label(beginLabelDefinition), statement->location);
                 emitStatementIr(doWhileStatement.body.get());
                 if (!emitBranchIr(doWhileStatement.distanceHint, BranchKind::Goto, beginLabelReferenceExpression, nullptr, false, reducedCondition, reducedCondition->location)) {
                     report->error("could not generate branch instruction for " + statement->getDescription().toString(), statement->location);
                     break;
                 }
-                emplaceIrNode(IrNode::Label(endLabelDefinition), reducedCondition->location);
+                createIrNode(IrNode::Label(endLabelDefinition), reducedCondition->location);
                 break;
             }
             case Statement::VariantType::typeIndexOf<Statement::Enum>(): break;
@@ -5936,14 +5936,14 @@ namespace wiz {
                     report->error("could not generate initial assignment instruction for " + statement->getDescription().toString(), statement->location);
                     break;
                 }
-                emplaceIrNode(IrNode::Label(beginLabelDefinition), statement->location);
+                createIrNode(IrNode::Label(beginLabelDefinition), statement->location);
                 emitStatementIr(forStatement.body.get());
-                emplaceIrNode(IrNode::Code(incrementInstruction, std::move(incrementOperandRoots)), reducedCondition->location);
+                createIrNode(IrNode::Code(incrementInstruction, std::move(incrementOperandRoots)), reducedCondition->location);
                 if (!emitBranchIr(forStatement.distanceHint, BranchKind::Goto, beginLabelReferenceExpression, nullptr, conditionNegated, reducedCondition, reducedCondition->location)) {
                     report->error("could not generate branch instruction for " + statement->getDescription().toString(), statement->location);
                     break;
                 }
-                emplaceIrNode(IrNode::Label(endLabelDefinition), reducedCondition->location);
+                createIrNode(IrNode::Label(endLabelDefinition), reducedCondition->location);
                 break;
             }
             case Statement::VariantType::typeIndexOf<Statement::Func>(): {
@@ -5999,12 +5999,12 @@ namespace wiz {
                         report->error("could not generate branch instruction for " + statement->getDescription().toString(), statement->location);
                         break;
                     }
-                    emplaceIrNode(IrNode::Label(elseLabelDefinition), statement->location);
+                    createIrNode(IrNode::Label(elseLabelDefinition), statement->location);
                     emitStatementIr(ifStatement.alternative.get());
                 } else {
-                    emplaceIrNode(IrNode::Label(elseLabelDefinition), statement->location);
+                    createIrNode(IrNode::Label(elseLabelDefinition), statement->location);
                 }
-                emplaceIrNode(IrNode::Label(endLabelDefinition), statement->location);
+                createIrNode(IrNode::Label(endLabelDefinition), statement->location);
                 break;
             }
             case Statement::VariantType::typeIndexOf<Statement::In>(): {
@@ -6013,9 +6013,9 @@ namespace wiz {
 
                 const auto result = handleInStatement(inStatement.pieces, inStatement.dest.get(), statement->location);
                 if (result.first) {
-                    emplaceIrNode(IrNode::PushRelocation(currentBank, result.second), statement->location);
+                    createIrNode(IrNode::PushRelocation(currentBank, result.second), statement->location);
                     emitStatementIr(inStatement.body.get());
-                    emplaceIrNode(IrNode::PopRelocation(), statement->location);
+                    createIrNode(IrNode::PopRelocation(), statement->location);
                 }
 
                 currentBank = bankStack.back();
@@ -6055,7 +6055,7 @@ namespace wiz {
                 continueLabel = beginLabelDefinition;
                 breakLabel = endLabelDefinition;
 
-                emplaceIrNode(IrNode::Label(beginLabelDefinition), statement->location);
+                createIrNode(IrNode::Label(beginLabelDefinition), statement->location);
 
                 for (std::size_t i = 0; i != *length; ++i) {
                     enterInlineSite(createInlineSite());
@@ -6067,7 +6067,7 @@ namespace wiz {
 
                     if (valid) {
                         auto tempDeclaration = makeFwdUnique<const Statement>(Statement::InternalDeclaration(), statement->location);
-                        auto tempDefinition = currentScope->emplaceDefinition(report, Definition::Let({}, nullptr), inlineForStatement.name, tempDeclaration.get());
+                        auto tempDefinition = currentScope->createDefinition(report, Definition::Let({}, nullptr), inlineForStatement.name, tempDeclaration.get());
                         auto& tempLetDefinition = tempDefinition->variant.get<Definition::Let>();
 
                         auto sourceItem = getSequenceLiteralItem(reducedSequence.get(), i);
@@ -6084,7 +6084,7 @@ namespace wiz {
                     }
                 }
 
-                emplaceIrNode(IrNode::Label(endLabelDefinition), statement->location);
+                createIrNode(IrNode::Label(endLabelDefinition), statement->location);
 
                 exitScope();
                 break;
@@ -6134,7 +6134,7 @@ namespace wiz {
                     break;
                 }
 
-                emplaceIrNode(IrNode::Label(currentScope->findLocalMemberDefinition(labelDeclaration.name)), statement->location);
+                createIrNode(IrNode::Label(currentScope->findLocalMemberDefinition(labelDeclaration.name)), statement->location);
                 break;
             }
             case Statement::VariantType::typeIndexOf<Statement::Let>(): break;
@@ -6159,7 +6159,7 @@ namespace wiz {
                     }
 
                     if (!varDefinition.modifiers.contains<Modifier::Extern>() && varDefinition.enclosingFunction == nullptr && currentBank != nullptr && isBankKindStored(currentBank->getKind())) {
-                        emplaceIrNode(IrNode::Var(definition), statement->location);
+                        createIrNode(IrNode::Var(definition), statement->location);
                     }
                 }
                 break;
@@ -6192,7 +6192,7 @@ namespace wiz {
                 continueLabel = beginLabelDefinition;
                 breakLabel = endLabelDefinition;
 
-                emplaceIrNode(IrNode::Label(beginLabelDefinition), statement->location);
+                createIrNode(IrNode::Label(beginLabelDefinition), statement->location);
                 if (!emitBranchIr(whileStatement.distanceHint, BranchKind::Goto, endLabelReferenceExpression, nullptr, true, reducedCondition, statement->location)) {
                     break;
                 }
@@ -6200,7 +6200,7 @@ namespace wiz {
                 if (!emitBranchIr(whileStatement.distanceHint, BranchKind::Goto, beginLabelReferenceExpression, nullptr, false, nullptr, statement->location)) {
                     break;
                 }
-                emplaceIrNode(IrNode::Label(endLabelDefinition), statement->location);
+                createIrNode(IrNode::Label(endLabelDefinition), statement->location);
                 break;
             }
             default: std::abort(); return false;

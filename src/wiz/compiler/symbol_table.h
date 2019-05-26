@@ -29,7 +29,7 @@ namespace wiz {
             Definition* addDefinition(Report* report, FwdUniquePtr<Definition> def);
 
             template <typename... Args>
-            Definition* emplaceDefinition(Report* report, Args&&... args) {
+            Definition* createDefinition(Report* report, Args&&... args) {
                 auto definition = makeFwdUnique<Definition>(std::forward<Args>(args)...);
                 return addDefinition(report, std::move(definition));
             }

@@ -38,9 +38,6 @@ namespace wiz {
 			Definition* cmp = nullptr;
 			Definition* compare_branch_not_equal = nullptr;
 			Definition* decrement_branch_not_zero = nullptr;
-
-            Instruction* cbneDirect = nullptr;
-            Instruction* cbneDirectIndexed = nullptr;
     };
 }
 

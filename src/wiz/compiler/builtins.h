@@ -81,17 +81,17 @@ namespace wiz {
             ~Builtins();
 
             template <typename... Args>
-            InstructionOperandPattern* emplaceInstructionOperandPattern(Args&&... args) {
+            InstructionOperandPattern* createInstructionOperandPattern(Args&&... args) {
                 return addInstructionOperandPattern(makeFwdUnique<InstructionOperandPattern>(std::forward<Args>(args)...));
             }
 
             template <typename... Args>
-            InstructionEncoding* emplaceInstructionEncoding(Args&&... args) {
+            InstructionEncoding* createInstructionEncoding(Args&&... args) {
                 return addInstructionEncoding(makeFwdUnique<InstructionEncoding>(std::forward<Args>(args)...));
             }
 
             template <typename... Args>
-            Instruction* emplaceInstruction(Args&&... args) {
+            Instruction* createInstruction(Args&&... args) {
                 return addInstruction(makeFwdUnique<Instruction>(std::forward<Args>(args)...));
             }
 

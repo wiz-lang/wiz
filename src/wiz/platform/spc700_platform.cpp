@@ -38,103 +38,103 @@ namespace wiz {
         farPointerSizedType = u24Type;
 
         // Registers.
-        a = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("a"), decl);
-        x = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("x"), decl);
-        y = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("y"), decl);
-        ya = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("ya"), decl);
-        const auto patternA = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(a));
-        const auto patternX = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(x));
-        const auto patternY = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(y));
-        const auto patternSP = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("sp"), decl)));
-        const auto patternPSW = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("psw"), decl)));
-        const auto patternYA = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(ya));
+        a = scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("a"), decl);
+        x = scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("x"), decl);
+        y = scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("y"), decl);
+        ya = scope->createDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("ya"), decl);
+        const auto patternA = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(a));
+        const auto patternX = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(x));
+        const auto patternY = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(y));
+        const auto patternSP = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("sp"), decl)));
+        const auto patternPSW = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("psw"), decl)));
+        const auto patternYA = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(ya));
 
-        negative = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("negative"), decl);
-        overflow = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("overflow"), decl);
-        direct_page = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("direct_page"), decl);
-        break_flag = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("break_flag"), decl);
-        half_carry = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("half_carry"), decl);
-        interrupt = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("interrupt"), decl);
-        zero = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("zero"), decl);
-        carry = scope->emplaceDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("carry"), decl);
+        negative = scope->createDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("negative"), decl);
+        overflow = scope->createDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("overflow"), decl);
+        direct_page = scope->createDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("direct_page"), decl);
+        break_flag = scope->createDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("break_flag"), decl);
+        half_carry = scope->createDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("half_carry"), decl);
+        interrupt = scope->createDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("interrupt"), decl);
+        zero = scope->createDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("zero"), decl);
+        carry = scope->createDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("carry"), decl);
 
-        const auto patternNegative = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(negative));
-        const auto patternOverflow = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(overflow));
-        const auto patternDirectPage = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(direct_page));
-        const auto patternInterrupt = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(interrupt));
-        const auto patternZero = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(zero));
-        const auto patternCarry = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Register(carry));
+        const auto patternNegative = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(negative));
+        const auto patternOverflow = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(overflow));
+        const auto patternDirectPage = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(direct_page));
+        const auto patternInterrupt = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(interrupt));
+        const auto patternZero = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(zero));
+        const auto patternCarry = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(carry));
 
         // Intrinsics.
-        const auto push = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("push"), decl);
-        const auto pop = scope->emplaceDefinition(nullptr, Definition::BuiltinLoadIntrinsic(u8Type), stringPool->intern("pop"), decl);
-        const auto irqcall = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("irqcall"), decl);
-        const auto nop = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("nop"), decl);
-        const auto sleep = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("sleep"), decl);
-        const auto stop = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("stop"), decl);
-        const auto swap_digits = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("swap_digits"), decl);
-        const auto test_and_set = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("test_and_set"), decl);
-        const auto test_and_clear = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("test_and_clear"), decl);
-        const auto divmod = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("divmod"), decl);
-        const auto decimal_adjust_add = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("decimal_adjust_add"), decl);
-        const auto decimal_adjust_sub = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("decimal_adjust_sub"), decl);
-        cmp = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("cmp"), decl);
-        compare_branch_not_equal = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("compare_branch_not_equal"), decl);
-        decrement_branch_not_zero = scope->emplaceDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("decrement_branch_not_zero"), decl);
+        const auto push = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("push"), decl);
+        const auto pop = scope->createDefinition(nullptr, Definition::BuiltinLoadIntrinsic(u8Type), stringPool->intern("pop"), decl);
+        const auto irqcall = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("irqcall"), decl);
+        const auto nop = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("nop"), decl);
+        const auto sleep = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("sleep"), decl);
+        const auto stop = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("stop"), decl);
+        const auto swap_digits = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("swap_digits"), decl);
+        const auto test_and_set = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("test_and_set"), decl);
+        const auto test_and_clear = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("test_and_clear"), decl);
+        const auto divmod = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("divmod"), decl);
+        const auto decimal_adjust_add = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("decimal_adjust_add"), decl);
+        const auto decimal_adjust_sub = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("decimal_adjust_sub"), decl);
+        cmp = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("cmp"), decl);
+        compare_branch_not_equal = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("compare_branch_not_equal"), decl);
+        decrement_branch_not_zero = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("decrement_branch_not_zero"), decl);
 
         // Non-register operands.
-        const auto patternFalse = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Boolean(false));
-        const auto patternTrue = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Boolean(true));
-        const auto patternAtLeast0 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::IntegerAtLeast(Int128(0)));
-        const auto patternAtLeast1 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::IntegerAtLeast(Int128(1)));
-        const auto patternImmBitSubscript = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::IntegerRange(Int128(0), Int128(7)));
-        const auto patternImmU8 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::IntegerRange(Int128(0), Int128(0xFF)));
-        const auto patternImmU16 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::IntegerRange(Int128(0), Int128(0xFFFF)));
-        const auto patternImmHighPageAddress = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::IntegerRange(Int128(0xFF00), Int128(0xFFFF)));
-        const auto patternTableCall0 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFDE))), 2));
-        const auto patternTableCall1 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFDC))), 2));
-        const auto patternTableCall2 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFDA))), 2));
-        const auto patternTableCall3 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFD8))), 2));
-        const auto patternTableCall4 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFD6))), 2));
-        const auto patternTableCall5 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFD4))), 2));
-        const auto patternTableCall6 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFD2))), 2));
-        const auto patternTableCall7 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFD0))), 2));
-        const auto patternTableCall8 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFCE))), 2));
-        const auto patternTableCall9 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFCC))), 2));
-        const auto patternTableCallA = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFCA))), 2));
-        const auto patternTableCallB = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFC8))), 2));
-        const auto patternTableCallC = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFC6))), 2));
-        const auto patternTableCallD = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFC4))), 2));
-        const auto patternTableCallE = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFC2))), 2));
-        const auto patternTableCallF = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFC0))), 2));
+        const auto patternFalse = builtins.createInstructionOperandPattern(InstructionOperandPattern::Boolean(false));
+        const auto patternTrue = builtins.createInstructionOperandPattern(InstructionOperandPattern::Boolean(true));
+        const auto patternAtLeast0 = builtins.createInstructionOperandPattern(InstructionOperandPattern::IntegerAtLeast(Int128(0)));
+        const auto patternAtLeast1 = builtins.createInstructionOperandPattern(InstructionOperandPattern::IntegerAtLeast(Int128(1)));
+        const auto patternImmBitSubscript = builtins.createInstructionOperandPattern(InstructionOperandPattern::IntegerRange(Int128(0), Int128(7)));
+        const auto patternImmU8 = builtins.createInstructionOperandPattern(InstructionOperandPattern::IntegerRange(Int128(0), Int128(0xFF)));
+        const auto patternImmU16 = builtins.createInstructionOperandPattern(InstructionOperandPattern::IntegerRange(Int128(0), Int128(0xFFFF)));
+        const auto patternImmHighPageAddress = builtins.createInstructionOperandPattern(InstructionOperandPattern::IntegerRange(Int128(0xFF00), Int128(0xFFFF)));
+        const auto patternTableCall0 = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFDE))), 2));
+        const auto patternTableCall1 = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFDC))), 2));
+        const auto patternTableCall2 = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFDA))), 2));
+        const auto patternTableCall3 = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFD8))), 2));
+        const auto patternTableCall4 = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFD6))), 2));
+        const auto patternTableCall5 = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFD4))), 2));
+        const auto patternTableCall6 = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFD2))), 2));
+        const auto patternTableCall7 = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFD0))), 2));
+        const auto patternTableCall8 = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFCE))), 2));
+        const auto patternTableCall9 = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFCC))), 2));
+        const auto patternTableCallA = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFCA))), 2));
+        const auto patternTableCallB = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFC8))), 2));
+        const auto patternTableCallC = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFC6))), 2));
+        const auto patternTableCallD = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFC4))), 2));
+        const auto patternTableCallE = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFC2))), 2));
+        const auto patternTableCallF = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(Int128(0xFFC0))), 2));
         const auto patternDirectU8
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(
                 false,
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
                     patternImmU8->clone())),
                 1));
         const auto patternDirectU16
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(
                 false,
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
                     patternImmU8->clone())),
                 2));
         const auto patternDirectIndexedByXU8
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Index(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Index(
                 false,
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
                     patternImmU8->clone())),
                 patternX->clone(),
                 1, 1));
         const auto patternDirectIndexedByYU8
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Index(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Index(
                 false,
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
                     patternImmU8->clone())),
                 patternY->clone(),
                 1, 1));
         const auto patternDirectU8BitIndex
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::BitIndex(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::BitIndex(
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Dereference(
                     false,
                     makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
@@ -143,7 +143,7 @@ namespace wiz {
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
                     patternImmBitSubscript->clone()))));
         const auto patternDirectIndexedByXIndirectU8
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(
                 false,
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Index(
                     false,
@@ -153,7 +153,7 @@ namespace wiz {
                     1, 2)),
                 1));
         const auto patternDirectIndirectIndexedByYU8
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Index(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Index(
                 false,
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Dereference(
                     false,
@@ -163,27 +163,27 @@ namespace wiz {
                 patternY->clone(),
                 1, 1));
         const auto patternAbsoluteU8
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(
                 false,
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
                     patternImmU16->clone())),
                 1));
         const auto patternAbsoluteIndexedByXU8
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Index(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Index(
                 false,
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
                     patternImmU16->clone())),
                 patternX->clone(),
                 1, 1));
         const auto patternAbsoluteIndexedByYU8
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Index(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Index(
                 false,
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
                     patternImmU16->clone())),
                 patternY->clone(),
                 1, 1));
         const auto patternAbsoluteU8BitIndex
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::BitIndex(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::BitIndex(
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Dereference(
                     false,
                     makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
@@ -192,7 +192,7 @@ namespace wiz {
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
                     patternImmBitSubscript->clone()))));
         const auto patternAbsoluteU8BitIndexNot
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Unary(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Unary(
                 UnaryOperatorKind::LogicalNegation,                 
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::BitIndex(
                     makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Dereference(
@@ -203,24 +203,24 @@ namespace wiz {
                     makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
                         patternImmBitSubscript->clone()))))));
 
-        const auto patternXIndirectU8 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, patternX->clone(), 1));        
-        const auto patternYIndirectU8 = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(false, patternY->clone(), 1));
+        const auto patternXIndirectU8 = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, patternX->clone(), 1));        
+        const auto patternYIndirectU8 = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(false, patternY->clone(), 1));
         const auto patternXPostIncrementIndirectU8
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(
                 false,
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Unary(
                     UnaryOperatorKind::PostIncrement,
                     patternX->clone())),
                 1));
         const auto patternAbsoluteIndexedByXIndirectU16
-            = builtins.emplaceInstructionOperandPattern(InstructionOperandPattern::Dereference(
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(
                 false,
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
                     patternImmU16->clone())),
                 2));
 
         // Instruction encodings.
-        const auto encodingImplicit = builtins.emplaceInstructionEncoding(
+        const auto encodingImplicit = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 static_cast<void>(captureLists);
                 return options.opcode.size();
@@ -234,7 +234,7 @@ namespace wiz {
                 buffer.insert(buffer.end(), options.opcode.begin(), options.opcode.end());
                 return true;
             });
-        const auto encodingU8Operand = builtins.emplaceInstructionEncoding(
+        const auto encodingU8Operand = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 static_cast<void>(captureLists);
                 return options.opcode.size() + 1;
@@ -248,7 +248,7 @@ namespace wiz {
                 buffer.push_back(static_cast<std::uint8_t>(captureLists[options.parameter[0]][0]->variant.get<InstructionOperand::Integer>().value));
                 return true;
             });
-        const auto encodingU16Operand = builtins.emplaceInstructionEncoding(
+        const auto encodingU16Operand = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 static_cast<void>(captureLists);
                 return options.opcode.size() + 2;
@@ -265,7 +265,7 @@ namespace wiz {
                 buffer.push_back(static_cast<std::uint8_t>((value >> 8) & 0xFF));
                 return true;
             });
-        const auto encodingPCRelativeI8Operand = builtins.emplaceInstructionEncoding(
+        const auto encodingPCRelativeI8Operand = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 static_cast<void>(captureLists);
                 return options.opcode.size() + 1;
@@ -287,7 +287,7 @@ namespace wiz {
                     return false;
                 }
             });
-        const auto encodingU8OperandPCRelativeI8Operand = builtins.emplaceInstructionEncoding(
+        const auto encodingU8OperandPCRelativeI8Operand = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 static_cast<void>(captureLists);
                 return options.opcode.size() + 2;
@@ -310,7 +310,7 @@ namespace wiz {
                     return false;
                 }
             });
-        const auto encodingU8OperandBitIndex = builtins.emplaceInstructionEncoding(
+        const auto encodingU8OperandBitIndex = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 static_cast<void>(captureLists);
                 return options.opcode.size() + 1;
@@ -330,7 +330,7 @@ namespace wiz {
                 buffer.push_back(zp);
                 return true;
             });
-        const auto encodingU8OperandBitIndexBranch = builtins.emplaceInstructionEncoding(
+        const auto encodingU8OperandBitIndexBranch = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 static_cast<void>(captureLists);
                 return options.opcode.size() + 2;
@@ -360,7 +360,7 @@ namespace wiz {
                     return false;
                 }
             });
-        const auto encodingU13OperandBitIndex = builtins.emplaceInstructionEncoding(
+        const auto encodingU13OperandBitIndex = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 static_cast<void>(captureLists);
                 return options.opcode.size() + 2;
@@ -386,7 +386,7 @@ namespace wiz {
                     return false;
                 }
             });
-        const auto encodingRepeatedImplicit = builtins.emplaceInstructionEncoding(
+        const auto encodingRepeatedImplicit = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 return static_cast<std::size_t>(captureLists[options.parameter[0]][0]->variant.get<InstructionOperand::Integer>().value) * options.opcode.size();
             },
@@ -401,7 +401,7 @@ namespace wiz {
                 }
                 return true;
             });
-        const auto encodingRepeatedU8Operand = builtins.emplaceInstructionEncoding(
+        const auto encodingRepeatedU8Operand = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 return static_cast<std::size_t>(captureLists[options.parameter[1]][0]->variant.get<InstructionOperand::Integer>().value) * (options.opcode.size() + 1);
             },
@@ -418,7 +418,7 @@ namespace wiz {
                 }
                 return true;
             });
-        const auto encodingRepeatedU16Operand = builtins.emplaceInstructionEncoding(
+        const auto encodingRepeatedU16Operand = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 return static_cast<std::size_t>(captureLists[options.parameter[1]][0]->variant.get<InstructionOperand::Integer>().value) * (options.opcode.size() + 2);
             },
@@ -436,7 +436,7 @@ namespace wiz {
                 }
                 return true;
             });
-        const auto encodingU8OperandU8Operand = builtins.emplaceInstructionEncoding(
+        const auto encodingU8OperandU8Operand = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                 static_cast<void>(captureLists);
                 return options.opcode.size() + 2;
@@ -454,28 +454,28 @@ namespace wiz {
 
         // Instructions.
         // a = mem
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternImmU8}), encodingU8Operand, InstructionOptions({0xE8}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternXIndirectU8}), encodingImplicit, InstructionOptions({0xE6}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternDirectU8}), encodingU8Operand, InstructionOptions({0xE4}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternDirectIndexedByXU8}), encodingU8Operand, InstructionOptions({0xF4}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0xE5}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternAbsoluteIndexedByXU8}), encodingU16Operand, InstructionOptions({0xF5}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternAbsoluteIndexedByYU8}), encodingU16Operand, InstructionOptions({0xF6}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternDirectIndexedByXIndirectU8}), encodingU8Operand, InstructionOptions({0xE7}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternDirectIndirectIndexedByYU8}), encodingU8Operand, InstructionOptions({0xF7}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternImmU8}), encodingU8Operand, InstructionOptions({0xE8}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternXIndirectU8}), encodingImplicit, InstructionOptions({0xE6}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternDirectU8}), encodingU8Operand, InstructionOptions({0xE4}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternDirectIndexedByXU8}), encodingU8Operand, InstructionOptions({0xF4}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0xE5}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternAbsoluteIndexedByXU8}), encodingU16Operand, InstructionOptions({0xF5}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternAbsoluteIndexedByYU8}), encodingU16Operand, InstructionOptions({0xF6}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternDirectIndexedByXIndirectU8}), encodingU8Operand, InstructionOptions({0xE7}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternDirectIndirectIndexedByYU8}), encodingU8Operand, InstructionOptions({0xF7}, {1}, {}));
         // a = *(x++) = a
         // *(x++) = a
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternXPostIncrementIndirectU8}), encodingImplicit, InstructionOptions({0xBF}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternXPostIncrementIndirectU8, patternA}), encodingImplicit, InstructionOptions({0xAF}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternXPostIncrementIndirectU8}), encodingImplicit, InstructionOptions({0xBF}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternXPostIncrementIndirectU8, patternA}), encodingImplicit, InstructionOptions({0xAF}, {}, {}));
         // mem = a
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternXIndirectU8, patternA}), encodingImplicit, InstructionOptions({0xC6}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8, patternA}), encodingU8Operand, InstructionOptions({0xC4}, {0}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectIndexedByXU8, patternA}), encodingU8Operand, InstructionOptions({0xD4}, {0}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternAbsoluteU8, patternA}), encodingU16Operand, InstructionOptions({0xC5}, {0}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternAbsoluteIndexedByXU8, patternA}), encodingU16Operand, InstructionOptions({0xD5}, {0}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternAbsoluteIndexedByYU8, patternA}), encodingU16Operand, InstructionOptions({0xD6}, {0}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectIndexedByXIndirectU8, patternA}), encodingU8Operand, InstructionOptions({0xC7}, {0}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectIndirectIndexedByYU8, patternA}), encodingU8Operand, InstructionOptions({0xD7}, {0}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternXIndirectU8, patternA}), encodingImplicit, InstructionOptions({0xC6}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8, patternA}), encodingU8Operand, InstructionOptions({0xC4}, {0}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectIndexedByXU8, patternA}), encodingU8Operand, InstructionOptions({0xD4}, {0}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternAbsoluteU8, patternA}), encodingU16Operand, InstructionOptions({0xC5}, {0}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternAbsoluteIndexedByXU8, patternA}), encodingU16Operand, InstructionOptions({0xD5}, {0}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternAbsoluteIndexedByYU8, patternA}), encodingU16Operand, InstructionOptions({0xD6}, {0}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectIndexedByXIndirectU8, patternA}), encodingU8Operand, InstructionOptions({0xC7}, {0}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectIndirectIndexedByYU8, patternA}), encodingU8Operand, InstructionOptions({0xD7}, {0}, {}));
         {
             const std::pair<InstructionType, std::vector<std::uint8_t>> arithmeticOperators[] {
                 {BinaryOperatorKind::BitwiseOr, {0x00}},
@@ -508,64 +508,64 @@ namespace wiz {
                 for (const auto& sig : arithmeticOperandSignatures) {
                     std::vector<std::uint8_t> opcode = op.second;
                     opcode[opcode.size() - 1] |= std::get<3>(sig);
-                    builtins.emplaceInstruction(InstructionSignature(op.first, 0, {std::get<0>(sig), std::get<1>(sig)}), std::get<2>(sig), InstructionOptions(std::move(opcode), std::get<4>(sig), {}));
+                    builtins.createInstruction(InstructionSignature(op.first, 0, {std::get<0>(sig), std::get<1>(sig)}), std::get<2>(sig), InstructionOptions(std::move(opcode), std::get<4>(sig), {}));
                 }
             }
         }
         // x = mem
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternX, patternImmU8}), encodingU8Operand, InstructionOptions({0xCD}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternX, patternDirectU8}), encodingU8Operand, InstructionOptions({0xF8}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternX, patternDirectIndexedByYU8}), encodingU8Operand, InstructionOptions({0xF9}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternX, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0xE9}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternX, patternImmU8}), encodingU8Operand, InstructionOptions({0xCD}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternX, patternDirectU8}), encodingU8Operand, InstructionOptions({0xF8}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternX, patternDirectIndexedByYU8}), encodingU8Operand, InstructionOptions({0xF9}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternX, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0xE9}, {1}, {}));
         // mem = x
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8, patternX}), encodingU8Operand, InstructionOptions({0xD8}, {0}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectIndexedByYU8, patternX}), encodingU8Operand, InstructionOptions({0xD9}, {0}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternAbsoluteU8, patternX}), encodingU16Operand, InstructionOptions({0xC9}, {0}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8, patternX}), encodingU8Operand, InstructionOptions({0xD8}, {0}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectIndexedByYU8, patternX}), encodingU8Operand, InstructionOptions({0xD9}, {0}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternAbsoluteU8, patternX}), encodingU16Operand, InstructionOptions({0xC9}, {0}, {}));
         // y = mem
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternY, patternImmU8}), encodingU8Operand, InstructionOptions({0x8D}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternY, patternDirectU8}), encodingU8Operand, InstructionOptions({0xEB}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternY, patternDirectIndexedByXU8}), encodingU8Operand, InstructionOptions({0xFB}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternY, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0xEC}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternY, patternImmU8}), encodingU8Operand, InstructionOptions({0x8D}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternY, patternDirectU8}), encodingU8Operand, InstructionOptions({0xEB}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternY, patternDirectIndexedByXU8}), encodingU8Operand, InstructionOptions({0xFB}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternY, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0xEC}, {1}, {}));
         // mem = y
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8, patternY}), encodingU8Operand, InstructionOptions({0xCB}, {0}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectIndexedByXU8, patternY}), encodingU8Operand, InstructionOptions({0xDB}, {0}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternAbsoluteU8, patternY}), encodingU16Operand, InstructionOptions({0xCC}, {0}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8, patternY}), encodingU8Operand, InstructionOptions({0xCB}, {0}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectIndexedByXU8, patternY}), encodingU8Operand, InstructionOptions({0xDB}, {0}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternAbsoluteU8, patternY}), encodingU16Operand, InstructionOptions({0xCC}, {0}, {}));
         // r = r
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternX}), encodingImplicit, InstructionOptions({0x7D}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternY}), encodingImplicit, InstructionOptions({0xDD}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternX, patternA}), encodingImplicit, InstructionOptions({0x5D}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternY, patternA}), encodingImplicit, InstructionOptions({0xFD}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternX, patternSP}), encodingImplicit, InstructionOptions({0x9D}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternSP, patternX}), encodingImplicit, InstructionOptions({0xBD}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternX}), encodingImplicit, InstructionOptions({0x7D}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternY}), encodingImplicit, InstructionOptions({0xDD}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternX, patternA}), encodingImplicit, InstructionOptions({0x5D}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternY, patternA}), encodingImplicit, InstructionOptions({0xFD}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternX, patternSP}), encodingImplicit, InstructionOptions({0x9D}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternSP, patternX}), encodingImplicit, InstructionOptions({0xBD}, {}, {}));
         // mem = mem
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8, patternImmU8}), encodingU8OperandU8Operand, InstructionOptions({0xFA}, {0, 1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8, patternDirectU8}), encodingU8OperandU8Operand, InstructionOptions({0x8F}, {0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8, patternImmU8}), encodingU8OperandU8Operand, InstructionOptions({0xFA}, {0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8, patternDirectU8}), encodingU8OperandU8Operand, InstructionOptions({0x8F}, {0, 1}, {}));
         // cmp x, mem
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), 0, {patternX, patternImmU8}), encodingU8Operand, InstructionOptions({0xC8}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), 0, {patternX, patternDirectU8}), encodingU8Operand, InstructionOptions({0x3E}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), 0, {patternX, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x1E}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), 0, {patternX, patternImmU8}), encodingU8Operand, InstructionOptions({0xC8}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), 0, {patternX, patternDirectU8}), encodingU8Operand, InstructionOptions({0x3E}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), 0, {patternX, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x1E}, {1}, {}));
         // cmp y, mem
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), 0, {patternY, patternImmU8}), encodingU8Operand, InstructionOptions({0xAD}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), 0, {patternY, patternDirectU8}), encodingU8Operand, InstructionOptions({0x7E}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), 0, {patternY, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x5E}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), 0, {patternY, patternImmU8}), encodingU8Operand, InstructionOptions({0xAD}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), 0, {patternY, patternDirectU8}), encodingU8Operand, InstructionOptions({0x7E}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), 0, {patternY, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x5E}, {1}, {}));
         // increment
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternA}), encodingImplicit, InstructionOptions({0xBC}, {0}, {zero}));
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternDirectU8}), encodingU8Operand, InstructionOptions({0xAB}, {0}, {zero}));
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternDirectIndexedByXU8}), encodingU16Operand, InstructionOptions({0xBB}, {0}, {zero}));
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0xAC}, {0}, {zero}));
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternX}), encodingImplicit, InstructionOptions({0x3D}, {}, {zero}));
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternY}), encodingImplicit, InstructionOptions({0xFC}, {}, {zero}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternA}), encodingImplicit, InstructionOptions({0xBC}, {0}, {zero}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternDirectU8}), encodingU8Operand, InstructionOptions({0xAB}, {0}, {zero}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternDirectIndexedByXU8}), encodingU16Operand, InstructionOptions({0xBB}, {0}, {zero}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0xAC}, {0}, {zero}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternX}), encodingImplicit, InstructionOptions({0x3D}, {}, {zero}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternY}), encodingImplicit, InstructionOptions({0xFC}, {}, {zero}));
         // decrement
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternA}), encodingImplicit, InstructionOptions({0x9C}, {0}, {zero}));
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternDirectU8}), encodingU8Operand, InstructionOptions({0x8B}, {0}, {zero}));
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternDirectIndexedByXU8}), encodingU16Operand, InstructionOptions({0x9B}, {0}, {zero}));
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x8C}, {0}, {zero}));
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternX}), encodingImplicit, InstructionOptions({0x1D}, {}, {zero}));
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternY}), encodingImplicit, InstructionOptions({0xDC}, {}, {zero}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternA}), encodingImplicit, InstructionOptions({0x9C}, {0}, {zero}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternDirectU8}), encodingU8Operand, InstructionOptions({0x8B}, {0}, {zero}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternDirectIndexedByXU8}), encodingU16Operand, InstructionOptions({0x9B}, {0}, {zero}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x8C}, {0}, {zero}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternX}), encodingImplicit, InstructionOptions({0x1D}, {}, {zero}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternY}), encodingImplicit, InstructionOptions({0xDC}, {}, {zero}));
         // bitwise negation
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::BitwiseNegation, 0, {patternA}), encodingImplicit, InstructionOptions({0x48, 0xFF}, {}, {}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::BitwiseNegation, 0, {patternA}), encodingImplicit, InstructionOptions({0x48, 0xFF}, {}, {}));
         // signed negation
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::BitwiseNegation, 0, {patternA}), encodingImplicit, InstructionOptions({0x48, 0xFF, 0x60, 0x88, 0x01}, {}, {}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::BitwiseNegation, 0, {patternA}), encodingImplicit, InstructionOptions({0x48, 0xFF, 0x60, 0x88, 0x01}, {}, {}));
         // bitshifts
         {
             const std::pair<InstructionType, std::uint8_t> shiftOperators[] {
@@ -576,145 +576,145 @@ namespace wiz {
                 {BinaryOperatorKind::RightRotateWithCarry, 0x60},
             };
             for (const auto& op : shiftOperators) {
-                builtins.emplaceInstruction(InstructionSignature(op.first, 0, {patternA, patternImmU8}), encodingRepeatedImplicit, InstructionOptions({static_cast<std::uint8_t>(op.second | 0x1C)}, {1}, {}));
-                builtins.emplaceInstruction(InstructionSignature(op.first, 0, {patternDirectU8, patternImmU8}), encodingRepeatedU8Operand, InstructionOptions({static_cast<std::uint8_t>(op.second | 0x6B)}, {0, 1}, {}));
-                builtins.emplaceInstruction(InstructionSignature(op.first, 0, {patternDirectIndexedByXU8, patternImmU8}), encodingRepeatedU8Operand, InstructionOptions({static_cast<std::uint8_t>(op.second | 0x1B)}, {0, 1}, {}));
-                builtins.emplaceInstruction(InstructionSignature(op.first, 0, {patternAbsoluteU8, patternImmU8}), encodingRepeatedU16Operand, InstructionOptions({static_cast<std::uint8_t>(op.second | 0x0C)}, {0, 1}, {}));
+                builtins.createInstruction(InstructionSignature(op.first, 0, {patternA, patternImmU8}), encodingRepeatedImplicit, InstructionOptions({static_cast<std::uint8_t>(op.second | 0x1C)}, {1}, {}));
+                builtins.createInstruction(InstructionSignature(op.first, 0, {patternDirectU8, patternImmU8}), encodingRepeatedU8Operand, InstructionOptions({static_cast<std::uint8_t>(op.second | 0x6B)}, {0, 1}, {}));
+                builtins.createInstruction(InstructionSignature(op.first, 0, {patternDirectIndexedByXU8, patternImmU8}), encodingRepeatedU8Operand, InstructionOptions({static_cast<std::uint8_t>(op.second | 0x1B)}, {0, 1}, {}));
+                builtins.createInstruction(InstructionSignature(op.first, 0, {patternAbsoluteU8, patternImmU8}), encodingRepeatedU16Operand, InstructionOptions({static_cast<std::uint8_t>(op.second | 0x0C)}, {0, 1}, {}));
             }
         }
         // xcn (swap nybbles in a)
-        builtins.emplaceInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(swap_digits)), 0, {patternA}), encodingImplicit, InstructionOptions({0x9F}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(swap_digits)), 0, {patternA}), encodingImplicit, InstructionOptions({0x9F}, {}, {}));
         // ya = dp16
         // dp16 = ya
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternYA, patternDirectU16}), encodingU8Operand, InstructionOptions({0xBA}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU16, patternYA}), encodingU8Operand, InstructionOptions({0xDA}, {0}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternYA, patternDirectU16}), encodingU8Operand, InstructionOptions({0xBA}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU16, patternYA}), encodingU8Operand, InstructionOptions({0xDA}, {0}, {}));
         // ++dp16
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternDirectU16}), encodingU8Operand, InstructionOptions({0x3A}, {0}, {zero}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternDirectU16}), encodingU8Operand, InstructionOptions({0x3A}, {0}, {zero}));
         // --dp16
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternDirectU16}), encodingU8Operand, InstructionOptions({0x1A}, {0}, {zero}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternDirectU16}), encodingU8Operand, InstructionOptions({0x1A}, {0}, {zero}));
         // ya += dp16
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Addition, 0, {patternYA, patternDirectU16}), encodingU8Operand, InstructionOptions({0x7A}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Addition, 0, {patternYA, patternDirectU16}), encodingU8Operand, InstructionOptions({0x7A}, {1}, {}));
         // ya -= dp16
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Subtraction, 0, {patternYA, patternDirectU16}), encodingU8Operand, InstructionOptions({0x9A}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Subtraction, 0, {patternYA, patternDirectU16}), encodingU8Operand, InstructionOptions({0x9A}, {1}, {}));
         // cmp ya, dp16
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), 0, {patternYA, patternDirectU16}), encodingU8Operand, InstructionOptions({0x5A}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), 0, {patternYA, patternDirectU16}), encodingU8Operand, InstructionOptions({0x5A}, {1}, {}));
         // ya = y * a
         // ya = a * y;
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Multiplication, 0, {patternYA, patternY, patternA}), encodingImplicit, InstructionOptions({0xCF}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Multiplication, 0, {patternYA, patternA, patternY}), encodingImplicit, InstructionOptions({0xCF}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Multiplication, 0, {patternYA, patternY, patternA}), encodingImplicit, InstructionOptions({0xCF}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Multiplication, 0, {patternYA, patternA, patternY}), encodingImplicit, InstructionOptions({0xCF}, {}, {}));
         // divmod(ya, x) // div ya, x -> y = result_mod, a = result_div
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(divmod), 0, {patternYA, patternX}), encodingU8Operand, InstructionOptions({0x9E}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(divmod), 0, {patternYA, patternX}), encodingU8Operand, InstructionOptions({0x9E}, {1}, {}));
         // daa
         // das
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(decimal_adjust_add), 0, {}), encodingImplicit, InstructionOptions({0xDF}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(decimal_adjust_sub), 0, {}), encodingImplicit, InstructionOptions({0xBE}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(decimal_adjust_add), 0, {}), encodingImplicit, InstructionOptions({0xDF}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(decimal_adjust_sub), 0, {}), encodingImplicit, InstructionOptions({0xBE}, {}, {}));
         // jump / branch instructions
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16}), encodingPCRelativeI8Operand, InstructionOptions({0x2F}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16}), encodingU16Operand, InstructionOptions({0x5F}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternAbsoluteIndexedByXIndirectU16}), encodingU16Operand, InstructionOptions({0x1F}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternCarry, patternFalse}), encodingPCRelativeI8Operand, InstructionOptions({0x90}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternCarry, patternTrue}), encodingPCRelativeI8Operand, InstructionOptions({0xB0}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternZero, patternFalse}), encodingPCRelativeI8Operand, InstructionOptions({0xD0}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternZero, patternTrue}), encodingPCRelativeI8Operand, InstructionOptions({0xF0}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternNegative, patternFalse}), encodingPCRelativeI8Operand, InstructionOptions({0x10}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternNegative, patternTrue}), encodingPCRelativeI8Operand, InstructionOptions({0x30}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternOverflow, patternFalse}), encodingPCRelativeI8Operand, InstructionOptions({0x50}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternOverflow, patternTrue}), encodingPCRelativeI8Operand, InstructionOptions({0x70}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternDirectU8BitIndex, patternFalse}), encodingU8OperandBitIndexBranch, InstructionOptions({0x13}, {0, 0, 1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternDirectU8BitIndex, patternTrue}), encodingU8OperandBitIndexBranch, InstructionOptions({0x03}, {0, 0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16}), encodingPCRelativeI8Operand, InstructionOptions({0x2F}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16}), encodingU16Operand, InstructionOptions({0x5F}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternAbsoluteIndexedByXIndirectU16}), encodingU16Operand, InstructionOptions({0x1F}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternCarry, patternFalse}), encodingPCRelativeI8Operand, InstructionOptions({0x90}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternCarry, patternTrue}), encodingPCRelativeI8Operand, InstructionOptions({0xB0}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternZero, patternFalse}), encodingPCRelativeI8Operand, InstructionOptions({0xD0}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternZero, patternTrue}), encodingPCRelativeI8Operand, InstructionOptions({0xF0}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternNegative, patternFalse}), encodingPCRelativeI8Operand, InstructionOptions({0x10}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternNegative, patternTrue}), encodingPCRelativeI8Operand, InstructionOptions({0x30}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternOverflow, patternFalse}), encodingPCRelativeI8Operand, InstructionOptions({0x50}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternOverflow, patternTrue}), encodingPCRelativeI8Operand, InstructionOptions({0x70}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternDirectU8BitIndex, patternFalse}), encodingU8OperandBitIndexBranch, InstructionOptions({0x13}, {0, 0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternDirectU8BitIndex, patternTrue}), encodingU8OperandBitIndexBranch, InstructionOptions({0x03}, {0, 0, 1}, {}));
         // long branch instructions
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternCarry, patternFalse}), encodingU16Operand, InstructionOptions({0xB0, 3, 0x5F}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternCarry, patternTrue}), encodingU16Operand, InstructionOptions({0x90, 3, 0x5F}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternZero, patternFalse}), encodingU16Operand, InstructionOptions({0xF0, 3, 0x5F}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternZero, patternTrue}), encodingU16Operand, InstructionOptions({0xD0, 3, 0x5F}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternNegative, patternFalse}), encodingU16Operand, InstructionOptions({0x30, 3, 0x5F}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternNegative, patternTrue}), encodingU16Operand, InstructionOptions({0x10, 3, 0x5F}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternOverflow, patternFalse}), encodingU16Operand, InstructionOptions({0x70, 3, 0x5F}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternOverflow, patternTrue}), encodingU16Operand, InstructionOptions({0x50, 3, 0x5F}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternDirectU8BitIndex, patternFalse}), encodingU8OperandBitIndexBranch, InstructionOptions({0x03, 3, 0x5F}, {0, 0, 1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternDirectU8BitIndex, patternTrue}), encodingU8OperandBitIndexBranch, InstructionOptions({0x13, 3, 0x5F}, {0, 0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternCarry, patternFalse}), encodingU16Operand, InstructionOptions({0xB0, 3, 0x5F}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternCarry, patternTrue}), encodingU16Operand, InstructionOptions({0x90, 3, 0x5F}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternZero, patternFalse}), encodingU16Operand, InstructionOptions({0xF0, 3, 0x5F}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternZero, patternTrue}), encodingU16Operand, InstructionOptions({0xD0, 3, 0x5F}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternNegative, patternFalse}), encodingU16Operand, InstructionOptions({0x30, 3, 0x5F}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternNegative, patternTrue}), encodingU16Operand, InstructionOptions({0x10, 3, 0x5F}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternOverflow, patternFalse}), encodingU16Operand, InstructionOptions({0x70, 3, 0x5F}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternOverflow, patternTrue}), encodingU16Operand, InstructionOptions({0x50, 3, 0x5F}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternDirectU8BitIndex, patternFalse}), encodingU8OperandBitIndexBranch, InstructionOptions({0x03, 3, 0x5F}, {0, 0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternDirectU8BitIndex, patternTrue}), encodingU8OperandBitIndexBranch, InstructionOptions({0x13, 3, 0x5F}, {0, 0, 1}, {}));
         // compare branch not equal
-        cbneDirect = builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(compare_branch_not_equal), 0, {patternA, patternDirectU8, patternImmU16}), encodingU8OperandPCRelativeI8Operand, InstructionOptions({0x2E}, {1, 2}, {}));
-        cbneDirectIndexed = builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(compare_branch_not_equal), 0, {patternA, patternDirectIndexedByXU8, patternImmU16}), encodingU8OperandPCRelativeI8Operand, InstructionOptions({0xDE}, {1, 2}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(compare_branch_not_equal), 0, {patternA, patternDirectU8, patternImmU16}), encodingU8OperandPCRelativeI8Operand, InstructionOptions({0x2E}, {1, 2}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(compare_branch_not_equal), 0, {patternA, patternDirectIndexedByXU8, patternImmU16}), encodingU8OperandPCRelativeI8Operand, InstructionOptions({0xDE}, {1, 2}, {}));
         // decrement and branch
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(decrement_branch_not_zero), 0, {patternY, patternImmU16}), encodingPCRelativeI8Operand, InstructionOptions({0xFE}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(decrement_branch_not_zero), 0, {patternDirectU8, patternImmU16}), encodingU8OperandPCRelativeI8Operand, InstructionOptions({0x6E}, {0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(decrement_branch_not_zero), 0, {patternY, patternImmU16}), encodingPCRelativeI8Operand, InstructionOptions({0xFE}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(decrement_branch_not_zero), 0, {patternDirectU8, patternImmU16}), encodingU8OperandPCRelativeI8Operand, InstructionOptions({0x6E}, {0, 1}, {}));
         // call instructions
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternImmHighPageAddress}), encodingU8Operand, InstructionOptions({0x4F}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternImmU16}), encodingU16Operand, InstructionOptions({0x3F}, {1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall0}), encodingImplicit, InstructionOptions({0x01}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall1}), encodingImplicit, InstructionOptions({0x11}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall2}), encodingImplicit, InstructionOptions({0x21}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall3}), encodingImplicit, InstructionOptions({0x31}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall4}), encodingImplicit, InstructionOptions({0x41}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall5}), encodingImplicit, InstructionOptions({0x51}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall6}), encodingImplicit, InstructionOptions({0x61}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall7}), encodingImplicit, InstructionOptions({0x71}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall8}), encodingImplicit, InstructionOptions({0x81}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall9}), encodingImplicit, InstructionOptions({0x91}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCallA}), encodingImplicit, InstructionOptions({0xA1}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCallB}), encodingImplicit, InstructionOptions({0xB1}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCallC}), encodingImplicit, InstructionOptions({0xC1}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCallD}), encodingImplicit, InstructionOptions({0xD1}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCallE}), encodingImplicit, InstructionOptions({0xE1}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCallF}), encodingImplicit, InstructionOptions({0xF1}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternImmHighPageAddress}), encodingU8Operand, InstructionOptions({0x4F}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternImmU16}), encodingU16Operand, InstructionOptions({0x3F}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall0}), encodingImplicit, InstructionOptions({0x01}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall1}), encodingImplicit, InstructionOptions({0x11}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall2}), encodingImplicit, InstructionOptions({0x21}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall3}), encodingImplicit, InstructionOptions({0x31}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall4}), encodingImplicit, InstructionOptions({0x41}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall5}), encodingImplicit, InstructionOptions({0x51}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall6}), encodingImplicit, InstructionOptions({0x61}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall7}), encodingImplicit, InstructionOptions({0x71}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall8}), encodingImplicit, InstructionOptions({0x81}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCall9}), encodingImplicit, InstructionOptions({0x91}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCallA}), encodingImplicit, InstructionOptions({0xA1}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCallB}), encodingImplicit, InstructionOptions({0xB1}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCallC}), encodingImplicit, InstructionOptions({0xC1}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCallD}), encodingImplicit, InstructionOptions({0xD1}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCallE}), encodingImplicit, InstructionOptions({0xE1}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternTableCallF}), encodingImplicit, InstructionOptions({0xF1}, {}, {}));
         // return instructions
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::Return, 0, {patternAtLeast0}), encodingImplicit, InstructionOptions({0x6F}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BranchKind::IrqReturn, 0, {patternAtLeast0}), encodingImplicit, InstructionOptions({0x7F}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Return, 0, {patternAtLeast0}), encodingImplicit, InstructionOptions({0x6F}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::IrqReturn, 0, {patternAtLeast0}), encodingImplicit, InstructionOptions({0x7F}, {}, {}));
         // brk (push pc, push psw, jmp [0xFFDE])
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(irqcall), 0, {}), encodingImplicit, InstructionOptions({0x0F}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(irqcall), 0, {}), encodingImplicit, InstructionOptions({0x0F}, {}, {}));
         // push
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), 0, {patternA}), encodingImplicit, InstructionOptions({0x2D}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), 0, {patternX}), encodingImplicit, InstructionOptions({0x4D}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), 0, {patternY}), encodingImplicit, InstructionOptions({0x6D}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), 0, {patternPSW}), encodingImplicit, InstructionOptions({0x0D}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), 0, {patternA}), encodingImplicit, InstructionOptions({0x2D}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), 0, {patternX}), encodingImplicit, InstructionOptions({0x4D}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), 0, {patternY}), encodingImplicit, InstructionOptions({0x6D}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), 0, {patternPSW}), encodingImplicit, InstructionOptions({0x0D}, {}, {}));
         // pop
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop), 0, {patternA}), encodingImplicit, InstructionOptions({0xAE}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop), 0, {patternX}), encodingImplicit, InstructionOptions({0xCE}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop), 0, {patternY}), encodingImplicit, InstructionOptions({0xEE}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop), 0, {patternPSW}), encodingImplicit, InstructionOptions({0x8E}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop), 0, {patternA}), encodingImplicit, InstructionOptions({0xAE}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop), 0, {patternX}), encodingImplicit, InstructionOptions({0xCE}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop), 0, {patternY}), encodingImplicit, InstructionOptions({0xEE}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop), 0, {patternPSW}), encodingImplicit, InstructionOptions({0x8E}, {}, {}));
         // carry - clrc/setc, notc
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternCarry, patternFalse}), encodingImplicit, InstructionOptions({0x60}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternCarry, patternTrue}), encodingImplicit, InstructionOptions({0x80}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::LogicalNegation, 0, {patternCarry}), encodingImplicit, InstructionOptions({0xED}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternCarry, patternFalse}), encodingImplicit, InstructionOptions({0x60}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternCarry, patternTrue}), encodingImplicit, InstructionOptions({0x80}, {}, {}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::LogicalNegation, 0, {patternCarry}), encodingImplicit, InstructionOptions({0xED}, {}, {}));
         // overflow - clrv
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternOverflow, patternFalse}), encodingImplicit, InstructionOptions({0xE0}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternOverflow, patternFalse}), encodingImplicit, InstructionOptions({0xE0}, {}, {}));
         // direct_page - clrp/setp
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectPage, patternFalse}), encodingImplicit, InstructionOptions({0x20}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectPage, patternTrue}), encodingImplicit, InstructionOptions({0x40}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectPage, patternFalse}), encodingImplicit, InstructionOptions({0x20}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectPage, patternTrue}), encodingImplicit, InstructionOptions({0x40}, {}, {}));
         // interrupt - di/ei
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternInterrupt, patternFalse}), encodingImplicit, InstructionOptions({0xC0}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternInterrupt, patternTrue}), encodingImplicit, InstructionOptions({0xA0}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternInterrupt, patternFalse}), encodingImplicit, InstructionOptions({0xC0}, {}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternInterrupt, patternTrue}), encodingImplicit, InstructionOptions({0xA0}, {}, {}));
         // clr1 dp$bit
         // set1 dp$bit
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8BitIndex, patternFalse}), encodingU8OperandBitIndex, InstructionOptions({0x00}, {0, 0, 1}, {}));
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8BitIndex, patternTrue}), encodingU8OperandBitIndex, InstructionOptions({0x10}, {0, 0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8BitIndex, patternFalse}), encodingU8OperandBitIndex, InstructionOptions({0x00}, {0, 0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8BitIndex, patternTrue}), encodingU8OperandBitIndex, InstructionOptions({0x10}, {0, 0, 1}, {}));
         // tclr1 abs
         // tset1 abs
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(test_and_clear), 0, {patternA, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x0E}, {}, {}));
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(test_and_set), 0, {patternA, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x4E}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(test_and_clear), 0, {patternA, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x0E}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(test_and_set), 0, {patternA, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x4E}, {}, {}));
         // carry &= mem$bit
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::BitwiseAnd, 0, {patternCarry, patternAbsoluteU8BitIndex}), encodingU13OperandBitIndex, InstructionOptions({0x4A}, {1, 1, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::BitwiseAnd, 0, {patternCarry, patternAbsoluteU8BitIndex}), encodingU13OperandBitIndex, InstructionOptions({0x4A}, {1, 1, 1}, {}));
         // carry &= !mem$bit
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::BitwiseAnd, 0, {patternCarry, patternAbsoluteU8BitIndexNot}), encodingU13OperandBitIndex, InstructionOptions({0x6A}, {1, 1, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::BitwiseAnd, 0, {patternCarry, patternAbsoluteU8BitIndexNot}), encodingU13OperandBitIndex, InstructionOptions({0x6A}, {1, 1, 1}, {}));
         // carry |= mem$bit
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::BitwiseOr, 0, {patternCarry, patternAbsoluteU8BitIndex}), encodingU13OperandBitIndex, InstructionOptions({0x0A}, {1, 1, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::BitwiseOr, 0, {patternCarry, patternAbsoluteU8BitIndex}), encodingU13OperandBitIndex, InstructionOptions({0x0A}, {1, 1, 1}, {}));
         // carry |= !mem$bit
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::BitwiseOr, 0, {patternCarry, patternAbsoluteU8BitIndexNot}), encodingU13OperandBitIndex, InstructionOptions({0x2A}, {1, 1, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::BitwiseOr, 0, {patternCarry, patternAbsoluteU8BitIndexNot}), encodingU13OperandBitIndex, InstructionOptions({0x2A}, {1, 1, 1}, {}));
         // carry ^= mem$bit
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::BitwiseXor, 0, {patternCarry, patternAbsoluteU8BitIndex}), encodingU13OperandBitIndex, InstructionOptions({0x8A}, {1, 1, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::BitwiseXor, 0, {patternCarry, patternAbsoluteU8BitIndex}), encodingU13OperandBitIndex, InstructionOptions({0x8A}, {1, 1, 1}, {}));
         // mem$bit = !mem$bit
-        builtins.emplaceInstruction(InstructionSignature(UnaryOperatorKind::LogicalNegation, 0, {patternAbsoluteU8BitIndex}), encodingU13OperandBitIndex, InstructionOptions({0xEA}, {0, 0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::LogicalNegation, 0, {patternAbsoluteU8BitIndex}), encodingU13OperandBitIndex, InstructionOptions({0xEA}, {0, 0, 1}, {}));
         // carry = mem$bit
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternCarry, patternAbsoluteU8BitIndex}), encodingU13OperandBitIndex, InstructionOptions({0xAA}, {1, 1, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternCarry, patternAbsoluteU8BitIndex}), encodingU13OperandBitIndex, InstructionOptions({0xAA}, {1, 1, 1}, {}));
         // mem$bit = carry
-        builtins.emplaceInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternAbsoluteU8BitIndex, patternCarry}), encodingU13OperandBitIndex, InstructionOptions({0xCA}, {0, 0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternAbsoluteU8BitIndex, patternCarry}), encodingU13OperandBitIndex, InstructionOptions({0xCA}, {0, 0, 1}, {}));
         // nop
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(nop), 0, {}), encodingImplicit, InstructionOptions({0x00}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(nop), 0, {}), encodingImplicit, InstructionOptions({0x00}, {}, {}));
         // sleep
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(sleep), 0, {}), encodingImplicit, InstructionOptions({0xEF}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(sleep), 0, {}), encodingImplicit, InstructionOptions({0xEF}, {}, {}));
         // stop
-        builtins.emplaceInstruction(InstructionSignature(InstructionType::VoidIntrinsic(stop), 0, {}), encodingImplicit, InstructionOptions({0xFF}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(stop), 0, {}), encodingImplicit, InstructionOptions({0xFF}, {}, {}));
     }
 
     Definition* Spc700Platform::getPointerSizedType() const {
@@ -756,14 +756,12 @@ namespace wiz {
                             operandRoots.push_back(InstructionOperandRoot(right, compiler.createOperandFromExpression(right, true)));
                             operandRoots.push_back(InstructionOperandRoot(nullptr, makeFwdUnique<InstructionOperand>(InstructionOperand::Integer(Int128(0x1234))))); 
 
-                            if (auto instruction = compiler.getBuiltins().selectInstruction(InstructionType::VoidIntrinsic(compare_branch_not_equal), 0, operandRoots)) {
-                                if (instruction == cbneDirect || instruction == cbneDirectIndexed) {
-                                    return std::make_unique<PlatformTestAndBranch>(
-                                        InstructionType::VoidIntrinsic(compare_branch_not_equal),
-                                        std::vector<const Expression*> {left, right},
-                                        std::vector<PlatformBranch> {}
-                                    );
-                                }
+                            if (compiler.getBuiltins().selectInstruction(InstructionType::VoidIntrinsic(compare_branch_not_equal), 0, operandRoots)) {
+                                return std::make_unique<PlatformTestAndBranch>(
+                                    InstructionType::VoidIntrinsic(compare_branch_not_equal),
+                                    std::vector<const Expression*> {left, right},
+                                    std::vector<PlatformBranch> {}
+                                );
                             }
                         }
                     }
