@@ -189,7 +189,7 @@ namespace wiz {
 namespace std {
     template <typename T, typename Deleter>
     struct hash<wiz::UniquePtr<T, Deleter>> {
-        WIZ_FORCE_INLINE std::size_t operator()(const wiz::UniquePtr<T, Deleter>& ptr) const {
+        WIZ_FORCE_INLINE std::size_t operator()(const wiz::UniquePtr<T, Deleter>&) const {
             return std::hash<typename wiz::UniquePtr<T, Deleter>::PointerType>();
         }
     };
