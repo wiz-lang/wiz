@@ -65,7 +65,7 @@ else ifeq ($(WERR),1)
 else ifeq ($(WERR),2)
 	WERR_ := -Werror
 else
-	$(error Unknown WERR setting $(WERR) (must be 0, 1, or 2))
+$(error Unknown WERR setting '$(WERR)' (must be 0, 1, or 2))
 endif
 
 ifeq ($(PLATFORM),native)
