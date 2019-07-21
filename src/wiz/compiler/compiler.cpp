@@ -2718,13 +2718,40 @@ namespace wiz {
             return nullptr;
         }
 
-        if (left->info->type->variant.is<TypeExpression::Array>()
-        && right->info->type->variant.is<TypeExpression::Array>()) {
-            if (canNarrowExpression(left, right->info->type.get())) {
-                return right->info->type.get();
-            }
-            if (canNarrowExpression(right, left->info->type.get())) {
-                return left->info->type.get();
+        if (const auto leftArrayType = left->info->type->variant.tryGet<TypeExpression::Array>()) {
+            if (const auto rightArrayType = right->info->type->variant.tryGet<TypeExpression::Array>()) {
+                const auto leftElementType = leftArrayType->elementType.get();
+                const auto rightElementType = rightArrayType->elementType.get();
+
+                if (isTypeEquivalent(leftElementType, rightElementType)) {
+                    return left->info->type.get();
+                }
+
+                if (const auto leftArray = left->variant.tryGet<Expression::ArrayLiteral>()) {
+                    bool success = true;
+                    for (const auto& item : leftArray->items) {
+                        if (!canNarrowExpression(item.get(), rightElementType)) {
+                            success = false;
+                            break;
+                        }
+                    }
+                    if (success) {
+                        return right->info->type.get();
+                    }
+                }
+
+                if (const auto rightArray = left->variant.tryGet<Expression::ArrayLiteral>()) {
+                    bool success = true;
+                    for (const auto& item : rightArray->items) {
+                        if (!canNarrowExpression(item.get(), leftElementType)) {
+                            success = false;
+                            break;
+                        }
+                    }
+                    if (success) {
+                        return left->info->type.get();
+                    }
+                }
             }
         }
 
@@ -2772,9 +2799,14 @@ namespace wiz {
 
         if (const auto destinationArrayType = destinationType->variant.tryGet<TypeExpression::Array>()) {
             if (const auto sourceArrayType = sourceExpressionType->variant.tryGet<TypeExpression::Array>()) {
+                if (destinationArrayType->size != nullptr && sourceArrayType->size->variant.get<Expression::IntegerLiteral>().value != destinationArrayType->size->variant.get<Expression::IntegerLiteral>().value) {
+                    return false;
+                }
+
+                const auto sourceElementType = sourceArrayType->elementType.get();
                 const auto destinationElementType = destinationArrayType->elementType.get();
 
-                if (isTypeEquivalent(destinationElementType, sourceArrayType->elementType.get())) {
+                if (isTypeEquivalent(destinationElementType, sourceElementType)) {
                     return true;
                 }
 
