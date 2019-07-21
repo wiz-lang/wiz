@@ -54,11 +54,25 @@ ifndef CFG
 	CFG := release
 endif
 
+ifndef WERR
+	WERR := 1
+endif
+
+ifeq ($(WERR),0)
+	WERR_ :=
+else ifeq ($(WERR),1)
+	WERR_ := -Werror -Wno-error=unused-variable -Wno-error=unused-result -Wno-error=unused-parameter -Wno-error=unused-function -Wno-error=unused-value
+else ifeq ($(WERR),2)
+	WERR_ := -Werror
+else
+	$(error Unknown WERR setting $(WERR) (must be 0, 1, or 2))
+endif
+
 ifeq ($(PLATFORM),native)
 ifeq ($(CFG),release)
-	CXX_FLAGS := -D_POSIX_SOURCE -Os -std=c++17 -MMD -Wall -Werror -Wextra -Wold-style-cast -Wnon-virtual-dtor -fno-exceptions -fno-rtti
+	CXX_FLAGS := -D_POSIX_SOURCE -Os -std=c++17 -MMD -Wall -Wextra $(WERR_) -Wold-style-cast -Wnon-virtual-dtor -fno-exceptions -fno-rtti
 else ifeq ($(CFG),debug)
-	CXX_FLAGS := -D_POSIX_SOURCE -DWIZ_DEBUG -g -std=c++17 -MMD -Wall -Werror -Wextra -Wold-style-cast -Wnon-virtual-dtor -fno-exceptions -fno-rtti
+	CXX_FLAGS := -D_POSIX_SOURCE -DWIZ_DEBUG -g -std=c++17 -MMD -Wall -Wextra $(WERR_) -Wold-style-cast -Wnon-virtual-dtor -fno-exceptions -fno-rtti
 endif
 	LXXFLAGS := -lm
 	INCLUDES := -I$(WIZ_SRC)
@@ -68,7 +82,7 @@ else ifeq ($(PLATFORM),emcc)
 	WIZ := wiz.js
 	CC := emcc
 	CXX := em++
-	CXX_FLAGS := -Oz -std=c++1z -MMD -Wall -Werror -Wextra -Wold-style-cast -Wnon-virtual-dtor -fno-exceptions
+	CXX_FLAGS := -Oz -std=c++1z -MMD -Wall -Wextra $(WERR_) -Wold-style-cast -Wnon-virtual-dtor -fno-exceptions
 	LXXFLAGS := -lm --bind --memory-init-file 0 -s NO_FILESYSTEM=1 -s INLINING_LIMIT=1 -s DISABLE_EXCEPTION_CATCHING=1 --pre-js $(WIZ_PRE_JS)
 	INCLUDES := -I$(WIZ_SRC)
 else
