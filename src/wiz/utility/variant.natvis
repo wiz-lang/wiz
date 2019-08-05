@@ -731,4 +731,421 @@
         <Item Name="[data]" Condition="tag == 19">*($T20 *)&amp;(data)</Item>
     </Expand>
 </Type>
+  
+<Type Name="wiz::Variant&lt;*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*&gt;">
+    <DisplayString Condition="tag == 0">{{tag={"$T1", s8b}, data={*($T1  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 1">{{tag={"$T2", s8b}, data={*($T2  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 2">{{tag={"$T3", s8b}, data={*($T3  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 3">{{tag={"$T4", s8b}, data={*($T4  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 4">{{tag={"$T5", s8b}, data={*($T5  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 5">{{tag={"$T6", s8b}, data={*($T6  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 6">{{tag={"$T7", s8b}, data={*($T7  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 7">{{tag={"$T8", s8b}, data={*($T8  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 8">{{tag={"$T9", s8b}, data={*($T9  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 9">{{tag={"$T10", s8b}, data={*($T10 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 10">{{tag={"$T11", s8b}, data={*($T11 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 11">{{tag={"$T12", s8b}, data={*($T12 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 12">{{tag={"$T13", s8b}, data={*($T13 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 13">{{tag={"$T14", s8b}, data={*($T14 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 14">{{tag={"$T15", s8b}, data={*($T15 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 15">{{tag={"$T16", s8b}, data={*($T16 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 16">{{tag={"$T17", s8b}, data={*($T17 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 17">{{tag={"$T18", s8b}, data={*($T18 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 18">{{tag={"$T19", s8b}, data={*($T19 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 19">{{tag={"$T20", s8b}, data={*($T20 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 20">{{tag={"$T21", s8b}, data={*($T21 *)&amp;(data)}}}</DisplayString>
+    <Expand>
+        <Item Name="[tag]" Condition="tag == 0">"$T1", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 1">"$T2", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 2">"$T3", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 3">"$T4", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 4">"$T5", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 5">"$T6", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 6">"$T7", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 7">"$T8", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 8">"$T9", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 9">"$T10", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 10">"$T11", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 11">"$T12", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 12">"$T13", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 13">"$T14", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 14">"$T15", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 15">"$T16", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 16">"$T17", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 17">"$T18", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 18">"$T19", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 19">"$T20", s8b</Item>
+        <Item Name="[data]" Condition="tag == 0">*($T1  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 1">*($T2  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 2">*($T3  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 3">*($T4  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 4">*($T5  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 5">*($T6  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 6">*($T7  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 7">*($T8  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 8">*($T9  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 9">*($T10 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 10">*($T11 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 11">*($T12 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 12">*($T13 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 13">*($T14 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 14">*($T15 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 15">*($T16 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 16">*($T17 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 17">*($T18 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 18">*($T19 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 19">*($T20 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 20">*($T21 *)&amp;(data)</Item>
+    </Expand>
+</Type>
+
+<Type Name="wiz::Variant&lt;*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*&gt;">
+    <DisplayString Condition="tag == 0">{{tag={"$T1", s8b}, data={*($T1  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 1">{{tag={"$T2", s8b}, data={*($T2  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 2">{{tag={"$T3", s8b}, data={*($T3  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 3">{{tag={"$T4", s8b}, data={*($T4  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 4">{{tag={"$T5", s8b}, data={*($T5  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 5">{{tag={"$T6", s8b}, data={*($T6  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 6">{{tag={"$T7", s8b}, data={*($T7  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 7">{{tag={"$T8", s8b}, data={*($T8  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 8">{{tag={"$T9", s8b}, data={*($T9  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 9">{{tag={"$T10", s8b}, data={*($T10 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 10">{{tag={"$T11", s8b}, data={*($T11 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 11">{{tag={"$T12", s8b}, data={*($T12 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 12">{{tag={"$T13", s8b}, data={*($T13 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 13">{{tag={"$T14", s8b}, data={*($T14 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 14">{{tag={"$T15", s8b}, data={*($T15 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 15">{{tag={"$T16", s8b}, data={*($T16 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 16">{{tag={"$T17", s8b}, data={*($T17 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 17">{{tag={"$T18", s8b}, data={*($T18 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 18">{{tag={"$T19", s8b}, data={*($T19 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 19">{{tag={"$T20", s8b}, data={*($T20 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 20">{{tag={"$T21", s8b}, data={*($T21 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 21">{{tag={"$T22", s8b}, data={*($T22 *)&amp;(data)}}}</DisplayString>
+    <Expand>
+        <Item Name="[tag]" Condition="tag == 0">"$T1", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 1">"$T2", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 2">"$T3", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 3">"$T4", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 4">"$T5", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 5">"$T6", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 6">"$T7", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 7">"$T8", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 8">"$T9", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 9">"$T10", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 10">"$T11", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 11">"$T12", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 12">"$T13", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 13">"$T14", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 14">"$T15", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 15">"$T16", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 16">"$T17", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 17">"$T18", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 18">"$T19", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 19">"$T20", s8b</Item>
+        <Item Name="[data]" Condition="tag == 0">*($T1  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 1">*($T2  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 2">*($T3  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 3">*($T4  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 4">*($T5  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 5">*($T6  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 6">*($T7  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 7">*($T8  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 8">*($T9  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 9">*($T10 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 10">*($T11 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 11">*($T12 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 12">*($T13 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 13">*($T14 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 14">*($T15 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 15">*($T16 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 16">*($T17 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 17">*($T18 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 18">*($T19 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 19">*($T20 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 20">*($T21 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 21">*($T22 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 22">*($T23 *)&amp;(data)</Item>
+    </Expand>
+</Type>
+
+
+<Type Name="wiz::Variant&lt;*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*&gt;">
+    <DisplayString Condition="tag == 0">{{tag={"$T1", s8b}, data={*($T1  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 1">{{tag={"$T2", s8b}, data={*($T2  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 2">{{tag={"$T3", s8b}, data={*($T3  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 3">{{tag={"$T4", s8b}, data={*($T4  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 4">{{tag={"$T5", s8b}, data={*($T5  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 5">{{tag={"$T6", s8b}, data={*($T6  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 6">{{tag={"$T7", s8b}, data={*($T7  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 7">{{tag={"$T8", s8b}, data={*($T8  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 8">{{tag={"$T9", s8b}, data={*($T9  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 9">{{tag={"$T10", s8b}, data={*($T10 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 10">{{tag={"$T11", s8b}, data={*($T11 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 11">{{tag={"$T12", s8b}, data={*($T12 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 12">{{tag={"$T13", s8b}, data={*($T13 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 13">{{tag={"$T14", s8b}, data={*($T14 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 14">{{tag={"$T15", s8b}, data={*($T15 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 15">{{tag={"$T16", s8b}, data={*($T16 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 16">{{tag={"$T17", s8b}, data={*($T17 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 17">{{tag={"$T18", s8b}, data={*($T18 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 18">{{tag={"$T19", s8b}, data={*($T19 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 19">{{tag={"$T20", s8b}, data={*($T20 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 20">{{tag={"$T21", s8b}, data={*($T21 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 21">{{tag={"$T22", s8b}, data={*($T22 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 22">{{tag={"$T22", s8b}, data={*($T23 *)&amp;(data)}}}</DisplayString>
+    <Expand>
+        <Item Name="[tag]" Condition="tag == 0">"$T1", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 1">"$T2", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 2">"$T3", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 3">"$T4", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 4">"$T5", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 5">"$T6", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 6">"$T7", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 7">"$T8", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 8">"$T9", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 9">"$T10", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 10">"$T11", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 11">"$T12", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 12">"$T13", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 13">"$T14", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 14">"$T15", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 15">"$T16", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 16">"$T17", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 17">"$T18", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 18">"$T19", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 19">"$T20", s8b</Item>
+        <Item Name="[data]" Condition="tag == 0">*($T1  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 1">*($T2  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 2">*($T3  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 3">*($T4  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 4">*($T5  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 5">*($T6  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 6">*($T7  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 7">*($T8  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 8">*($T9  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 9">*($T10 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 10">*($T11 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 11">*($T12 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 12">*($T13 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 13">*($T14 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 14">*($T15 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 15">*($T16 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 16">*($T17 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 17">*($T18 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 18">*($T19 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 19">*($T20 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 20">*($T21 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 21">*($T22 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 22">*($T23 *)&amp;(data)</Item>
+    </Expand>
+</Type>
+  
+<Type Name="wiz::Variant&lt;*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*&gt;">
+    <DisplayString Condition="tag == 0">{{tag={"$T1", s8b}, data={*($T1  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 1">{{tag={"$T2", s8b}, data={*($T2  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 2">{{tag={"$T3", s8b}, data={*($T3  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 3">{{tag={"$T4", s8b}, data={*($T4  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 4">{{tag={"$T5", s8b}, data={*($T5  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 5">{{tag={"$T6", s8b}, data={*($T6  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 6">{{tag={"$T7", s8b}, data={*($T7  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 7">{{tag={"$T8", s8b}, data={*($T8  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 8">{{tag={"$T9", s8b}, data={*($T9  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 9">{{tag={"$T10", s8b}, data={*($T10 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 10">{{tag={"$T11", s8b}, data={*($T11 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 11">{{tag={"$T12", s8b}, data={*($T12 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 12">{{tag={"$T13", s8b}, data={*($T13 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 13">{{tag={"$T14", s8b}, data={*($T14 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 14">{{tag={"$T15", s8b}, data={*($T15 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 15">{{tag={"$T16", s8b}, data={*($T16 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 16">{{tag={"$T17", s8b}, data={*($T17 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 17">{{tag={"$T18", s8b}, data={*($T18 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 18">{{tag={"$T19", s8b}, data={*($T19 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 19">{{tag={"$T20", s8b}, data={*($T20 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 20">{{tag={"$T21", s8b}, data={*($T21 *)&amp;(data)}}}</DisplayString>
+    <Expand>
+        <Item Name="[tag]" Condition="tag == 0">"$T1", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 1">"$T2", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 2">"$T3", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 3">"$T4", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 4">"$T5", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 5">"$T6", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 6">"$T7", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 7">"$T8", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 8">"$T9", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 9">"$T10", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 10">"$T11", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 11">"$T12", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 12">"$T13", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 13">"$T14", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 14">"$T15", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 15">"$T16", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 16">"$T17", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 17">"$T18", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 18">"$T19", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 19">"$T20", s8b</Item>
+        <Item Name="[data]" Condition="tag == 0">*($T1  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 1">*($T2  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 2">*($T3  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 3">*($T4  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 4">*($T5  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 5">*($T6  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 6">*($T7  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 7">*($T8  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 8">*($T9  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 9">*($T10 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 10">*($T11 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 11">*($T12 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 12">*($T13 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 13">*($T14 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 14">*($T15 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 15">*($T16 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 16">*($T17 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 17">*($T18 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 18">*($T19 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 19">*($T20 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 20">*($T21 *)&amp;(data)</Item>
+    </Expand>
+</Type>
+
+<Type Name="wiz::Variant&lt;*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*&gt;">
+    <DisplayString Condition="tag == 0">{{tag={"$T1", s8b}, data={*($T1  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 1">{{tag={"$T2", s8b}, data={*($T2  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 2">{{tag={"$T3", s8b}, data={*($T3  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 3">{{tag={"$T4", s8b}, data={*($T4  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 4">{{tag={"$T5", s8b}, data={*($T5  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 5">{{tag={"$T6", s8b}, data={*($T6  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 6">{{tag={"$T7", s8b}, data={*($T7  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 7">{{tag={"$T8", s8b}, data={*($T8  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 8">{{tag={"$T9", s8b}, data={*($T9  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 9">{{tag={"$T10", s8b}, data={*($T10 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 10">{{tag={"$T11", s8b}, data={*($T11 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 11">{{tag={"$T12", s8b}, data={*($T12 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 12">{{tag={"$T13", s8b}, data={*($T13 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 13">{{tag={"$T14", s8b}, data={*($T14 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 14">{{tag={"$T15", s8b}, data={*($T15 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 15">{{tag={"$T16", s8b}, data={*($T16 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 16">{{tag={"$T17", s8b}, data={*($T17 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 17">{{tag={"$T18", s8b}, data={*($T18 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 18">{{tag={"$T19", s8b}, data={*($T19 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 19">{{tag={"$T20", s8b}, data={*($T20 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 20">{{tag={"$T21", s8b}, data={*($T21 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 21">{{tag={"$T22", s8b}, data={*($T22 *)&amp;(data)}}}</DisplayString>
+    <Expand>
+        <Item Name="[tag]" Condition="tag == 0">"$T1", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 1">"$T2", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 2">"$T3", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 3">"$T4", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 4">"$T5", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 5">"$T6", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 6">"$T7", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 7">"$T8", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 8">"$T9", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 9">"$T10", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 10">"$T11", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 11">"$T12", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 12">"$T13", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 13">"$T14", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 14">"$T15", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 15">"$T16", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 16">"$T17", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 17">"$T18", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 18">"$T19", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 19">"$T20", s8b</Item>
+        <Item Name="[data]" Condition="tag == 0">*($T1  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 1">*($T2  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 2">*($T3  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 3">*($T4  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 4">*($T5  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 5">*($T6  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 6">*($T7  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 7">*($T8  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 8">*($T9  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 9">*($T10 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 10">*($T11 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 11">*($T12 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 12">*($T13 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 13">*($T14 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 14">*($T15 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 15">*($T16 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 16">*($T17 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 17">*($T18 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 18">*($T19 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 19">*($T20 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 20">*($T21 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 21">*($T22 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 22">*($T23 *)&amp;(data)</Item>
+    </Expand>
+</Type>
+
+<Type Name="wiz::Variant&lt;*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*&gt;">
+    <DisplayString Condition="tag == 0">{{tag={"$T1", s8b}, data={*($T1  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 1">{{tag={"$T2", s8b}, data={*($T2  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 2">{{tag={"$T3", s8b}, data={*($T3  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 3">{{tag={"$T4", s8b}, data={*($T4  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 4">{{tag={"$T5", s8b}, data={*($T5  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 5">{{tag={"$T6", s8b}, data={*($T6  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 6">{{tag={"$T7", s8b}, data={*($T7  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 7">{{tag={"$T8", s8b}, data={*($T8  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 8">{{tag={"$T9", s8b}, data={*($T9  *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 9">{{tag={"$T10", s8b}, data={*($T10 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 10">{{tag={"$T11", s8b}, data={*($T11 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 11">{{tag={"$T12", s8b}, data={*($T12 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 12">{{tag={"$T13", s8b}, data={*($T13 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 13">{{tag={"$T14", s8b}, data={*($T14 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 14">{{tag={"$T15", s8b}, data={*($T15 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 15">{{tag={"$T16", s8b}, data={*($T16 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 16">{{tag={"$T17", s8b}, data={*($T17 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 17">{{tag={"$T18", s8b}, data={*($T18 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 18">{{tag={"$T19", s8b}, data={*($T19 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 19">{{tag={"$T20", s8b}, data={*($T20 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 20">{{tag={"$T21", s8b}, data={*($T21 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 21">{{tag={"$T22", s8b}, data={*($T22 *)&amp;(data)}}}</DisplayString>
+    <DisplayString Condition="tag == 22">{{tag={"$T22", s8b}, data={*($T23 *)&amp;(data)}}}</DisplayString>
+    <Expand>
+        <Item Name="[tag]" Condition="tag == 0">"$T1", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 1">"$T2", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 2">"$T3", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 3">"$T4", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 4">"$T5", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 5">"$T6", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 6">"$T7", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 7">"$T8", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 8">"$T9", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 9">"$T10", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 10">"$T11", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 11">"$T12", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 12">"$T13", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 13">"$T14", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 14">"$T15", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 15">"$T16", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 16">"$T17", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 17">"$T18", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 18">"$T19", s8b</Item>
+        <Item Name="[tag]" Condition="tag == 19">"$T20", s8b</Item>
+        <Item Name="[data]" Condition="tag == 0">*($T1  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 1">*($T2  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 2">*($T3  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 3">*($T4  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 4">*($T5  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 5">*($T6  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 6">*($T7  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 7">*($T8  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 8">*($T9  *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 9">*($T10 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 10">*($T11 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 11">*($T12 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 12">*($T13 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 13">*($T14 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 14">*($T15 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 15">*($T16 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 16">*($T17 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 17">*($T18 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 18">*($T19 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 19">*($T20 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 20">*($T21 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 21">*($T22 *)&amp;(data)</Item>
+        <Item Name="[data]" Condition="tag == 22">*($T23 *)&amp;(data)</Item>
+    </Expand>
+</Type>
 </AutoVisualizer>

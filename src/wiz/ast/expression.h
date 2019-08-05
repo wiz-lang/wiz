@@ -73,6 +73,7 @@ namespace wiz {
         LowByte,
         HighByte,
         BankByte,
+        AddressReserve,
 
         Count,
     };

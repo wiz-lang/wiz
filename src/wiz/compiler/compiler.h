@@ -81,6 +81,7 @@ namespace wiz {
             IrNode* addIrNode(FwdUniquePtr<IrNode> node);
             Definition* addToDefinitionPool(FwdUniquePtr<Definition> definition);
             const Expression* addToExpressionPool(FwdUniquePtr<const Expression> expression);
+            const Statement* addToStatementPool(FwdUniquePtr<const Statement> statement);
             Definition* createAnonymousLabelDefinition();
 
             template <typename... Args>
@@ -138,7 +139,9 @@ namespace wiz {
 
             bool resolveDefinitionTypes();
 
-            bool reserveVariableStorage(const Statement* statement);
+            bool reserveStorage(const Statement* statement);
+            bool resolveVariableInitializer(Definition* definition, const Expression* initializer, StringView description, SourceLocation location);
+            bool reserveVariableStorage(Definition* definition, StringView description, SourceLocation location);
 
             FwdUniquePtr<InstructionOperand> createPlaceholderFromResolvedTypeDefinition(const Definition* resolvedTypeDefinition) const;
             FwdUniquePtr<InstructionOperand> createPlaceholderFromTypeExpression(const TypeExpression* typeExpression) const;
@@ -207,6 +210,9 @@ namespace wiz {
 
             std::vector<LetExpressionStackItem> letExpressionStack;
 
+            bool allowReservedConstants = false;
+            std::vector<Definition*> reservedConstants;
+
             struct CompiledAttribute {
                 CompiledAttribute(
                     const Statement* statement,
@@ -246,8 +252,9 @@ namespace wiz {
 
             std::unordered_map<StringView, StringView> embedCache;
 
-            std::vector<FwdUniquePtr<const Expression>> expressionPool;
             std::vector<FwdUniquePtr<Definition>> definitionPool;
+            std::vector<FwdUniquePtr<const Statement>> statementPool;
+            std::vector<FwdUniquePtr<const Expression>> expressionPool;
             std::vector<FwdUniquePtr<IrNode>> irNodes;
     };
 }

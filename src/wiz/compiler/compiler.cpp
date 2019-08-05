@@ -48,7 +48,7 @@ namespace wiz {
     bool Compiler::compile() {
         return reserveDefinitions(program.get())
         && resolveDefinitionTypes()
-        && reserveVariableStorage(program.get())
+        && reserveStorage(program.get())
         && emitStatementIr(program.get())
         && generateCode();
     }
@@ -162,7 +162,7 @@ namespace wiz {
     }
 
     IrNode* Compiler::addIrNode(FwdUniquePtr<IrNode> node) {
-        auto result = node.get();
+        const auto result = node.get();
         if (result != nullptr) {
             irNodes.push_back(std::move(node));
         }
@@ -170,7 +170,7 @@ namespace wiz {
     }
 
     Definition* Compiler::addToDefinitionPool(FwdUniquePtr<Definition> definition) {
-        auto result = definition.get();
+        const auto result = definition.get();
         if (result != nullptr) {
             definitionPool.push_back(std::move(definition));
         }
@@ -178,16 +178,24 @@ namespace wiz {
     }
 
     const Expression* Compiler::addToExpressionPool(FwdUniquePtr<const Expression> expression) {
-        auto result = expression.get();
+        const auto result = expression.get();
         if (result != nullptr) {
             expressionPool.push_back(std::move(expression));
         }
         return result;
     }
 
+    const Statement* Compiler::addToStatementPool(FwdUniquePtr<const Statement> statement) {
+        const auto result = statement.get();
+        if (result != nullptr) {
+            statementPool.push_back(std::move(statement));
+        }
+        return result;
+    }
+
     Definition* Compiler::createAnonymousLabelDefinition() {
         const auto labelId = stringPool->intern("$label" + std::to_string(definitionPool.size()));
-        auto result = addToDefinitionPool(makeFwdUnique<Definition>(Definition::Func(true, false, false, BranchKind::None, builtins.getUnitTuple(), currentScope, nullptr), labelId, nullptr));
+        const auto result = addToDefinitionPool(makeFwdUnique<Definition>(Definition::Func(true, false, false, BranchKind::None, builtins.getUnitTuple(), currentScope, nullptr), labelId, nullptr));
         auto& func = result->variant.get<Definition::Func>();
         func.resolvedSignatureType = makeFwdUnique<const TypeExpression>(TypeExpression::Function(false, {}, func.returnTypeExpression->clone()), func.returnTypeExpression->location);
         return result;
@@ -441,8 +449,8 @@ namespace wiz {
                 computedItems.reserve(*length);
 
                 auto scope = std::make_unique<SymbolTable>(currentScope, StringView());
-                auto tempDeclaration = makeFwdUnique<const Statement>(Statement::InternalDeclaration(), expression->location);
-                auto tempDefinition = scope->createDefinition(report, Definition::Let({}, nullptr), arrayComprehension.name, tempDeclaration.get());
+                auto tempDeclaration = addToStatementPool(makeFwdUnique<const Statement>(Statement::InternalDeclaration(), expression->location));
+                auto tempDefinition = scope->createDefinition(report, Definition::Let({}, nullptr), arrayComprehension.name, tempDeclaration);
                 auto& tempLetDefinition = tempDefinition->variant.get<Definition::Let>();
 
                 const TypeExpression* elementType = nullptr;
@@ -1619,15 +1627,19 @@ namespace wiz {
                     return nullptr;
                 }
 
-                if (op != UnaryOperatorKind::Indirection
-                && op != UnaryOperatorKind::Grouping
-                && op != UnaryOperatorKind::AddressOf
-                && op != UnaryOperatorKind::FarAddressOf
-                && op != UnaryOperatorKind::LowByte
-                && op != UnaryOperatorKind::HighByte) {
-                    if (operand->info->flags.contains<ExpressionInfo::Flag::WriteOnly>()) {
-                        report->error("operand to " + getUnaryOperatorName(op).toString() + " cannot be `writeonly`", operand->location);
-                        return nullptr;
+                switch (op) {
+                    case UnaryOperatorKind::Indirection: break;
+                    case UnaryOperatorKind::Grouping: break;
+                    case UnaryOperatorKind::AddressOf: break;
+                    case UnaryOperatorKind::FarAddressOf: break;
+                    case UnaryOperatorKind::LowByte: break;
+                    case UnaryOperatorKind::HighByte: break;
+                    default: {
+                        if (operand->info->flags.contains<ExpressionInfo::Flag::WriteOnly>()) {
+                            report->error("operand to " + getUnaryOperatorName(op).toString() + " cannot be `writeonly`", operand->location);
+                            return nullptr;
+                        }
+                        break;
                     }
                 }
 
@@ -1938,6 +1950,76 @@ namespace wiz {
                         return makeFwdUnique<const Expression>(
                             Expression::UnaryOperator(unaryOperator.op, std::move(operand)), expression->location,
                             ExpressionInfo(context, std::move(resultType), ExpressionInfo::Flags {}));
+                    }
+
+                    // Address reserve operator `@`
+                    // Reserves an address for some data, and returns the pointer to that data.
+                    // The data will be located immediately after the expression that references it.
+                    // T -> *const T
+                    case UnaryOperatorKind::AddressReserve: {
+                        if (!allowReservedConstants) {
+                            report->error("cannot use " + getUnaryOperatorName(unaryOperator.op).toString() + " here", expression->location);
+                            return nullptr;
+                        }
+
+                        if (operand->info->context == EvaluationContext::CompileTime
+                        || operand->info->context == EvaluationContext::LinkTime) {
+                            const auto constType = operand->info->type.get();
+                            const auto constName = stringPool->intern("$data" + std::to_string(definitionPool.size()));
+                            auto constDeclaration = addToStatementPool(makeFwdUnique<const Statement>(Statement::InternalDeclaration(), expression->location));
+                            auto definition = addToDefinitionPool(makeFwdUnique<Definition>(Definition::Var(Modifiers { Modifier::Const }, currentFunction, nullptr, nullptr), constName, constDeclaration));
+                            auto& constDefinition = definition->variant.get<Definition::Var>();
+
+                            constDefinition.resolvedType = constType;
+                            constDefinition.initializerExpression = std::move(operand);
+
+                            const auto elementTypePtr =
+                                constType->variant.is<TypeExpression::Array>()
+                                ? constType->variant.get<TypeExpression::Array>().elementType.get()
+                                : constType;
+
+                            const auto elementStorageSize = calculateStorageSize(elementTypePtr, ""_sv);
+                            if (!elementStorageSize.hasValue()) {
+                                report->error("operand of " + getUnaryOperatorName(unaryOperator.op).toString() + " cannot be of type " + getTypeName(constType) + " because it has unknown size", expression->location);
+                                return nullptr;
+                            }
+
+                            reservedConstants.push_back(definition);
+
+                            auto pointerToElementType = makeFwdUnique<const TypeExpression>(
+                                TypeExpression::Pointer(elementTypePtr->clone(), PointerQualifiers { PointerQualifier::Const }),
+                                expression->location);
+                            const auto pointerToElementTypePtr = pointerToElementType.get();
+
+                            // &data as *U
+                            return makeFwdUnique<const Expression>(
+                                Expression::Cast(
+                                    makeFwdUnique<const Expression>(
+                                        Expression::UnaryOperator(
+                                            UnaryOperatorKind::AddressOf,
+                                            makeFwdUnique<const Expression>(
+                                                Expression::ResolvedIdentifier(definition, {constName}),
+                                                expression->location,
+                                                ExpressionInfo(EvaluationContext::LinkTime,
+                                                    constType->clone(),
+                                                    ExpressionInfo::Flags { ExpressionInfo::Flag::LValue, ExpressionInfo::Flag::Const }))),
+                                        expression->location,
+                                        ExpressionInfo(
+                                            EvaluationContext::LinkTime,
+                                            makeFwdUnique<const TypeExpression>(
+                                                TypeExpression::Pointer(constType->clone(), PointerQualifiers { PointerQualifier::Const }),
+                                                expression->location),
+                                            ExpressionInfo::Flags {})),
+                                std::move(pointerToElementType)),
+                                expression->location,
+                                ExpressionInfo(
+                                    EvaluationContext::LinkTime,
+                                    pointerToElementTypePtr->clone(),
+                                    ExpressionInfo::Flags {}));
+                        } else {
+                            report->error("operand of " + getUnaryOperatorName(unaryOperator.op).toString() + " must be a link-time expression.", expression->location);
+                            return nullptr;
+                        }
                     }
                 }
             }
@@ -4049,14 +4131,14 @@ namespace wiz {
         return true;
     }
 
-    bool Compiler::reserveVariableStorage(const Statement* statement) {
+    bool Compiler::reserveStorage(const Statement* statement) {
         const auto& variant = statement->variant;
         switch (variant.index()) {
             case Statement::VariantType::typeIndexOf<Statement::Attribution>(): {
                 const auto& attributedStatement = variant.get<Statement::Attribution>();
                 pushAttributeList(statementAttributeLists[statement]);
                 if (checkConditionalCompilationAttributes()) {
-                    reserveVariableStorage(attributedStatement.body.get());
+                    reserveStorage(attributedStatement.body.get());
                 }
                 popAttributeList();
                 break;
@@ -4066,7 +4148,7 @@ namespace wiz {
                 const auto& blockStatement = variant.get<Statement::Block>();
                 enterScope(getOrCreateStatementScope(StringView(), statement, currentScope));
                 for (const auto& item : blockStatement.items) {
-                    reserveVariableStorage(item.get());
+                    reserveStorage(item.get());
                 }
                 exitScope();
                 break;
@@ -4074,7 +4156,7 @@ namespace wiz {
             case Statement::VariantType::typeIndexOf<Statement::Config>(): break;
             case Statement::VariantType::typeIndexOf<Statement::DoWhile>(): {
                 const auto& doWhileStatement = variant.get<Statement::DoWhile>();
-                reserveVariableStorage(doWhileStatement.body.get());
+                reserveStorage(doWhileStatement.body.get());
                 break;
             }
             case Statement::VariantType::typeIndexOf<Statement::Enum>(): break;
@@ -4083,21 +4165,27 @@ namespace wiz {
                 const auto& file = variant.get<Statement::File>();
                 enterScope(findStatementScope(statement));
                 for (const auto& item : file.items) {
-                    reserveVariableStorage(item.get());
+                    reserveStorage(item.get());
                 }
                 exitScope();
                 break;
             }
             case Statement::VariantType::typeIndexOf<Statement::For>(): {
                 const auto& forStatement = variant.get<Statement::For>();
-                reserveVariableStorage(forStatement.body.get());
+                reserveStorage(forStatement.body.get());
                 break;
             }
             case Statement::VariantType::typeIndexOf<Statement::Func>(): {
                 const auto& funcDeclaration = variant.get<Statement::Func>();
 
-                auto& funcDefinition = currentScope->findLocalMemberDefinition(funcDeclaration.name)->variant.get<Definition::Func>();                
+                auto definition = currentScope->findLocalMemberDefinition(funcDeclaration.name);
+                auto& funcDefinition = definition->variant.get<Definition::Func>();    
                 
+                const auto oldFunction = currentFunction;
+                const auto onExit = makeScopeGuard([&]() {
+                    currentFunction = oldFunction;
+                });
+
                 for (auto& parameter : funcDefinition.parameters) {
                     auto& parameterVarDefinition = parameter->variant.get<Definition::Var>();
 
@@ -4109,14 +4197,15 @@ namespace wiz {
                     }
                 }
 
-                reserveVariableStorage(funcDeclaration.body.get());   
+                currentFunction = definition;
+                reserveStorage(funcDeclaration.body.get());
                 break;
             }
             case Statement::VariantType::typeIndexOf<Statement::If>(): {
                 const auto& ifStatement = variant.get<Statement::If>();
-                reserveVariableStorage(ifStatement.body.get());
+                reserveStorage(ifStatement.body.get());
                 if (ifStatement.alternative) {
-                    reserveVariableStorage(ifStatement.alternative.get());
+                    reserveStorage(ifStatement.alternative.get());
                 }
                 break;
             }
@@ -4126,7 +4215,7 @@ namespace wiz {
 
                 const auto result = handleInStatement(inStatement.pieces, inStatement.dest.get(), statement->location);
                 if (result.first) {
-                    reserveVariableStorage(inStatement.body.get());
+                    reserveStorage(inStatement.body.get());
                 }
 
                 currentBank = bankStack.back();
@@ -4142,7 +4231,7 @@ namespace wiz {
             case Statement::VariantType::typeIndexOf<Statement::Namespace>(): {
                 const auto& namespaceDeclaration = variant.get<Statement::Namespace>();
                 enterScope(findStatementScope(namespaceDeclaration.body.get()));
-                reserveVariableStorage(namespaceDeclaration.body.get());
+                reserveStorage(namespaceDeclaration.body.get());
                 exitScope();
                 break;
             }
@@ -4153,116 +4242,145 @@ namespace wiz {
                 const auto& names = varDeclaration.names;
                 const auto bank = currentBank;
                 const auto description = statement->getDescription();
+                const auto location = statement->location;
 
                 if (varDeclaration.value != nullptr) {
                     if (names.size() != 1) {
-                        report->error(description.toString() + " with initializer must contain exactly one declaration.", statement->location);
+                        report->error(description.toString() + " with initializer must contain exactly one declaration.", location);
                         break;
                     }
 
-                    auto name = varDeclaration.names[0];
-                    auto& varDefinition = currentScope->findLocalMemberDefinition(name)->variant.get<Definition::Var>();
-
-                    if (bank == nullptr || !isBankKindStored(bank->getKind())) {
-                        report->error(description.toString() + " with initializer " + (bank == nullptr ? "must be inside an `in` statement" : "is not allowed in bank `" + bank->getName().toString() + "`"), statement->location);
+                    if (!resolveVariableInitializer(currentScope->findLocalMemberDefinition(varDeclaration.names[0]), varDeclaration.value.get(), description, location)) {
                         break;
-                    }
-
-                    if (varDefinition.enclosingFunction != nullptr) {
-                        report->error("local " + description.toString() + " with initializer is not currently supported", statement->location);
-                        break;
-                    }
-
-                    if (auto reducedValue = reduceExpression(varDeclaration.value.get())) {
-                        if (const auto declarationType = varDefinition.reducedTypeExpression.get()) {
-                            if (declarationType->variant.is<TypeExpression::DesignatedStorage>()) {
-                                report->error(description.toString() + " cannot have type `" + getTypeName(varDefinition.reducedTypeExpression.get()) + "`", statement->location);
-                                break;
-                            }
-
-                            if (const auto compatibleInitializerType = findCompatibleAssignmentType(reducedValue.get(), declarationType)) {
-                                varDefinition.initializerExpression = createConvertedExpression(reducedValue.get(), compatibleInitializerType);
-                            } else {
-                                report->error(description.toString() + " of type `" + getTypeName(varDefinition.reducedTypeExpression.get()) + "` cannot be initialized with `" + getTypeName(reducedValue->info->type.get()) + "` expression", statement->location);
-                                break;
-                            }
-                        } else {
-                            varDefinition.initializerExpression = std::move(reducedValue);
-                        }
-
-                        if (varDefinition.initializerExpression != nullptr) {
-                            if (const auto arrayType = varDefinition.initializerExpression->info->type->variant.tryGet<TypeExpression::Array>()) {
-                                if (arrayType->elementType == nullptr) {
-                                    report->error("array has unknown element type", statement->location);
-                                    break;
-                                }
-                            }
-                        }
-
-                        varDefinition.resolvedType = varDefinition.initializerExpression->info->type.get();
                     }
                 }
 
                 for (std::size_t i = 0, size = names.size(); i != size; ++i) {
-                    auto& varDefinition = currentScope->findLocalMemberDefinition(names[i])->variant.get<Definition::Var>();
-
-                    if (!varDefinition.resolvedType) {
-                        report->error("could not resolve declaration type", statement->location);
+                    if (!reserveVariableStorage(currentScope->findLocalMemberDefinition(names[i]), description, location)) {
                         break;
                     }
-
-                    if (varDefinition.resolvedType->variant.is<TypeExpression::DesignatedStorage>()) {
-                        if (varDefinition.modifiers.contains<Modifier::Extern>() || varDefinition.modifiers.contains<Modifier::Const>() || varDefinition.modifiers.contains<Modifier::WriteOnly>()) {
-                            report->error((varDefinition.modifiers.contains<Modifier::Extern>() ? "extern " : "") + statement->getDescription().toString() + " of `" + names[i].toString() + (names.size() > 1 ? ", ..." : "") + "` cannot have designated storage type", statement->location);
-                        }
-                    } else {
-                        const auto storageSize = calculateStorageSize(varDefinition.resolvedType, description);
-                        if (!storageSize.hasValue()) {
-                            break;
-                        }
-
-                        varDefinition.storageSize = storageSize;
-
-                        if (varDefinition.addressExpression != nullptr) {
-                            if (varDefinition.modifiers.contains<Modifier::Extern>() || varDefinition.enclosingFunction != nullptr || bank == nullptr || !isBankKindStored(bank->getKind())) {
-                                // Variable definitions with explicit addresses can be placed at any absolute address.
-                                // (They don't have relative addresses because of the explcit address can be outside of the current bank.)
-                                varDefinition.address = Address(Optional<std::size_t>(), resolveExplicitAddressExpression(varDefinition.addressExpression));
-                            }
-                        } else {
-                            if (varDefinition.modifiers.contains<Modifier::Extern>()) {
-                                report->error("extern " + statement->getDescription().toString() + " of `" + names[i].toString() + (names.size() > 1 ? ", ..." : "") + "` must have an explicit address", statement->location);
-                            } else if (varDefinition.enclosingFunction == nullptr) {
-                                if (bank == nullptr) {
-                                    report->error(statement->getDescription().toString() + " of `" + names[i].toString() + (names.size() > 1 ? ", ..." : "") + "` must be inside an `in` statement, have an explicit address `@`, or have a designated storage type", statement->location);
-                                    break;
-                                }
-
-                                if (!isBankKindStored(bank->getKind())) {
-                                    varDefinition.address = bank->getAddress();
-
-                                    if (!bank->reserveRam(report, description, statement, statement->location, storageSize.get())) {
-                                        break;
-                                    }
-                                }
-                            } else {
-                                report->error("local " + statement->getDescription().toString() + " of `" + names[i].toString() + (names.size() > 1 ? ", ..." : "") + "` must have an explicit address, or have a designated storage type", statement->location);
-                                break;
-                            }
-                        }
-                    }
                 }
+
                 break;
             }
             case Statement::VariantType::typeIndexOf<Statement::While>(): {
                 const auto& whileStatement = variant.get<Statement::While>();
-                reserveVariableStorage(whileStatement.body.get());
+                reserveStorage(whileStatement.body.get());
                 break;
             }
             default: std::abort(); return false;
         }
 
         return statement == program.get() ? report->validate() : report->alive();
+    }
+
+    bool Compiler::resolveVariableInitializer(Definition* definition, const Expression* initializer, StringView description, SourceLocation location) {
+        auto& varDefinition = definition->variant.get<Definition::Var>();
+        const auto name = definition->name;
+
+        if (currentBank == nullptr || !isBankKindStored(currentBank->getKind())) {
+            report->error(description.toString() + " with initializer " + (currentBank == nullptr ? "must be inside an `in` statement" : "is not allowed in bank `" + currentBank->getName().toString() + "`"), location);
+            return false;
+        }
+
+        if (varDefinition.enclosingFunction != nullptr) {
+            report->error("local " + description.toString() + " with initializer is not currently supported", location);
+            return false;
+        }
+
+        allowReservedConstants = true;
+
+        if (auto reducedValue = reduceExpression(initializer)) {
+            if (const auto declarationType = varDefinition.reducedTypeExpression.get()) {
+                if (declarationType->variant.is<TypeExpression::DesignatedStorage>()) {
+                    report->error(description.toString() + " cannot have type `" + getTypeName(varDefinition.reducedTypeExpression.get()) + "`", location);
+                    return false;
+                }
+
+                if (const auto compatibleInitializerType = findCompatibleAssignmentType(reducedValue.get(), declarationType)) {
+                    varDefinition.initializerExpression = createConvertedExpression(reducedValue.get(), compatibleInitializerType);
+                } else {
+                    report->error(description.toString() + " of type `" + getTypeName(varDefinition.reducedTypeExpression.get()) + "` cannot be initialized with `" + getTypeName(reducedValue->info->type.get()) + "` expression", location);
+                    return false;
+                }
+            } else {
+                varDefinition.initializerExpression = std::move(reducedValue);
+            }
+
+            if (varDefinition.initializerExpression != nullptr) {
+                if (const auto arrayType = varDefinition.initializerExpression->info->type->variant.tryGet<TypeExpression::Array>()) {
+                    if (arrayType->elementType == nullptr) {
+                        report->error("array has unknown element type", location);
+                        return false;
+                    }
+                }
+            }
+
+            varDefinition.resolvedType = varDefinition.initializerExpression->info->type.get();
+        }
+
+        allowReservedConstants = false;
+        varDefinition.nestedConstants.insert(varDefinition.nestedConstants.end(), reservedConstants.begin(), reservedConstants.end());
+        reservedConstants.clear();
+
+        return true;
+    }
+
+    bool Compiler::reserveVariableStorage(Definition* definition, StringView description, SourceLocation location) {
+        auto& varDefinition = definition->variant.get<Definition::Var>();
+        const auto name = definition->name;
+
+        if (!varDefinition.resolvedType) {
+            report->error("could not resolve declaration type", location);
+            return false;
+        }
+
+        if (varDefinition.resolvedType->variant.is<TypeExpression::DesignatedStorage>()) {
+            if (varDefinition.modifiers.contains<Modifier::Extern>() || varDefinition.modifiers.contains<Modifier::Const>() || varDefinition.modifiers.contains<Modifier::WriteOnly>()) {
+                report->error((varDefinition.modifiers.contains<Modifier::Extern>() ? "extern " : "") + description.toString() + " of `" + name.toString() + "` cannot have designated storage type", location);
+            }
+        } else {
+            const auto storageSize = calculateStorageSize(varDefinition.resolvedType, description);
+            if (!storageSize.hasValue()) {
+                return false;
+            }
+
+            varDefinition.storageSize = storageSize;
+
+            if (varDefinition.addressExpression != nullptr) {
+                if (varDefinition.modifiers.contains<Modifier::Extern>() || varDefinition.enclosingFunction != nullptr || currentBank == nullptr || !isBankKindStored(currentBank->getKind())) {
+                    // Variable definitions with explicit addresses can be placed at any absolute address.
+                    // (They don't have relative addresses because of the explcit address can be outside of the current bank.)
+                    varDefinition.address = Address(Optional<std::size_t>(), resolveExplicitAddressExpression(varDefinition.addressExpression));
+                }
+            } else {
+                if (varDefinition.modifiers.contains<Modifier::Extern>()) {
+                    report->error("extern " + description.toString() + " of `" + name.toString() + "` must have an explicit address", location);
+                } else if (varDefinition.enclosingFunction == nullptr) {
+                    if (currentBank == nullptr) {
+                        report->error(description.toString() + " of `" + name.toString() + "` must be inside an `in` statement, have an explicit address `@`, or have a designated storage type", location);
+                        return false;
+                    }
+
+                    if (!isBankKindStored(currentBank->getKind())) {
+                        varDefinition.address = currentBank->getAddress();
+
+                        if (!currentBank->reserveRam(report, description, definition->declaration, location, storageSize.get())) {
+                            return false;
+                        }
+                    }
+                } else {
+                    report->error("local " + description.toString() + " of `" + name.toString() + "` must have an explicit address, or have a designated storage type", location);
+                    return false;
+                }
+            }
+        }
+
+        for (auto& nestedConstant : varDefinition.nestedConstants) {
+            reserveVariableStorage(nestedConstant, "nested constant"_sv, nestedConstant->declaration->location);
+        }
+
+        return true;
     }
 
     FwdUniquePtr<InstructionOperand> Compiler::createPlaceholderFromResolvedTypeDefinition(const Definition* resolvedTypeDefinition) const {
@@ -4716,7 +4834,7 @@ namespace wiz {
                     const auto funcDeclaration = definition->declaration;
                     enterScope(getOrCreateStatementScope(StringView(), funcDeclaration, funcDefinition->enclosingScope));
 
-                    bool valid = reserveDefinitions(funcDeclaration) && resolveDefinitionTypes() && reserveVariableStorage(funcDeclaration);
+                    bool valid = reserveDefinitions(funcDeclaration) && resolveDefinitionTypes() && reserveStorage(funcDeclaration);
 
                     if (valid) {
                         // TODO: templating on type or expression???
@@ -6095,11 +6213,11 @@ namespace wiz {
 
                     const auto body = inlineForStatement.body.get();
 
-                    bool valid = reserveDefinitions(body) && resolveDefinitionTypes() && reserveVariableStorage(body);
+                    bool valid = reserveDefinitions(body) && resolveDefinitionTypes() && reserveStorage(body);
 
                     if (valid) {
-                        auto tempDeclaration = makeFwdUnique<const Statement>(Statement::InternalDeclaration(), statement->location);
-                        auto tempDefinition = currentScope->createDefinition(report, Definition::Let({}, nullptr), inlineForStatement.name, tempDeclaration.get());
+                        auto tempDeclaration = addToStatementPool(makeFwdUnique<const Statement>(Statement::InternalDeclaration(), statement->location));
+                        auto tempDefinition = currentScope->createDefinition(report, Definition::Let({}, nullptr), inlineForStatement.name, tempDeclaration);
                         auto& tempLetDefinition = tempDefinition->variant.get<Definition::Let>();
 
                         auto sourceItem = getSequenceLiteralItem(reducedSequence.get(), i);
@@ -6192,6 +6310,10 @@ namespace wiz {
 
                     if (!varDefinition.modifiers.contains<Modifier::Extern>() && varDefinition.enclosingFunction == nullptr && currentBank != nullptr && isBankKindStored(currentBank->getKind())) {
                         createIrNode(IrNode::Var(definition), statement->location);
+
+                        for (auto& nestedConstant : varDefinition.nestedConstants) {
+                            createIrNode(IrNode::Var(nestedConstant), statement->location);
+                        }
                     }
                 }
                 break;

@@ -218,7 +218,8 @@ namespace wiz {
             Optional<Address> address;
             Optional<std::size_t> storageSize;
             FwdUniquePtr<const TypeExpression> reducedTypeExpression;
-            FwdUniquePtr<const Expression> initializerExpression;            
+            FwdUniquePtr<const Expression> initializerExpression;
+            std::vector<Definition*> nestedConstants;
         };
 
         template <typename T>

@@ -96,7 +96,7 @@ namespace wiz {
             UniquePtr(std::nullptr_t)
             : UniquePtrBase<T, Deleter>(nullptr) {}
 
-            UniquePtr(PointerType ptr)
+            explicit UniquePtr(PointerType ptr)
             : UniquePtrBase<T, Deleter>(ptr) {}
 
             UniquePtr(PointerType ptr, const DeleterType& del)

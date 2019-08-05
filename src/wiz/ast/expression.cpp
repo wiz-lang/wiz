@@ -92,11 +92,12 @@ namespace wiz {
         "`<:`",
         "`>:`",
         "`#:`",
+        "`@`",
     };
 
     static_assert(sizeof(unaryOperatorSymbols) / sizeof(*unaryOperatorSymbols) == static_cast<std::size_t>(UnaryOperatorKind::Count), "`unaryOperatorSymbols` table must have an entry for every `UnaryOperatorKind`");
 
-    const char* const unaryOperatorNames[static_cast<std::size_t>(UnaryOperatorKind::Count)] = {
+    const char* const unaryOperatorNames[] = {
         "(none)",
         "address-of `&`",
         "far address-of `far &`",
@@ -112,6 +113,7 @@ namespace wiz {
         "low-byte access `<:`",
         "high-byte access `>:`",
         "bank-byte access `#:`",
+        "address-reserve `@`",
     };
 
     static_assert(sizeof(unaryOperatorNames) / sizeof(*unaryOperatorNames) == static_cast<std::size_t>(UnaryOperatorKind::Count), "`unaryOperatorNames` table must have an entry for every `UnaryOperatorKind`");
