@@ -78,7 +78,7 @@ namespace wiz {
     SnesFormat::SnesFormat() {}
     SnesFormat::~SnesFormat() {}
 
-    bool SnesFormat::generate(Report* report, StringView outputName, const Config& config, const std::vector<std::unique_ptr<Bank>>& banks, std::vector<std::uint8_t>& data) {
+    bool SnesFormat::generate(Report* report, StringView outputName, const Config& config, ArrayView<UniquePtr<Bank>> banks, std::vector<std::uint8_t>& data) {
         static_cast<void>(outputName);
 
         // http://old.smwiki.net/wiki/Internal_ROM_Header
@@ -264,7 +264,7 @@ namespace wiz {
     SnesSmcFormat::SnesSmcFormat() {}
     SnesSmcFormat::~SnesSmcFormat() {}
 
-    bool SnesSmcFormat::generate(Report* report, StringView outputName, const Config& config, const std::vector<std::unique_ptr<Bank>>& banks, std::vector<std::uint8_t>& data) {
+    bool SnesSmcFormat::generate(Report* report, StringView outputName, const Config& config, ArrayView<UniquePtr<Bank>> banks, std::vector<std::uint8_t>& data) {
         // https://en.wikibooks.org/wiki/Super_NES_Programming/SNES_memory_map#The_SNES_header       
 
         SnesFormat snesFormat;

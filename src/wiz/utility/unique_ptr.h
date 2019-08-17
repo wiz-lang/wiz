@@ -182,8 +182,12 @@ namespace wiz {
             WIZ_FORCE_INLINE bool operator >=(const UniquePtr& other) const {
                 return this->pointer() >= other.pointer();
             }
-
     };
+
+    template <typename T, typename... Args>
+    UniquePtr<T> makeUnique(Args&&... args) {
+        return UniquePtr<T>(new T(std::forward<Args>(args)...));
+    }
 }
 
 namespace std {

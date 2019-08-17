@@ -54,7 +54,7 @@ namespace wiz {
     GameBoyFormat::GameBoyFormat() {}
     GameBoyFormat::~GameBoyFormat() {}
 
-    bool GameBoyFormat::generate(Report* report, StringView outputName, const Config& config, const std::vector<std::unique_ptr<Bank>>& banks, std::vector<std::uint8_t>& data) {
+    bool GameBoyFormat::generate(Report* report, StringView outputName, const Config& config, ArrayView<UniquePtr<Bank>> banks, std::vector<std::uint8_t>& data) {
         static_cast<void>(outputName);
         
         // http://problemkaputt.de/pandocs.htm#thecartridgeheader

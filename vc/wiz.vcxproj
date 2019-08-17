@@ -72,6 +72,7 @@
     <ClInclude Include="..\src\wiz\utility\optional.h" />
     <ClInclude Include="..\src\wiz\utility\overload.h" />
     <ClInclude Include="..\src\wiz\utility\path.h" />
+    <ClInclude Include="..\src\wiz\utility\ptr_pool.h" />
     <ClInclude Include="..\src\wiz\utility\reader.h" />
     <ClInclude Include="..\src\wiz\utility\report.h" />
     <ClInclude Include="..\src\wiz\utility\report_error_flags.h" />

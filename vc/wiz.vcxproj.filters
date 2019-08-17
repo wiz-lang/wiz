@@ -207,9 +207,6 @@
     <ClInclude Include="..\src\wiz\utility\import_manager.h">
       <Filter>Header Files\utility</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\wiz\utility\import_options.h">
-      <Filter>Header Files\utility</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\wiz\compiler\operations.h">
       <Filter>Header Files\compiler</Filter>
     </ClInclude>
@@ -226,6 +223,12 @@
       <Filter>Header Files\utility</Filter>
     </ClInclude>
     <ClInclude Include="..\src\wiz\utility\unique_ptr.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\wiz\utility\import_options.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\wiz\utility\ptr_pool.h">
       <Filter>Header Files\utility</Filter>
     </ClInclude>
   </ItemGroup>

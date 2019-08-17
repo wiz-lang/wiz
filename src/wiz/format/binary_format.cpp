@@ -6,7 +6,7 @@ namespace wiz {
     BinaryFormat::BinaryFormat() {}
     BinaryFormat::~BinaryFormat() {}
 
-    bool BinaryFormat::generate(Report* report, StringView outputName, const Config& config, const std::vector<std::unique_ptr<Bank>>& banks, std::vector<std::uint8_t>& data) {
+    bool BinaryFormat::generate(Report* report, StringView outputName, const Config& config, ArrayView<UniquePtr<Bank>> banks, std::vector<std::uint8_t>& data) {
         static_cast<void>(outputName);
         
         const auto trim = config.checkBoolean(report, "trim"_sv, false);

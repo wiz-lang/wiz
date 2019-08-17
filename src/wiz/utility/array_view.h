@@ -21,19 +21,23 @@ namespace wiz {
             ArrayView(const std::vector<T>& other)
             : data(other.data()), length(other.size()) {}
 
-            std::add_pointer_t<const T> getData() const {
+            WIZ_FORCE_INLINE std::add_pointer_t<const T> getData() const {
                 return data;
             }
 
-            std::size_t getLength() const {
+            WIZ_FORCE_INLINE std::size_t getLength() const {
                 return length;
             }
 
-            std::add_pointer_t<const T> begin() const {
+            WIZ_FORCE_INLINE std::size_t size() const {
+                return length;
+            }
+
+            WIZ_FORCE_INLINE std::add_pointer_t<const T> begin() const {
                 return data;
             }
 
-            std::add_pointer_t<const T> end() const {
+            WIZ_FORCE_INLINE std::add_pointer_t<const T> end() const {
                 return data + length;
             }
 

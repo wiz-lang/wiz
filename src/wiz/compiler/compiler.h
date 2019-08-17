@@ -15,6 +15,8 @@
 #include <wiz/utility/int128.h>
 #include <wiz/utility/optional.h>
 #include <wiz/utility/source_location.h>
+#include <wiz/utility/ptr_pool.h>
+#include <wiz/utility/array_view.h>
 
 namespace wiz {
     enum class BranchKind;
@@ -53,7 +55,7 @@ namespace wiz {
 
             Report* getReport() const;
             const Statement* getProgram() const;
-            const std::vector<std::unique_ptr<Bank>>& getRegisteredBanks() const;
+            ArrayView<UniquePtr<Bank>> getRegisteredBanks() const;
             const Builtins& getBuiltins() const;
             std::uint32_t getModeFlags() const;
 
@@ -71,23 +73,13 @@ namespace wiz {
             void exitScope();
 
             struct InlineSite;
-            InlineSite* createInlineSite();
             void enterInlineSite(InlineSite* inlineSite);
             void exitInlineSite();
 
             bool enterLetExpression(StringView name, SourceLocation location);
             void exitLetExpression();
 
-            IrNode* addIrNode(FwdUniquePtr<IrNode> node);
-            Definition* addToDefinitionPool(FwdUniquePtr<Definition> definition);
-            const Expression* addToExpressionPool(FwdUniquePtr<const Expression> expression);
-            const Statement* addToStatementPool(FwdUniquePtr<const Statement> statement);
             Definition* createAnonymousLabelDefinition();
-
-            template <typename... Args>
-            IrNode* createIrNode(Args&&... args) {
-                return addIrNode(makeFwdUnique<IrNode>(std::forward<Args>(args)...));
-            }
 
             void raiseUnresolvedIdentifierError(const std::vector<StringView>& pieces, std::size_t pieceIndex, SourceLocation location);
             std::pair<Definition*, std::size_t> resolveIdentifier(const std::vector<StringView>& pieces, SourceLocation location);
@@ -181,7 +173,7 @@ namespace wiz {
 
             std::unordered_map<StringView, SymbolTable*> moduleScopes;
 
-            std::vector<std::unique_ptr<SymbolTable>> registeredScopes;
+            PtrPool<SymbolTable> registeredScopes;
             SymbolTable* currentScope = nullptr;
             std::vector<SymbolTable*> scopeStack;
 
@@ -190,7 +182,7 @@ namespace wiz {
             };
 
             InlineSite defaultInlineSite;
-            std::vector<std::unique_ptr<InlineSite>> registeredInlineSites;
+            PtrPool<InlineSite> registeredInlineSites;
             InlineSite* currentInlineSite = nullptr;
             std::vector<InlineSite*> inlineSiteStack;
 
@@ -231,10 +223,10 @@ namespace wiz {
             };
 
             struct CompiledAttributeList {
-                std::vector<std::unique_ptr<CompiledAttribute>> attributes;
+                PtrPool<CompiledAttribute> attributes;
             };
 
-            std::vector<std::unique_ptr<CompiledAttributeList>> attributeLists;
+            PtrPool<CompiledAttributeList> attributeLists;
             std::unordered_map<const Statement*, CompiledAttributeList*> statementAttributeLists;
             std::vector<CompiledAttributeList*> attributeListStack;
             std::vector<CompiledAttribute*> attributeStack;
@@ -243,7 +235,7 @@ namespace wiz {
 
             Bank* currentBank = nullptr;
             std::vector<Bank*> bankStack;
-            std::vector<std::unique_ptr<Bank>> registeredBanks;
+            PtrPool<Bank> registeredBanks;
 
             Definition* currentFunction = nullptr;
             Definition* breakLabel = nullptr;
@@ -252,10 +244,10 @@ namespace wiz {
 
             std::unordered_map<StringView, StringView> embedCache;
 
-            std::vector<FwdUniquePtr<Definition>> definitionPool;
-            std::vector<FwdUniquePtr<const Statement>> statementPool;
-            std::vector<FwdUniquePtr<const Expression>> expressionPool;
-            std::vector<FwdUniquePtr<IrNode>> irNodes;
+            FwdPtrPool<Definition> definitionPool;
+            FwdPtrPool<const Statement> statementPool;
+            FwdPtrPool<const Expression> expressionPool;
+            FwdPtrPool<IrNode> irNodes;
     };
 }
 

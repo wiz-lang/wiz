@@ -73,7 +73,7 @@ namespace wiz {
     NesFormat::NesFormat() {}
     NesFormat::~NesFormat() {}
 
-    bool NesFormat::generate(Report* report, StringView outputName, const Config& config, const std::vector<std::unique_ptr<Bank>>& banks, std::vector<std::uint8_t>& data) {
+    bool NesFormat::generate(Report* report, StringView outputName, const Config& config, ArrayView<UniquePtr<Bank>> banks, std::vector<std::uint8_t>& data) {
         static_cast<void>(outputName);
         
         // https://wiki.nesdev.com/w/index.php/INES

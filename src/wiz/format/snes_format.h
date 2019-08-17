@@ -10,7 +10,7 @@ namespace wiz {
             SnesFormat();
             ~SnesFormat() override;
 
-            bool generate(Report* report, StringView outputName, const Config& config, const std::vector<std::unique_ptr<Bank>>& banks, std::vector<std::uint8_t>& data) override;
+            bool generate(Report* report, StringView outputName, const Config& config, ArrayView<UniquePtr<Bank>> banks, std::vector<std::uint8_t>& data) override;
     };
 
     class SnesSmcFormat : public Format {
@@ -18,7 +18,7 @@ namespace wiz {
             SnesSmcFormat();
             ~SnesSmcFormat() override;
 
-            bool generate(Report* report, StringView outputName, const Config& config, const std::vector<std::unique_ptr<Bank>>& banks, std::vector<std::uint8_t>& data) override;
+            bool generate(Report* report, StringView outputName, const Config& config, ArrayView<UniquePtr<Bank>> banks, std::vector<std::uint8_t>& data) override;
     };
 }
 

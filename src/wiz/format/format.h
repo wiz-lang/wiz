@@ -7,6 +7,7 @@
 #include <wiz/compiler/bank.h>
 #include <wiz/utility/report.h>
 #include <wiz/utility/string_view.h>
+#include <wiz/utility/array_view.h>
 #include <wiz/utility/fwd_unique_ptr.h>
 
 namespace wiz {
@@ -16,7 +17,7 @@ namespace wiz {
         public:
             virtual ~Format() {};
 
-            virtual bool generate(Report* report, StringView outputName, const Config& configItems, const std::vector<std::unique_ptr<Bank>>& banks, std::vector<std::uint8_t>& data) = 0;
+            virtual bool generate(Report* report, StringView outputName, const Config& configItems, ArrayView<UniquePtr<Bank>> banks, std::vector<std::uint8_t>& data) = 0;
     };
 
     class FormatCollection {

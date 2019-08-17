@@ -33,6 +33,10 @@ namespace wiz {
                 return length;
             }
 
+            WIZ_FORCE_INLINE std::size_t size() const {
+                return length;
+            }
+
             WIZ_FORCE_INLINE constexpr const char* begin() const {
                 return data;
             }
