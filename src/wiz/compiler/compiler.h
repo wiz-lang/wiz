@@ -57,6 +57,7 @@ namespace wiz {
             Report* getReport() const;
             const Statement* getProgram() const;
             ArrayView<UniquePtr<Bank>> getRegisteredBanks() const;
+            ArrayView<UniquePtr<SymbolTable>> getRegisteredScopes() const;
             const Builtins& getBuiltins() const;
             std::uint32_t getModeFlags() const;
 

@@ -21,13 +21,10 @@ namespace wiz {
         }
 
         for (std::size_t i = 0; i != banks.size(); ++i) {
-            const auto& bank = banks[i];
-            
-            if (trimmedBankIndex == i) {
-                bank->exportTrimmedRom(data);
-            } else {
-                bank->exportRom(data);
-            }
+            const auto& bank = banks[i];            
+            const auto bankData = trimmedBankIndex == i ? bank->getUsedData() : bank->getData();
+            data.reserve(data.size() + bankData.size());
+            data.insert(data.end(), bankData.begin(), bankData.end());
         }
 
         return true;

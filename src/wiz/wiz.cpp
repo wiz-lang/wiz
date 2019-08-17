@@ -9,6 +9,8 @@
 #include <wiz/compiler/config.h>
 #include <wiz/compiler/version.h>
 #include <wiz/compiler/compiler.h>
+#include <wiz/compiler/definition.h>
+#include <wiz/compiler/symbol_table.h>
 #include <wiz/format/format.h>
 #include <wiz/platform/platform.h>
 #include <wiz/utility/tty.h>
@@ -296,6 +298,49 @@ namespace wiz {
                     }
                 }
 
+#if 0
+                {
+                    const auto scopes = compiler.getRegisteredScopes();
+                    for (const auto& scope : scopes) {
+                        for (const auto& definitionPair : scope->getDefinitions()) {
+                            const auto& definition = definitionPair.second;
+                            const auto& variant = definition->variant;
+
+                            switch (variant.index()) {
+                                case Definition::VariantType::typeIndexOf<Definition::Var>(): {
+                                    const auto& varDef = variant.get<Definition::Var>();
+                                    if (const auto address = varDef.address.tryGet()) {
+                                        if (const auto absolutePosition = address->absolutePosition.tryGet()) {
+                                            report->log("var " + definition->name.toString()
+                                                + " @ " + Int128(*absolutePosition).toString(16)
+                                                + (address->bank != nullptr
+                                                    ? " (in bank " + address->bank->getName().toString() + ")"
+                                                    : ""));
+                                        }
+                                    }
+                                    break;
+                                }
+                                case Definition::VariantType::typeIndexOf<Definition::Func>(): {
+                                    const auto& funcDef = variant.get<Definition::Func>();
+                                    if (const auto address = funcDef.address.tryGet()) {
+                                        if (const auto absolutePosition = address->absolutePosition.tryGet()) {
+                                            report->log("func "
+                                                + definition->name.toString()
+                                                + " @ " + Int128(*absolutePosition).toString(16)
+                                                + (address->bank != nullptr
+                                                    ? " (in bank " + address->bank->getName().toString() + ")"
+                                                    : "")
+                                            );
+                                        }
+                                    }
+                                    break;
+                                }
+                                default: break;
+                            }
+                        }
+                    }
+                }
+#endif
                 report->notice("Done.");
                 return 0;
             }

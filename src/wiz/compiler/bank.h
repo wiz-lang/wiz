@@ -10,6 +10,7 @@
 
 #include <wiz/compiler/address.h>
 #include <wiz/utility/optional.h>
+#include <wiz/utility/array_view.h>
 #include <wiz/utility/string_view.h>
 #include <wiz/utility/source_location.h>
 
@@ -67,6 +68,8 @@ namespace wiz {
             std::size_t getCapacity() const;
             Address getAddress() const;
             std::size_t getRelativePosition() const;
+            ArrayView<std::uint8_t> getData() const;
+            ArrayView<std::uint8_t> getUsedData() const;
             void setRelativePosition(std::size_t dest);
 
             void rewind();
@@ -74,9 +77,8 @@ namespace wiz {
             bool reserveRom(Report* report, StringView description, const void* node, SourceLocation location, std::size_t size);
             bool write(Report* report, StringView description, const void* node, SourceLocation location, const std::vector<std::uint8_t>& values);
             bool absoluteSeek(Report* report, std::size_t dest, const SourceLocation& location);
-            void exportRom(std::vector<std::uint8_t>& outputData) const;
+
             std::size_t calculateUsedSize() const;
-            void exportTrimmedRom(std::vector<std::uint8_t>& outputData) const;
 
         private:
             std::string getAddressDescription(std::size_t offset);

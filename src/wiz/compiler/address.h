@@ -6,43 +6,28 @@
 #include <wiz/utility/optional.h>
 
 namespace wiz {
+    class Bank;
+
     struct Address {
-        Address()
-        : relativePosition(),
-        absolutePosition() {}
+        Address() = default;
+        Address(const Address& other) = default;
 
         Address(
             Optional<std::size_t> relativePosition,
-            Optional<std::size_t> absolutePosition)
+            Optional<std::size_t> absolutePosition,
+            const Bank* bank)
         : relativePosition(relativePosition),
-        absolutePosition(absolutePosition) {}
+        absolutePosition(absolutePosition),
+        bank(bank) {}
 
-        Address(const Address& other)
-        : relativePosition(other.relativePosition),
-        absolutePosition(other.absolutePosition) {}
-
-        Address& operator =(const Address& other) {
-            if (this != &other) {                
-                relativePosition = other.relativePosition;
-                absolutePosition = other.absolutePosition;
-            }
-            return *this;
-        }
+        Address& operator =(const Address& other) = default;
 
         bool operator ==(const Address& other) const {
-            if (relativePosition.hasValue() != other.relativePosition.hasValue()) {
-                return false;
-            }
-            if (relativePosition.hasValue() && relativePosition.get() != other.relativePosition.get()) {
-                return false;
-            }
-            if (absolutePosition.hasValue() != other.absolutePosition.hasValue()) {
-                return false;
-            }
-            if (absolutePosition.hasValue() && absolutePosition.get() != other.absolutePosition.get()) {
-                return false;
-            }
-            return true;
+            return relativePosition.hasValue() == other.relativePosition.hasValue()
+            && (!relativePosition.hasValue() || relativePosition.get() == other.relativePosition.get())
+            && absolutePosition.hasValue() == other.absolutePosition.hasValue()
+            && (!absolutePosition.hasValue() || absolutePosition.get() == other.absolutePosition.get())
+            && bank == other.bank;
         }
 
         bool operator !=(const Address& other) const {
@@ -51,6 +36,7 @@ namespace wiz {
 
         Optional<std::size_t> relativePosition;
         Optional<std::size_t> absolutePosition;
+        const Bank* bank = nullptr;
     };
 }
 

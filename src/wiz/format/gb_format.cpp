@@ -60,7 +60,9 @@ namespace wiz {
         // http://problemkaputt.de/pandocs.htm#thecartridgeheader
 
         for (const auto& bank : banks) {
-            bank->exportRom(data);
+            const auto bankData = bank->getData();
+            data.reserve(data.size() + bankData.size());
+            data.insert(data.end(), bankData.begin(), bankData.end());
         }
 
         if (data.size() < RomBankSize) {

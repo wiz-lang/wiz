@@ -86,7 +86,9 @@ namespace wiz {
         // https://en.wikibooks.org/wiki/Super_NES_Programming/SNES_memory_map#The_SNES_header
 
         for (const auto& bank : banks) {
-            bank->exportRom(data);
+            const auto bankData = bank->getData();
+            data.reserve(data.size() + bankData.size());
+            data.insert(data.end(), bankData.begin(), bankData.end());
         }
         
         std::uint8_t mapModeSetting = 0x20;

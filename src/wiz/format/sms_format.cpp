@@ -19,7 +19,9 @@ namespace wiz {
         // http://www.smspower.org/Development/ROMHeader
 
         for (const auto& bank : banks) {
-            bank->exportRom(data);
+            const auto bankData = bank->getData();
+            data.reserve(data.size() + bankData.size());
+            data.insert(data.end(), bankData.begin(), bankData.end());
         }
 
         std::size_t headerAddress = 0x1FF0;

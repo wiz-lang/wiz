@@ -48,10 +48,6 @@ namespace wiz {
         }
     }
 
-    std::unordered_map<StringView, FwdUniquePtr<Definition>>& SymbolTable::getDefinitions() {
-        return definitions;
-    }
-
     const std::unordered_map<StringView, FwdUniquePtr<Definition>>& SymbolTable::getDefinitions() const {
         return definitions;
     }

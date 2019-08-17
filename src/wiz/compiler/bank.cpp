@@ -64,7 +64,8 @@ namespace wiz {
     Address Bank::getAddress() const {
         return Address(
             relativePosition,
-            origin.hasValue() ? origin.get() + relativePosition : Optional<std::size_t>()
+            origin.hasValue() ? origin.get() + relativePosition : Optional<std::size_t>(),
+            this
         );
     }
 
@@ -76,6 +77,13 @@ namespace wiz {
         relativePosition = dest;
     }
 
+    ArrayView<std::uint8_t> Bank::getData() const {
+        return ArrayView<std::uint8_t>(data);
+    }
+
+    ArrayView<std::uint8_t> Bank::getUsedData() const {
+        return ArrayView<std::uint8_t>(data.data(), calculateUsedSize());
+    }
 
     void Bank::rewind() {
         relativePosition = 0;
@@ -164,14 +172,6 @@ namespace wiz {
         }
     }
 
-    void Bank::exportRom(std::vector<std::uint8_t>& outputData) const {
-        if (!isBankKindStored(kind)) {
-            return;
-        }
-
-        outputData.insert(outputData.end(), data.begin(), data.end());
-    }
-
     std::size_t Bank::calculateUsedSize() const {
         for (std::size_t i = ownership.size() - 1; i < ownership.size(); --i) {
             if (ownership[i] != 0) {
@@ -179,14 +179,6 @@ namespace wiz {
             }
         }
         return 0;
-    }
-
-    void Bank::exportTrimmedRom(std::vector<std::uint8_t>& outputData) const {
-        if (!isBankKindStored(kind)) {
-            return;
-        }
-
-        outputData.insert(outputData.end(), data.begin(), data.begin() + calculateUsedSize());
     }
 
     std::string Bank::getAddressDescription(std::size_t offset) {

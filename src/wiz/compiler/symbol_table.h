@@ -1,11 +1,11 @@
 #ifndef WIZ_COMPILER_SYMBOL_TABLE_H
 #define WIZ_COMPILER_SYMBOL_TABLE_H
 
-#include <string>
-#include <unordered_map>
-#include <vector>
 #include <set>
 #include <memory>
+#include <string>
+#include <vector>
+#include <unordered_map>
 
 #include <wiz/utility/fwd_unique_ptr.h>
 
@@ -25,7 +25,6 @@ namespace wiz {
             std::string getFullName() const;
             void printKeys(Report* report) const;
 
-            std::unordered_map<StringView, FwdUniquePtr<Definition>>& getDefinitions();
             const std::unordered_map<StringView, FwdUniquePtr<Definition>>& getDefinitions() const;
 
             Definition* addDefinition(Report* report, FwdUniquePtr<Definition> def);

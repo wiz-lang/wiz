@@ -65,6 +65,10 @@ namespace wiz {
         return registeredBanks.view();
     }
 
+    ArrayView<UniquePtr<SymbolTable>> Compiler::getRegisteredScopes() const {
+        return registeredScopes.view();
+    }
+
     const Builtins& Compiler::getBuiltins() const {
         return builtins;
     }
@@ -4300,7 +4304,7 @@ namespace wiz {
                 if (varDefinition.modifiers.contains<Modifier::Extern>() || varDefinition.enclosingFunction != nullptr || currentBank == nullptr || !isBankKindStored(currentBank->getKind())) {
                     // Variable definitions with explicit addresses can be placed at any absolute address.
                     // (They don't have relative addresses because of the explcit address can be outside of the current bank.)
-                    varDefinition.address = Address(Optional<std::size_t>(), resolveExplicitAddressExpression(varDefinition.addressExpression));
+                    varDefinition.address = Address(Optional<std::size_t>(), resolveExplicitAddressExpression(varDefinition.addressExpression), nullptr);
                 }
             } else {
                 if (varDefinition.modifiers.contains<Modifier::Extern>()) {

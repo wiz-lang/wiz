@@ -83,7 +83,9 @@ namespace wiz {
 
         for (const auto& bank : banks) {
             if (isBankKindStored(bank->getKind()) && bank->getKind() != BankKind::CharacterRom) {
-                bank->exportRom(data);
+                const auto bankData = bank->getData();
+                data.reserve(data.size() + bankData.size());
+                data.insert(data.end(), bankData.begin(), bankData.end());
             }
         }
 
@@ -97,7 +99,9 @@ namespace wiz {
 
         for (const auto& bank : banks) {
             if (isBankKindStored(bank->getKind()) && bank->getKind() == BankKind::CharacterRom) {
-                bank->exportRom(data);
+                const auto bankData = bank->getData();
+                data.reserve(data.size() + bankData.size());
+                data.insert(data.end(), bankData.begin(), bankData.end());
             }
         }
 
