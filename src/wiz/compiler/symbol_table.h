@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <set>
 #include <memory>
 
 #include <wiz/utility/fwd_unique_ptr.h>
@@ -26,6 +27,7 @@ namespace wiz {
 
             std::unordered_map<StringView, FwdUniquePtr<Definition>>& getDefinitions();
             const std::unordered_map<StringView, FwdUniquePtr<Definition>>& getDefinitions() const;
+
             Definition* addDefinition(Report* report, FwdUniquePtr<Definition> def);
 
             template <typename... Args>
@@ -37,9 +39,9 @@ namespace wiz {
             bool addImport(SymbolTable* scope);
             bool addRecursiveImport(SymbolTable* scope);
             Definition* findLocalMemberDefinition(StringView name) const;
-            std::vector<Definition*> findImportedMemberDefinitions(StringView name) const;
-            std::vector<Definition*> findMemberDefinitions(StringView name) const;
-            std::vector<Definition*> findUnqualifiedDefinitions(StringView name) const;
+            void findImportedMemberDefinitions(StringView name, std::set<Definition*>& results) const;
+            void findMemberDefinitions(StringView name, std::set<Definition*>& results) const;
+            void findUnqualifiedDefinitions(StringView name, std::set<Definition*>& results) const;
 
         private:
             SymbolTable* parent;

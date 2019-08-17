@@ -111,34 +111,30 @@ namespace wiz {
         return nullptr;
     }
 
-    std::vector<Definition*> SymbolTable::findImportedMemberDefinitions(StringView name) const {
-        std::vector<Definition*> results;
+    void SymbolTable::findImportedMemberDefinitions(StringView name, std::set<Definition*>& results) const {
         for (const auto import : imports) {
             if (const auto result = import->findLocalMemberDefinition(name)) {
                 if (std::find(results.begin(), results.end(), result) == results.end()) {
-                    results.push_back(result);
+                    results.insert(result);
                 }
             }
         }
-        return results;
     }
 
-    std::vector<Definition*> SymbolTable::findMemberDefinitions(StringView name) const {
-        auto results = findImportedMemberDefinitions(name);
+    void SymbolTable::findMemberDefinitions(StringView name, std::set<Definition*>& results) const {
+        findImportedMemberDefinitions(name, results);
         if (const auto result = findLocalMemberDefinition(name)) {
             if (std::find(results.begin(), results.end(), result) == results.end()) {
                 results.insert(results.begin(), result);
             }
         }
-        return results;
     }
 
-    std::vector<Definition*> SymbolTable::findUnqualifiedDefinitions(StringView name) const {
-        auto results = findMemberDefinitions(name);
+    void SymbolTable::findUnqualifiedDefinitions(StringView name, std::set<Definition*>& results) const {
+        findMemberDefinitions(name, results);
         if (results.size() == 0 && parent != nullptr) {
-            return parent->findUnqualifiedDefinitions(name);
+            parent->findUnqualifiedDefinitions(name, results);
         }
-        return results;
     }
 }
 

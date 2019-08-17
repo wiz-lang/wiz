@@ -1,6 +1,7 @@
 #ifndef WIZ_COMPILER_COMPILER_H
 #define WIZ_COMPILER_COMPILER_H
 
+#include <set>
 #include <memory>
 #include <string>
 #include <vector>
@@ -176,6 +177,13 @@ namespace wiz {
             PtrPool<SymbolTable> registeredScopes;
             SymbolTable* currentScope = nullptr;
             std::vector<SymbolTable*> scopeStack;
+
+            struct ResolveIdentifierState {
+                std::set<Definition*> previousResults;
+                std::set<Definition*> results;
+            } resolveIdentifierTempState;
+
+            std::set<Definition*> tempImportedDefinitions;
 
             struct InlineSite {
                 std::unordered_map<const Statement*, SymbolTable*> statementScopes;

@@ -174,46 +174,40 @@ namespace wiz {
     }
     
     std::pair<Definition*, std::size_t> Compiler::resolveIdentifier(const std::vector<StringView>& pieces, SourceLocation location) {
-        std::vector<Definition*> searchSet;
-        std::vector<Definition*> results;
-
         if (pieces.empty()) {
             raiseUnresolvedIdentifierError(pieces, 0, location);
             return {nullptr, 0};
         }
 
+        auto& previousResults = resolveIdentifierTempState.previousResults;
+        auto& results = resolveIdentifierTempState.results;
+        previousResults.clear();
+        results.clear();
+
         std::size_t pieceIndex;
         for (pieceIndex = 0; pieceIndex != pieces.size(); ++pieceIndex) {
             const auto piece = pieces[pieceIndex];
 
-            if (searchSet.empty()) {
-                results = currentScope->findUnqualifiedDefinitions(piece);
+            if (previousResults.empty()) {
+                currentScope->findUnqualifiedDefinitions(piece, results);
             } else {
-                for (const auto definition : searchSet) {
+                for (const auto definition : previousResults) {
                     if (const auto ns = definition->variant.tryGet<Definition::Namespace>()) {
-                        const auto memberResults = ns->environment->findMemberDefinitions(piece);
-
-                        for (const auto memberResult : memberResults) {
-                            if (std::find(results.begin(), results.end(), memberResult) == results.end()) {
-                                results.push_back(memberResult);
-                            }
-                        }
+                        ns->environment->findMemberDefinitions(piece, results);
                     }
                 }
             }
 
-            if (results.size() != 0) {
-                bool ambiguous = false;
+            if (results.size() == 0) {
+                break;
+            }
 
-                if (pieceIndex == pieces.size() - 1 || !results[0]->variant.is<Definition::Namespace>()) {
-                    if (results.size() == 1) {
-                        return {results[0], pieceIndex};
-                    } else {
-                        ambiguous = true;
-                    }
-                }
+            const auto firstMatch = *results.begin();
 
-                if (ambiguous) {
+            if (pieceIndex == pieces.size() - 1 || !firstMatch->variant.is<Definition::Namespace>()) {
+                if (results.size() == 1) {
+                    return {firstMatch, pieceIndex};
+                } else {
                     const auto partiallyQualifiedName = text::join(pieces.begin(), pieces.begin() + pieceIndex + 1, ".");
 
                     report->error(
@@ -225,21 +219,17 @@ namespace wiz {
                         location,
                         ReportErrorFlags { ReportErrorFlagType::Continued });
 
-                    std::size_t i = 0;
                     for (const auto result : results) {
                         report->error("`" + partiallyQualifiedName + "` is defined here, by " + result->declaration->getDescription().toString(), result->declaration->location, ReportErrorFlags { ReportErrorFlagType::Continued });
-                        ++i;
                     }
 
                     report->error("identifier must be manually disambiguated\n", location);
                     return {nullptr, pieceIndex};
                 }
-            } else {
-                raiseUnresolvedIdentifierError(pieces, pieceIndex, location);
-                return {nullptr, pieceIndex};
             }
 
-            searchSet = std::move(results);
+            previousResults.swap(results);
+            results.clear();
         }
 
         raiseUnresolvedIdentifierError(pieces, pieceIndex, location);
@@ -3842,8 +3832,9 @@ namespace wiz {
                     scope = getOrCreateStatementScope(namespaceDeclaration.name, statement, currentScope);
                     currentScope->createDefinition(report, Definition::Namespace(scope), namespaceDeclaration.name, statement);
 
-                    const auto importedDefinitions = currentScope->findImportedMemberDefinitions(namespaceDeclaration.name);
-                    for (const auto importedDefinition : importedDefinitions) {
+                    tempImportedDefinitions.clear();
+                    currentScope->findImportedMemberDefinitions(namespaceDeclaration.name, tempImportedDefinitions);
+                    for (const auto importedDefinition : tempImportedDefinitions) {
                         if (const auto ns = importedDefinition->variant.tryGet<Definition::Namespace>()) {
                             scope->addRecursiveImport(ns->environment);
                         }
