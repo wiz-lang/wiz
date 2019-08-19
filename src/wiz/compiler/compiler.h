@@ -56,8 +56,8 @@ namespace wiz {
 
             Report* getReport() const;
             const Statement* getProgram() const;
-            ArrayView<UniquePtr<Bank>> getRegisteredBanks() const;
-            ArrayView<UniquePtr<SymbolTable>> getRegisteredScopes() const;
+            std::vector<const Bank*> getRegisteredBanks() const;
+            std::vector<const Definition*> getRegisteredDefinitions() const;
             const Builtins& getBuiltins() const;
             std::uint32_t getModeFlags() const;
 
@@ -81,7 +81,7 @@ namespace wiz {
             bool enterLetExpression(StringView name, SourceLocation location);
             void exitLetExpression();
 
-            Definition* createAnonymousLabelDefinition();
+            Definition* createAnonymousLabelDefinition(StringView label);
 
             void raiseUnresolvedIdentifierError(const std::vector<StringView>& pieces, std::size_t pieceIndex, SourceLocation location);
             std::pair<Definition*, std::size_t> resolveIdentifier(const std::vector<StringView>& pieces, SourceLocation location);
@@ -257,6 +257,7 @@ namespace wiz {
             FwdPtrPool<const Statement> statementPool;
             FwdPtrPool<const Expression> expressionPool;
             FwdPtrPool<IrNode> irNodes;
+            std::unordered_map<StringView, std::size_t> labelSuffixes;
     };
 }
 

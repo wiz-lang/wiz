@@ -18,7 +18,8 @@ namespace wiz {
             ArrayView(std::add_pointer_t<const T> data, std::size_t length)
             : data(data), length(length) {}
 
-            ArrayView(const std::vector<T>& other)
+            template <typename Container>
+            ArrayView(const Container& other)
             : data(other.data()), length(other.size()) {}
 
             WIZ_FORCE_INLINE std::add_pointer_t<const T> getData() const {

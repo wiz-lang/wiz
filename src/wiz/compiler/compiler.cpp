@@ -61,12 +61,29 @@ namespace wiz {
         return program.get();
     }
 
-    ArrayView<UniquePtr<Bank>> Compiler::getRegisteredBanks() const {
-        return registeredBanks.view();
+    std::vector<const Bank*> Compiler::getRegisteredBanks() const {
+        std::vector<const Bank*> results;
+        results.reserve(registeredBanks.size());
+
+        for (const auto& bank : registeredBanks) {
+            results.push_back(bank.get());
+        }
+        return results;
     }
 
-    ArrayView<UniquePtr<SymbolTable>> Compiler::getRegisteredScopes() const {
-        return registeredScopes.view();
+    std::vector<const Definition*> Compiler::getRegisteredDefinitions() const {
+        std::vector<const Definition*> results;
+
+        results.reserve(definitionPool.size());
+        for (const auto& definition : definitionPool) {
+            results.push_back(definition.get());
+        }
+
+        for (const auto& scope : registeredScopes) {
+            scope->getDefinitions(results);
+        }
+
+        return results;
     }
 
     const Builtins& Compiler::getBuiltins() const {
@@ -160,8 +177,9 @@ namespace wiz {
         letExpressionStack.pop_back();    
     }
 
-    Definition* Compiler::createAnonymousLabelDefinition() {
-        const auto labelId = stringPool->intern("$label" + std::to_string(definitionPool.size()));
+    Definition* Compiler::createAnonymousLabelDefinition(StringView prefix) {
+        const auto suffix = ++labelSuffixes[prefix];
+        const auto labelId = stringPool->intern(prefix.toString() + std::to_string(suffix));
         const auto result = definitionPool.addNew(Definition::Func(true, false, false, BranchKind::None, builtins.getUnitTuple(), currentScope, nullptr), labelId, nullptr);
         auto& func = result->variant.get<Definition::Func>();
         func.resolvedSignatureType = makeFwdUnique<const TypeExpression>(TypeExpression::Function(false, {}, func.returnTypeExpression->clone()), func.returnTypeExpression->location);
@@ -5483,7 +5501,7 @@ namespace wiz {
                         const auto oldFunction = currentFunction;
                         currentFunction = nullptr;
 
-                        const auto failureLabelDefinition = createAnonymousLabelDefinition();
+                        const auto failureLabelDefinition = createAnonymousLabelDefinition("$skip"_sv);
                         const auto failureReferenceExpression = expressionPool.add(resolveDefinitionExpression(failureLabelDefinition, {}, location));
 
                         bool result = emitBranchIr(distanceHint, BranchKind::Goto, failureReferenceExpression, nullptr, !negated, condition, condition->location)
@@ -5601,7 +5619,7 @@ namespace wiz {
                             return false;
                         }
 
-                        const auto failureLabelDefinition = createAnonymousLabelDefinition();
+                        const auto failureLabelDefinition = createAnonymousLabelDefinition("$skip"_sv);
                         const auto failureReferenceExpression = expressionPool.add(resolveDefinitionExpression(failureLabelDefinition, {}, location));
 
                         for (const auto& branch : testAndBranch->branches) {
@@ -5620,7 +5638,7 @@ namespace wiz {
                 switch (op) {
                     case BinaryOperatorKind::LogicalAnd: {
                         if (!negated) {
-                            const auto failureLabelDefinition = createAnonymousLabelDefinition();                        
+                            const auto failureLabelDefinition = createAnonymousLabelDefinition("$skip"_sv);
                             const auto failureLabelReferenceExpression = expressionPool.add(resolveDefinitionExpression(failureLabelDefinition, {}, condition->location));
 
                             if (!emitBranchIr(distanceHint, kind, failureLabelReferenceExpression, returnValue, !negated, binaryOperator->left.get(), condition->location)
@@ -5640,7 +5658,7 @@ namespace wiz {
                             return emitBranchIr(distanceHint, kind, destination, returnValue, negated, binaryOperator->left.get(), condition->location)
                             && emitBranchIr(distanceHint, kind, destination, returnValue, negated, binaryOperator->right.get(), condition->location);
                         } else {
-                            const auto failureLabelDefinition = createAnonymousLabelDefinition();                        
+                            const auto failureLabelDefinition = createAnonymousLabelDefinition("$skip"_sv);                        
                             const auto failureLabelReferenceExpression = expressionPool.add(resolveDefinitionExpression(failureLabelDefinition, {}, condition->location));
 
                             if (!emitBranchIr(distanceHint, kind, failureLabelReferenceExpression, returnValue, !negated, binaryOperator->left.get(), condition->location)
@@ -5775,7 +5793,7 @@ namespace wiz {
 
         returnLabel = nullptr;
         if (returnKind == BranchKind::None) {
-            returnLabel = createAnonymousLabelDefinition();
+            returnLabel = createAnonymousLabelDefinition("$ret"_sv);
         }
 
         if (!funcDefinition.inlined) {
@@ -5859,9 +5877,9 @@ namespace wiz {
                     break;
                 }
 
-                const auto beginLabelDefinition = createAnonymousLabelDefinition();                
+                const auto beginLabelDefinition = createAnonymousLabelDefinition("$loop"_sv);                
                 const auto beginLabelReferenceExpression = expressionPool.add(resolveDefinitionExpression(beginLabelDefinition, {}, statement->location));
-                const auto endLabelDefinition = createAnonymousLabelDefinition();
+                const auto endLabelDefinition = createAnonymousLabelDefinition("$endloop"_sv);
 
                 continueLabel = beginLabelDefinition;
                 breakLabel = endLabelDefinition;
@@ -5955,9 +5973,9 @@ namespace wiz {
                     break;
                 }
                 
-                const auto beginLabelDefinition = createAnonymousLabelDefinition();
+                const auto beginLabelDefinition = createAnonymousLabelDefinition("$loop"_sv);
                 const auto beginLabelReferenceExpression = expressionPool.add(resolveDefinitionExpression(beginLabelDefinition, {}, statement->location));
-                const auto endLabelDefinition = createAnonymousLabelDefinition();
+                const auto endLabelDefinition = createAnonymousLabelDefinition("$endloop"_sv);
 
                 continueLabel = beginLabelDefinition;
                 breakLabel = endLabelDefinition;
@@ -6086,9 +6104,9 @@ namespace wiz {
                     break;
                 }
 
-                const auto endLabelDefinition = createAnonymousLabelDefinition();
+                const auto endLabelDefinition = createAnonymousLabelDefinition("$endif"_sv);
                 const auto endLabelReferenceExpression = expressionPool.add(resolveDefinitionExpression(endLabelDefinition, {}, statement->location));
-                const auto elseLabelDefinition = createAnonymousLabelDefinition();
+                const auto elseLabelDefinition = createAnonymousLabelDefinition("$else"_sv);
                 const auto elseLabelReferenceExpression = expressionPool.add(resolveDefinitionExpression(elseLabelDefinition, {}, statement->location));
 
                 if (!emitBranchIr(ifStatement.distanceHint, BranchKind::Goto, elseLabelReferenceExpression, nullptr, true, reducedCondition, statement->location)) {
@@ -6152,8 +6170,8 @@ namespace wiz {
 
                 enterScope(getOrCreateStatementScope(StringView(), statement, currentScope));
                 
-                const auto beginLabelDefinition = createAnonymousLabelDefinition();
-                const auto endLabelDefinition = createAnonymousLabelDefinition();
+                const auto beginLabelDefinition = createAnonymousLabelDefinition("$loop"_sv);
+                const auto endLabelDefinition = createAnonymousLabelDefinition("$endloop"_sv);
 
                 continueLabel = beginLabelDefinition;
                 breakLabel = endLabelDefinition;
@@ -6291,9 +6309,9 @@ namespace wiz {
                     break;
                 }
 
-                const auto beginLabelDefinition = createAnonymousLabelDefinition();                
+                const auto beginLabelDefinition = createAnonymousLabelDefinition("$loop"_sv);
                 const auto beginLabelReferenceExpression = expressionPool.add(resolveDefinitionExpression(beginLabelDefinition, {}, statement->location));
-                const auto endLabelDefinition = createAnonymousLabelDefinition();                
+                const auto endLabelDefinition = createAnonymousLabelDefinition("$endloop"_sv);
                 const auto endLabelReferenceExpression = expressionPool.add(resolveDefinitionExpression(endLabelDefinition, {}, statement->location));
 
                 continueLabel = beginLabelDefinition;

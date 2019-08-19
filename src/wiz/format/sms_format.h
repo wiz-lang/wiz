@@ -15,7 +15,7 @@ namespace wiz {
             SmsFormat(SystemType systemType);
             ~SmsFormat() override;
 
-            bool generate(Report* report, StringView outputName, const Config& config, ArrayView<UniquePtr<Bank>> banks, std::vector<std::uint8_t>& data) override;
+            bool generate(Report* report, StringView outputName, const Config& config, ArrayView<const Bank*> banks, FormatOutput& output) override;
         private:
             SystemType systemType;
     };

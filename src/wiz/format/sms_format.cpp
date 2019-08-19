@@ -13,13 +13,17 @@ namespace wiz {
 
     SmsFormat::~SmsFormat() {}
 
-    bool SmsFormat::generate(Report* report, StringView outputName, const Config& config, ArrayView<UniquePtr<Bank>> banks, std::vector<std::uint8_t>& data) {
+    bool SmsFormat::generate(Report* report, StringView outputName, const Config& config, ArrayView<const Bank*> banks, FormatOutput& output) {
         static_cast<void>(outputName);
         
         // http://www.smspower.org/Development/ROMHeader
 
+        auto& data = output.data;
+
         for (const auto& bank : banks) {
             const auto bankData = bank->getData();
+
+            output.bankOffsets[bank] = data.size();
             data.reserve(data.size() + bankData.size());
             data.insert(data.end(), bankData.begin(), bankData.end());
         }

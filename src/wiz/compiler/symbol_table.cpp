@@ -42,14 +42,24 @@ namespace wiz {
     }
 
     void SymbolTable::printKeys(Report* report) const {
-        for (const auto& item : definitions) {
+        for (const auto& item : namesToDefinitions) {
             const auto& decl = item.second->declaration;
             report->log(item.first.toString() + ": " + decl->getDescription().toString() + " (declared: " + decl->location.toString() + ")");
         }
     }
 
-    const std::unordered_map<StringView, FwdUniquePtr<Definition>>& SymbolTable::getDefinitions() const {
-        return definitions;
+    void SymbolTable::getDefinitions(std::vector<Definition*>& results) const {
+        results.reserve(results.size() + namesToDefinitions.size());
+        for (const auto& it : namesToDefinitions) {
+            results.push_back(it.second.get());
+        }
+    }
+
+    void SymbolTable::getDefinitions(std::vector<const Definition*>& results) const {
+        results.reserve(results.size() + namesToDefinitions.size());
+        for (const auto& it : namesToDefinitions) {
+            results.push_back(it.second.get());
+        }
     }
 
     Definition* SymbolTable::addDefinition(Report* report, FwdUniquePtr<Definition> def) {
@@ -64,7 +74,7 @@ namespace wiz {
             def->parentScope = this;
 
             auto result = def.get();
-            definitions[def->name] = std::move(def);
+            namesToDefinitions[def->name] = std::move(def);
             return result;
         }
     }
@@ -82,7 +92,7 @@ namespace wiz {
 
     bool SymbolTable::addRecursiveImport(SymbolTable* import) {
         if (addImport(import)) {
-            for (const auto& it : definitions) {
+            for (const auto& it : namesToDefinitions) {
                 const auto name = it.first;
                 const auto& def = it.second;
                 if (auto ns = def->variant.tryGet<Definition::Namespace>()) {
@@ -100,8 +110,8 @@ namespace wiz {
     }
 
     Definition* SymbolTable::findLocalMemberDefinition(StringView name) const {
-        const auto match = definitions.find(name);
-        if (match != definitions.end()) {
+        const auto match = namesToDefinitions.find(name);
+        if (match != namesToDefinitions.end()) {
             return match->second.get();
         }
         return nullptr;

@@ -78,15 +78,19 @@ namespace wiz {
     SnesFormat::SnesFormat() {}
     SnesFormat::~SnesFormat() {}
 
-    bool SnesFormat::generate(Report* report, StringView outputName, const Config& config, ArrayView<UniquePtr<Bank>> banks, std::vector<std::uint8_t>& data) {
+    bool SnesFormat::generate(Report* report, StringView outputName, const Config& config, ArrayView<const Bank*> banks, FormatOutput& output) {
         static_cast<void>(outputName);
 
         // http://old.smwiki.net/wiki/Internal_ROM_Header
         // https://github.com/gilligan/snesdev/blob/master/docs/fullsnes.txt
         // https://en.wikibooks.org/wiki/Super_NES_Programming/SNES_memory_map#The_SNES_header
 
+        auto& data = output.data;
+
         for (const auto& bank : banks) {
             const auto bankData = bank->getData();
+
+            output.bankOffsets[bank] = data.size();
             data.reserve(data.size() + bankData.size());
             data.insert(data.end(), bankData.begin(), bankData.end());
         }
@@ -266,13 +270,15 @@ namespace wiz {
     SnesSmcFormat::SnesSmcFormat() {}
     SnesSmcFormat::~SnesSmcFormat() {}
 
-    bool SnesSmcFormat::generate(Report* report, StringView outputName, const Config& config, ArrayView<UniquePtr<Bank>> banks, std::vector<std::uint8_t>& data) {
+    bool SnesSmcFormat::generate(Report* report, StringView outputName, const Config& config, ArrayView<const Bank*> banks, FormatOutput& output) {
         // https://en.wikibooks.org/wiki/Super_NES_Programming/SNES_memory_map#The_SNES_header       
 
         SnesFormat snesFormat;
-        if (!snesFormat.generate(report, outputName, config, banks, data)) {
+        if (!snesFormat.generate(report, outputName, config, banks, output)) {
             return false;
         }
+
+        auto& data = output.data;
 
         std::size_t romSize = data.size();
         std::size_t smcRomBlockCount = romSize / SmcRomBlockSize;

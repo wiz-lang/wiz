@@ -29,6 +29,39 @@
 #include <wiz/utility/resource_manager.h>
 
 namespace wiz {
+#if 0
+    void dumpAddress(Report* report, const Definition* definition, FormatOutput& output) {
+        const auto& variant = definition->variant;
+
+        Optional<Address> address;
+
+        switch (variant.index()) {
+            case Definition::VariantType::typeIndexOf<Definition::Var>(): {
+                address = variant.get<Definition::Var>().address;
+                break;
+            }
+            case Definition::VariantType::typeIndexOf<Definition::Func>(): {
+                address = variant.get<Definition::Func>().address;
+                break;
+            }
+            default: break;
+        }
+
+        if (address.hasValue()) {
+            if (address->relativePosition.hasValue() && address->absolutePosition.hasValue()) {
+                const auto offset = address->relativePosition.get() + output.bankOffsets[address->bank];
+
+                report->log("var " + definition->name.toString()
+                    + " @ " + Int128(address->absolutePosition.get()).toString(16)
+                    + (address->bank != nullptr
+                        ? " (in bank " + address->bank->getName().toString() + ")"
+                        : "")
+                    + " -> offset = " + Int128(offset).toString(16));
+            }
+        }
+    }
+#endif
+
     int run(Report* report, ResourceManager* resourceManager, ArrayView<const char*> arguments) {
         StringPool stringPool;
         PlatformCollection platformCollection;
@@ -262,13 +295,11 @@ namespace wiz {
             if (compiler.compile()) {
                 Format* format = nullptr;
 
-                {
-                    if (const auto formatValue = config.checkString(report, "format"_sv, false)) {
-                        format = formatCollection.find(formatValue->second);
-                        if (format == nullptr) {
-                            report->error("`format` of \"" + formatValue->second.toString() + "\" is not supported.", formatValue->first->location, ReportErrorFlags { ReportErrorFlagType::Fatal });
-                            return 1;
-                        }
+                if (const auto formatValue = config.checkString(report, "format"_sv, false)) {
+                    format = formatCollection.find(formatValue->second);
+                    if (format == nullptr) {
+                        report->error("`format` of \"" + formatValue->second.toString() + "\" is not supported.", formatValue->first->location, ReportErrorFlags { ReportErrorFlagType::Fatal });
+                        return 1;
                     }
                 }
 
@@ -280,65 +311,30 @@ namespace wiz {
                     }
                 }
 
-                {
-                    report->log(">> Writing ROM...");
-                    std::vector<std::uint8_t> outputData;
+                report->log(">> Writing ROM...");
 
-                    format->generate(report, outputName, config, compiler.getRegisteredBanks(), outputData);
-                    if (!report->validate()) {
-                        return 1;
-                    }
+                FormatOutput output;
 
-                    auto writer = resourceManager->openWriter(outputName);
-                    if (writer && writer->write(outputData)) {
-                        report->log(">> Wrote to \"" + outputName.toString() + "\".");
-                    } else {
-                        report->error("Output file \"" + outputName.toString() + "\" could not be written.", SourceLocation(), ReportErrorFlags { ReportErrorFlagType::Fatal });
-                        return 1;
-                    }
+                auto banks = compiler.getRegisteredBanks();
+
+                format->generate(report, outputName, config, banks, output);
+                if (!report->validate()) {
+                    return 1;
+                }
+
+                auto writer = resourceManager->openWriter(outputName);
+                if (writer && writer->write(output.data)) {
+                    report->log(">> Wrote to \"" + outputName.toString() + "\".");
+                } else {
+                    report->error("Output file \"" + outputName.toString() + "\" could not be written.", SourceLocation(), ReportErrorFlags { ReportErrorFlagType::Fatal });
+                    return 1;
                 }
 
 #if 0
-                {
-                    const auto scopes = compiler.getRegisteredScopes();
-                    for (const auto& scope : scopes) {
-                        for (const auto& definitionPair : scope->getDefinitions()) {
-                            const auto& definition = definitionPair.second;
-                            const auto& variant = definition->variant;
+                const auto definitions = compiler.getRegisteredDefinitions();
 
-                            switch (variant.index()) {
-                                case Definition::VariantType::typeIndexOf<Definition::Var>(): {
-                                    const auto& varDef = variant.get<Definition::Var>();
-                                    if (const auto address = varDef.address.tryGet()) {
-                                        if (const auto absolutePosition = address->absolutePosition.tryGet()) {
-                                            report->log("var " + definition->name.toString()
-                                                + " @ " + Int128(*absolutePosition).toString(16)
-                                                + (address->bank != nullptr
-                                                    ? " (in bank " + address->bank->getName().toString() + ")"
-                                                    : ""));
-                                        }
-                                    }
-                                    break;
-                                }
-                                case Definition::VariantType::typeIndexOf<Definition::Func>(): {
-                                    const auto& funcDef = variant.get<Definition::Func>();
-                                    if (const auto address = funcDef.address.tryGet()) {
-                                        if (const auto absolutePosition = address->absolutePosition.tryGet()) {
-                                            report->log("func "
-                                                + definition->name.toString()
-                                                + " @ " + Int128(*absolutePosition).toString(16)
-                                                + (address->bank != nullptr
-                                                    ? " (in bank " + address->bank->getName().toString() + ")"
-                                                    : "")
-                                            );
-                                        }
-                                    }
-                                    break;
-                                }
-                                default: break;
-                            }
-                        }
-                    }
+                for (const auto& definition : definitions) {
+                    dumpAddress(report, definition, output);
                 }
 #endif
                 report->notice("Done.");

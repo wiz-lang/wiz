@@ -73,17 +73,21 @@ namespace wiz {
     NesFormat::NesFormat() {}
     NesFormat::~NesFormat() {}
 
-    bool NesFormat::generate(Report* report, StringView outputName, const Config& config, ArrayView<UniquePtr<Bank>> banks, std::vector<std::uint8_t>& data) {
+    bool NesFormat::generate(Report* report, StringView outputName, const Config& config, ArrayView<const Bank*> banks, FormatOutput& output) {
         static_cast<void>(outputName);
         
         // https://wiki.nesdev.com/w/index.php/INES
         // https://wiki.nesdev.com/w/index.php/NES_2.0
+
+        auto& data = output.data;
 
         data.insert(data.end(), HeaderSize, 0);
 
         for (const auto& bank : banks) {
             if (isBankKindStored(bank->getKind()) && bank->getKind() != BankKind::CharacterRom) {
                 const auto bankData = bank->getData();
+
+                output.bankOffsets[bank] = data.size();
                 data.reserve(data.size() + bankData.size());
                 data.insert(data.end(), bankData.begin(), bankData.end());
             }
@@ -100,6 +104,8 @@ namespace wiz {
         for (const auto& bank : banks) {
             if (isBankKindStored(bank->getKind()) && bank->getKind() == BankKind::CharacterRom) {
                 const auto bankData = bank->getData();
+
+                output.bankOffsets[bank] = data.size();
                 data.reserve(data.size() + bankData.size());
                 data.insert(data.end(), bankData.begin(), bankData.end());
             }

@@ -25,7 +25,8 @@ namespace wiz {
             std::string getFullName() const;
             void printKeys(Report* report) const;
 
-            const std::unordered_map<StringView, FwdUniquePtr<Definition>>& getDefinitions() const;
+            void getDefinitions(std::vector<Definition*>& results) const;
+            void getDefinitions(std::vector<const Definition*>& results) const;
 
             Definition* addDefinition(Report* report, FwdUniquePtr<Definition> def);
 
@@ -46,7 +47,7 @@ namespace wiz {
             SymbolTable* parent;
             StringView namespaceName;
             std::vector<SymbolTable*> imports;
-            std::unordered_map<StringView, FwdUniquePtr<Definition>> definitions;
+            std::unordered_map<StringView, FwdUniquePtr<Definition>> namesToDefinitions;
     };
 }
 

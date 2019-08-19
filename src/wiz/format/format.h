@@ -13,11 +13,16 @@
 namespace wiz {
     class Config;
 
+    struct FormatOutput {
+        std::unordered_map<const Bank*, std::size_t> bankOffsets;
+        std::vector<std::uint8_t> data;
+    };
+
     class Format {
         public:
             virtual ~Format() {};
 
-            virtual bool generate(Report* report, StringView outputName, const Config& configItems, ArrayView<UniquePtr<Bank>> banks, std::vector<std::uint8_t>& data) = 0;
+            virtual bool generate(Report* report, StringView outputName, const Config& configItems, ArrayView<const Bank*> banks, FormatOutput& output) = 0;
     };
 
     class FormatCollection {
