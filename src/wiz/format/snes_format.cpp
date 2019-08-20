@@ -78,26 +78,26 @@ namespace wiz {
     SnesFormat::SnesFormat() {}
     SnesFormat::~SnesFormat() {}
 
-    bool SnesFormat::generate(Report* report, StringView outputName, const Config& config, ArrayView<const Bank*> banks, FormatOutput& output) {
-        static_cast<void>(outputName);
-
+    bool SnesFormat::generate(FormatContext& context) {
         // http://old.smwiki.net/wiki/Internal_ROM_Header
         // https://github.com/gilligan/snesdev/blob/master/docs/fullsnes.txt
         // https://en.wikibooks.org/wiki/Super_NES_Programming/SNES_memory_map#The_SNES_header
-
-        auto& data = output.data;
+        const auto report = context.report;
+        const auto config = context.config;
+        const auto& banks = context.banks;
+        auto& data = context.data;
 
         for (const auto& bank : banks) {
             const auto bankData = bank->getData();
 
-            output.bankOffsets[bank] = data.size();
+            context.bankOffsets[bank] = data.size();
             data.reserve(data.size() + bankData.size());
             data.insert(data.end(), bankData.begin(), bankData.end());
         }
         
         std::uint8_t mapModeSetting = 0x20;
         std::size_t headerAddress = 0x7F00;
-        if (const auto mapModeName = config.checkString(report, "map_mode"_sv, false)) {
+        if (const auto mapModeName = config->checkString(report, "map_mode"_sv, false)) {
             const auto match = mapModes.find(mapModeName->second);
             if (match != mapModes.end()) {
                 const auto& mapModeInfo = match->second;
@@ -107,7 +107,7 @@ namespace wiz {
                 report->error("`map_mode` of \"" + mapModeName->second.toString() + "\" is not supported", mapModeName->first->location);
             }
         }
-        if (const auto fastrom = config.checkBoolean(report, "fastrom"_sv, false)) {
+        if (const auto fastrom = config->checkBoolean(report, "fastrom"_sv, false)) {
             if (fastrom->second) {
                 mapModeSetting |= 0x10;
             }
@@ -125,13 +125,13 @@ namespace wiz {
         data[headerAddress + 0xDC] = 0xFF;
         data[headerAddress + 0xDD] = 0xFF;
 
-        if (const auto makerCode = config.checkFixedString(report, "maker_code"_sv, 2, false)) {
+        if (const auto makerCode = config->checkFixedString(report, "maker_code"_sv, 2, false)) {
             memcpy(&data[headerAddress + 0xB0], makerCode->second.getData(), makerCode->second.getLength());
         }
-        if (const auto gameCode = config.checkFixedString(report, "game_code"_sv, 4, false)) {
+        if (const auto gameCode = config->checkFixedString(report, "game_code"_sv, 4, false)) {
             memcpy(&data[headerAddress + 0xB2], gameCode->second.getData(), gameCode->second.getLength());
         }
-        if (const auto expansionRamSize = config.checkInteger(report, "expansion_ram_size"_sv, false)) {
+        if (const auto expansionRamSize = config->checkInteger(report, "expansion_ram_size"_sv, false)) {
             const auto value = static_cast<std::size_t>(expansionRamSize->second);
             if (value != 0) {
                 auto logValue = log2(value);
@@ -144,13 +144,13 @@ namespace wiz {
                 }
             }
         }
-        if (const auto specialVersion = config.checkInteger(report, "special_version"_sv, false)) {
+        if (const auto specialVersion = config->checkInteger(report, "special_version"_sv, false)) {
             data[headerAddress + 0xBE] = static_cast<std::uint8_t>(specialVersion->second);
         }
-        if (const auto cartSubType = config.checkInteger(report, "cart_subtype"_sv, false)) {
+        if (const auto cartSubType = config->checkInteger(report, "cart_subtype"_sv, false)) {
             data[headerAddress + 0xBF] = static_cast<std::uint8_t>(cartSubType->second);
         }
-        if (const auto title = config.checkFixedString(report, "title"_sv, SnesTitleMaxLength, false)) {
+        if (const auto title = config->checkFixedString(report, "title"_sv, SnesTitleMaxLength, false)) {
             memcpy(&data[headerAddress + 0xC0], title->second.getData(), title->second.getLength());
         }
 
@@ -158,7 +158,7 @@ namespace wiz {
             std::uint8_t cartTypeLower = 0x00;
             std::uint8_t cartTypeUpper = 0x00;
 
-            if (const auto expansion = config.checkString(report, "expansion_type"_sv, false)) {
+            if (const auto expansion = config->checkString(report, "expansion_type"_sv, false)) {
                 const auto match = expansionSettings.find(expansion->second);
                 if (match != expansionSettings.end()) {
                     cartTypeLower = match->second & 0x0F;
@@ -168,7 +168,7 @@ namespace wiz {
                 }
             }
 
-            if (const auto ramSize = config.checkInteger(report, "ram_size"_sv, false)) {
+            if (const auto ramSize = config->checkInteger(report, "ram_size"_sv, false)) {
                 const auto value = static_cast<std::size_t>(ramSize->second);
                 if (value != 0) {
                     auto logValue = log2(value);
@@ -187,7 +187,7 @@ namespace wiz {
                 }
             }
 
-            if (const auto battery = config.checkBoolean(report, "battery"_sv, false)) {
+            if (const auto battery = config->checkBoolean(report, "battery"_sv, false)) {
                 if (battery->second) {
                     switch (cartTypeLower) {
                         case 0x00:
@@ -224,7 +224,7 @@ namespace wiz {
             }
         }
 
-        if (const auto region = config.checkString(report, "region"_sv, false)) {
+        if (const auto region = config->checkString(report, "region"_sv, false)) {
             const auto match = regionSettings.find(region->second);
             if (match != regionSettings.end()) {
                 data[headerAddress + 0xD9] = match->second;
@@ -232,7 +232,7 @@ namespace wiz {
                 report->error("`region` of \"" + region->second.toString() + "\" is not supported", region->first->location);
             }
         }
-        if (const auto version = config.checkInteger(report, "rom_version"_sv, false)) {
+        if (const auto version = config->checkInteger(report, "rom_version"_sv, false)) {
             data[headerAddress + 0xDB] = static_cast<std::uint8_t>(version->second);
         }
 
@@ -270,15 +270,15 @@ namespace wiz {
     SnesSmcFormat::SnesSmcFormat() {}
     SnesSmcFormat::~SnesSmcFormat() {}
 
-    bool SnesSmcFormat::generate(Report* report, StringView outputName, const Config& config, ArrayView<const Bank*> banks, FormatOutput& output) {
+    bool SnesSmcFormat::generate(FormatContext& context) {
         // https://en.wikibooks.org/wiki/Super_NES_Programming/SNES_memory_map#The_SNES_header       
 
         SnesFormat snesFormat;
-        if (!snesFormat.generate(report, outputName, config, banks, output)) {
+        if (!snesFormat.generate(context)) {
             return false;
         }
 
-        auto& data = output.data;
+        auto& data = context.data;
 
         std::size_t romSize = data.size();
         std::size_t smcRomBlockCount = romSize / SmcRomBlockSize;

@@ -73,13 +73,14 @@ namespace wiz {
     NesFormat::NesFormat() {}
     NesFormat::~NesFormat() {}
 
-    bool NesFormat::generate(Report* report, StringView outputName, const Config& config, ArrayView<const Bank*> banks, FormatOutput& output) {
-        static_cast<void>(outputName);
-        
+    bool NesFormat::generate(FormatContext& context) {        
         // https://wiki.nesdev.com/w/index.php/INES
         // https://wiki.nesdev.com/w/index.php/NES_2.0
 
-        auto& data = output.data;
+        const auto report = context.report;
+        const auto config = context.config;
+        const auto& banks = context.banks;
+        auto& data = context.data;
 
         data.insert(data.end(), HeaderSize, 0);
 
@@ -87,7 +88,7 @@ namespace wiz {
             if (isBankKindStored(bank->getKind()) && bank->getKind() != BankKind::CharacterRom) {
                 const auto bankData = bank->getData();
 
-                output.bankOffsets[bank] = data.size();
+                context.bankOffsets[bank] = data.size();
                 data.reserve(data.size() + bankData.size());
                 data.insert(data.end(), bankData.begin(), bankData.end());
             }
@@ -105,7 +106,7 @@ namespace wiz {
             if (isBankKindStored(bank->getKind()) && bank->getKind() == BankKind::CharacterRom) {
                 const auto bankData = bank->getData();
 
-                output.bankOffsets[bank] = data.size();
+                context.bankOffsets[bank] = data.size();
                 data.reserve(data.size() + bankData.size());
                 data.insert(data.end(), bankData.begin(), bankData.end());
             }
@@ -124,7 +125,7 @@ namespace wiz {
         data[5] = static_cast<std::uint8_t>(chrSize / ChrRomBankSize);
 
         std::uint8_t mapper = 0;
-        if (const auto cartType = config.checkString(report, "cart_type"_sv, false)) {
+        if (const auto cartType = config->checkString(report, "cart_type"_sv, false)) {
             const auto match = cartTypes.find(cartType->second);
             if (match != cartTypes.end()) {
                 mapper = match->second;
@@ -132,29 +133,29 @@ namespace wiz {
                 report->error("`cart_type` of \"" + cartType->second.toString() + "\" is not supported", cartType->first->location);
             }
         }
-        if (const auto cartTypeID = config.checkInteger(report, "cart_type_id"_sv, false)) {
+        if (const auto cartTypeID = config->checkInteger(report, "cart_type_id"_sv, false)) {
             mapper = static_cast<std::uint8_t>(cartTypeID->second);
         }
 
         data[6] = (mapper & 0xFF) << 4;
         data[7] = ((mapper & 0xFF) >> 4) << 4;        
 
-        if (const auto verticalMirror = config.checkBoolean(report, "vertical_mirror"_sv, false)) {
+        if (const auto verticalMirror = config->checkBoolean(report, "vertical_mirror"_sv, false)) {
             if (verticalMirror->second) {
                 data[6] |= 0x01;
             }
         }
-        if (const auto battery = config.checkBoolean(report, "battery"_sv, false)) {
+        if (const auto battery = config->checkBoolean(report, "battery"_sv, false)) {
             if (battery->second) {
                 data[6] |= 0x02;
             }
         }
-        if (const auto fourScreen = config.checkBoolean(report, "four_screen"_sv, false)) {
+        if (const auto fourScreen = config->checkBoolean(report, "four_screen"_sv, false)) {
             if (fourScreen->second) {
                 data[6] |= 0x08;
             }
         }
-        if (const auto prgRamSize = config.checkInteger(report, "prg_ram_size"_sv, false)) {
+        if (const auto prgRamSize = config->checkInteger(report, "prg_ram_size"_sv, false)) {
             if (prgRamSize->second >= Int128(PrgRamBankSize * 255)) {
                 report->error("`prg_ram_size` of " + prgRamSize->second.toString() + " is too big (must be no more than " + std::to_string(PrgRamBankSize * 255) + " bytes)", prgRamSize->first->location);
             } else {

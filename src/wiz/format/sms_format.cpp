@@ -13,17 +13,17 @@ namespace wiz {
 
     SmsFormat::~SmsFormat() {}
 
-    bool SmsFormat::generate(Report* report, StringView outputName, const Config& config, ArrayView<const Bank*> banks, FormatOutput& output) {
-        static_cast<void>(outputName);
-        
+    bool SmsFormat::generate(FormatContext& context) {
         // http://www.smspower.org/Development/ROMHeader
-
-        auto& data = output.data;
-
+        const auto report = context.report;
+        const auto config = context.config;
+        const auto& banks = context.banks;
+        auto& data = context.data;
+        
         for (const auto& bank : banks) {
             const auto bankData = bank->getData();
 
-            output.bankOffsets[bank] = data.size();
+            context.bankOffsets[bank] = data.size();
             data.reserve(data.size() + bankData.size());
             data.insert(data.end(), bankData.begin(), bankData.end());
         }
@@ -50,7 +50,7 @@ namespace wiz {
         memset(&data[headerAddress], 0, 0x10);
         memcpy(&data[headerAddress], HeaderSignature.getData(), HeaderSignature.getLength());
 
-        if (const auto productCode = config.checkInteger(report, "product_code"_sv, false)) {
+        if (const auto productCode = config->checkInteger(report, "product_code"_sv, false)) {
             if (Int128(0) <= productCode->second && productCode->second <= Int128(159999)) {
                 std::uint32_t value = static_cast<std::uint32_t>(productCode->second);
 
@@ -67,7 +67,7 @@ namespace wiz {
                 report->error("`product_code` of " + productCode->second.toString() + " is invalid (must be between 0 and 159999)", productCode->first->location);
             }
         }
-        if (const auto version = config.checkInteger(report, "version"_sv, false)) {
+        if (const auto version = config->checkInteger(report, "version"_sv, false)) {
             if (Int128(0) <= version->second && version->second <= Int128(0xF)) {
                 data[headerAddress + 0xE] |= static_cast<std::uint8_t>(version->second);
             } else {
@@ -76,7 +76,7 @@ namespace wiz {
         }
 
         data[headerAddress + 0xF] = 0x40 | checksumRomSizeSetting;
-        if (const auto region = config.checkString(report, "region"_sv, false)) {
+        if (const auto region = config->checkString(report, "region"_sv, false)) {
             const auto value = region->second;
 
             std::uint8_t setting = systemType == SystemType::MasterSystem ? 0x04 : 0x07;

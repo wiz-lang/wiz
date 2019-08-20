@@ -10,7 +10,7 @@ namespace wiz {
             SnesFormat();
             ~SnesFormat() override;
 
-            bool generate(Report* report, StringView outputName, const Config& config, ArrayView<const Bank*> banks, FormatOutput& output) override;
+            bool generate(FormatContext& context) override;
     };
 
     class SnesSmcFormat : public Format {
@@ -18,7 +18,7 @@ namespace wiz {
             SnesSmcFormat();
             ~SnesSmcFormat() override;
 
-            bool generate(Report* report, StringView outputName, const Config& config, ArrayView<const Bank*> banks, FormatOutput& output) override;
+            bool generate(FormatContext& context) override;
     };
 }
 

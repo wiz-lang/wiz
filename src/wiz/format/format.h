@@ -9,11 +9,28 @@
 #include <wiz/utility/string_view.h>
 #include <wiz/utility/array_view.h>
 #include <wiz/utility/fwd_unique_ptr.h>
+#include <wiz/utility/string_pool.h>
 
 namespace wiz {
     class Config;
 
-    struct FormatOutput {
+    struct FormatContext {
+        FormatContext(Report* report,
+            StringPool* stringPool,
+            const Config* config,
+            StringView outputName,
+            ArrayView<const Bank*> banks)
+        : report(report),
+        stringPool(stringPool),
+        config(config),
+        outputName(outputName) {}
+
+        Report* report;
+        StringPool* stringPool;
+        const Config* config;
+        StringView outputName;
+        ArrayView<const Bank*> banks;
+
         std::unordered_map<const Bank*, std::size_t> bankOffsets;
         std::vector<std::uint8_t> data;
     };
@@ -22,7 +39,7 @@ namespace wiz {
         public:
             virtual ~Format() {};
 
-            virtual bool generate(Report* report, StringView outputName, const Config& configItems, ArrayView<const Bank*> banks, FormatOutput& output) = 0;
+            virtual bool generate(FormatContext& context) = 0;
     };
 
     class FormatCollection {

@@ -10,7 +10,7 @@ namespace wiz {
             BinaryFormat();
             ~BinaryFormat() override;
 
-            bool generate(Report* report, StringView outputName, const Config& config, ArrayView<const Bank*> banks, FormatOutput& output) override;
+            bool generate(FormatContext& context) override;
     };
 }
 

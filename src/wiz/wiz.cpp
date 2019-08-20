@@ -313,21 +313,21 @@ namespace wiz {
 
                 report->log(">> Writing ROM...");
 
-                FormatOutput output;
-
                 auto banks = compiler.getRegisteredBanks();
+                FormatContext context(report, &stringPool, &config, outputName, banks);
 
-                format->generate(report, outputName, config, banks, output);
-                if (!report->validate()) {
+                if (!format->generate(context) || !report->validate()) {
                     return 1;
                 }
 
-                auto writer = resourceManager->openWriter(outputName);
-                if (writer && writer->write(output.data)) {
-                    report->log(">> Wrote to \"" + outputName.toString() + "\".");
-                } else {
-                    report->error("Output file \"" + outputName.toString() + "\" could not be written.", SourceLocation(), ReportErrorFlags { ReportErrorFlagType::Fatal });
-                    return 1;
+                {
+                    auto writer = resourceManager->openWriter(outputName);
+                    if (writer && writer->write(context.data)) {
+                        report->log(">> Wrote to \"" + outputName.toString() + "\".");
+                    } else {
+                        report->error("Output file \"" + outputName.toString() + "\" could not be written.", SourceLocation(), ReportErrorFlags { ReportErrorFlagType::Fatal });
+                        return 1;
+                    }
                 }
 
 #if 0

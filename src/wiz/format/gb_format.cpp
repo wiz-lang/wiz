@@ -54,17 +54,18 @@ namespace wiz {
     GameBoyFormat::GameBoyFormat() {}
     GameBoyFormat::~GameBoyFormat() {}
 
-    bool GameBoyFormat::generate(Report* report, StringView outputName, const Config& config, ArrayView<const Bank*> banks, FormatOutput& output) {
-        static_cast<void>(outputName);
-        
+    bool GameBoyFormat::generate(FormatContext& context) {
         // http://problemkaputt.de/pandocs.htm#thecartridgeheader
 
-        auto& data = output.data;
+        const auto report = context.report;
+        const auto config = context.config;
+        const auto& banks = context.banks;      
+        auto& data = context.data;
 
         for (const auto& bank : banks) {
             const auto bankData = bank->getData();
 
-            output.bankOffsets[bank] = data.size();
+            context.bankOffsets[bank] = data.size();
             data.reserve(data.size() + bankData.size());
             data.insert(data.end(), bankData.begin(), bankData.end());
         }
@@ -77,38 +78,38 @@ namespace wiz {
         memcpy(&data[0x104], LogoBitmap, sizeof(LogoBitmap));
         data[0x14B] = 0x33;
 
-        std::size_t titleMaxLength = config.has("manufacturer"_sv) ? 11 : 15;
+        std::size_t titleMaxLength = config->has("manufacturer"_sv) ? 11 : 15;
 
-        if (const auto title = config.checkFixedString(report, "title"_sv, titleMaxLength, false)) {
+        if (const auto title = config->checkFixedString(report, "title"_sv, titleMaxLength, false)) {
             memcpy(&data[0x134], title->second.getData(), title->second.getLength());
         } else {
-            auto truncatedOutputName = path::stripExtension(outputName).sub(0, titleMaxLength).toString();
+            auto truncatedOutputName = path::stripExtension(context.outputName).sub(0, titleMaxLength).toString();
             std::transform(truncatedOutputName.begin(), truncatedOutputName.end(), truncatedOutputName.begin(), [](unsigned char c) { return std::toupper(c); });
             memcpy(&data[0x134], truncatedOutputName.data(), truncatedOutputName.length());
         }
 
-        if (const auto manufacturer = config.checkFixedString(report, "manufacturer"_sv, 4, false)) {
+        if (const auto manufacturer = config->checkFixedString(report, "manufacturer"_sv, 4, false)) {
             memcpy(&data[0x13F], manufacturer->second.getData(), manufacturer->second.getLength());
         }
-        if (const auto gbcCompatible = config.checkBoolean(report, "gbc_compatible"_sv, false)) {
+        if (const auto gbcCompatible = config->checkBoolean(report, "gbc_compatible"_sv, false)) {
             if (gbcCompatible->second) {
                 data[0x143] = 0x80;
             }
         }
-        if (const auto gbcExclusive = config.checkBoolean(report, "gbc_exclusive"_sv, false)) {
+        if (const auto gbcExclusive = config->checkBoolean(report, "gbc_exclusive"_sv, false)) {
             if (gbcExclusive->second) {
                 data[0x143] = 0xC0;
             }
         }
-        if (const auto licensee = config.checkFixedString(report, "licensee"_sv, 2, false)) {
+        if (const auto licensee = config->checkFixedString(report, "licensee"_sv, 2, false)) {
             memcpy(&data[0x144], licensee->second.getData(), licensee->second.getLength());
         }
-        if (const auto sgbCompatible = config.checkBoolean(report, "sgb_compatible"_sv, false)) {
+        if (const auto sgbCompatible = config->checkBoolean(report, "sgb_compatible"_sv, false)) {
             if (sgbCompatible->second) {
                 data[0x146] = 0x03;
             }
         }
-        if (const auto cartType = config.checkString(report, "cart_type"_sv, false)) {
+        if (const auto cartType = config->checkString(report, "cart_type"_sv, false)) {
             const auto match = cartTypes.find(cartType->second);
             if (match != cartTypes.end()) {
                 data[0x147] = static_cast<std::uint8_t>(match->second);
@@ -116,10 +117,10 @@ namespace wiz {
                 report->error("`cart_type` of \"" + cartType->second.toString() + "\" is not supported", cartType->first->location);
             }
         }
-        if (const auto cartTypeID = config.checkInteger(report, "cart_type_id"_sv, false)) {
+        if (const auto cartTypeID = config->checkInteger(report, "cart_type_id"_sv, false)) {
             data[0x147] = static_cast<std::uint8_t>(cartTypeID->second);
         }
-        if (const auto ramSize = config.checkInteger(report, "ram_size"_sv, false)) {
+        if (const auto ramSize = config->checkInteger(report, "ram_size"_sv, false)) {
             const auto value = ramSize->second;
             
             // See: http://gbdev.gg8.se/wiki/articles/The_Cartridge_Header#0149_-_RAM_Size
@@ -140,15 +141,15 @@ namespace wiz {
 
             data[0x149] = setting;
         }
-        if (const auto international = config.checkBoolean(report, "international"_sv, false)) {
+        if (const auto international = config->checkBoolean(report, "international"_sv, false)) {
             if (international->second) {
                 data[0x14A] = 0x01;
             }
         }
-        if (const auto oldLicensee = config.checkInteger(report, "old_licensee"_sv, false)) {
+        if (const auto oldLicensee = config->checkInteger(report, "old_licensee"_sv, false)) {
             data[0x14B] = static_cast<std::uint8_t>(oldLicensee->second);
         }
-        if (const auto version = config.checkInteger(report, "version"_sv, false)) {
+        if (const auto version = config->checkInteger(report, "version"_sv, false)) {
             data[0x14C] = static_cast<std::uint8_t>(version->second);
         }
 
