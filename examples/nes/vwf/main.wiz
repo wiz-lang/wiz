@@ -78,8 +78,7 @@ in prg {
 
         <:ptr0 = a = <:TEXTBOX_BG_ADDR;
         >:ptr0 = a = >:TEXTBOX_BG_ADDR;
-        b2 = a = 1;
-        vwf.setup_canvas_offscreen(ptr0, b2);
+        vwf.setup_canvas_offscreen(ptr0);
 
         <:ptr0 = a = <:&message;
         >:ptr0 = a = >:&message;

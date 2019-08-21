@@ -5,8 +5,8 @@ import "globals";
 namespace vwf {
     let CANVAS_WIDTH = 20;
     let CANVAS_HEIGHT = 4;
-    let CANVAS_PIXEL_WIDTH = CANVAS_WIDTH * 16;
-    let CANVAS_PIXEL_HEIGHT = CANVAS_HEIGHT * 16;
+    let TILE_START_INDEX = 1;
+    let TILESET_BASE_ADDRESS = nes.ppu.ADDRESS_PATTERN_0;
 
     in ram {
         var buffer_position : u8;
@@ -17,9 +17,9 @@ namespace vwf {
     }
 
     func init() {
-        <:dest_line_addr = a = 0x10;
+        <:dest_line_addr = a = <:(TILESET_BASE_ADDRESS + TILE_START_INDEX * 16);
         <:dest_tile_addr = a;
-        >:dest_line_addr = a = 0x00;
+        >:dest_line_addr = a = >:(TILESET_BASE_ADDRESS + TILE_START_INDEX * 16);
         >:dest_tile_addr = a;
 
         buffer_position = a = 0;
@@ -31,7 +31,10 @@ namespace vwf {
         } while x != 32;
     }
 
-    func setup_canvas_offscreen(dest : *u8 in ptr0, value : u8 in b2) {
+    func setup_canvas_offscreen(dest : *u8 in ptr0) {
+        var value : u8 in b2;
+        value = a = TILE_START_INDEX;
+
         nes.ppu.control = a = 0;
         y = a;
 
@@ -63,13 +66,13 @@ namespace vwf {
 
         if a >= 8 {
             dest_pixel_y = a = a - 8;
-            <:dest_line_addr = a = <:dest_line_addr + <:CANVAS_PIXEL_WIDTH;
-            >:dest_line_addr = a = >:dest_line_addr +# >:CANVAS_PIXEL_WIDTH;
+            <:dest_line_addr = a = <:dest_line_addr + <:(CANVAS_WIDTH * 16);
+            >:dest_line_addr = a = >:dest_line_addr +# >:(CANVAS_WIDTH * 16);
         }
 
-        <:dest_line_addr = a = <:dest_line_addr + <:CANVAS_PIXEL_WIDTH;
+        <:dest_line_addr = a = <:dest_line_addr + <:(CANVAS_WIDTH * 16);
         <:dest_tile_addr = a;
-        >:dest_line_addr = a = >:dest_line_addr +# >:CANVAS_PIXEL_WIDTH;
+        >:dest_line_addr = a = >:dest_line_addr +# >:(CANVAS_WIDTH * 16);
         >:dest_tile_addr = a;
     }
 
@@ -85,8 +88,8 @@ namespace vwf {
         <:bitmap_ptr = a = x;
         >:bitmap_ptr = a = 0;
         inline for let i in 1 .. 4 {
-            <:bitmap_ptr = a = <:bitmap_ptr << 1;
-            >:bitmap_ptr = a = >:bitmap_ptr <<<<# 1;
+            <:bitmap_ptr <<= 1;
+            >:bitmap_ptr <<<<#= 1;
         }
 
         <:bitmap_ptr = a = <:bitmap_ptr + <:&font_bitmap_data;
