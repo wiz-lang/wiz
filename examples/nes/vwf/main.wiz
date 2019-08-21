@@ -1,0 +1,135 @@
+import "nes";
+import "banks";
+import "globals";
+
+in prg {
+    import "vwf";
+
+    func main() {
+        // Disable decimal arithmetic (though not actually supported on 2A03 anyway)
+        decimal = false;
+        // Disable interrupts.
+        nointerrupt = true;
+        // Prepare stack.
+        s = x = 0xFF;
+
+        // Turn off rendering.
+        nes.ppu.control = x = 0;
+        nes.ppu.mask = x;
+        // Disable DMC interrupts.
+        nes.apu.frame_counter = a = nes.apu.FRAME_COUNTER_IRQ_DISABLE;
+
+        // Wait for the PPU to be ready to use, which takes 2 vertical blanks.
+        do {
+            do {} while !nes.ppu.status$7;
+            x++;
+        } while x != 2;
+
+        // Read PPU status to reset the PPU high/low latch.
+        a = nes.ppu.status;
+
+        // Setup the PPU for copying to the nametable.
+        nes.ppu.address = a = >:nes.ppu.ADDRESS_NAMETABLE_DATA;
+        nes.ppu.address = a = <:nes.ppu.ADDRESS_NAMETABLE_DATA;
+        // Clear the nametable.
+        x = >:nes.ppu.NAMETABLE_SIZE * 2;
+        do {
+            y = 0;
+            do {
+                nes.ppu.data = a;
+                y++;
+            } while !zero;
+
+            x--;
+        } while !zero;
+
+        // Setup the PPU for copying to the pattern memory.
+        nes.ppu.address = a = >:nes.ppu.ADDRESS_PATTERN_DATA;
+        nes.ppu.address = a = <:nes.ppu.ADDRESS_PATTERN_DATA;
+        // Clear the pattern data.
+        x = >:nes.ppu.PATTERN_SIZE * 2;
+        do {
+            y = 0;
+            do {
+                nes.ppu.data = a;
+                y++;
+            } while !zero;
+
+            x--;
+        } while !zero;
+
+        // Setup the PPU for copying to the palette.
+        nes.ppu.address = a = >:nes.ppu.ADDRESS_PALETTE_DATA;
+        nes.ppu.address = a = <:nes.ppu.ADDRESS_PALETTE_DATA;
+        // Clear the palette.
+        x = 0;            
+        do {
+            nes.ppu.data = a = palette[x];
+            x++;
+        } while x != palette.len;
+
+        a = nes.ppu.status; 
+        nes.ppu.scroll = a = 0;
+        nes.ppu.scroll = a;
+
+        vwf.init();
+
+        let TEXTBOX_BG_ADDR = nes.ppu.ADDRESS_NAMETABLE_DATA + (3 * 32) + 7;
+
+        <:ptr0 = a = <:TEXTBOX_BG_ADDR;
+        >:ptr0 = a = >:TEXTBOX_BG_ADDR;
+        b2 = a = 1;
+        vwf.setup_canvas_offscreen(ptr0, b2);
+
+        <:ptr0 = a = <:&message;
+        >:ptr0 = a = >:&message;
+        vwf.draw_text_offscreen(ptr0);
+        
+        // We're finally ready to show the screen!
+        nes.ppu.control = a = nes.ppu.CONTROL_NMI;
+        nes.ppu.mask = a = nes.ppu.MASK_LEFTMOST_BG | nes.ppu.MASK_RENDER_BG;
+
+        // Enable interrupts.
+        nointerrupt = false;
+
+        while true {}
+    }
+
+    #[nmi] func draw() {
+        push(a);
+        a = x; push(a);
+        a = y; push(a);
+        a = nes.ppu.status; 
+        nes.ppu.scroll = a = 0;
+        nes.ppu.scroll = a;
+        y = a = pop();
+        x = a = pop();
+        a = pop();
+    }
+
+    #[irq] func scanline() {
+        push(a);
+        a = x; push(a);
+        a = y; push(a);
+        y = a = pop();
+        x = a = pop();
+        a = pop();
+    }
+
+    const message = "You want the \x02Burrito XL\x03?\nGreat choice! Let's see...\nThat will be... \x01$8\x03 please.\0";
+
+    const palette : [u8] = [
+        // Tiles
+        0x0F, 0x29, 0x25, 0x30,
+        0x0F, 0x00, 0x10, 0x30,
+        0x0F, 0x00, 0x10, 0x30,
+        0x0F, 0x00, 0x10, 0x30,
+        // Sprites
+        0x0F, 0x00, 0x10, 0x30,
+        0x0F, 0x00, 0x10, 0x30,
+        0x0F, 0x00, 0x10, 0x30,
+        0x0F, 0x00, 0x10, 0x30
+    ];
+
+    const @ 0xFFFA = [draw, main, scanline];
+}

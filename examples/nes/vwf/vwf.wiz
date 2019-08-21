@@ -1,0 +1,264 @@
+import "nes";
+import "banks";
+import "globals";
+
+namespace vwf {
+    let CANVAS_WIDTH = 20;
+    let CANVAS_HEIGHT = 4;
+    let CANVAS_PIXEL_WIDTH = CANVAS_WIDTH * 16;
+    let CANVAS_PIXEL_HEIGHT = CANVAS_HEIGHT * 16;
+
+    in ram {
+        var buffer_position : u8;
+        var buffer_data : [u8; 32];
+        var dest_tile_addr : *u8;
+        var dest_pixel_y : u8;
+        var dest_line_addr : *u8;
+    }
+
+    func init() {
+        <:dest_line_addr = a = 0x10;
+        <:dest_tile_addr = a;
+        >:dest_line_addr = a = 0x00;
+        >:dest_tile_addr = a;
+
+        buffer_position = a = 0;
+        dest_pixel_y = a;
+        x = 0;
+        do {
+            buffer_data[x] = a;
+            x++;
+        } while x != 32;
+    }
+
+    func setup_canvas_offscreen(dest : *u8 in ptr0, value : u8 in b2) {
+        nes.ppu.control = a = 0;
+        y = a;
+
+        do {
+            nes.ppu.address = a = >:dest;
+            nes.ppu.address = a = <:dest;
+            x = 0;
+            do {
+                nes.ppu.data = a = value;
+                value++;
+                x++;
+            } while x != CANVAS_WIDTH;
+
+            <:dest = a = <:dest + 32;
+            >:dest = a = >:dest +# 0;
+            y++;
+        } while y != CANVAS_HEIGHT;
+    }
+
+    func next_line() {
+        buffer_position = a = 0;
+        x = 0;
+        do {
+            buffer_data[x] = a;
+            x++;
+        } while x != 32;
+
+        dest_pixel_y = a = dest_pixel_y + 4;
+
+        if a >= 8 {
+            dest_pixel_y = a = a - 8;
+            <:dest_line_addr = a = <:dest_line_addr + <:CANVAS_PIXEL_WIDTH;
+            >:dest_line_addr = a = >:dest_line_addr +# >:CANVAS_PIXEL_WIDTH;
+        }
+
+        <:dest_line_addr = a = <:dest_line_addr + <:CANVAS_PIXEL_WIDTH;
+        <:dest_tile_addr = a;
+        >:dest_line_addr = a = >:dest_line_addr +# >:CANVAS_PIXEL_WIDTH;
+        >:dest_tile_addr = a;
+    }
+
+    func prepare_glyph(glyph_index : u8 in x, color : u8 in b2) {
+        var bitmap_ptr : *u8 in ptr4;
+        var width : u8 in b6;
+        var shift : u8 in b7;
+        var bitmask_lower_plane : u8 in b8;
+        var bitmask_upper_plane : u8 in b9;
+
+        width = a = font_glyph_widths[x];
+
+        <:bitmap_ptr = a = x;
+        >:bitmap_ptr = a = 0;
+        inline for let i in 1 .. 4 {
+            <:bitmap_ptr = a = <:bitmap_ptr << 1;
+            >:bitmap_ptr = a = >:bitmap_ptr <<<<# 1;
+        }
+
+        <:bitmap_ptr = a = <:bitmap_ptr + <:&font_bitmap_data;
+        >:bitmap_ptr = a = >:bitmap_ptr +# >:&font_bitmap_data;
+
+        bitmask_lower_plane = a = 0;
+        if { a = color & 1; } && !zero {
+            bitmask_lower_plane--;
+        }
+
+        bitmask_upper_plane = a = 0;
+        if { a = color & 2; } && !zero {
+            bitmask_upper_plane--;
+        }
+
+        shift = a = buffer_position;
+        y = 0;
+        do {
+            if y < 8 {
+                a = bitmap_ptr[y] & bitmask_lower_plane;
+            } else {
+                a = bitmap_ptr[y] & bitmask_upper_plane;
+            }
+
+            x = shift;
+            while !zero {
+                a = a >>> 1;
+                x--;
+            }
+
+            buffer_data[y] = a = a | buffer_data[y];
+            y++;
+        } while y != 16;
+
+        if { a = buffer_position + width; } && a >= 8 {
+            shift = a = 8 - buffer_position;
+            y = 0;
+            do {
+                if y < 8 {
+                    a = bitmap_ptr[y] & bitmask_lower_plane;
+                } else { 
+                    a = bitmap_ptr[y] & bitmask_upper_plane;
+                }
+
+                x = shift;
+                while !zero {
+                    a = a << 1;
+                    x--;
+                }
+
+                (&buffer_data[16])[y] = a = a | (&buffer_data[16])[y];
+                y++;
+            } while y != 16;
+        }
+
+        buffer_position = a = buffer_position + width;
+    }
+
+    func flush_column_offscreen(top_len : u8 in b4, bottom_len : u8 in b5) {
+        var dest : *u8 in ptr6;
+        var src : *u8 in ptr8;
+
+        // Draw first column, possibly two rows of data.
+        // Top tile, lower bitplane.
+        <:src = a = <:&buffer_data[0];
+        >:src = a = >:&buffer_data[0];
+        <:dest = a = <:dest_tile_addr + dest_pixel_y;
+        >:dest = a = >:dest_tile_addr +# 0;
+        nes.ppu.address = a = >:dest;
+        nes.ppu.address = a = <:dest;
+        y = 0;
+        do { 
+            nes.ppu.data = a = src[y];
+            y++;
+        } while y != top_len;
+
+        // Top tile, upper bitplane
+        <:src = a = <:&buffer_data[8];
+        >:src = a = >:&buffer_data[8];
+        <:dest = a = <:dest + 8;
+        >:dest = a = >:dest +# 0;
+        nes.ppu.address = a = >:dest;
+        nes.ppu.address = a = <:dest;
+        y = 0;
+        do {
+            nes.ppu.data = a = src[y];
+            y++;
+        } while y != top_len;
+
+        // Bottom tile?
+        if { a = bottom_len; } && !zero {
+            // Bottom tile, lower bitplane.
+            <:src = a = <:&buffer_data[0] + top_len;
+            >:src = a = >:&buffer_data[0] +# 0;
+            <:dest = a = <:dest_tile_addr + <:(CANVAS_WIDTH * 16);
+            >:dest = a = >:dest_tile_addr +# >:(CANVAS_WIDTH * 16);
+            nes.ppu.address = a = >:dest;
+            nes.ppu.address = a = <:dest;
+            y = 0;
+            do {
+                nes.ppu.data = a = src[y];
+                y++;
+            } while y != bottom_len;
+
+            // Bottom tile, upper bitplane.
+            <:src = a = <:&buffer_data[8] + top_len;
+            >:src = a = >:&buffer_data[8] +# 0;
+            <:dest = a = <:dest + 8;
+            >:dest = a = >:dest +# 0;
+            nes.ppu.address = a = >:dest;
+            nes.ppu.address = a = <:dest;
+            y = 0;
+            do {
+                nes.ppu.data = a = src[y];
+                y++;
+            } while y != bottom_len;
+        }
+    }
+
+    func flush_buffer_offscreen() {
+        var top_len : u8 in b4;
+        var bottom_len : u8 in b5;
+
+        top_len = a = 8 - dest_pixel_y;
+        bottom_len = a = dest_pixel_y;
+
+        // Ensure writing in 1-byte strides, and that the screen is off.
+        nes.ppu.control = a = 0;
+
+        // Draw the first column, possibly two rows of tile data.
+        flush_column_offscreen(top_len, bottom_len);
+
+        // If wider than 8px, it's two columns.
+        if { a = buffer_position; } && a >= 8 {
+            // Move buffer left one tile, so we can draw this tile, and there's more room for the next tile.
+            x = 0;
+            do {
+                buffer_data[x] = a = (&buffer_data[16])[x];
+                (&buffer_data[16])[x] = a = 0;
+                x++;
+            } while x != 16;
+
+            buffer_position = a = buffer_position - 8;
+
+            // Advance the position in dest.
+            <:dest_tile_addr = a = <:dest_tile_addr + 16;
+            >:dest_tile_addr = a = >:dest_tile_addr +# 0;
+
+            // Draw the second column, possibly another two rows of tile data.
+            flush_column_offscreen(top_len, bottom_len);
+        }
+    }
+
+    func draw_text_offscreen(src : *u8 in ptr0) {
+        var color : u8 in b2;
+        color = a = 3;
+
+        while { y = 0; a = src[y]; } && !zero {
+            if a == '\n' {
+                next_line();
+            } else if a < 4 {
+                color = a;
+            } else if a >= 32 {
+                x = a = a - 32;
+                prepare_glyph(x, color);
+                flush_buffer_offscreen();
+            }
+
+            ++<:src; if zero { ++>:src; }
+        }
+    }
+
+    const font_bitmap_data = embed "vwf_font.chr";
+    const font_glyph_widths : [u8] = [4, 5, 6, 6, 6, 9, 9, 3, 4, 4, 6, 8, 4, 6, 3, 8, 7, 5, 7, 7, 7, 7, 7, 7, 7, 7, 4, 4, 6, 5, 6, 7, 9, 7, 7, 7, 7, 7, 7, 7, 7, 5, 7, 7, 7, 8, 8, 7, 7, 8, 7, 7, 7, 7, 8, 8, 8, 7, 7, 4, 5, 4, 7, 6, 4, 7, 7, 7, 7, 7, 6, 7, 7, 3, 5, 7, 3, 8, 7, 7, 7, 7, 7, 6, 7, 7, 8, 8, 7, 7, 7, 5, 3, 5, 7, 3];
+}

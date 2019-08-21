@@ -1,0 +1,8 @@
+config {
+    format = "nes",
+}
+
+bank zeropage @ 0x00 : [vardata; 256];
+bank stack @ 0x100 : [vardata; 256];
+bank ram @ 0x200 : [vardata; 1536];
+bank prg @ 0x8000 : [constdata; 32768];
