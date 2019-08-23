@@ -15,6 +15,9 @@ namespace vram_buffer {
         // Format:
         //
         // command
+        //   bit 7: 1 = increment by 32 / 0 = increment by 1
+        //   bit 6: 1 = fill mode / 0 = copy mode,
+        //   bit 0 .. 5: length        
         // address hi
         // address lo
         // data
