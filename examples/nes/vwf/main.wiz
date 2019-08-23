@@ -4,6 +4,7 @@ import "globals";
 
 in prg {
     import "vwf";
+    import "vram_buffer";
 
     func main() {
         // Disable decimal arithmetic (though not actually supported on 2A03 anyway)
@@ -79,19 +80,38 @@ in prg {
         <:ptr0 = a = <:TEXTBOX_BG_ADDR;
         >:ptr0 = a = >:TEXTBOX_BG_ADDR;
         vwf.setup_canvas_offscreen(ptr0);
-
-        <:ptr0 = a = <:&message;
-        >:ptr0 = a = >:&message;
-        vwf.draw_text_offscreen(ptr0);
         
+        vram_buffer.clear();
+
         // We're finally ready to show the screen!
         nes.ppu.control = a = nes.ppu.CONTROL_NMI;
-        nes.ppu.mask = a = nes.ppu.MASK_LEFTMOST_BG | nes.ppu.MASK_RENDER_BG;
 
         // Enable interrupts.
         nointerrupt = false;
 
-        while true {}
+        <:text_ptr = a = <:&message;
+        >:text_ptr = a = >:&message;
+        text_color = a = 3;
+        text_delay = a = 60;
+
+        while true {
+            vram_buffer.clear();
+
+            if { a = text_delay; } && zero {
+                <:ptr0 = a = <:text_ptr;
+                >:ptr0 = a = >:text_ptr;
+                b2 = a = text_color;
+                vwf.draw_text_character_queued(ptr0, b2);
+                <:text_ptr = a = <:ptr0;
+                >:text_ptr = a = >:ptr0;
+                text_color = a = b2;
+            } else {
+                text_delay--;
+            }
+            vram_buffer.request_transfer();
+
+            do { a = vram_buffer.transfer_requested; } while !zero;
+        }
     }
 
     #[nmi] func draw() {
@@ -99,8 +119,12 @@ in prg {
         a = x; push(a);
         a = y; push(a);
         a = nes.ppu.status; 
+
+        vram_buffer.complete_transfer();
+
+        nes.ppu.mask = a = nes.ppu.MASK_LEFTMOST_BG | nes.ppu.MASK_RENDER_BG;
         nes.ppu.scroll = a = 0;
-        nes.ppu.scroll = a;
+        nes.ppu.scroll = a = 0;
         y = a = pop();
         x = a = pop();
         a = pop();
@@ -116,6 +140,24 @@ in prg {
     }
 
     const message = "You want the \x02Burrito XL\x03?\nGreat choice! Let's see...\nThat will be... \x01$8\x03 please.\0";
+
+    const tile_copy_command : [u8] = [
+        <:32, >:nes.ppu.ADDRESS_PATTERN_DATA, 0,
+            0x00, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0x00, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0xFF,
+            0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0x00, 0x12, 0x34, 0x56, 0xFF,
+        <:32, >:nes.ppu.ADDRESS_PATTERN_DATA, 32,
+            0x00, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0x00, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0xFF,
+            0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0x00, 0x12, 0x34, 0x56, 0xFF,
+        <:32, >:nes.ppu.ADDRESS_PATTERN_DATA, 64,
+            0x00, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0x00, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0xFF,
+            0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0x00, 0x12, 0x34, 0x56, 0xFF,            
+    ];
 
     const palette : [u8] = [
         // Tiles

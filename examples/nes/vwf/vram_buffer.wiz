@@ -1,0 +1,80 @@
+import "nes";
+import "banks";
+import "globals";
+
+namespace vram_buffer {
+    let COMMAND_INCREMENT_32 = 0x80 as u8;
+    let COMMAND_FILL = 0x40 as u8;
+    let COMMAND_CONTROL_MASK = 0xC0 as u8;
+    let COMMAND_LENGTH_MASK = 0x3F as u8;
+
+    in ram {
+        var transfer_requested : u8;
+        var position : u8;
+
+        // Format:
+        //
+        // command
+        // address hi
+        // address lo
+        // data
+        // ...
+        // until command == 0
+        var data : [u8; 128];
+    }
+
+    func clear() {
+        x = 0;        
+        transfer_requested = x;
+        position = x;
+        data[x] = a = x;
+    }
+
+    func request_transfer() {
+        x = position;
+        data[x] = a = 0;
+        transfer_requested++;
+    }
+
+    func complete_transfer() {
+        if { a = transfer_requested; } && zero {
+            return;
+        }
+
+        x = 0;
+        transfer_requested = x;
+
+        while { y = data[x]; } && !zero {
+            x++;
+            nes.ppu.address = a = data[x]; x++;
+            nes.ppu.address = a = data[x]; x++;
+
+            a = nes.ppu.CONTROL_NMI;
+            if y >= COMMAND_INCREMENT_32 {
+                a |= nes.ppu.CONTROL_VRAM_INCREMENT_32;
+            }
+            nes.ppu.control = a;
+
+            a = y & ~COMMAND_INCREMENT_32;
+
+            if a >= COMMAND_FILL {
+                y = a = a & ~COMMAND_CONTROL_MASK;
+                a = data[x];
+
+                x++;
+                do {
+                    nes.ppu.data = a;
+                    y--;
+                } while !zero;
+            } else {
+                y = a;
+
+                do {
+                    nes.ppu.data = a = data[x];
+                    x++;
+                    y--;
+                } while !zero;            
+            }
+        }
+    }
+}

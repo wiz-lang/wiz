@@ -3,4 +3,8 @@ import "banks";
 in zeropage {
     var b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15 : u8;
     var ptr0 @ &b0, ptr2 @ &b2, ptr4 @ &b4, ptr6 @ &b6, ptr8 @ &b8, ptr10 @ &b10, ptr12 @ &b12, ptr14 @ &b14 : *u8;
+
+    var text_delay : u8;
+    var text_ptr : *u8;
+    var text_color : u8;
 }

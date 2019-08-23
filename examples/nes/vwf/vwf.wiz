@@ -1,6 +1,7 @@
 import "nes";
 import "banks";
 import "globals";
+import "vram_buffer";
 
 namespace vwf {
     let CANVAS_WIDTH = 20;
@@ -22,13 +23,8 @@ namespace vwf {
         >:dest_line_addr = a = >:(TILESET_BASE_ADDRESS + TILE_START_INDEX * 16);
         >:dest_tile_addr = a;
 
-        buffer_position = a = 0;
-        dest_pixel_y = a;
-        x = 0;
-        do {
-            buffer_data[x] = a;
-            x++;
-        } while x != 32;
+        dest_pixel_y = a = 0;
+        return clear_buffer();
     }
 
     func setup_canvas_offscreen(dest : *u8 in ptr0) {
@@ -54,13 +50,17 @@ namespace vwf {
         } while y != CANVAS_HEIGHT;
     }
 
-    func next_line() {
+    func clear_buffer() {
         buffer_position = a = 0;
         x = 0;
         do {
             buffer_data[x] = a;
             x++;
         } while x != 32;
+    }
+
+    func next_line() {
+        clear_buffer();
 
         dest_pixel_y = a = dest_pixel_y + 4;
 
@@ -248,6 +248,8 @@ namespace vwf {
         color = a = 3;
 
         while { y = 0; a = src[y]; } && !zero {
+            ++<:src; if zero { ++>:src; }
+
             if a == '\n' {
                 next_line();
             } else if a < 4 {
@@ -257,8 +259,128 @@ namespace vwf {
                 prepare_glyph(x, color);
                 flush_buffer_offscreen();
             }
+        }
+    }
 
+    func flush_column_queued(top_len : u8 in b4, bottom_len : u8 in b5) {
+        var dest : *u8 in ptr6;
+        var src : *u8 in ptr8;
+
+        x = vram_buffer.position;
+
+        // Draw first column, possibly two rows of data.
+        // Top tile, lower bitplane.
+        <:src = a = <:&buffer_data[0];
+        >:src = a = >:&buffer_data[0];
+        <:dest = a = <:dest_tile_addr + dest_pixel_y;
+        >:dest = a = >:dest_tile_addr +# 0;
+
+        vram_buffer.data[x] = a = top_len; x++;
+        vram_buffer.data[x] = a = >:dest; x++;
+        vram_buffer.data[x] = a = <:dest; x++;
+        y = 0;
+        do { 
+            vram_buffer.data[x] = a = src[y];
+            x++;
+            y++;
+        } while y != top_len;
+
+        // Top tile, upper bitplane
+        <:src = a = <:&buffer_data[8];
+        >:src = a = >:&buffer_data[8];
+        <:dest = a = <:dest + 8;
+        >:dest = a = >:dest +# 0;
+        vram_buffer.data[x] = a = top_len; x++;
+        vram_buffer.data[x] = a = >:dest; x++;
+        vram_buffer.data[x] = a = <:dest; x++;
+        y = 0;
+        do { 
+            vram_buffer.data[x] = a = src[y];
+            x++;
+            y++;
+        } while y != top_len;
+
+        // Bottom tile?
+        if { a = bottom_len; } && !zero {
+            // Bottom tile, lower bitplane.
+            <:src = a = <:&buffer_data[0] + top_len;
+            >:src = a = >:&buffer_data[0] +# 0;
+            <:dest = a = <:dest_tile_addr + <:(CANVAS_WIDTH * 16);
+            >:dest = a = >:dest_tile_addr +# >:(CANVAS_WIDTH * 16);
+            vram_buffer.data[x] = a = bottom_len; x++;
+            vram_buffer.data[x] = a = >:dest; x++;
+            vram_buffer.data[x] = a = <:dest; x++;
+            y = 0;
+            do { 
+                vram_buffer.data[x] = a = src[y];
+                x++;
+                y++;
+            } while y != bottom_len;
+
+            // Bottom tile, upper bitplane.
+            <:src = a = <:&buffer_data[8] + top_len;
+            >:src = a = >:&buffer_data[8] +# 0;
+            <:dest = a = <:dest + 8;
+            >:dest = a = >:dest +# 0;
+            vram_buffer.data[x] = a = bottom_len; x++;
+            vram_buffer.data[x] = a = >:dest; x++;
+            vram_buffer.data[x] = a = <:dest; x++;
+            y = 0;
+            do { 
+                vram_buffer.data[x] = a = src[y];
+                x++;
+                y++;
+            } while y != bottom_len;
+        }
+
+        vram_buffer.position = x;
+    }
+
+    func flush_buffer_queued() {
+        var top_len : u8 in b4;
+        var bottom_len : u8 in b5;
+
+        top_len = a = 8 - dest_pixel_y;
+        bottom_len = a = dest_pixel_y;
+
+        // Draw the first column, possibly two rows of tile data.
+        flush_column_queued(top_len, bottom_len);
+
+        // If wider than 8px, it's two columns.
+        if { a = buffer_position; } && a >= 8 {
+            // Move buffer left one tile, so we can draw this tile, and there's more room for the next tile.
+            x = 0;
+            do {
+                buffer_data[x] = a = (&buffer_data[16])[x];
+                (&buffer_data[16])[x] = a = 0;
+                x++;
+            } while x != 16;
+
+            buffer_position = a = buffer_position - 8;
+
+            // Advance the position in dest.
+            <:dest_tile_addr = a = <:dest_tile_addr + 16;
+            >:dest_tile_addr = a = >:dest_tile_addr +# 0;
+
+            // Draw the second column, possibly another two rows of tile data.
+            flush_column_queued(top_len, bottom_len);
+        }
+    }
+
+    func draw_text_character_queued(src : *u8 in ptr0, color : u8 in b2) {
+        while { y = 0; a = src[y]; } && !zero {
             ++<:src; if zero { ++>:src; }
+
+            if a == '\n' {
+                next_line();
+            } else if a < 4 {
+                color = a;
+            } else if a >= 32 {
+                x = a = a - 32;
+                prepare_glyph(x, color);
+                flush_buffer_queued();                
+                break;
+            }
         }
     }
 
