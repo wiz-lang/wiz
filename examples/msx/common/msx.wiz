@@ -1,0 +1,410 @@
+// TODO: add lots of missing I/O register definitions, clean up definitions.
+// TODO: variables in I/O space? instead of io_write/io_read, just use like a register/variable.
+namespace msx {
+    namespace bios {
+        namespace rst {
+            // TODO: make defines for all the functions listed here: http://map.grauw.nl/resources/msxbios.php
+        }
+    }
+
+    namespace konami {
+        extern writeonly rom_6000 @ 0x6000 : u8;
+        extern writeonly rom_8000 @ 0x8000 : u8;
+        extern writeonly rom_A000 @ 0xA000 : u8;
+    }
+
+    namespace scc {
+        extern writeonly control @ 0x9000 : u8;
+
+        let CONTROL_ENABLE = 0x3F;
+        let CONTROL_DISALBE = 0x00;
+
+        extern var wave_0 @ 0x9800 : [u8; 32];
+        extern var wave_1 @ 0x9820 : [u8; 32];
+        extern var wave_2 @ 0x9840 : [u8; 32];
+        extern var wave_34 @ 0x9860 : [u8; 32];
+        extern var frequency_l_0 @ 0x9880 : u8;
+        extern var frequency_h_0 @ 0x9881 : u8;
+        extern var frequency_l_1 @ 0x9882 : u8;
+        extern var frequency_h_1 @ 0x9883 : u8;
+        extern var frequency_l_2 @ 0x9884 : u8;
+        extern var frequency_h_2 @ 0x9885 : u8;
+        extern var frequency_l_3 @ 0x9886 : u8;
+        extern var frequency_h_3 @ 0x9887 : u8;
+        extern var frequency_l_4 @ 0x9888 : u8;
+        extern var frequency_h_4 @ 0x9889 : u8;
+        extern var volume_0 @ 0x988A : u8;
+        extern var volume_1 @ 0x988B : u8;
+        extern var volume_2 @ 0x988C : u8;
+        extern var volume_3 @ 0x988D : u8;
+        extern var volume_4 @ 0x988E : u8;
+
+        extern var channel_enable @ 0x988F : u8;
+
+        let CHANNEL_ENABLE_4 = 0x10;
+        let CHANNEL_ENABLE_3 = 0x08;
+        let CHANNEL_ENABLE_2 = 0x04;
+        let CHANNEL_ENABLE_1 = 0x02;
+        let CHANNEL_ENABLE_0 = 0x01;
+    }
+
+    namespace ascii8 {
+        extern writeonly rom_4000 @ 0x4000 : u8;
+        extern writeonly rom_6000 @ 0x6000 : u8;
+        extern writeonly rom_8000 @ 0x8000 : u8;
+        extern writeonly rom_A000 @ 0xA000 : u8;
+    }
+
+    namespace ascii16 {
+        extern writeonly rom_4000 @ 0x4000 : u8;
+        extern writeonly rom_8000 @ 0x8000 : u8;
+    }
+
+    namespace io {
+        namespace vdp {
+            let data = 0x98;
+            let control = 0x99;
+
+            // Writing to the control port lets you access one of the following through the data port.
+            let CONTROL_ACCESS_REGISTER = 0x80;
+            let CONTROL_ACCESS_VRAM_READ = 0x00;
+            let CONTROL_ACCESS_VRAM_WRITE = 0x40;
+
+            // Reading the control port gives back VDP status.
+            let CONTROL_STATUS_BIT_VBLANK = 7;
+            let CONTROL_STATUS_BIT_SPRITE_OVERFLOW = 6;
+            let CONTROL_STATUS_BIT_SPRITE_COLLISION = 5;
+            let CONTROL_STATUS_MASK_VBLANK = 0x80;
+            let CONTROL_STATUS_MASK_SPRITE_OVERFLOW = 0x40;
+            let CONTROL_STATUS_MASK_SPRITE_COLLISION = 0x20;
+            let CONTROL_STATUS_MASK_FIFTH_SPRITE = 0x1F;
+        }
+
+        namespace vdp2 {
+            let palette = 0x9A;
+            let register_data = 0x9B;
+        }
+
+        namespace memory {
+            let control = 0x3E;
+            let CONTROL_EXPANSION_DISABLE = 0x80;
+            let CONTROL_CARTRIDGE_DISABLE = 0x40;
+            let CONTROL_CARD_DISABLE = 0x20;
+            let CONTROL_RAM_DISABLE = 0x10;
+            let CONTROL_BIOS_DISABLE = 0x04;
+            let CONTROL_DEVICE_DISABLE = 0x02;
+        }
+
+        namespace ppi {
+            let primary_slot = 0xA8;
+
+            let PRIMARY_SLOT_0000_MASK = 0x03;
+            let PRIMARY_SLOT_4000_MASK = 0x0C;
+            let PRIMARY_SLOT_8000_MASK = 0x30;
+            let PRIMARY_SLOT_C000_MASK = 0xC0;
+
+            let PRIMARY_SLOT_MAIN_ROM = 0;
+            let PRIMARY_SLOT_CART_A = 0;
+            let PRIMARY_SLOT_CART_B = 0;
+            let PRIMARY_SLOT_AUX = 0;            
+
+            let keyboard_status = 0xA9;
+
+            let select = 0xAA;
+            let SELECT_KEYBOARD_CLICK = 0x80;
+            let SELECT_CAPSLOCK_LED = 0x40;
+            let SELECT_CASSETTE_AUDIO_OUT = 0x20;
+            let SELECT_CASSETTE_MOTOR_ON = 0x10;
+            let SELECT_KEYBOARD_LINE_MASK = 0x0F;
+
+            let control = 0xAB;
+            let CONTROL_BIT_INDEX_MASK = 0x0E;
+            let CONTROL_BIT_INDEX_SHIFT = 1;
+            let CONTROL_BIT_SET = 0x01;
+            let CONTROL_BIT_RESET = 0x00;
+        }
+
+        namespace psg {
+            let index = 0xA0;
+            let write = 0xA1;
+            let read = 0xA2;
+        }
+
+        namespace rtc {
+            let index = 0xB4;
+            let data = 0xB5;
+        }
+
+        namespace acia {
+            let data = 0x80;
+            let control = 0x81;
+
+            let CONTROL_STATUS_DATA_SET_READY = 0x80;
+            let CONTROL_STATUS_SYNC_BREAK = 0x40;
+            let CONTROL_STATUS_FRAMING_ERROR = 0x20;
+            let CONTROL_STATUS_OVERRUN_ERROR = 0x10;
+            let CONTROL_STATUS_PARITY_ERROR = 0x08;
+            let CONTROL_STATUS_TRANSMIT_EMPTY  = 0x04;
+            let CONTROL_STATUS_RECEIVE_READY = 0x02;
+            let CONTROL_STATUS_TRANSMIT_READY = 0x01;
+
+            let CONTROL_MODE_STOP_2_BIT = 0xC0;
+            let CONTROL_MODE_STOP_1_5_BIT = 0x80;
+            let CONTROL_MODE_STOP_1_BIT = 0x40;
+            let CONTROL_MODE_STOP_INVALID = 0x00;
+            let CONTROL_MODE_PARITY_CHECK = 0x20;
+            let CONTROL_MODE_ENABLE_PARITY = 0x10;
+            let CONTROL_MODE_WORD_8_BIT = 0x0C;
+            let CONTROL_MODE_WORD_7_BIT = 0x08;
+            let CONTROL_MODE_WORD_6_BIT = 0x04;
+            let CONTROL_MODE_WORD_5_BIT = 0x00;
+            let CONTROL_MODE_BAUD_28_8_KHZ = 0x03;
+            let CONTROL_MODE_BAUD_115_2_KHZ = 0x02;
+            let CONTROL_MODE_BAUD_1843_2_KHZ = 0x01;
+            let CONTROL_MODE_BAUD_SYNC = 0x00;
+
+            let CONTROL_COMMAND_HUNT_MODE = 0x80;
+            let CONTROL_COMMAND_INTERNAL_RESET = 0x40;
+            let CONTROL_COMMAND_SEND_REQUEST = 0x20;
+            let CONTROL_COMMAND_CLEAR_ERRORS = 0x10;
+            let CONTROL_COMMAND_BREAK = 0x08;
+            let CONTROL_COMMAND_RECEIVE = 0x04;
+            let CONTROL_COMMAND_DATA_TERMINAL_READY = 0x02;
+            let CONTROL_COMMAND_TRANSMIT = 0x01;
+        }
+
+        let system_enable = 0xF5;
+        let SYSTEM_ENABLE_CLOCK_ID = 0x80;
+        let SYSTEM_ENABLE_LIGHTPEN = 0x40;
+        let SYSTEM_ENABLE_RS232C = 0x20;
+        let SYSTEM_ENABLE_MSX_INTERFACE = 0x10;
+        let SYSTEM_ENABLE_SUPERIMPOSE = 0x08;
+        let SYSTEM_ENABLE_MSX_AUDIO = 0x04;
+        let SYSTEM_ENABLE_KANJI_2 = 0x02;
+        let SYSTEM_ENABLE_KANJI_1 = 0x01;
+
+        let av_control = 0xF7;
+        let AV_CONTROL_REVERSE_VDP_BIT_5 = 0x80;
+        let AV_CONTROL_REVERSE_VDP_BIT_4 = 0x40;
+        let AV_CONTROL_YM_CONTROL = 0x20;
+        let AV_CONTROL_AV_CONTROL = 0x10;
+        let AV_CONTROL_ENABLE_RGB21_INPUT = 0x04;
+        let AV_CONTROL_L = 0x02;
+        let AV_CONTROL_R = 0x01;
+
+        let AV_CONTROL_STATUS_RGB21_INPUT_ENABLED = 0x08;
+
+    }
+
+    // VDP registers
+    namespace vdp {
+        namespace color {
+            let TRANSPARENT = 0;
+            let BLACK = 1;
+            let MEDIUM_GREEN = 2;
+            let LIGHT_GREEN = 3;
+            let DARK_BLUE = 4;
+            let LIGHT_BLUE = 5;
+            let DARK_RED = 6;
+            let CYAN = 7;
+            let MEDIUM_RED = 8;
+            let LIGHT_RED = 9;
+            let DARK_YELLOW = 10;
+            let LIGHT_YELLOW = 11;
+            let DARK_GREEN = 12;
+            let MAGENTA = 13;
+            let GRAY = 14;
+            let WHITE = 15;
+        }
+
+        let mode_control_0 = 0x00;
+        let MODE_CONTROL_0_DIGITIZE = 0x40;
+        let MODE_CONTROL_0_LIGHTPEN_MOUSE = 0x20;
+        let MODE_CONTROL_0_HBLANK_IRQ = 0x10;
+        let MODE_CONTROL_0_M5 = 0x08;
+        let MODE_CONTROL_0_M4 = 0x04;
+        let MODE_CONTROL_0_M3 = 0x02;
+        let MODE_CONTROL_0_EXTERNAL_INPUT = 0x01;
+
+        let mode_control_1 = 0x01;
+
+        let MODE_CONTROL_1_ENABLE = 0x40;
+        let MODE_CONTROL_1_VBLANK_IRQ = 0x20;
+        let MODE_CONTROL_1_M1 = 0x10;
+        let MODE_CONTROL_1_M2 = 0x08;
+        let MODE_CONTROL_1_SPRITE_8x16 = 0x02;
+        let MODE_CONTROL_1_SPRITE_STRETCH = 0x01;
+
+        let nametable_address = 0x02;
+        let NAMETABLE_ADDRESS_SHIFT = 10;
+
+        let colortable_address = 0x03;
+        let COLORTABLE_ADDRESS_SHIFT = 6;
+
+        let tile_pattern_address = 0x04;
+        let TILE_PATTERN_ADDRESS_SHIFT = 11;
+
+        let sprite_attribute_address = 0x05;
+        let SPRITE_ATTRIBUTE_ADDRESS_SHIFT = 7;
+
+        let sprite_pattern_address = 0x06;
+        let SPRITE_PATTERN_ADDRESS_SHIFT = 7;
+
+
+        let overscan_color = 0x07;
+    }
+
+    // VDP registers (MSX2 only)
+    namespace vdp2 {
+        let mode_control_2 = 0x08;
+        let MODE_CONTROL_2_MOUSE_SELECT = 0x80;
+        let MODE_CONTROL_2_LIGHTPEN_SELECT = 0x40;
+        let MODE_CONTROL_2_OPAQUE_COLOR0 = 0x20;
+        let MODE_CONTROL_2_COLOR_BUS_INPUT = 0x10;
+        let MODE_CONTROL_2_VRAM_SIZE_FAST_64K = 0x0C;
+        let MODE_CONTROL_2_VRAM_SIZE_64K = 0x08;
+        let MODE_CONTROL_2_VRAM_SIZE_4X_16K = 0x04;
+        let MODE_CONTROL_2_VRAM_SIZE_1X_16K = 0x00;
+        let MODE_CONTROL_2_DISABLE_OBJ = 0x02;
+        let MODE_CONTROL_2_GREYSCALE = 0x01;
+
+        let mode_control_3 = 0x09;
+        let MODE_CONTROL_3_SCREEN_HEIGHT_212 = 0x80;
+        let MODE_CONTROL_3_SCREEN_HEIGHT_192 = 0x00;
+        let MODE_CONTROL_3_SIMULTANEOUS_EXTERN = 0x20;
+        let MODE_CONTROL_3_SIMULTANEOUS_MIX = 0x10;
+        let MODE_CONTROL_3_SIMULTANEOUS_INTERN = 0x00;
+        let MODE_CONTROL_3_INTERLACE = 0x08;
+        let MODE_CONTROL_3_EVEN_ODD = 0x04;
+        let MODE_CONTROL_3_NTSC = 0x02;
+        let MODE_CONTROL_3_DOT_CLOCK_INPUT = 0x01;
+
+        let colortable_address_h = 0x0A;
+        let sprite_attribute_address_h = 0x0B;
+        let blink_color = 0x0C;
+        let blink_period = 0x0D;
+        let vram_bank_select = 0x0E;
+        let status_register_index = 0x0F;
+        let palette_index = 0x10;
+
+        let register_index = 0x11;
+        let REGISTER_INDEX_DISABLE_AUTO_INCREMENT = 0x80;
+
+        let display_adjust = 0x12;
+        let DISPLAY_ADJUST_X_MASK = 0x0F;
+        let DISPLAY_ADJUST_Y_MASK = 0xF0;
+        let DISPLAY_ADJUST_Y_SHIFT = 8;
+
+        let scanline_interrupt_line = 0x13;
+        let vscroll = 0x17;
+
+        let hscroll_control = 0x19;
+        let HSCROLL_CONTROL_COMMAND_ALTERNATE = 0x80;
+        let HSCROLL_CONTROL_COMMAND_NORMAL = 0x00;
+        let HSCROLL_CONTROL_PIN8_VDS = 0x20;
+        let HSCROLL_CONTROL_PIN8_CPU_CLOCK = 0x00;
+        let HSCROLL_CONTROL_ENABLE_YJK_ATTRIBUTES = 0x10;
+        let HSCROLL_CONTROL_ENABLE_YJK = 0x08;
+        let HSCROLL_CONTROL_ENABLE_WAITSTATE = 0x04;
+        let HSCROLL_CONTROL_HIDE_LEFTMOST = 0x02;
+        let HSCROLL_CONTROL_TWO_PAGE = 0x01;
+
+        let hscroll_offset_h = 0x1A;
+        let hscroll_offset_l = 0x1B;
+
+        let source_x_l = 0x20;
+        let source_x_h = 0x21;
+        let source_y_l = 0x22;
+        let source_y_h = 0x23;
+        let dest_x_l = 0x24;
+        let dest_x_h = 0x25;
+        let dest_y_l = 0x26;
+        let dest_y_h = 0x27;
+        let width_l = 0x28;
+        let width_h = 0x29;
+        let height_l = 0x2A;
+        let height_h = 0x2B;
+
+        let data = 0x2C;
+
+        let argument = 0x2D;
+        let command = 0x2E;
+    }
+
+    namespace psg {
+        let frequency_l_a = 0x00;
+        let frequency_h_a = 0x01;
+        let frequency_l_b = 0x02;
+        let frequency_h_b = 0x03;
+        let frequency_l_c = 0x04;
+        let frequency_h_c = 0x05;
+
+        let noise_period = 0x06;
+
+        let mixer = 0x07;
+        let MIXER_IO_PORT_B_OUTPUT = 0x80;
+        let MIXER_IO_PORT_A_OUTPUT = 0x40;
+        let MIXER_ENABLE_NOISE_C = 0x20;
+        let MIXER_ENABLE_NOISE_B = 0x10;
+        let MIXER_ENABLE_NOISE_A = 0x08;
+        let MIXER_ENABLE_TONE_C = 0x04;
+        let MIXER_ENABLE_TONE_B = 0x02;
+        let MIXER_ENABLE_TONE_A = 0x01;
+
+        let volume_a = 0x08;
+        let volume_b = 0x09;
+        let volume_c = 0x0A;
+
+        let envelope_frequency_l = 0x0B;
+        let envelope_frequency_h = 0x0C;
+
+        let envelope_shape = 0x0D;
+        let ENVELOPE_SHAPE_CONTINUE = 0x08;
+        let ENVELOPE_SHAPE_ATTACK = 0x04;
+        let ENVELOPE_SHAPE_ALTERNATE = 0x02;
+        let ENVELOPE_SHAPE_HOLD = 0x01;
+
+        let io_port_a = 0x0E;
+        let IO_PORT_A_CASSETTE = 0x80;
+        let IO_PORT_A_KEYBOARD_SWITCH = 0x40;
+        let IO_PORT_A_JOY_B = 0x20;
+        let IO_PORT_A_JOY_A = 0x10;
+        let IO_PORT_A_JOY_RIGHT = 0x08;
+        let IO_PORT_A_JOY_LEFT = 0x04;
+        let IO_PORT_A_JOY_DOWN = 0x02;
+        let IO_PORT_A_JOY_UP = 0x01;
+
+        let io_port_b = 0x0F;
+        let IO_PORT_B_LED = 0x80;
+        let IO_PORT_B_JOY_INDEX = 0x40;
+        let IO_PORT_B_PULSE_2 = 0x20;
+        let IO_PORT_B_PULSE_1 = 0x10;
+        let IO_PORT_B_TOUCHPAD_HANDSHAKE = 0x0F;
+    }
+
+    namespace rtc {
+        let mode = 0x0D;
+        let test = 0x0E;
+        let reset = 0x0F;
+    }
+
+    namespace ppi {
+        // Read is inverted from write.
+        extern var secondary_slot @ 0xFFFF : u8;
+
+        let SECONDARY_SLOT_0000_MASK = 0x03;
+        let SECONDARY_SLOT_4000_MASK = 0x0C;
+        let SECONDARY_SLOT_8000_MASK = 0x30;
+        let SECONDARY_SLOT_C000_MASK = 0xC0;
+
+        let SECONDARY_SLOT_AUX_SUB_DISK = 1;
+        let SECONDARY_SLOT_AUX_RAM = 2;
+    }
+
+    namespace ram {
+        extern var bank_0000 @ 0xFC : u8;
+        extern var bank_4000 @ 0xFD : u8;
+        extern var bank_8000 @ 0xFE : u8;
+        extern var bank_C000 @ 0xFF : u8;        
+    }
+}
