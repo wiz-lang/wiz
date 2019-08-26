@@ -232,7 +232,8 @@ namespace msx {
         let MODE_CONTROL_1_VBLANK_IRQ = 0x20;
         let MODE_CONTROL_1_M1 = 0x10;
         let MODE_CONTROL_1_M2 = 0x08;
-        let MODE_CONTROL_1_SPRITE_8x16 = 0x02;
+        let MODE_CONTROL_1_SPRITE_16x16 = 0x02;
+        let MODE_CONTROL_1_SPRITE_8x8 = 0x00;
         let MODE_CONTROL_1_SPRITE_STRETCH = 0x01;
 
         let nametable_address = 0x02;
@@ -249,7 +250,6 @@ namespace msx {
 
         let sprite_pattern_address = 0x06;
         let SPRITE_PATTERN_ADDRESS_SHIFT = 7;
-
 
         let overscan_color = 0x07;
     }

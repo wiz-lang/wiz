@@ -73,8 +73,6 @@ in prg {
         nes.ppu.scroll = a = 0;
         nes.ppu.scroll = a;
 
-        vwf.init();
-
         let TEXTBOX_BG_ADDR = nes.ppu.ADDRESS_NAMETABLE_DATA + (3 * 32) + 7;
 
         <:ptr0 = a = <:TEXTBOX_BG_ADDR;
@@ -89,28 +87,94 @@ in prg {
         // Enable interrupts.
         nointerrupt = false;
 
-        <:text_ptr = a = <:&message;
-        >:text_ptr = a = >:&message;
-        text_color = a = 3;
-        text_delay = a = 60;
+        text_message_index = a = 0;
 
-        while true {
-            vram_buffer.clear();
+        ^while true {
+            <:ptr0 = a = <:&messages;
+            >:ptr0 = a = >:&messages;
+            a = text_message_index;
+            y = a = a << 1;
+            <:text_ptr = a = ptr0[y]; y++;
+            >:text_ptr = a = ptr0[y];
+            text_color = a = 3;
+            text_delay = a = 10;
+            text_hold_timer = a = 180;
+            vwf.init();
+            while true {
+                vram_buffer.clear();
 
-            if { a = text_delay; } && zero {
-                <:ptr0 = a = <:text_ptr;
-                >:ptr0 = a = >:text_ptr;
-                b2 = a = text_color;
-                vwf.draw_text_character_queued(ptr0, b2);
-                <:text_ptr = a = <:ptr0;
-                >:text_ptr = a = >:ptr0;
-                text_color = a = b2;
-            } else {
-                text_delay--;
+                if { a = text_delay; } && zero {
+                    <:ptr0 = a = <:text_ptr;
+                    >:ptr0 = a = >:text_ptr;
+                    if { y = 0; a = ptr0[y]; } && !zero {
+                        b2 = a = text_color;
+                        vwf.draw_text_character_queued(ptr0, b2);
+                        <:text_ptr = a = <:ptr0;
+                        >:text_ptr = a = >:ptr0;
+                        text_color = a = b2;
+                    } else {
+                        if { a = text_hold_timer; } && !zero {
+                            text_hold_timer--;
+                        }
+                    }
+                } else {
+                    text_delay--;
+                }
+                vram_buffer.request_transfer();
+
+                do { a = vram_buffer.transfer_requested; } while !zero;
+
+                if { a = text_hold_timer; } && zero {
+                    break;
+                }
             }
-            vram_buffer.request_transfer();
 
-            do { a = vram_buffer.transfer_requested; } while !zero;
+            b15 = a = 0;
+
+            // FIXME: move the clear functionality into the VWF library.
+
+            while { a = b15; } && a < vwf.CANVAS_WIDTH * vwf.CANVAS_HEIGHT {
+                vram_buffer.clear();
+
+                x = vram_buffer.position;
+
+                var dest : *u8 in ptr0;
+                <:dest = a = b15;
+                >:dest = a = 0;
+
+                inline for in 1 .. 4 {
+                    <:dest <<= 1;
+                    >:dest <<<<#= 1;
+                }
+
+                <:dest = a = <:dest + <:(nes.ppu.ADDRESS_PATTERN_DATA + vwf.TILE_START_INDEX * 16);
+                >:dest = a = >:dest +# >:(nes.ppu.ADDRESS_PATTERN_DATA + vwf.TILE_START_INDEX * 16);
+
+                y = 4;
+                do {
+                    vram_buffer.data[x] = a = 32 | vram_buffer.COMMAND_FILL; x++;
+                    vram_buffer.data[x] = a = >:dest; x++;
+                    vram_buffer.data[x] = a = <:dest; x++;
+                    vram_buffer.data[x] = a = 0; x++;
+
+                    <:dest = a = <:dest + 32;
+                    >:dest = a = >:dest +# 0;
+
+                    b15++;
+                    b15++;
+                    y--;
+                } while !zero;
+
+                vram_buffer.position = x;
+                vram_buffer.request_transfer();
+
+                do { a = vram_buffer.transfer_requested; } while !zero;
+            }
+
+            text_message_index++;
+            if { a = text_message_index; } && a >= messages.len {
+                text_message_index = a = 0;
+            }            
         }
     }
 
@@ -139,7 +203,11 @@ in prg {
         a = pop();
     }
 
-    const message = "You want the \x02Burrito XL\x03?\nGreat choice! Let's see...\nThat will be... \x01$8\x03 please.\0";
+    const messages = [
+        @"You want the \x02Burrito XL\x03?\nGreat choice! Let's see...\nThat will be... \x01$8\x03 please.\0",
+        @"...Here you go.\nRemember to eat it while\nit's still fresh!\0",
+        @"Thanks for checking out\nthis \x01variable width font\x03\ndemo.\0",
+    ];
 
     const tile_copy_command : [u8] = [
         <:32, >:nes.ppu.ADDRESS_PATTERN_DATA, 0,

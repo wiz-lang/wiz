@@ -7,4 +7,7 @@ in zeropage {
     var text_delay : u8;
     var text_ptr : *u8;
     var text_color : u8;
+    var text_hold_timer : u8;
+
+    var text_message_index : u8;
 }
