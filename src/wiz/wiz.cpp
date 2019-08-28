@@ -298,7 +298,7 @@ namespace wiz {
                 if (const auto formatValue = config.checkString(report, "format"_sv, false)) {
                     format = formatCollection.find(formatValue->second);
                     if (format == nullptr) {
-                        report->error("`format` of \"" + formatValue->second.toString() + "\" is not supported.", formatValue->first->location, ReportErrorFlags { ReportErrorFlagType::Fatal });
+                        report->error("`format` of \"" + formatValue->second.toString() + "\" is not supported.", formatValue->first->location, ReportErrorFlags::of<ReportErrorFlagType::Fatal>());
                         return 1;
                     }
                 }
@@ -325,7 +325,7 @@ namespace wiz {
                     if (writer && writer->write(context.data)) {
                         report->log(">> Wrote to \"" + outputName.toString() + "\".");
                     } else {
-                        report->error("Output file \"" + outputName.toString() + "\" could not be written.", SourceLocation(), ReportErrorFlags { ReportErrorFlagType::Fatal });
+                        report->error("Output file \"" + outputName.toString() + "\" could not be written.", SourceLocation(), ReportErrorFlags::of<ReportErrorFlagType::Fatal>());
                         return 1;
                     }
                 }

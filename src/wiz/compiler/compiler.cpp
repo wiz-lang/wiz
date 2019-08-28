@@ -158,14 +158,14 @@ namespace wiz {
 
     bool Compiler::enterLetExpression(StringView name, SourceLocation location) {  
         if (letExpressionStack.size() >= MaxLetRecursionDepth) {
-            report->error("stack overflow encountered during `let` expression evaluation", location, ReportErrorFlags { ReportErrorFlagType::Continued });
-            report->error("internal recursion limit is " + std::to_string(MaxLetRecursionDepth), location, ReportErrorFlags { ReportErrorFlagType::Continued });
-            report->error("stack trace:", location, ReportErrorFlags { ReportErrorFlagType::Continued });
+            report->error("stack overflow encountered during `let` expression evaluation", location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
+            report->error("internal recursion limit is " + std::to_string(MaxLetRecursionDepth), location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
+            report->error("stack trace:", location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
             for (std::size_t i = 0; i != letExpressionStack.size(); ++i) {
                 const auto& item = letExpressionStack[i];
                 report->log("#" + std::to_string(i + 1) + " - " + item.location.toString() + " in expression `" + item.name.toString() + "`");
             }
-            report->error("stopping compilation due to previous error", location, ReportErrorFlags(ReportErrorFlagType::Fatal));
+            report->error("stopping compilation due to previous error", location, ReportErrorFlags::of<ReportErrorFlagType::Fatal>());
             return false;
         }
 
@@ -239,10 +239,10 @@ namespace wiz {
                             : "")
                         + " is ambiguous",
                         location,
-                        ReportErrorFlags { ReportErrorFlagType::Continued });
+                        ReportErrorFlags::of<ReportErrorFlagType::Continued>());
 
                     for (const auto result : results) {
-                        report->error("`" + partiallyQualifiedName + "` is defined here, by " + result->declaration->getDescription().toString(), result->declaration->location, ReportErrorFlags { ReportErrorFlagType::Continued });
+                        report->error("`" + partiallyQualifiedName + "` is defined here, by " + result->declaration->getDescription().toString(), result->declaration->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
                     }
 
                     report->error("identifier must be manually disambiguated\n", location);
@@ -701,7 +701,7 @@ namespace wiz {
                     // ((T_1, T_2, ... T_n), integer i) -> T_i
                     case BinaryOperatorKind::Indexing: {
                         if (isIntegerType(right->info->type.get())) {
-                            ExpressionInfo::Flags flags(left->info->flags & ExpressionInfo::Flags { ExpressionInfo::Flag::LValue, ExpressionInfo::Flag::Const, ExpressionInfo::Flag::WriteOnly, ExpressionInfo::Flag::Far });
+                            const auto flags = left->info->flags.intersect<ExpressionInfo::Flag::LValue, ExpressionInfo::Flag::Const, ExpressionInfo::Flag::WriteOnly, ExpressionInfo::Flag::Far>();
 
                             if (left->info->type->variant.is<TypeExpression::Array>()) {
                                 if (right->variant.is<Expression::IntegerLiteral>()) {
@@ -744,9 +744,9 @@ namespace wiz {
                                                 auto resultType = left->info->type->variant.get<TypeExpression::Array>().elementType->clone();
                                                 auto addressType = makeFwdUnique<const TypeExpression>(
                                                     TypeExpression::Pointer(left->info->type->variant.get<TypeExpression::Array>().elementType->clone(),
-                                                        (left->info->flags.contains<ExpressionInfo::Flag::Const>() ? PointerQualifiers { PointerQualifier::Const } : PointerQualifiers {})
-                                                        | (left->info->flags.contains<ExpressionInfo::Flag::WriteOnly>() ? PointerQualifiers { PointerQualifier::WriteOnly } : PointerQualifiers {})
-                                                        | (left->info->flags.contains<ExpressionInfo::Flag::Far>() ? PointerQualifiers { PointerQualifier::Far } : PointerQualifiers {})
+                                                        (left->info->flags.contains<ExpressionInfo::Flag::Const>() ? PointerQualifiers::of<PointerQualifier::Const>() : PointerQualifiers {})
+                                                        | (left->info->flags.contains<ExpressionInfo::Flag::WriteOnly>() ? PointerQualifiers::of<PointerQualifier::WriteOnly>() : PointerQualifiers {})
+                                                        | (left->info->flags.contains<ExpressionInfo::Flag::Far>() ? PointerQualifiers::of<PointerQualifier::Far>() : PointerQualifiers {})
                                                     ),
                                                     resultType->location);
                                                 const auto pointerSizedType = left->info->flags.contains<ExpressionInfo::Flag::Far>() ? platform->getFarPointerSizedType() : platform->getPointerSizedType();
@@ -768,9 +768,9 @@ namespace wiz {
                                         auto resultType = left->info->type->variant.get<TypeExpression::Array>().elementType->clone();
                                         auto addressType = makeFwdUnique<const TypeExpression>(
                                             TypeExpression::Pointer(left->info->type->variant.get<TypeExpression::Array>().elementType->clone(),
-                                                (left->info->flags.contains<ExpressionInfo::Flag::Const>() ? PointerQualifiers { PointerQualifier::Const } : PointerQualifiers {})
-                                                | (left->info->flags.contains<ExpressionInfo::Flag::WriteOnly>() ? PointerQualifiers { PointerQualifier::WriteOnly } : PointerQualifiers {})
-                                                | (left->info->flags.contains<ExpressionInfo::Flag::Far>() ? PointerQualifiers { PointerQualifier::Far } : PointerQualifiers {})),
+                                                (left->info->flags.contains<ExpressionInfo::Flag::Const>() ? PointerQualifiers::of<PointerQualifier::Const>() : PointerQualifiers {})
+                                                | (left->info->flags.contains<ExpressionInfo::Flag::WriteOnly>() ? PointerQualifiers::of<PointerQualifier::WriteOnly>() : PointerQualifiers {})
+                                                | (left->info->flags.contains<ExpressionInfo::Flag::Far>() ? PointerQualifiers::of<PointerQualifier::Far>() : PointerQualifiers {})),
                                             resultType->location);
                                         const auto pointerSizedType = left->info->flags.contains<ExpressionInfo::Flag::Far>() ? platform->getFarPointerSizedType() : platform->getPointerSizedType();
                                         const auto mask = Int128((1U << (8U * pointerSizedType->variant.get<Definition::BuiltinIntegerType>().size)) - 1);
@@ -820,10 +820,10 @@ namespace wiz {
                                 report->error("tuple index must be a compile-time integer literal", expression->location);
                                 return nullptr;
                             } else if (const auto pointerType = left->info->type->variant.tryGet<TypeExpression::Pointer>()) {
-                                const auto flags = ExpressionInfo::Flags { ExpressionInfo::Flag::LValue }
-                                    | (pointerType->qualifiers.contains<PointerQualifier::Const>() ? ExpressionInfo::Flags { ExpressionInfo::Flag::Const } : ExpressionInfo::Flags {})
-                                    | (pointerType->qualifiers.contains<PointerQualifier::WriteOnly>() ? ExpressionInfo::Flags { ExpressionInfo::Flag::WriteOnly } : ExpressionInfo::Flags {})
-                                    | (pointerType->qualifiers.contains<PointerQualifier::Far>() ? ExpressionInfo::Flags { ExpressionInfo::Flag::Far } : ExpressionInfo::Flags {});
+                                const auto flags = ExpressionInfo::Flags::of<ExpressionInfo::Flag::LValue>()
+                                    | (pointerType->qualifiers.contains<PointerQualifier::Const>() ? ExpressionInfo::Flags::of<ExpressionInfo::Flag::Const>() : ExpressionInfo::Flags {})
+                                    | (pointerType->qualifiers.contains<PointerQualifier::WriteOnly>() ? ExpressionInfo::Flags::of<ExpressionInfo::Flag::WriteOnly>() : ExpressionInfo::Flags {})
+                                    | (pointerType->qualifiers.contains<PointerQualifier::Far>() ? ExpressionInfo::Flags::of<ExpressionInfo::Flag::Far>() : ExpressionInfo::Flags {});
                                 auto resultType = pointerType->elementType->clone();
 
                                 return makeFwdUnique<const Expression>(
@@ -1208,7 +1208,7 @@ namespace wiz {
                             return makeFwdUnique<const Expression>(
                                 Expression::IntegerLiteral(*integerValue & Int128((1U << (8U * pointerSizedType->variant.get<Definition::BuiltinIntegerType>().size)) - 1)),
                                 expression->location,
-                                ExpressionInfo(EvaluationContext::CompileTime, std::move(destType), destFar ? ExpressionInfo::Flags { ExpressionInfo::Flag::Far } : ExpressionInfo::Flags {}));
+                                ExpressionInfo(EvaluationContext::CompileTime, std::move(destType), destFar ? ExpressionInfo::Flags::of<ExpressionInfo::Flag::Far>() : ExpressionInfo::Flags {}));
                         }
                     }
                 }
@@ -1220,7 +1220,7 @@ namespace wiz {
                     return makeFwdUnique<const Expression>(
                         Expression::Cast(std::move(operand), std::move(destType)),
                         expression->location,
-                        ExpressionInfo(context, std::move(destTypeClone), destFar ? ExpressionInfo::Flags { ExpressionInfo::Flag::Far } : ExpressionInfo::Flags {}));
+                        ExpressionInfo(context, std::move(destTypeClone), destFar ? ExpressionInfo::Flags::of<ExpressionInfo::Flag::Far>() : ExpressionInfo::Flags {}));
                 }
 
                 report->error("cannot cast expression from `" + getTypeName(sourceType.get()) + "` to `" + getTypeName(destType.get()) + "`", expression->location);
@@ -1638,10 +1638,10 @@ namespace wiz {
                     // *T -> T
                     case UnaryOperatorKind::Indirection: {
                         if (const auto& pointerType = operand->info->type->variant.tryGet<TypeExpression::Pointer>()) {
-                            const auto flags = ExpressionInfo::Flags { ExpressionInfo::Flag::LValue }
-                                | (pointerType->qualifiers.contains<PointerQualifier::Const>() ? ExpressionInfo::Flags { ExpressionInfo::Flag::Const } : ExpressionInfo::Flags {})
-                                | (pointerType->qualifiers.contains<PointerQualifier::WriteOnly>() ? ExpressionInfo::Flags { ExpressionInfo::Flag::WriteOnly } : ExpressionInfo::Flags {})
-                                | (pointerType->qualifiers.contains<PointerQualifier::Far>() ? ExpressionInfo::Flags { ExpressionInfo::Flag::Far } : ExpressionInfo::Flags {});
+                            const auto flags = ExpressionInfo::Flags::of<ExpressionInfo::Flag::LValue>()
+                                | (pointerType->qualifiers.contains<PointerQualifier::Const>() ? ExpressionInfo::Flags::of<ExpressionInfo::Flag::Const>() : ExpressionInfo::Flags {})
+                                | (pointerType->qualifiers.contains<PointerQualifier::WriteOnly>() ? ExpressionInfo::Flags::of<ExpressionInfo::Flag::WriteOnly>() : ExpressionInfo::Flags {})
+                                | (pointerType->qualifiers.contains<PointerQualifier::Far>() ? ExpressionInfo::Flags::of<ExpressionInfo::Flag::Far>() : ExpressionInfo::Flags {});
                             auto resultType = pointerType->elementType->clone();
 
                             return makeFwdUnique<const Expression>(
@@ -1704,19 +1704,19 @@ namespace wiz {
                             if (const auto varDefinition = resolvedIdentifier->definition->variant.tryGet<Definition::Var>()) {
                                 auto resultType = makeFwdUnique<const TypeExpression>(
                                     TypeExpression::Pointer(operand->info->type->clone(), 
-                                        (operand->info->flags.contains<ExpressionInfo::Flag::Const>() ? PointerQualifiers { PointerQualifier::Const } : PointerQualifiers {})
-                                        | (operand->info->flags.contains<ExpressionInfo::Flag::WriteOnly>() ? PointerQualifiers { PointerQualifier::WriteOnly } : PointerQualifiers {})
-                                        | (op == UnaryOperatorKind::FarAddressOf ? PointerQualifiers { PointerQualifier::Far } : PointerQualifiers {}) ),
+                                        (operand->info->flags.contains<ExpressionInfo::Flag::Const>() ? PointerQualifiers::of<PointerQualifier::Const>() : PointerQualifiers {})
+                                        | (operand->info->flags.contains<ExpressionInfo::Flag::WriteOnly>() ? PointerQualifiers::of<PointerQualifier::WriteOnly>() : PointerQualifiers {})
+                                        | (op == UnaryOperatorKind::FarAddressOf ? PointerQualifiers::of<PointerQualifier::Far>() : PointerQualifiers {}) ),
                                     operand->info->type->location);
 
                                 if (varDefinition->address.hasValue() && varDefinition->address->absolutePosition.hasValue()) {
                                     return makeFwdUnique<const Expression>(
                                         Expression::IntegerLiteral(Int128(varDefinition->address->absolutePosition.get()) & mask), expression->location,
-                                        ExpressionInfo(EvaluationContext::CompileTime, std::move(resultType), op == UnaryOperatorKind::FarAddressOf ? ExpressionInfo::Flags { ExpressionInfo::Flag::Far } : ExpressionInfo::Flags {}));
+                                        ExpressionInfo(EvaluationContext::CompileTime, std::move(resultType), op == UnaryOperatorKind::FarAddressOf ? ExpressionInfo::Flags::of<ExpressionInfo::Flag::Far>() : ExpressionInfo::Flags {}));
                                 } else {
                                     return makeFwdUnique<const Expression>(
                                         Expression::UnaryOperator(unaryOperator.op, std::move(operand)), expression->location,
-                                        ExpressionInfo(EvaluationContext::LinkTime, std::move(resultType), op == UnaryOperatorKind::FarAddressOf ? ExpressionInfo::Flags { ExpressionInfo::Flag::Far } : ExpressionInfo::Flags {}));
+                                        ExpressionInfo(EvaluationContext::LinkTime, std::move(resultType), op == UnaryOperatorKind::FarAddressOf ? ExpressionInfo::Flags::of<ExpressionInfo::Flag::Far>() : ExpressionInfo::Flags {}));
                                 }
                             } else if (const auto funcDefinition = resolvedIdentifier->definition->variant.tryGet<Definition::Func>()) {
                                 if (funcDefinition->inlined) {
@@ -1726,18 +1726,18 @@ namespace wiz {
 
                                 auto resultType = makeFwdUnique<const TypeExpression>(
                                     TypeExpression::Pointer(operand->info->type->clone(), 
-                                        PointerQualifiers { PointerQualifier::Const }
-                                        | (op == UnaryOperatorKind::FarAddressOf ? PointerQualifiers { PointerQualifier::Far } : PointerQualifiers {}) ),
+                                        PointerQualifiers::of<PointerQualifier::Const>()
+                                        | (op == UnaryOperatorKind::FarAddressOf ? PointerQualifiers::of<PointerQualifier::Far>() : PointerQualifiers {}) ),
                                     operand->info->type->location);
 
                                 if (funcDefinition->address.hasValue() && funcDefinition->address.get().absolutePosition.hasValue()) {
                                     return makeFwdUnique<const Expression>(
                                         Expression::IntegerLiteral(Int128(funcDefinition->address->absolutePosition.get()) & mask), expression->location,
-                                        ExpressionInfo(EvaluationContext::CompileTime, std::move(resultType), op == UnaryOperatorKind::FarAddressOf ? ExpressionInfo::Flags { ExpressionInfo::Flag::Far } : ExpressionInfo::Flags {}));
+                                        ExpressionInfo(EvaluationContext::CompileTime, std::move(resultType), op == UnaryOperatorKind::FarAddressOf ? ExpressionInfo::Flags::of<ExpressionInfo::Flag::Far>() : ExpressionInfo::Flags {}));
                                 } else {
                                     return makeFwdUnique<const Expression>(
                                         Expression::UnaryOperator(unaryOperator.op, std::move(operand)), expression->location,
-                                        ExpressionInfo(EvaluationContext::LinkTime, std::move(resultType), op == UnaryOperatorKind::FarAddressOf ? ExpressionInfo::Flags { ExpressionInfo::Flag::Far } : ExpressionInfo::Flags {}));
+                                        ExpressionInfo(EvaluationContext::LinkTime, std::move(resultType), op == UnaryOperatorKind::FarAddressOf ? ExpressionInfo::Flags::of<ExpressionInfo::Flag::Far>() : ExpressionInfo::Flags {}));
                                 }
                             }
                         }
@@ -1942,7 +1942,7 @@ namespace wiz {
                             const auto constType = operand->info->type.get();
                             const auto constName = stringPool->intern("$data" + std::to_string(definitionPool.size()));
                             auto constDeclaration = statementPool.addNew(Statement::InternalDeclaration(), expression->location);
-                            auto definition = definitionPool.addNew(Definition::Var(Modifiers { Modifier::Const }, currentFunction, nullptr, nullptr), constName, constDeclaration);
+                            auto definition = definitionPool.addNew(Definition::Var(Modifiers::of<Modifier::Const>(), currentFunction, nullptr, nullptr), constName, constDeclaration);
                             auto& constDefinition = definition->variant.get<Definition::Var>();
 
                             constDefinition.resolvedType = constType;
@@ -1962,7 +1962,7 @@ namespace wiz {
                             reservedConstants.push_back(definition);
 
                             auto pointerToElementType = makeFwdUnique<const TypeExpression>(
-                                TypeExpression::Pointer(elementTypePtr->clone(), PointerQualifiers { PointerQualifier::Const }),
+                                TypeExpression::Pointer(elementTypePtr->clone(), PointerQualifiers::of<PointerQualifier::Const>()),
                                 expression->location);
                             const auto pointerToElementTypePtr = pointerToElementType.get();
 
@@ -1977,12 +1977,12 @@ namespace wiz {
                                                 expression->location,
                                                 ExpressionInfo(EvaluationContext::LinkTime,
                                                     constType->clone(),
-                                                    ExpressionInfo::Flags { ExpressionInfo::Flag::LValue, ExpressionInfo::Flag::Const }))),
+                                                    ExpressionInfo::Flags::of<ExpressionInfo::Flag::LValue, ExpressionInfo::Flag::Const>()))),
                                         expression->location,
                                         ExpressionInfo(
                                             EvaluationContext::LinkTime,
                                             makeFwdUnique<const TypeExpression>(
-                                                TypeExpression::Pointer(constType->clone(), PointerQualifiers { PointerQualifier::Const }),
+                                                TypeExpression::Pointer(constType->clone(), PointerQualifiers::of<PointerQualifier::Const>()),
                                                 expression->location),
                                             ExpressionInfo::Flags {})),
                                 std::move(pointerToElementType)),
@@ -2149,14 +2149,14 @@ namespace wiz {
                 ExpressionInfo(
                     varDefinition->resolvedType->variant.is<TypeExpression::Array>() ? EvaluationContext::LinkTime : EvaluationContext::RunTime,
                     varDefinition->resolvedType->clone(),
-                    ExpressionInfo::Flags { ExpressionInfo::Flag::LValue }
-                    | (varDefinition->modifiers.contains<Modifier::Const>() ? ExpressionInfo::Flags { ExpressionInfo::Flag::Const } : ExpressionInfo::Flags {})
-                    | (varDefinition->modifiers.contains<Modifier::WriteOnly>() ? ExpressionInfo::Flags { ExpressionInfo::Flag::WriteOnly } : ExpressionInfo::Flags {})));
+                    ExpressionInfo::Flags::of<ExpressionInfo::Flag::LValue>()
+                    | (varDefinition->modifiers.contains<Modifier::Const>() ? ExpressionInfo::Flags::of<ExpressionInfo::Flag::Const>() : ExpressionInfo::Flags {})
+                    | (varDefinition->modifiers.contains<Modifier::WriteOnly>() ? ExpressionInfo::Flags::of<ExpressionInfo::Flag::WriteOnly>() : ExpressionInfo::Flags {})));
         } else if (const auto registerDefinition = definition->variant.tryGet<Definition::BuiltinRegister>()) {
             return makeFwdUnique<const Expression>(Expression::ResolvedIdentifier(definition, pieces), location,
                 ExpressionInfo(EvaluationContext::RunTime,
                     makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(registerDefinition->type), location),
-                    ExpressionInfo::Flags { ExpressionInfo::Flag::LValue }));
+                    ExpressionInfo::Flags::of<ExpressionInfo::Flag::LValue>()));
         } else if (const auto funcDefinition = definition->variant.tryGet<Definition::Func>()) {
             if (funcDefinition->resolvedSignatureType == nullptr) {
                 report->error("encountered a reference to func `" + getResolvedIdentifierName(definition, pieces) + "` before its type was known", location);
@@ -2173,7 +2173,7 @@ namespace wiz {
                 ExpressionInfo(
                     context,
                     funcDefinition->resolvedSignatureType->clone(),
-                    (funcDefinition->far ? ExpressionInfo::Flags { ExpressionInfo::Flag::Far } : ExpressionInfo::Flags {})));
+                    (funcDefinition->far ? ExpressionInfo::Flags::of<ExpressionInfo::Flag::Far>() : ExpressionInfo::Flags {})));
         } else if (definition->variant.is<Definition::BuiltinVoidIntrinsic>()) {
             return makeFwdUnique<const Expression>(Expression::ResolvedIdentifier(definition, pieces), location,
                 ExpressionInfo(EvaluationContext::RunTime,
@@ -2279,14 +2279,14 @@ namespace wiz {
                         ExpressionInfo(
                             EvaluationContext::RunTime,
                             std::move(resultType),
-                            expression->info->flags & ExpressionInfo::Flags { ExpressionInfo::Flag::LValue, ExpressionInfo::Flag::Const, ExpressionInfo::Flag::WriteOnly, ExpressionInfo::Flag::Far }));
+                            expression->info->flags.intersect<ExpressionInfo::Flag::LValue, ExpressionInfo::Flag::Const, ExpressionInfo::Flag::WriteOnly, ExpressionInfo::Flag::Far>()));
                 }
             }
         } else if (const auto& pointerType = typeExpression->variant.tryGet<TypeExpression::Pointer>()) {
-            const auto flags = ExpressionInfo::Flags { ExpressionInfo::Flag::LValue }
-                | (pointerType->qualifiers.contains<PointerQualifier::Const>() ? ExpressionInfo::Flags { ExpressionInfo::Flag::Const } : ExpressionInfo::Flags {})
-                | (pointerType->qualifiers.contains<PointerQualifier::WriteOnly>() ? ExpressionInfo::Flags { ExpressionInfo::Flag::WriteOnly } : ExpressionInfo::Flags {})
-                | (pointerType->qualifiers.contains<PointerQualifier::Far>() ? ExpressionInfo::Flags { ExpressionInfo::Flag::Far } : ExpressionInfo::Flags {});
+            const auto flags = ExpressionInfo::Flags::of<ExpressionInfo::Flag::LValue>()
+                | (pointerType->qualifiers.contains<PointerQualifier::Const>() ? ExpressionInfo::Flags::of<ExpressionInfo::Flag::Const>() : ExpressionInfo::Flags {})
+                | (pointerType->qualifiers.contains<PointerQualifier::WriteOnly>() ? ExpressionInfo::Flags::of<ExpressionInfo::Flag::WriteOnly>() : ExpressionInfo::Flags {})
+                | (pointerType->qualifiers.contains<PointerQualifier::Far>() ? ExpressionInfo::Flags::of<ExpressionInfo::Flag::Far>() : ExpressionInfo::Flags {});
             auto resultType = pointerType->elementType->clone();
             auto indirection = makeFwdUnique<const Expression>(
                 Expression::UnaryOperator(UnaryOperatorKind::Indirection, expression->clone()), expression->location,
@@ -2324,12 +2324,12 @@ namespace wiz {
     }
 
     FwdUniquePtr<const Expression> Compiler::simplifyIndirectionOffsetExpression(FwdUniquePtr<const TypeExpression> resultType, const Expression* expression, EvaluationContext context, Optional<Int128> absolutePosition, Int128 offset) {
-        ExpressionInfo::Flags flags(expression->info->flags & ExpressionInfo::Flags { ExpressionInfo::Flag::LValue, ExpressionInfo::Flag::Const, ExpressionInfo::Flag::WriteOnly, ExpressionInfo::Flag::Far });
+        ExpressionInfo::Flags flags(expression->info->flags.intersect<ExpressionInfo::Flag::LValue, ExpressionInfo::Flag::Const, ExpressionInfo::Flag::WriteOnly, ExpressionInfo::Flag::Far>());
         auto addressType = makeFwdUnique<const TypeExpression>(
             TypeExpression::Pointer(resultType->clone(), 
-                (expression->info->flags.contains<ExpressionInfo::Flag::Const>() ? PointerQualifiers { PointerQualifier::Const } : PointerQualifiers {})
-                | (expression->info->flags.contains<ExpressionInfo::Flag::WriteOnly>() ? PointerQualifiers { PointerQualifier::WriteOnly } : PointerQualifiers {})
-                | (expression->info->flags.contains<ExpressionInfo::Flag::Far>() ? PointerQualifiers { PointerQualifier::Far } : PointerQualifiers {})),
+                (expression->info->flags.contains<ExpressionInfo::Flag::Const>() ? PointerQualifiers::of<PointerQualifier::Const>() : PointerQualifiers {})
+                | (expression->info->flags.contains<ExpressionInfo::Flag::WriteOnly>() ? PointerQualifiers::of<PointerQualifier::WriteOnly>() : PointerQualifiers {})
+                | (expression->info->flags.contains<ExpressionInfo::Flag::Far>() ? PointerQualifiers::of<PointerQualifier::Far>() : PointerQualifiers {})),
             expression->info->type->location);
 
         if (absolutePosition.hasValue()) {
@@ -3814,7 +3814,7 @@ namespace wiz {
                     if (const auto moduleScope = findModuleScope(importReference.expandedPath)) {
                         currentScope->addRecursiveImport(moduleScope);
                     } else {
-                        report->error("import reference appeared before a file node actually registered the module", statement->location, ReportErrorFlags(ReportErrorFlagType::InternalError));
+                        report->error("import reference appeared before a file node actually registered the module", statement->location, ReportErrorFlags::of<ReportErrorFlagType::InternalError>());
                     }
                 }
                 break;
@@ -4531,7 +4531,7 @@ namespace wiz {
                             return createOperandFromExpression(cast.operand.get(), quiet);
                         } else {
                             if (!quiet) {
-                                report->error("run-time cast from `" + getTypeName(sourceType) + "` to `" + getTypeName(destType) + "` is not possible because it would require a temporary", expression->location, ReportErrorFlags { ReportErrorFlagType::Continued });
+                                report->error("run-time cast from `" + getTypeName(sourceType) + "` to `" + getTypeName(destType) + "` is not possible because it would require a temporary", expression->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
                             }
                         }
                     }
@@ -5014,13 +5014,13 @@ namespace wiz {
             }
         }
 
-        report->error("unhandled call expression", location, ReportErrorFlags { ReportErrorFlagType::InternalError });
+        report->error("unhandled call expression", location, ReportErrorFlags::of<ReportErrorFlagType::InternalError>());
         return false;
     }
 
     void Compiler::raiseEmitLoadError(const Expression* dest, const Expression* source, SourceLocation location) {
         const auto candidates = builtins.findAllInstructionsByType(InstructionType(BinaryOperatorKind::Assignment));
-        report->error("could not generate code for " + getBinaryOperatorName(BinaryOperatorKind::Assignment).toString(), source->location, ReportErrorFlags { ReportErrorFlagType::Continued });
+        report->error("could not generate code for " + getBinaryOperatorName(BinaryOperatorKind::Assignment).toString(), source->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
 
         auto destOperand = createOperandFromExpression(dest, false);
         auto sourceOperand = createOperandFromExpression(source, false);
@@ -5037,7 +5037,7 @@ namespace wiz {
         report->error("got: `"
             + destOperand->toString()
             + " = " + sourceOperand->toString()
-            + "`", source->location, ReportErrorFlags { ReportErrorFlagType::Continued });
+            + "`", source->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
 
         if (candidates.size() > 0) {
             std::size_t optionCount = 0;
@@ -5046,7 +5046,7 @@ namespace wiz {
                     case 2: {
                         if (candidate->signature.operandPatterns[0]->matches(*destOperand)) {
                             if (optionCount == 0) {
-                                report->error("possible options:", source->location, ReportErrorFlags { ReportErrorFlagType::Continued });
+                                report->error("possible options:", source->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
                             }
                             ++optionCount;
                             report->log("  `" + candidate->signature.operandPatterns[0]->toString() + " = " + candidate->signature.operandPatterns[1]->toString() + "`");
@@ -5066,7 +5066,7 @@ namespace wiz {
 
     void Compiler::raiseEmitUnaryExpressionError(const Expression* dest, UnaryOperatorKind op, const Expression* source, SourceLocation location) {
         const auto candidates = builtins.findAllInstructionsByType(InstructionType(op));
-        report->error("could not generate code for " + getUnaryOperatorName(op).toString(), source->location, ReportErrorFlags { ReportErrorFlagType::Continued });
+        report->error("could not generate code for " + getUnaryOperatorName(op).toString(), source->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
 
         auto destOperand = createOperandFromExpression(dest, false);
         auto sourceOperand = createOperandFromExpression(source, false);
@@ -5102,7 +5102,7 @@ namespace wiz {
                 + (suffixOperator ? "" : getUnaryOperatorSymbol(op).toString())
                 + destOperand->toString()
                 + (suffixOperator ? getUnaryOperatorSymbol(op).toString() : "")
-                + "`", source->location, ReportErrorFlags { ReportErrorFlagType::Continued });
+                + "`", source->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
         } else {
             report->error("got: `"
                 + destOperand->toString()
@@ -5110,11 +5110,11 @@ namespace wiz {
                 + (suffixOperator ? "" : getUnaryOperatorSymbol(op).toString())
                 + sourceOperand->toString()
                 + (suffixOperator ? getUnaryOperatorSymbol(op).toString() : "")
-                + "`", source->location, ReportErrorFlags { ReportErrorFlagType::Continued });
+                + "`", source->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
         }
 
         if (candidates.size() > 0) {
-            report->error("possible options:", source->location, ReportErrorFlags { ReportErrorFlagType::Continued });
+            report->error("possible options:", source->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
             for (const auto candidate : candidates) {
                 switch (candidate->signature.operandPatterns.size()) {
                     case 1: {
@@ -5158,7 +5158,7 @@ namespace wiz {
 
     void Compiler::raiseEmitBinaryExpressionError(const Expression* dest, BinaryOperatorKind op, const Expression* left, const Expression* right, SourceLocation location) {
         const auto candidates = builtins.findAllInstructionsByType(InstructionType(op));
-        report->error("could not generate code for " + getBinaryOperatorName(op).toString(), right->location, ReportErrorFlags { ReportErrorFlagType::Continued });
+        report->error("could not generate code for " + getBinaryOperatorName(op).toString(), right->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
 
         auto destOperand = createOperandFromExpression(dest, false);
         auto leftOperand = createOperandFromExpression(left, false);
@@ -5182,18 +5182,18 @@ namespace wiz {
                 + destOperand->toString()
                 + " " + getBinaryOperatorSymbol(op).toString() + "= "
                 + rightOperand->toString()
-                + "`", right->location, ReportErrorFlags { ReportErrorFlagType::Continued });
+                + "`", right->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
         } else {
             report->error("got: `"
                 + destOperand->toString()
                 + " " + leftOperand->toString()
                 + " " + getBinaryOperatorSymbol(op).toString()
                 + " " + rightOperand->toString()
-                + "`", right->location, ReportErrorFlags { ReportErrorFlagType::Continued });
+                + "`", right->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
         }
 
         if (candidates.size() > 0) {
-            report->error("possible options:", right->location, ReportErrorFlags { ReportErrorFlagType::Continued });
+            report->error("possible options:", right->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
             for (const auto candidate : candidates) {
                 switch (candidate->signature.operandPatterns.size()) {
                     case 2: {
@@ -5229,7 +5229,7 @@ namespace wiz {
         }
 
         const auto candidates = builtins.findAllInstructionsByType(instructionType);
-        report->error("could not generate code for intrinsic `" + intrinsicName + "`", location, ReportErrorFlags { ReportErrorFlagType::Continued });
+        report->error("could not generate code for intrinsic `" + intrinsicName + "`", location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
 
         for (std::size_t i = 0; i != operandRoots.size(); ++i) {
             const auto& operand = operandRoots[i].operand;
@@ -5255,11 +5255,11 @@ namespace wiz {
                 }
             }
             message += ")`";
-            report->error(message, location, ReportErrorFlags { ReportErrorFlagType::Continued });
+            report->error(message, location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
         }
 
         if (candidates.size() > 0) {
-            report->error("possible options:", location, ReportErrorFlags { ReportErrorFlagType::Continued });
+            report->error("possible options:", location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
             for (const auto candidate : candidates) {
                 std::string message = "  `"
                     + (isLoadIntrinsic ? candidate->signature.operandPatterns[0]->toString() + " = " : "")
@@ -6411,7 +6411,7 @@ namespace wiz {
                             currentBank->reserveRom(report, "code"_sv, irNode.get(), irNode->location, size);
                         }
                     } else {
-                        report->error("failed to extract instruction capture list during instruction selection pass", irNode->location, ReportErrorFlags { ReportErrorFlagType::InternalError });
+                        report->error("failed to extract instruction capture list during instruction selection pass", irNode->location, ReportErrorFlags::of<ReportErrorFlagType::InternalError>());
                     }
                     break;
                 }
@@ -6511,7 +6511,7 @@ namespace wiz {
                             message += "relative position " + std::to_string(currentBankAddress.relativePosition.get());
                         }
 
-                        report->error(message, irNode->location, ReportErrorFlags { ReportErrorFlagType::InternalError });
+                        report->error(message, irNode->location, ReportErrorFlags::of<ReportErrorFlagType::InternalError>());
                     }
                     break;
                 }
@@ -6532,7 +6532,7 @@ namespace wiz {
                                     tempOperandRoots.push_back(InstructionOperandRoot(reducedExpression.get(), std::move(operand)));
                                     tempExpressions.push_back(std::move(reducedExpression));
                                 } else {
-                                    report->error("failed to create operand for reduced expresion", irNode->location, ReportErrorFlags { ReportErrorFlagType::InternalError });
+                                    report->error("failed to create operand for reduced expresion", irNode->location, ReportErrorFlags::of<ReportErrorFlagType::InternalError>());
                                     failed = true;
                                     break;
                                 }
@@ -6556,7 +6556,7 @@ namespace wiz {
                             break;
                         }
                     } else {
-                        report->error("failed to extract instruction capture list during generation pass", irNode->location, ReportErrorFlags { ReportErrorFlagType::InternalError });
+                        report->error("failed to extract instruction capture list during generation pass", irNode->location, ReportErrorFlags::of<ReportErrorFlagType::InternalError>());
                     }
                     break;
                 }
@@ -6586,7 +6586,7 @@ namespace wiz {
 
                     if (hasInitializer) {
                         if (!serializeConstantInitializer(finalInitializerExpression, tempBuffer)) {
-                            report->error("constant initializer could not be resolved at compile-time", irNode->location, ReportErrorFlags { ReportErrorFlagType::Fatal });
+                            report->error("constant initializer could not be resolved at compile-time", irNode->location, ReportErrorFlags::of<ReportErrorFlagType::Fatal>());
                             break;
                         }
                     } else {

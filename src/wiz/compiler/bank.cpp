@@ -91,7 +91,7 @@ namespace wiz {
 
     bool Bank::reserveRam(Report* report, StringView description, const void* node, SourceLocation location, std::size_t size) {
         if (!isBankKindWritable(kind)) {
-            report->error(description.toString() + " requires a writable region, which is not allowed in readonly bank `" + name.toString() + "`", location, ReportErrorFlags(ReportErrorFlagType::Fatal));
+            report->error(description.toString() + " requires a writable region, which is not allowed in readonly bank `" + name.toString() + "`", location, ReportErrorFlags::of<ReportErrorFlagType::Fatal>());
             return false;
         } else {
             return reserve(report, description, node, location, size);
@@ -100,7 +100,7 @@ namespace wiz {
 
     bool Bank::reserveRom(Report* report, StringView description, const void* node, SourceLocation location, std::size_t size) {
         if (!isBankKindStored(kind)) {
-            report->error(description.toString() + " requires initialized data, which is not allowed in volatile bank `" + name.toString() + "`", location, ReportErrorFlags(ReportErrorFlagType::Fatal));
+            report->error(description.toString() + " requires initialized data, which is not allowed in volatile bank `" + name.toString() + "`", location, ReportErrorFlags::of<ReportErrorFlagType::Fatal>());
             return false;
         } else {
             return reserve(report, description, node, location, size);
@@ -113,7 +113,7 @@ namespace wiz {
             report->error(description.toString() + " needs " + std::to_string(size)
                 + " byte(s), which exceeds the remaining space in bank `" + name.toString()
                 + "` by " + std::to_string(relativePosition + size - capacity) + " byte(s)",
-                location, ReportErrorFlags(ReportErrorFlagType::Fatal));
+                location, ReportErrorFlags::of<ReportErrorFlagType::Fatal>());
             return false;
         }
 
@@ -123,7 +123,7 @@ namespace wiz {
                 + " in bank `" + name.toString()
                 + "`, with " + description.toString()
                 + " that never reserved any space for itself",
-                location, ReportErrorFlags{ReportErrorFlagType::Fatal, ReportErrorFlagType::InternalError});
+                location, ReportErrorFlags::of<ReportErrorFlagType::Fatal, ReportErrorFlagType::InternalError>());
             return false;
         }
 
@@ -133,13 +133,13 @@ namespace wiz {
                 report->error("write conflict encountered at " + getAddressDescription(relativePosition + i)
                     + " while attempting to write byte " + std::to_string(i) + " of " + std::to_string(size)
                     + " byte(s) for " + description.toString(),
-                    location, ReportErrorFlags{ReportErrorFlagType::InternalError, ReportErrorFlagType::Continued});
+                    location, ReportErrorFlags::of<ReportErrorFlagType::InternalError, ReportErrorFlagType::Continued>());
 
                 if (const auto previousID = ownership[relativePosition + i]) {
                     const auto& previous = owners[previousID - 1];
-                    report->error("address was supposed to be reserved here, by " + previous.description.toString(), previous.location, ReportErrorFlags(ReportErrorFlagType::Fatal));
+                    report->error("address was supposed to be reserved here, by " + previous.description.toString(), previous.location, ReportErrorFlags::of<ReportErrorFlagType::Fatal>());
                 } else {
-                    report->error("address was never reserved when it was supposed to be", location, ReportErrorFlags(ReportErrorFlagType::Fatal));
+                    report->error("address was never reserved when it was supposed to be", location, ReportErrorFlags::of<ReportErrorFlagType::Fatal>());
                 }
                 return false;
             }
@@ -160,7 +160,7 @@ namespace wiz {
                     + "` in bank `" + name.toString()
                     + "`, which exceeds its address range of `0x" + Int128(originValue).toString(16)
                     + "` .. `" + Int128(originValue + capacity - 1).toString(16) + "`",
-                    location, ReportErrorFlags(ReportErrorFlagType::Fatal));
+                    location, ReportErrorFlags::of<ReportErrorFlagType::Fatal>());
                 return false;
             }
 
@@ -194,7 +194,7 @@ namespace wiz {
             report->error(description.toString() + " needs " + std::to_string(size)
                 + " byte(s), which exceeds the remaining space in bank `" + name.toString()
                 + "` by " + std::to_string(relativePosition + size - capacity) + " byte(s)",
-                location, ReportErrorFlags(ReportErrorFlagType::Fatal));
+                location, ReportErrorFlags::of<ReportErrorFlagType::Fatal>());
             return false;
         }
 
@@ -214,8 +214,8 @@ namespace wiz {
                 report->error("overlap conflict encountered at " + getAddressDescription(relativePosition + i)
                     + " while reserving byte " + std::to_string(i) + " of " + std::to_string(size)
                     + " byte(s) needed for " + description.toString(),
-                    location, ReportErrorFlags(ReportErrorFlagType::Continued));
-                report->error("address was previously reserved here, by " + previous.description.toString(), previous.location, ReportErrorFlags(ReportErrorFlagType::Fatal));
+                    location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
+                report->error("address was previously reserved here, by " + previous.description.toString(), previous.location, ReportErrorFlags::of<ReportErrorFlagType::Fatal>());
                 return false;
             }
 

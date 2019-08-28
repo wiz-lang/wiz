@@ -35,7 +35,7 @@ namespace wiz {
             }
 
             WIZ_FORCE_INLINE ArrayView<Pointer> view() const {
-                return ArrayView(instances_);
+                return ArrayView<Pointer>(instances_);
             }
 
             WIZ_FORCE_INLINE std::add_pointer_t<const Pointer> begin() const {

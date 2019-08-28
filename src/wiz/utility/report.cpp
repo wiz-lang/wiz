@@ -27,7 +27,7 @@ namespace wiz {
             logger->error(location, severity, message);
 
             bool aborting = flags.contains<ReportErrorFlagType::Fatal>() || previousFlags.contains<ReportErrorFlagType::Fatal>();
-            previousFlags = flags | (previousFlags & ReportErrorFlags(ReportErrorFlagType::Fatal));
+            previousFlags = flags | (previousFlags.intersect<ReportErrorFlagType::Fatal>());
 
             if (flags.contains<ReportErrorFlagType::Continued>()) {
                 aborting = false;

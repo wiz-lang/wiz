@@ -23,7 +23,8 @@ namespace wiz {
         : report(report),
         stringPool(stringPool),
         config(config),
-        outputName(outputName) {}
+        outputName(outputName),
+        banks(banks) {}
 
         Report* report;
         StringPool* stringPool;

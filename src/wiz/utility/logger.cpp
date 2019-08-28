@@ -23,19 +23,19 @@ namespace wiz {
         };
         using ColorAttributeFlags = BitFlags<ColorAttributeFlagType, ColorAttributeFlagType::Count>;
 
-        ColorAttributeFlags ColorAttributeFlagsBackgroundChannels {
+        ColorAttributeFlags ColorAttributeFlagsBackgroundChannels = ColorAttributeFlags::of<
             ColorAttributeFlagType::BackgroundRed,
             ColorAttributeFlagType::BackgroundGreen,
             ColorAttributeFlagType::BackgroundBlue,
-            ColorAttributeFlagType::BackgroundIntensity,   
-        };
+            ColorAttributeFlagType::BackgroundIntensity   
+        >();
 
-        ColorAttributeFlags ColorAttributeFlagsForegroundChannels {
+        ColorAttributeFlags ColorAttributeFlagsForegroundChannels = ColorAttributeFlags::of<
             ColorAttributeFlagType::ForegroundRed,
             ColorAttributeFlagType::ForegroundGreen,
             ColorAttributeFlagType::ForegroundBlue,
-            ColorAttributeFlagType::ForegroundIntensity,   
-        };
+            ColorAttributeFlagType::ForegroundIntensity
+        >();
 
 #ifdef _WIN32
         std::int16_t toWindowsAttribute(ColorAttributeFlags flags) {
@@ -57,14 +57,14 @@ namespace wiz {
             ColorAttributeFlags result;
             const auto flags = static_cast<std::uint16_t>(signedMask);
 
-            if (flags & BACKGROUND_RED) { result |= ColorAttributeFlags(ColorAttributeFlagType::BackgroundRed); }
-            if (flags & BACKGROUND_GREEN) { result |= ColorAttributeFlags(ColorAttributeFlagType::BackgroundGreen); }
-            if (flags & BACKGROUND_BLUE) { result |= ColorAttributeFlags(ColorAttributeFlagType::BackgroundBlue); }
-            if (flags & BACKGROUND_INTENSITY) { result |= ColorAttributeFlags(ColorAttributeFlagType::BackgroundIntensity); }
-            if (flags & FOREGROUND_RED) { result |= ColorAttributeFlags(ColorAttributeFlagType::ForegroundRed); }
-            if (flags & FOREGROUND_GREEN) { result |= ColorAttributeFlags(ColorAttributeFlagType::ForegroundGreen); }
-            if (flags & FOREGROUND_BLUE) { result |= ColorAttributeFlags(ColorAttributeFlagType::ForegroundBlue); }
-            if (flags & FOREGROUND_INTENSITY) { result |= ColorAttributeFlags(ColorAttributeFlagType::ForegroundIntensity); }
+            if (flags & BACKGROUND_RED) { result |= ColorAttributeFlags::of<ColorAttributeFlagType::BackgroundRed>(); }
+            if (flags & BACKGROUND_GREEN) { result |= ColorAttributeFlags::of<ColorAttributeFlagType::BackgroundGreen>(); }
+            if (flags & BACKGROUND_BLUE) { result |= ColorAttributeFlags::of<ColorAttributeFlagType::BackgroundBlue>(); }
+            if (flags & BACKGROUND_INTENSITY) { result |= ColorAttributeFlags::of<ColorAttributeFlagType::BackgroundIntensity>(); }
+            if (flags & FOREGROUND_RED) { result |= ColorAttributeFlags::of<ColorAttributeFlagType::ForegroundRed>(); }
+            if (flags & FOREGROUND_GREEN) { result |= ColorAttributeFlags::of<ColorAttributeFlagType::ForegroundGreen>(); }
+            if (flags & FOREGROUND_BLUE) { result |= ColorAttributeFlags::of<ColorAttributeFlagType::ForegroundBlue>(); }
+            if (flags & FOREGROUND_INTENSITY) { result |= ColorAttributeFlags::of<ColorAttributeFlagType::ForegroundIntensity>(); }
 
             return result;
         }
@@ -202,17 +202,17 @@ namespace wiz {
 
         ColorAttributeFlags getColorForError(ReportErrorSeverity severity) {
             switch (severity) {
-                case ReportErrorSeverity::Note: return ColorAttributeFlags {
+                case ReportErrorSeverity::Note: return ColorAttributeFlags::of<
                     ColorAttributeFlagType::DefaultBackgroundColor,
                     ColorAttributeFlagType::ForegroundRed,
                     ColorAttributeFlagType::ForegroundBlue,
-                    ColorAttributeFlagType::ForegroundIntensity,
-                };
-                default: return ColorAttributeFlags {
+                    ColorAttributeFlagType::ForegroundIntensity
+                >();
+                default: return ColorAttributeFlags::of<
                     ColorAttributeFlagType::DefaultBackgroundColor,
                     ColorAttributeFlagType::ForegroundRed,
-                    ColorAttributeFlagType::ForegroundIntensity,
-                };
+                    ColorAttributeFlagType::ForegroundIntensity
+                >();
             }
         }
 
@@ -241,11 +241,11 @@ namespace wiz {
                             context.resetColor();
                         } else {
                             quote = c;
-                            context.setColor(ColorAttributeFlags {
+                            context.setColor(ColorAttributeFlags::of<
                                 ColorAttributeFlagType::DefaultBackgroundColor,
                                 ColorAttributeFlagType::DefaultForegroundColor,
-                                ColorAttributeFlagType::ForegroundIntensity,
-                            });
+                                ColorAttributeFlagType::ForegroundIntensity
+                            >());
                         }
                         lastIndex = quote != 0 ? i : i + 1;
                     }
@@ -284,11 +284,11 @@ namespace wiz {
         auto windowSize = context.getWindowSize();
 
         if (message.rfind(">>", 0) == 0) {
-            context.setColor(ColorAttributeFlags {
+            context.setColor(ColorAttributeFlags::of<
                 ColorAttributeFlagType::DefaultBackgroundColor,
                 ColorAttributeFlagType::DefaultForegroundColor,
-                ColorAttributeFlagType::ForegroundIntensity,
-            });
+                ColorAttributeFlagType::ForegroundIntensity
+            >());
             printWordWrapped(column, windowSize.first, file, StringView(message));
         } else {
             context.resetColor();            
@@ -300,11 +300,11 @@ namespace wiz {
     // TODO: nice-to-have: word-wrapping support for TTY
     void FileLogger::error(const SourceLocation& location, ReportErrorSeverity severity, const std::string& message) {
         ConsoleColorContext context(file, colorMethod);
-        context.setColor(ColorAttributeFlags {
+        context.setColor(ColorAttributeFlags::of<
             ColorAttributeFlagType::DefaultBackgroundColor,
             ColorAttributeFlagType::DefaultForegroundColor,
-            ColorAttributeFlagType::ForegroundIntensity,
-        });
+            ColorAttributeFlagType::ForegroundIntensity
+        >());
 
         std::size_t column = 0;
         auto windowSize = context.getWindowSize();
@@ -326,11 +326,11 @@ namespace wiz {
     // TODO: nice-to-have: word-wrapping support for TTY
     void FileLogger::notice(const std::string& message) {
         ConsoleColorContext context(file, colorMethod);
-        context.setColor(ColorAttributeFlags {
+        context.setColor(ColorAttributeFlags::of<
             ColorAttributeFlagType::DefaultBackgroundColor,
             ColorAttributeFlagType::DefaultForegroundColor,
-            ColorAttributeFlagType::ForegroundIntensity,
-        });
+            ColorAttributeFlagType::ForegroundIntensity
+        >());
 
         std::size_t column = 0;
         auto windowSize = context.getWindowSize();

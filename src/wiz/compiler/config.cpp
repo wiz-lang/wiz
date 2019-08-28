@@ -9,7 +9,7 @@ namespace wiz {
     bool Config::add(Report* report, StringView key, FwdUniquePtr<const Expression> value) {
         const auto match = items.find(key);
         if (match != items.end()) {
-            report->error("duplicate config entry for `" + key.toString() + "`", value->location, ReportErrorFlags { ReportErrorFlagType::Continued });
+            report->error("duplicate config entry for `" + key.toString() + "`", value->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
             report->error("previous entry for `" + key.toString() + "` appeared here", match->second->location);
             return false;
         } else {

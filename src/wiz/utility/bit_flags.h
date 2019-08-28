@@ -2,11 +2,26 @@
 #define WIZ_UTILITY_BIT_FLAGS_H
 
 #include <cstdint>
+#include <utility>
 #include <type_traits>
 #include <initializer_list>
-#include <utility>
+#include <wiz/utility/macros.h>
 
 namespace wiz {
+    namespace detail {
+        template <typename T, T Flag, T... Flags>
+        struct BitFlagDisjunction {
+            static constexpr std::uint32_t value = 
+                (1 << static_cast<std::uint32_t>(Flag))
+                | BitFlagDisjunction<T, Flags...>::value;
+        };
+
+        template <typename T, T Flag>
+        struct BitFlagDisjunction<T, Flag> {
+            static constexpr std::uint32_t value = static_cast<std::uint32_t>(Flag);
+        };
+    }
+
     template <typename T, T FlagCount>
     struct BitFlags {
         public:
@@ -16,88 +31,98 @@ namespace wiz {
                 && static_cast<UnderlyingType>(FlagCount) <= 32,
                 "BitFlags type must use a FlagCount in the range 0 .. 32.");
 
-            BitFlags()
+            WIZ_FORCE_INLINE BitFlags()
             : flags(0) {}
 
-            BitFlags(const BitFlags& other)
+            WIZ_FORCE_INLINE BitFlags(const BitFlags& other)
             : flags(other.flags) {}
 
-            BitFlags(BitFlags&& other)
-            : flags(std::move(other.flags)) {}
+            WIZ_FORCE_INLINE BitFlags(BitFlags&& other)
+            : flags(other.flags) {}
 
-            explicit BitFlags(T flag)
-            : flags(1 << static_cast<uint32_t>(flag)) {}
-
-            explicit BitFlags(std::initializer_list<T> flags)
-            : flags(0) {
-                for (const auto flag : flags) {
-                    this->flags |= (1 << static_cast<uint32_t>(flag));
-                }
+            template <T... Flags>
+            WIZ_FORCE_INLINE static BitFlags of() {
+                return BitFlags(detail::BitFlagDisjunction<T, Flags...>::value);
             }
 
-            BitFlags operator |(BitFlags other) const {
+            WIZ_FORCE_INLINE BitFlags operator |(BitFlags other) const {
                 return BitFlags(flags | other.flags);
             }
 
-            BitFlags operator &(BitFlags other) const {
+            WIZ_FORCE_INLINE  BitFlags operator &(BitFlags other) const {
                 return BitFlags(flags & other.flags);
             }
 
-            BitFlags operator ^(BitFlags other) const {
+            WIZ_FORCE_INLINE BitFlags operator ^(BitFlags other) const {
                 return BitFlags(flags ^ other.flags);
             }
 
-            BitFlags operator ~() const {
-                return BitFlags(flags ^ ((1 << static_cast<uint32_t>(FlagCount)) - 1));
+            WIZ_FORCE_INLINE BitFlags operator ~() const {
+                return BitFlags(flags ^ ((1 << static_cast<std::uint32_t>(FlagCount)) - 1));
             }
 
-            BitFlags& operator =(BitFlags other) {
+            WIZ_FORCE_INLINE BitFlags& operator =(BitFlags other) {
                 flags = other.flags;
                 return *this;
             }
 
-            BitFlags& operator |=(BitFlags other) {
-                *this = *this | other;
+            WIZ_FORCE_INLINE BitFlags& operator |=(BitFlags other) {
+                flags |= other.flags;
                 return *this;
             }
 
-            BitFlags& operator &=(BitFlags other) {
-                *this = *this & other;
+            WIZ_FORCE_INLINE BitFlags& operator &=(BitFlags other) {
+                flags &= other.flags;
                 return *this;
             }
 
-            BitFlags& operator ^=(BitFlags other) {
-                *this = *this ^ other;
+            WIZ_FORCE_INLINE BitFlags& operator ^=(BitFlags other) {
+                flags ^= other.flags;
                 return *this;
             }
 
-            bool operator ==(BitFlags other) const {
+            WIZ_FORCE_INLINE bool operator ==(BitFlags other) const {
                 return flags == other.flags;
             }
 
-            bool operator !=(BitFlags other) const {
+            WIZ_FORCE_INLINE bool operator !=(BitFlags other) const {
                 return !(*this == other);
             }
 
             template <T Flag>
-            bool contains() const {
-                static_assert(0 <= static_cast<UnderlyingType>(Flag)
-                    && static_cast<UnderlyingType>(Flag) < static_cast<UnderlyingType>(FlagCount),
-                    "contains() check must use a Flag in the range 0 .. FlagCount - 1.");
-                return (flags & (1 << static_cast<uint32_t>(Flag))) != 0;
+            WIZ_FORCE_INLINE bool contains() const {
+                return (flags & (1 << static_cast<std::uint32_t>(Flag))) != 0;
             }
 
-            bool contains(T flag) const {
-                return (flags & (1 << static_cast<uint32_t>(flag))) != 0;
+            WIZ_FORCE_INLINE std::uint32_t underlying() const {
+                return flags;
+            }
+
+            template <T... Flags>
+            WIZ_FORCE_INLINE BitFlags add() const {
+                return BitFlags(flags | detail::BitFlagDisjunction<T, Flags...>::value);
+            }
+
+            template <T... Flags>
+            WIZ_FORCE_INLINE BitFlags intersect() const {
+                return BitFlags(flags & detail::BitFlagDisjunction<T, Flags...>::value);
+            }
+
+            template <T... Flags>
+            WIZ_FORCE_INLINE BitFlags toggle() const {
+                return BitFlags(flags ^ detail::BitFlagDisjunction<T, Flags...>::value);
+            }
+
+            template <T... Flags>
+            WIZ_FORCE_INLINE BitFlags remove() const {
+                return BitFlags(flags & ~detail::BitFlagDisjunction<T, Flags...>::value);
             }
 
         private:
-            explicit BitFlags(std::uint32_t flags)
+            WIZ_FORCE_INLINE explicit BitFlags(std::uint32_t flags)
             : flags(flags) {}
 
             std::uint32_t flags;
     };
 }
-
 #endif
-
