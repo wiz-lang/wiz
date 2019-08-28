@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include <wiz/ast/modifiers.h>
+#include <wiz/ast/qualifiers.h>
 #include <wiz/compiler/address.h>
 #include <wiz/platform/platform.h>
 #include <wiz/utility/int128.h>
@@ -200,16 +200,16 @@ namespace wiz {
 
         struct Var {
             Var(
-                Modifiers modifiers,
+                Qualifiers qualifiers,
                 Definition* enclosingFunction,
                 const Expression* addressExpression,
                 const TypeExpression* typeExpression)
-            : modifiers(modifiers),
+            : qualifiers(qualifiers),
             enclosingFunction(enclosingFunction),
             addressExpression(addressExpression),
             typeExpression(typeExpression) {}
 
-            Modifiers modifiers;
+            Qualifiers qualifiers;
             Definition* enclosingFunction;
             const Expression* addressExpression;
             const TypeExpression* typeExpression;

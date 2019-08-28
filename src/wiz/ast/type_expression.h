@@ -5,7 +5,7 @@
 #include <vector>
 #include <cstddef>
 
-#include <wiz/ast/modifiers.h>
+#include <wiz/ast/qualifiers.h>
 #include <wiz/utility/variant.h>
 #include <wiz/utility/bit_flags.h>
 #include <wiz/utility/fwd_unique_ptr.h>
@@ -64,12 +64,12 @@ namespace wiz {
             struct Pointer {
                 Pointer(
                     FwdUniquePtr<const TypeExpression> elementType,
-                    PointerQualifiers qualifiers)
+                    Qualifiers qualifiers)
                 : elementType(std::move(elementType)),
                 qualifiers(qualifiers) {}
 
                 FwdUniquePtr<const TypeExpression> elementType;
-                PointerQualifiers qualifiers;
+                Qualifiers qualifiers;
             };
 
             struct ResolvedIdentifier {

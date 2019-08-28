@@ -119,7 +119,7 @@ namespace wiz {
             makeFwdUnique<const Expression>(Expression::IntegerLiteral(value), declaration->location,
                 ExpressionInfo(EvaluationContext::CompileTime,
                     makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(iexprType), declaration->location),
-                    ExpressionInfo::Flags {})));
+                    Qualifiers {})));
     }
 
     void Builtins::addDefineBoolean(StringView key, bool value) {
@@ -127,7 +127,7 @@ namespace wiz {
             makeFwdUnique<const Expression>(Expression::BooleanLiteral(value), declaration->location,
                 ExpressionInfo(EvaluationContext::CompileTime,
                     makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(boolType), declaration->location),
-                    ExpressionInfo::Flags {})));
+                    Qualifiers {})));
     }
 
     ArrayView<FwdUniquePtr<const InstructionOperandPattern>> Builtins::getInstructionOperandPatterns() const {

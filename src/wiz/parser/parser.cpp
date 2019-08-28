@@ -237,16 +237,16 @@ namespace wiz {
                     case Keyword::Enum: return parseEnumDeclaration();
                     case Keyword::Struct: return parseStructDeclaration(StructKind::Struct);
                     case Keyword::Union: return parseStructDeclaration(StructKind::Union);
-                    case Keyword::Var: return parseVarDeclaration(Modifiers {});
-                    case Keyword::Const: return parseVarDeclaration(Modifiers::of<Modifier::Const>());
-                    case Keyword::WriteOnly: return parseVarDeclaration(Modifiers::of<Modifier::WriteOnly>());
+                    case Keyword::Var: return parseVarDeclaration(Qualifiers {});
+                    case Keyword::Const: return parseVarDeclaration(Qualifiers::of<Qualifier::Const>());
+                    case Keyword::WriteOnly: return parseVarDeclaration(Qualifiers::of<Qualifier::WriteOnly>());
                     case Keyword::Extern: {
                         nextToken(); // IDENTIFIER (keyword `extern`)
 
                         switch (token.keyword) {
-                            case Keyword::Var: return parseVarDeclaration(Modifiers::of<Modifier::Extern>());
-                            case Keyword::Const: return parseVarDeclaration(Modifiers::of<Modifier::Extern, Modifier::Const>());
-                            case Keyword::WriteOnly: return parseVarDeclaration(Modifiers::of<Modifier::Extern, Modifier::WriteOnly>());
+                            case Keyword::Var: return parseVarDeclaration(Qualifiers::of<Qualifier::Extern>());
+                            case Keyword::Const: return parseVarDeclaration(Qualifiers::of<Qualifier::Extern, Qualifier::Const>());
+                            case Keyword::WriteOnly: return parseVarDeclaration(Qualifiers::of<Qualifier::Extern, Qualifier::WriteOnly>());
                             default: {
                                 reject(token, "declaration after `extern`"_sv, false);
                                 skipToNextStatement();
@@ -855,14 +855,14 @@ namespace wiz {
         return makeFwdUnique<const Statement>(Statement::Struct(structKind, name, std::move(items)), location);
     }
 
-    FwdUniquePtr<const Statement> Parser::parseVarDeclaration(Modifiers modifiers) {
+    FwdUniquePtr<const Statement> Parser::parseVarDeclaration(Qualifiers qualifiers) {
         // var = `var` IDENTIFIER (`,` IDENTIFIER)* `:` type `;`
         const auto location = scanner->getLocation();        
 
         const char* description = "`var` declaration";
-        if (modifiers.contains<Modifier::Const>()) {
+        if (qualifiers.has<Qualifier::Const>()) {
             description = "`const` declaration";
-        } else if (modifiers.contains<Modifier::WriteOnly>()) {
+        } else if (qualifiers.has<Qualifier::WriteOnly>()) {
             description = "`writeonly` declaration";
         }
 
@@ -870,7 +870,7 @@ namespace wiz {
         std::vector<FwdUniquePtr<const Expression>> addresses;
         nextToken(); // IDENTIFIER (keyword `var`)
         
-        if (!modifiers.contains<Modifier::Const>() || token.type == TokenType::Identifier) {
+        if (!qualifiers.has<Qualifier::Const>() || token.type == TokenType::Identifier) {
             if (checkIdentifier()) {
                 names.push_back(token.text);
             }
@@ -887,7 +887,7 @@ namespace wiz {
         }        
 
         // Check if we should match (`,` id)*
-        while (!modifiers.contains<Modifier::Const>() && token.type == TokenType::Comma) {
+        while (!qualifiers.has<Qualifier::Const>() && token.type == TokenType::Comma) {
             nextToken(); // `,`
             if (token.type == TokenType::Identifier) {
                 if (checkIdentifier()) {
@@ -928,7 +928,7 @@ namespace wiz {
         }
         expectStatementEnd(StringView(description));
 
-        return makeFwdUnique<const Statement>(Statement::Var(modifiers, names, std::move(addresses), std::move(type), std::move(value)), location);
+        return makeFwdUnique<const Statement>(Statement::Var(qualifiers, names, std::move(addresses), std::move(type), std::move(value)), location);
     }
 
     FwdUniquePtr<const Statement> Parser::parseTypeAliasDeclaration() {
@@ -1374,7 +1374,7 @@ namespace wiz {
             if (op != BinaryOperatorKind::None) {
                 const auto location = scanner->getLocation();
                 nextToken(); // operator token
-                auto right = parseAssignment(options.add<ExpressionParseOption::AllowStructLiterals>()); // assignment
+                auto right = parseAssignment(options.include<ExpressionParseOption::AllowStructLiterals>()); // assignment
                 right = makeFwdUnique<const Expression>(Expression::BinaryOperator(
                     op, left->clone(), std::move(right)), location, Optional<ExpressionInfo>());
                 return makeFwdUnique<const Expression>(Expression::BinaryOperator(
@@ -1382,7 +1382,7 @@ namespace wiz {
             } else if (token.type == TokenType::Equals) {
                 const auto location = scanner->getLocation();
                 nextToken(); // `=`
-                auto right = parseAssignment(options.add<ExpressionParseOption::AllowStructLiterals>()); // assignment
+                auto right = parseAssignment(options.include<ExpressionParseOption::AllowStructLiterals>()); // assignment
                 return makeFwdUnique<const Expression>(Expression::BinaryOperator(
                     BinaryOperatorKind::Assignment, std::move(left), std::move(right)), location, Optional<ExpressionInfo>());                
             } else {
@@ -1742,7 +1742,7 @@ namespace wiz {
                     break;
                 }
                 case TokenType::Comma: {
-                    if (options.contains<ExpressionParseOption::Parenthesized>()) {
+                    if (options.has<ExpressionParseOption::Parenthesized>()) {
                         const auto location = scanner->getLocation();
                         nextToken(); // `,`
 
@@ -1848,7 +1848,7 @@ namespace wiz {
         //      term(general)
         //      | block `;`? expr
         const auto location = scanner->getLocation();
-        if (options.contains<ExpressionParseOption::Conditional>()) {
+        if (options.has<ExpressionParseOption::Conditional>()) {
             if (token.type == TokenType::LeftBrace) {
                 auto block = parseBlockStatement();
 
@@ -1899,7 +1899,7 @@ namespace wiz {
                     nextToken(); // `)`
                     return makeFwdUnique<const Expression>(Expression::TupleLiteral({}), location, Optional<ExpressionInfo>());
                 } else {
-                    auto expr = parseExpressionWithOptions(options.add<ExpressionParseOption::Parenthesized, ExpressionParseOption::AllowStructLiterals>()); // expression 
+                    auto expr = parseExpressionWithOptions(options.include<ExpressionParseOption::Parenthesized, ExpressionParseOption::AllowStructLiterals>()); // expression 
                     expectTokenType(TokenType::RightParenthesis); // `)`
                     if (expr && expr->variant.is<Expression::TupleLiteral>()) {
                         return expr;
@@ -1994,7 +1994,7 @@ namespace wiz {
                     case Keyword::None: {
                         auto qualifiedIdentifier = parseQualifiedIdentifier();
 
-                        if (options.contains<ExpressionParseOption::AllowStructLiterals>()
+                        if (options.has<ExpressionParseOption::AllowStructLiterals>()
                         && token.type == TokenType::LeftBrace) {
                             nextToken(); // `{`
 
@@ -2233,7 +2233,7 @@ namespace wiz {
             if (token.keyword == Keyword::Func) {
                 return parseFunctionType(true);
             } else if (token.type == TokenType::Asterisk) {    
-                return parsePointerType(PointerQualifiers::of<PointerQualifier::Far>());
+                return parsePointerType(Qualifiers::of<Qualifier::Far>());
             } else {
                 reject(token, "pointer `*` type or function `func` type after `far`"_sv, true);
                 return nullptr;
@@ -2295,7 +2295,7 @@ namespace wiz {
             expectTokenType(TokenType::RightBracket); // `]`
             return makeFwdUnique<const TypeExpression>(TypeExpression::Array(std::move(elementType), std::move(size)), location);
         } else if (token.type == TokenType::Asterisk) {
-            return parsePointerType(PointerQualifiers {});
+            return parsePointerType(Qualifiers {});
         } else {
             reject(token, "type name"_sv, true);
             return nullptr;
@@ -2362,14 +2362,14 @@ namespace wiz {
         return makeFwdUnique<const TypeExpression>(TypeExpression::Function(far, std::move(parameterTypes), std::move(returnType)), location);
     }
 
-    FwdUniquePtr<const TypeExpression> Parser::parsePointerType(PointerQualifiers qualifiers) {
+    FwdUniquePtr<const TypeExpression> Parser::parsePointerType(Qualifiers qualifiers) {
         const auto location = scanner->getLocation();
 
         nextToken(); // `*`
 
         switch (token.keyword) {
-            case Keyword::Const: nextToken(); qualifiers |= PointerQualifiers::of<PointerQualifier::Const>(); break;
-            case Keyword::WriteOnly: nextToken(); qualifiers |= PointerQualifiers::of<PointerQualifier::WriteOnly>(); break;
+            case Keyword::Const: nextToken(); qualifiers |= Qualifiers::of<Qualifier::Const>(); break;
+            case Keyword::WriteOnly: nextToken(); qualifiers |= Qualifiers::of<Qualifier::WriteOnly>(); break;
             default: break;
         }
 

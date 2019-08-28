@@ -32,8 +32,8 @@ namespace wiz {
 
     ImportResult ImportManager::attemptAbsoluteImport(StringView originalPath, StringView attemptedPath, ImportOptions importOptions, StringView& displayPath, StringView& canonicalPath, std::unique_ptr<Reader>& reader) {
         static_cast<void>(originalPath);
-        const auto appendExtension = importOptions.contains<ImportOptionType::AppendExtension>();
-        const auto allowShellResources = importOptions.contains<ImportOptionType::AllowShellResources>();
+        const auto appendExtension = importOptions.has<ImportOptionType::AppendExtension>();
+        const auto allowShellResources = importOptions.has<ImportOptionType::AllowShellResources>();
 
         reader = nullptr;
 

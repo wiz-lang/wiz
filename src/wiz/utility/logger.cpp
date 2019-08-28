@@ -7,7 +7,7 @@
 
 namespace wiz {
     namespace {
-        enum class ColorAttributeFlagType {
+        enum class ColorAttributeFlag {
             BackgroundRed,
             BackgroundGreen,
             BackgroundBlue,
@@ -21,34 +21,34 @@ namespace wiz {
 
             Count
         };
-        using ColorAttributeFlags = BitFlags<ColorAttributeFlagType, ColorAttributeFlagType::Count>;
+        using ColorAttributeFlags = BitFlags<ColorAttributeFlag, ColorAttributeFlag::Count>;
 
         ColorAttributeFlags ColorAttributeFlagsBackgroundChannels = ColorAttributeFlags::of<
-            ColorAttributeFlagType::BackgroundRed,
-            ColorAttributeFlagType::BackgroundGreen,
-            ColorAttributeFlagType::BackgroundBlue,
-            ColorAttributeFlagType::BackgroundIntensity   
+            ColorAttributeFlag::BackgroundRed,
+            ColorAttributeFlag::BackgroundGreen,
+            ColorAttributeFlag::BackgroundBlue,
+            ColorAttributeFlag::BackgroundIntensity   
         >();
 
         ColorAttributeFlags ColorAttributeFlagsForegroundChannels = ColorAttributeFlags::of<
-            ColorAttributeFlagType::ForegroundRed,
-            ColorAttributeFlagType::ForegroundGreen,
-            ColorAttributeFlagType::ForegroundBlue,
-            ColorAttributeFlagType::ForegroundIntensity
+            ColorAttributeFlag::ForegroundRed,
+            ColorAttributeFlag::ForegroundGreen,
+            ColorAttributeFlag::ForegroundBlue,
+            ColorAttributeFlag::ForegroundIntensity
         >();
 
 #ifdef _WIN32
         std::int16_t toWindowsAttribute(ColorAttributeFlags flags) {
             std::uint16_t result = 0;
 
-            if (flags.contains<ColorAttributeFlagType::BackgroundRed>()) { result |= BACKGROUND_RED; }
-            if (flags.contains<ColorAttributeFlagType::BackgroundGreen>()) { result |= BACKGROUND_GREEN; }
-            if (flags.contains<ColorAttributeFlagType::BackgroundBlue>()) { result |= BACKGROUND_BLUE; }
-            if (flags.contains<ColorAttributeFlagType::BackgroundIntensity>()) { result |= BACKGROUND_INTENSITY; }
-            if (flags.contains<ColorAttributeFlagType::ForegroundRed>()) { result |= FOREGROUND_RED; }
-            if (flags.contains<ColorAttributeFlagType::ForegroundGreen>()) { result |= FOREGROUND_GREEN; }
-            if (flags.contains<ColorAttributeFlagType::ForegroundBlue>()) { result |= FOREGROUND_BLUE; }
-            if (flags.contains<ColorAttributeFlagType::ForegroundIntensity>()) { result |= FOREGROUND_INTENSITY; }
+            if (flags.has<ColorAttributeFlag::BackgroundRed>()) { result |= BACKGROUND_RED; }
+            if (flags.has<ColorAttributeFlag::BackgroundGreen>()) { result |= BACKGROUND_GREEN; }
+            if (flags.has<ColorAttributeFlag::BackgroundBlue>()) { result |= BACKGROUND_BLUE; }
+            if (flags.has<ColorAttributeFlag::BackgroundIntensity>()) { result |= BACKGROUND_INTENSITY; }
+            if (flags.has<ColorAttributeFlag::ForegroundRed>()) { result |= FOREGROUND_RED; }
+            if (flags.has<ColorAttributeFlag::ForegroundGreen>()) { result |= FOREGROUND_GREEN; }
+            if (flags.has<ColorAttributeFlag::ForegroundBlue>()) { result |= FOREGROUND_BLUE; }
+            if (flags.has<ColorAttributeFlag::ForegroundIntensity>()) { result |= FOREGROUND_INTENSITY; }
 
             return static_cast<std::int16_t>(result);
         }
@@ -57,14 +57,14 @@ namespace wiz {
             ColorAttributeFlags result;
             const auto flags = static_cast<std::uint16_t>(signedMask);
 
-            if (flags & BACKGROUND_RED) { result |= ColorAttributeFlags::of<ColorAttributeFlagType::BackgroundRed>(); }
-            if (flags & BACKGROUND_GREEN) { result |= ColorAttributeFlags::of<ColorAttributeFlagType::BackgroundGreen>(); }
-            if (flags & BACKGROUND_BLUE) { result |= ColorAttributeFlags::of<ColorAttributeFlagType::BackgroundBlue>(); }
-            if (flags & BACKGROUND_INTENSITY) { result |= ColorAttributeFlags::of<ColorAttributeFlagType::BackgroundIntensity>(); }
-            if (flags & FOREGROUND_RED) { result |= ColorAttributeFlags::of<ColorAttributeFlagType::ForegroundRed>(); }
-            if (flags & FOREGROUND_GREEN) { result |= ColorAttributeFlags::of<ColorAttributeFlagType::ForegroundGreen>(); }
-            if (flags & FOREGROUND_BLUE) { result |= ColorAttributeFlags::of<ColorAttributeFlagType::ForegroundBlue>(); }
-            if (flags & FOREGROUND_INTENSITY) { result |= ColorAttributeFlags::of<ColorAttributeFlagType::ForegroundIntensity>(); }
+            if (flags & BACKGROUND_RED) { result |= ColorAttributeFlags::of<ColorAttributeFlag::BackgroundRed>(); }
+            if (flags & BACKGROUND_GREEN) { result |= ColorAttributeFlags::of<ColorAttributeFlag::BackgroundGreen>(); }
+            if (flags & BACKGROUND_BLUE) { result |= ColorAttributeFlags::of<ColorAttributeFlag::BackgroundBlue>(); }
+            if (flags & BACKGROUND_INTENSITY) { result |= ColorAttributeFlags::of<ColorAttributeFlag::BackgroundIntensity>(); }
+            if (flags & FOREGROUND_RED) { result |= ColorAttributeFlags::of<ColorAttributeFlag::ForegroundRed>(); }
+            if (flags & FOREGROUND_GREEN) { result |= ColorAttributeFlags::of<ColorAttributeFlag::ForegroundGreen>(); }
+            if (flags & FOREGROUND_BLUE) { result |= ColorAttributeFlags::of<ColorAttributeFlag::ForegroundBlue>(); }
+            if (flags & FOREGROUND_INTENSITY) { result |= ColorAttributeFlags::of<ColorAttributeFlag::ForegroundIntensity>(); }
 
             return result;
         }
@@ -139,19 +139,19 @@ namespace wiz {
                     }
 
                     if (colorMethod == FileLogger::ColorMethod::Ansi) {
-                        std::fprintf(file, "\033[%d", colorFlags.contains<ColorAttributeFlagType::ForegroundIntensity>() ? 1 : 0);
-                        if (!colorFlags.contains<ColorAttributeFlagType::DefaultForegroundColor>()) {
+                        std::fprintf(file, "\033[%d", colorFlags.has<ColorAttributeFlag::ForegroundIntensity>() ? 1 : 0);
+                        if (!colorFlags.has<ColorAttributeFlag::DefaultForegroundColor>()) {
                             std::uint8_t mask = 0;
-                            if (colorFlags.contains<ColorAttributeFlagType::ForegroundRed>()) { mask |= 0x01; }
-                            if (colorFlags.contains<ColorAttributeFlagType::ForegroundGreen>()) { mask |= 0x02; }
-                            if (colorFlags.contains<ColorAttributeFlagType::ForegroundBlue>()) { mask |= 0x04; }
+                            if (colorFlags.has<ColorAttributeFlag::ForegroundRed>()) { mask |= 0x01; }
+                            if (colorFlags.has<ColorAttributeFlag::ForegroundGreen>()) { mask |= 0x02; }
+                            if (colorFlags.has<ColorAttributeFlag::ForegroundBlue>()) { mask |= 0x04; }
                             std::fprintf(file, ";%u", mask + 30);
                         }
-                        if (!colorFlags.contains<ColorAttributeFlagType::DefaultBackgroundColor>()) {
+                        if (!colorFlags.has<ColorAttributeFlag::DefaultBackgroundColor>()) {
                             std::uint8_t mask = 0;
-                            if (colorFlags.contains<ColorAttributeFlagType::BackgroundRed>()) { mask |= 0x01; }
-                            if (colorFlags.contains<ColorAttributeFlagType::BackgroundGreen>()) { mask |= 0x02; }
-                            if (colorFlags.contains<ColorAttributeFlagType::BackgroundBlue>()) { mask |= 0x04; }
+                            if (colorFlags.has<ColorAttributeFlag::BackgroundRed>()) { mask |= 0x01; }
+                            if (colorFlags.has<ColorAttributeFlag::BackgroundGreen>()) { mask |= 0x02; }
+                            if (colorFlags.has<ColorAttributeFlag::BackgroundBlue>()) { mask |= 0x04; }
                             std::fprintf(file, ";%u", mask + 40);
                         }
                         std::fputs("m", file);
@@ -159,10 +159,10 @@ namespace wiz {
 
 #ifdef _WIN32
                     if (colorMethod == FileLogger::ColorMethod::Windows && handle != nullptr) {
-                        if (colorFlags.contains<ColorAttributeFlagType::DefaultBackgroundColor>()) {
+                        if (colorFlags.has<ColorAttributeFlag::DefaultBackgroundColor>()) {
                             colorFlags |= (fromWindowsAttributes(originalAttributes) & ColorAttributeFlagsBackgroundChannels);
                         }
-                        if (colorFlags.contains<ColorAttributeFlagType::DefaultForegroundColor>()) {
+                        if (colorFlags.has<ColorAttributeFlag::DefaultForegroundColor>()) {
                             colorFlags |= (fromWindowsAttributes(originalAttributes) & ColorAttributeFlagsForegroundChannels);
                         }
                         SetConsoleTextAttribute(handle, toWindowsAttribute(colorFlags));
@@ -203,15 +203,15 @@ namespace wiz {
         ColorAttributeFlags getColorForError(ReportErrorSeverity severity) {
             switch (severity) {
                 case ReportErrorSeverity::Note: return ColorAttributeFlags::of<
-                    ColorAttributeFlagType::DefaultBackgroundColor,
-                    ColorAttributeFlagType::ForegroundRed,
-                    ColorAttributeFlagType::ForegroundBlue,
-                    ColorAttributeFlagType::ForegroundIntensity
+                    ColorAttributeFlag::DefaultBackgroundColor,
+                    ColorAttributeFlag::ForegroundRed,
+                    ColorAttributeFlag::ForegroundBlue,
+                    ColorAttributeFlag::ForegroundIntensity
                 >();
                 default: return ColorAttributeFlags::of<
-                    ColorAttributeFlagType::DefaultBackgroundColor,
-                    ColorAttributeFlagType::ForegroundRed,
-                    ColorAttributeFlagType::ForegroundIntensity
+                    ColorAttributeFlag::DefaultBackgroundColor,
+                    ColorAttributeFlag::ForegroundRed,
+                    ColorAttributeFlag::ForegroundIntensity
                 >();
             }
         }
@@ -242,9 +242,9 @@ namespace wiz {
                         } else {
                             quote = c;
                             context.setColor(ColorAttributeFlags::of<
-                                ColorAttributeFlagType::DefaultBackgroundColor,
-                                ColorAttributeFlagType::DefaultForegroundColor,
-                                ColorAttributeFlagType::ForegroundIntensity
+                                ColorAttributeFlag::DefaultBackgroundColor,
+                                ColorAttributeFlag::DefaultForegroundColor,
+                                ColorAttributeFlag::ForegroundIntensity
                             >());
                         }
                         lastIndex = quote != 0 ? i : i + 1;
@@ -285,9 +285,9 @@ namespace wiz {
 
         if (message.rfind(">>", 0) == 0) {
             context.setColor(ColorAttributeFlags::of<
-                ColorAttributeFlagType::DefaultBackgroundColor,
-                ColorAttributeFlagType::DefaultForegroundColor,
-                ColorAttributeFlagType::ForegroundIntensity
+                ColorAttributeFlag::DefaultBackgroundColor,
+                ColorAttributeFlag::DefaultForegroundColor,
+                ColorAttributeFlag::ForegroundIntensity
             >());
             printWordWrapped(column, windowSize.first, file, StringView(message));
         } else {
@@ -301,9 +301,9 @@ namespace wiz {
     void FileLogger::error(const SourceLocation& location, ReportErrorSeverity severity, const std::string& message) {
         ConsoleColorContext context(file, colorMethod);
         context.setColor(ColorAttributeFlags::of<
-            ColorAttributeFlagType::DefaultBackgroundColor,
-            ColorAttributeFlagType::DefaultForegroundColor,
-            ColorAttributeFlagType::ForegroundIntensity
+            ColorAttributeFlag::DefaultBackgroundColor,
+            ColorAttributeFlag::DefaultForegroundColor,
+            ColorAttributeFlag::ForegroundIntensity
         >());
 
         std::size_t column = 0;
@@ -327,9 +327,9 @@ namespace wiz {
     void FileLogger::notice(const std::string& message) {
         ConsoleColorContext context(file, colorMethod);
         context.setColor(ColorAttributeFlags::of<
-            ColorAttributeFlagType::DefaultBackgroundColor,
-            ColorAttributeFlagType::DefaultForegroundColor,
-            ColorAttributeFlagType::ForegroundIntensity
+            ColorAttributeFlag::DefaultBackgroundColor,
+            ColorAttributeFlag::DefaultForegroundColor,
+            ColorAttributeFlag::ForegroundIntensity
         >());
 
         std::size_t column = 0;

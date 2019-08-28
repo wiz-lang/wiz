@@ -40,7 +40,7 @@ namespace wiz {
             decl->location, 
             ExpressionInfo(EvaluationContext::CompileTime, 
                 makeFwdUnique<TypeExpression>(TypeExpression::ResolvedIdentifier(u8Type), decl->location),
-                ExpressionInfo::Flags {}));
+                Qualifiers {}));
         
         pointerSizedType = u16Type;
         farPointerSizedType = u24Type;

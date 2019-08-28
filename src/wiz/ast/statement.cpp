@@ -276,7 +276,7 @@ namespace wiz {
                 }
                 return makeFwdUnique<const Statement>(
                     Var(
-                        var.modifiers,
+                        var.qualifiers,
                         var.names,
                         std::move(clonedAddresses),
                         var.typeExpression ? var.typeExpression->clone() : nullptr,
@@ -347,9 +347,9 @@ namespace wiz {
             case VariantType::typeIndexOf<TypeAlias>(): return "`typealias` declaration"_sv;
             case VariantType::typeIndexOf<Var>(): {
                 const auto& varDeclaration = variant.get<Var>();
-                if (varDeclaration.modifiers.contains<Modifier::Const>()) {
+                if (varDeclaration.qualifiers.has<Qualifier::Const>()) {
                     return "`const` declaration"_sv;
-                } else if (varDeclaration.modifiers.contains<Modifier::WriteOnly>()) {
+                } else if (varDeclaration.qualifiers.has<Qualifier::WriteOnly>()) {
                     return "`writeonly` declaration"_sv;
                 } else {
                     return "`var` declaration"_sv;

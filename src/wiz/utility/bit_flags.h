@@ -18,7 +18,8 @@ namespace wiz {
 
         template <typename T, T Flag>
         struct BitFlagDisjunction<T, Flag> {
-            static constexpr std::uint32_t value = static_cast<std::uint32_t>(Flag);
+            static constexpr std::uint32_t value = 
+                (1 << static_cast<std::uint32_t>(Flag));
         };
     }
 
@@ -49,7 +50,7 @@ namespace wiz {
                 return BitFlags(flags | other.flags);
             }
 
-            WIZ_FORCE_INLINE  BitFlags operator &(BitFlags other) const {
+            WIZ_FORCE_INLINE BitFlags operator &(BitFlags other) const {
                 return BitFlags(flags & other.flags);
             }
 
@@ -90,7 +91,7 @@ namespace wiz {
             }
 
             template <T Flag>
-            WIZ_FORCE_INLINE bool contains() const {
+            WIZ_FORCE_INLINE bool has() const {
                 return (flags & (1 << static_cast<std::uint32_t>(Flag))) != 0;
             }
 
@@ -98,24 +99,58 @@ namespace wiz {
                 return flags;
             }
 
+            WIZ_FORCE_INLINE BitFlags include(BitFlags other) const {
+                return *this | other;
+            }
+
             template <T... Flags>
-            WIZ_FORCE_INLINE BitFlags add() const {
-                return BitFlags(flags | detail::BitFlagDisjunction<T, Flags...>::value);
+            WIZ_FORCE_INLINE BitFlags include() const {
+                return include(of<Flags...>());
+            }
+
+            WIZ_FORCE_INLINE BitFlags intersect(BitFlags other) const {
+                return *this & other;
             }
 
             template <T... Flags>
             WIZ_FORCE_INLINE BitFlags intersect() const {
-                return BitFlags(flags & detail::BitFlagDisjunction<T, Flags...>::value);
+                return intersect(of<Flags...>());
+            }
+
+            WIZ_FORCE_INLINE BitFlags toggle(BitFlags other) const {
+                return *this ^ other;
             }
 
             template <T... Flags>
             WIZ_FORCE_INLINE BitFlags toggle() const {
-                return BitFlags(flags ^ detail::BitFlagDisjunction<T, Flags...>::value);
+                return toggle(of<Flags...>());
+            }
+
+            WIZ_FORCE_INLINE BitFlags exclude(BitFlags other) const {
+                return *this & ~other;
             }
 
             template <T... Flags>
-            WIZ_FORCE_INLINE BitFlags remove() const {
-                return BitFlags(flags & ~detail::BitFlagDisjunction<T, Flags...>::value);
+            WIZ_FORCE_INLINE BitFlags exclude() const {
+                return exclude(of<Flags...>());
+            }
+
+            WIZ_FORCE_INLINE bool any(BitFlags other) const {
+                return intersect(other).flags != 0;
+            }
+
+            template <T... Flags>
+            WIZ_FORCE_INLINE bool any() const {
+                return any(of<Flags...>());
+            }
+
+            WIZ_FORCE_INLINE bool all(BitFlags other) const {
+                return intersect(other).flags == other;
+            }
+
+            template <T... Flags>
+            WIZ_FORCE_INLINE bool all() const {
+                return all(of<Flags...>());
             }
 
         private:

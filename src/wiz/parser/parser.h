@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <unordered_set>
 
-#include <wiz/ast/modifiers.h>
+#include <wiz/ast/qualifiers.h>
 #include <wiz/parser/token.h>
 #include <wiz/utility/string_pool.h>
 #include <wiz/utility/array_view.h>
@@ -72,7 +72,7 @@ namespace wiz {
             FwdUniquePtr<const Statement> parseLetDeclaration();
             FwdUniquePtr<const Statement> parseEnumDeclaration();
             FwdUniquePtr<const Statement> parseStructDeclaration(StructKind structType);
-            FwdUniquePtr<const Statement> parseVarDeclaration(Modifiers modifiers);
+            FwdUniquePtr<const Statement> parseVarDeclaration(Qualifiers modifiers);
             FwdUniquePtr<const Statement> parseTypeAliasDeclaration();
             FwdUniquePtr<const Statement> parseFuncDeclaration(bool inlined, bool far);
             FwdUniquePtr<const Statement> parseDistanceHintedStatement();
@@ -109,7 +109,7 @@ namespace wiz {
             FwdUniquePtr<const TypeExpression> parseType();
             FwdUniquePtr<const TypeExpression> parseInnerType();
             FwdUniquePtr<const TypeExpression> parseFunctionType(bool far);
-            FwdUniquePtr<const TypeExpression> parsePointerType(PointerQualifiers qualifiers);
+            FwdUniquePtr<const TypeExpression> parsePointerType(Qualifiers qualifiers);
 
             StringPool* stringPool;
             ImportManager* importManager;

@@ -147,7 +147,7 @@ namespace wiz {
     }
 
     ExpressionInfo ExpressionInfo::clone() const {
-        return ExpressionInfo(context, type->clone(), flags);
+        return ExpressionInfo(context, type->clone(), qualifiers);
     }
 
     template <>

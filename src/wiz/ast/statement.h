@@ -7,7 +7,7 @@
 #include <vector>
 #include <cstddef>
 
-#include <wiz/ast/modifiers.h>
+#include <wiz/ast/qualifiers.h>
 #include <wiz/utility/variant.h>
 #include <wiz/utility/bit_flags.h>
 #include <wiz/utility/fwd_unique_ptr.h>
@@ -388,12 +388,12 @@ namespace wiz {
 
             struct Var {
                 Var(
-                    Modifiers modifiers,
+                    Qualifiers qualifiers,
                     StringView name,
                     FwdUniquePtr<const Expression> address,
                     FwdUniquePtr<const TypeExpression> typeExpression,
                     FwdUniquePtr<const Expression> value)
-                : modifiers(modifiers),
+                : qualifiers(qualifiers),
                 names(),
                 addresses(),
                 typeExpression(std::move(typeExpression)),
@@ -403,18 +403,18 @@ namespace wiz {
                 }
 
                 Var(
-                    Modifiers modifiers,
+                    Qualifiers qualifiers,
                     const std::vector<StringView>& names,
                     std::vector<FwdUniquePtr<const Expression>> addresses,
                     FwdUniquePtr<const TypeExpression> typeExpression,
                     FwdUniquePtr<const Expression> value)
-                : modifiers(modifiers),
+                : qualifiers(qualifiers),
                 names(names),
                 addresses(std::move(addresses)),
                 typeExpression(std::move(typeExpression)),
                 value(std::move(value)) {}
 
-                Modifiers modifiers;
+                Qualifiers qualifiers;
                 std::vector<StringView> names;
                 std::vector<FwdUniquePtr<const Expression>> addresses;
                 FwdUniquePtr<const TypeExpression> typeExpression;

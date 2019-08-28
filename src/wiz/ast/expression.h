@@ -9,6 +9,7 @@
 #include <type_traits>
 #include <unordered_map>
 
+#include <wiz/ast/qualifiers.h>
 #include <wiz/utility/int128.h>
 #include <wiz/utility/variant.h>
 #include <wiz/utility/optional.h>
@@ -101,34 +102,24 @@ namespace wiz {
     };
 
     struct ExpressionInfo {
-        enum class Flag {
-            LValue,
-            Const,
-            WriteOnly,
-            Far,
-
-            Count,
-        };
-        using Flags = BitFlags<Flag, Flag::Count>;
-
         ExpressionInfo()
         : context(EvaluationContext::Count),
         type(nullptr),
-        flags() {}
+        qualifiers() {}
 
         ExpressionInfo(
             EvaluationContext context,
             FwdUniquePtr<const TypeExpression> type,
-            Flags flags)
+            Qualifiers qualifiers)
         : context(context),
         type(std::move(type)),
-        flags(flags) {}
+        qualifiers(qualifiers) {}
 
         ExpressionInfo clone() const;
 
         EvaluationContext context;
         FwdUniquePtr<const TypeExpression> type;
-        Flags flags;
+        Qualifiers qualifiers;
     };
 
     struct Expression {

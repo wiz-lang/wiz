@@ -4,11 +4,11 @@
 namespace wiz {
     namespace {
         ReportErrorSeverity getSeverity(ReportErrorFlags flags, ReportErrorFlags previousFlags) {
-            if (flags.contains<ReportErrorFlagType::InternalError>()) {
+            if (flags.has<ReportErrorFlagType::InternalError>()) {
                 return ReportErrorSeverity::InternalError;
-            } else if (flags.contains<ReportErrorFlagType::Fatal>()) {
+            } else if (flags.has<ReportErrorFlagType::Fatal>()) {
                 return ReportErrorSeverity::Fatal;
-            } else if (previousFlags.contains<ReportErrorFlagType::Continued>()) {
+            } else if (previousFlags.has<ReportErrorFlagType::Continued>()) {
                 return ReportErrorSeverity::Note;
             } else {
                 return ReportErrorSeverity::Error;
@@ -26,10 +26,10 @@ namespace wiz {
             auto severity = getSeverity(flags, previousFlags);
             logger->error(location, severity, message);
 
-            bool aborting = flags.contains<ReportErrorFlagType::Fatal>() || previousFlags.contains<ReportErrorFlagType::Fatal>();
+            bool aborting = flags.has<ReportErrorFlagType::Fatal>() || previousFlags.has<ReportErrorFlagType::Fatal>();
             previousFlags = flags | (previousFlags.intersect<ReportErrorFlagType::Fatal>());
 
-            if (flags.contains<ReportErrorFlagType::Continued>()) {
+            if (flags.has<ReportErrorFlagType::Continued>()) {
                 aborting = false;
             } else {
                 errors++;
