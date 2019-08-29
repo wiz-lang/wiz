@@ -47,19 +47,19 @@ namespace wiz {
             }
 
             WIZ_FORCE_INLINE BitFlags operator |(BitFlags other) const {
-                return BitFlags(flags | other.flags);
+                return BitFlags(static_cast<std::uint32_t>(flags | other.flags));
             }
 
             WIZ_FORCE_INLINE BitFlags operator &(BitFlags other) const {
-                return BitFlags(flags & other.flags);
+                return BitFlags(static_cast<std::uint32_t>(flags & other.flags));
             }
 
             WIZ_FORCE_INLINE BitFlags operator ^(BitFlags other) const {
-                return BitFlags(flags ^ other.flags);
+                return BitFlags(static_cast<std::uint32_t>(flags ^ other.flags));
             }
 
             WIZ_FORCE_INLINE BitFlags operator ~() const {
-                return BitFlags(flags ^ ((1 << static_cast<std::uint32_t>(FlagCount)) - 1));
+                return BitFlags(static_cast<std::uint32_t>(flags ^ ((1 << static_cast<std::uint32_t>(FlagCount)) - 1)));
             }
 
             WIZ_FORCE_INLINE BitFlags& operator =(BitFlags other) {

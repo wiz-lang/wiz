@@ -1632,12 +1632,12 @@ namespace wiz {
                     // *T -> T
                     case UnaryOperatorKind::Indirection: {
                         if (const auto& pointerType = operand->info->type->variant.tryGet<TypeExpression::Pointer>()) {
-                            const auto flags = Qualifiers::of<Qualifier::LValue>().include(pointerType->qualifiers.intersect<Qualifier::Const, Qualifier::WriteOnly, Qualifier::Far>());
+                            const auto qualifiers = Qualifiers::of<Qualifier::LValue>().include(pointerType->qualifiers.intersect<Qualifier::Const, Qualifier::WriteOnly, Qualifier::Far>());
                             auto resultType = pointerType->elementType->clone();
 
                             return makeFwdUnique<const Expression>(
                                 Expression::UnaryOperator(unaryOperator.op, std::move(operand)), expression->location,
-                                ExpressionInfo(EvaluationContext::RunTime, std::move(resultType), flags));
+                                ExpressionInfo(EvaluationContext::RunTime, std::move(resultType), qualifiers));
                         }
 
                         report->error(getUnaryOperatorName(unaryOperator.op).toString() + " is not defined for provided operand type `" + getTypeName(operand->info->type.get()) + "`", expression->location);
@@ -1691,24 +1691,23 @@ namespace wiz {
                         } else if (const auto resolvedIdentifier = operand->variant.tryGet<Expression::ResolvedIdentifier>()) {
                             const auto pointerSizedType = op == UnaryOperatorKind::FarAddressOf ? platform->getFarPointerSizedType() : platform->getPointerSizedType();
                             const auto mask = Int128((1U << (8U * pointerSizedType->variant.get<Definition::BuiltinIntegerType>().size)) - 1);
+                            const auto farQualifier = op == UnaryOperatorKind::FarAddressOf ? Qualifiers::of<Qualifier::Far>() : Qualifiers {};
 
                             if (const auto varDefinition = resolvedIdentifier->definition->variant.tryGet<Definition::Var>()) {
                                 auto resultType = makeFwdUnique<const TypeExpression>(
                                     TypeExpression::Pointer(
                                         operand->info->type->clone(),
-                                        operand->info->qualifiers.intersect<Qualifier::Const, Qualifier::WriteOnly, Qualifier::Far>()),
+                                        operand->info->qualifiers.intersect<Qualifier::Const, Qualifier::WriteOnly>().include(farQualifier)),
                                     operand->info->type->location);
 
                                 if (varDefinition->address.hasValue() && varDefinition->address->absolutePosition.hasValue()) {
                                     return makeFwdUnique<const Expression>(
                                         Expression::IntegerLiteral(Int128(varDefinition->address->absolutePosition.get()) & mask), expression->location,
-                                        ExpressionInfo(EvaluationContext::CompileTime, std::move(resultType),
-                                            op == UnaryOperatorKind::FarAddressOf ? Qualifiers::of<Qualifier::Far>() : Qualifiers {}));
+                                        ExpressionInfo(EvaluationContext::CompileTime, std::move(resultType), farQualifier));
                                 } else {
                                     return makeFwdUnique<const Expression>(
                                         Expression::UnaryOperator(unaryOperator.op, std::move(operand)), expression->location,
-                                        ExpressionInfo(EvaluationContext::LinkTime, std::move(resultType),
-                                            op == UnaryOperatorKind::FarAddressOf ? Qualifiers::of<Qualifier::Far>() : Qualifiers {}));
+                                        ExpressionInfo(EvaluationContext::LinkTime, std::move(resultType), farQualifier));
                                 }
                             } else if (const auto funcDefinition = resolvedIdentifier->definition->variant.tryGet<Definition::Func>()) {
                                 if (funcDefinition->inlined) {
@@ -1717,18 +1716,19 @@ namespace wiz {
                                 }
 
                                 auto resultType = makeFwdUnique<const TypeExpression>(
-                                    TypeExpression::Pointer(operand->info->type->clone(), 
-                                        Qualifiers::of<Qualifier::Const>().include(op == UnaryOperatorKind::FarAddressOf ? Qualifiers::of<Qualifier::Far>() : Qualifiers {})),
+                                    TypeExpression::Pointer(
+                                        operand->info->type->clone(), 
+                                        Qualifiers::of<Qualifier::Const>().include(farQualifier)),
                                     operand->info->type->location);
 
                                 if (funcDefinition->address.hasValue() && funcDefinition->address.get().absolutePosition.hasValue()) {
                                     return makeFwdUnique<const Expression>(
                                         Expression::IntegerLiteral(Int128(funcDefinition->address->absolutePosition.get()) & mask), expression->location,
-                                        ExpressionInfo(EvaluationContext::CompileTime, std::move(resultType), op == UnaryOperatorKind::FarAddressOf ? Qualifiers::of<Qualifier::Far>() : Qualifiers {}));
+                                        ExpressionInfo(EvaluationContext::CompileTime, std::move(resultType), farQualifier));
                                 } else {
                                     return makeFwdUnique<const Expression>(
                                         Expression::UnaryOperator(unaryOperator.op, std::move(operand)), expression->location,
-                                        ExpressionInfo(EvaluationContext::LinkTime, std::move(resultType), op == UnaryOperatorKind::FarAddressOf ? Qualifiers::of<Qualifier::Far>() : Qualifiers {}));
+                                        ExpressionInfo(EvaluationContext::LinkTime, std::move(resultType), farQualifier));
                                 }
                             }
                         }
@@ -2272,11 +2272,11 @@ namespace wiz {
                 }
             }
         } else if (const auto& pointerType = typeExpression->variant.tryGet<TypeExpression::Pointer>()) {
-            const auto flags = Qualifiers::of<Qualifier::LValue>().include(pointerType->qualifiers.intersect<Qualifier::Const, Qualifier::WriteOnly, Qualifier::Far>());
+            const auto qualifiers = Qualifiers::of<Qualifier::LValue>().include(pointerType->qualifiers.intersect<Qualifier::Const, Qualifier::WriteOnly, Qualifier::Far>());
             auto resultType = pointerType->elementType->clone();
             auto indirection = makeFwdUnique<const Expression>(
                 Expression::UnaryOperator(UnaryOperatorKind::Indirection, expression->clone()), expression->location,
-                ExpressionInfo(EvaluationContext::RunTime, std::move(resultType), flags));
+                ExpressionInfo(EvaluationContext::RunTime, std::move(resultType), qualifiers));
             auto member = resolveValueMemberExpression(indirection.get(), name);
             return member;
         } else {
