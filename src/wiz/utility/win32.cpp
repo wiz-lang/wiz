@@ -31,7 +31,7 @@ namespace wiz {
         NtQueryObjectProc getNtQueryObjectProc() {
             static NtQueryObjectProc proc = nullptr;
             if (proc == nullptr) {
-                proc = reinterpret_cast<NtQueryObjectProc>(GetProcAddress(GetModuleHandle(TEXT("Ntdll.dll")), "NtQueryObject"));
+                proc = reinterpret_cast<NtQueryObjectProc>(reinterpret_cast<void*>(GetProcAddress(GetModuleHandle(TEXT("Ntdll.dll")), "NtQueryObject")));
             }
             return proc;
         }
