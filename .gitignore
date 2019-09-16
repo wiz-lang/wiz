@@ -57,3 +57,4 @@ obj/
 *.psess
 *.bin
 *.rom
+vc/.vs

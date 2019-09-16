@@ -88,7 +88,7 @@ NOTE: All build instructions require a C++14, C++17, or later compiler. It will 
 
 ### Windows (Visual Studio)
 
-- Install Visual Studio 2017 or later. 
+- Install Visual Studio 2019 or later. 
 - Open `vc/wiz.sln` in Visual Studio. Build the solution.
 - If the build succeeds, a file named `wiz.exe` should exist in the `bin/` folder under the root of this repository.
 
