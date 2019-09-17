@@ -1,0 +1,270 @@
+// SYSTEM  6502 65c02 wdc65c02 rockwell65c02
+// ::TODO huc6280 wdc65816::
+//
+// Opcodes tested from site: http://6502.org/tutorials/6502opcodes.html
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -a6502 -m0x8000 6502_goto_and_or.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+in prg {
+
+let FarLabel = 0xfeed as func;
+
+func goto_and_or_test {
+
+// ::BUG Invalid code (correct assembly is below)::
+// BLOCK 000000      c9 64                 cmp #0x64
+// BLOCK             d0 1a                 bne 0x00801e
+// BLOCK             c9 2a                 cmp #0x2a
+// BLOCK             f0 16                 beq 0x00801e
+// BLOCK             c5 00                 cmp 0x00
+// BLOCK             b0 12                 bcs 0x00801e
+// BLOCK             cd 00 02              cmp 0x0200
+// BLOCK             90 0d                 bcc 0x00801e
+// BLOCK             c5 01                 cmp 0x01
+// BLOCK             f0 02                 beq 0x008017
+// BLOCK             b0 07                 bcs 0x00801e
+// BLOCK 000017      cd 01 02              cmp 0x0201
+// BLOCK             f0 02                 beq 0x00801e
+// BLOCK             b0 e2                 bcs 0x008000
+LogicalAndTestLabel:
+    goto LogicalAndTestLabel if
+        a == 100
+        && a != 42
+        && a < zp_u8_00
+        && a >= ram_u8_200
+        && a <= zp_u8_01
+        && a > ram_u8_201;
+
+
+
+// BLOCK 00001e      c9 64                 cmp #0x64
+// BLOCK             f0 fc                 beq 0x00801e
+// BLOCK             c9 2a                 cmp #0x2a
+// BLOCK             d0 f8                 bne 0x00801e
+// BLOCK             c5 00                 cmp 0x00
+// BLOCK             90 f4                 bcc 0x00801e
+// BLOCK             cd 00 02              cmp 0x0200
+// BLOCK             b0 ef                 bcs 0x00801e
+// BLOCK             c5 01                 cmp 0x01
+// BLOCK             f0 eb                 beq 0x00801e
+// BLOCK             90 e9                 bcc 0x00801e
+// BLOCK             cd 01 02              cmp 0x0201
+// BLOCK             f0 02                 beq 0x00803c
+// BLOCK             b0 e2                 bcs 0x00801e
+LogicalOrTestLabel:
+    goto LogicalOrTestLabel if
+        a == 100
+        || a != 42
+        || a < zp_u8_00
+        || a >= ram_u8_200
+        || a <= zp_u8_01
+        || a > ram_u8_201;
+
+
+
+// Branch order matches gcc and clang compiler
+// BLOCK 00003c      c9 ab                 cmp #0xab
+// BLOCK             f0 fc                 beq 0x00803c
+// BLOCK             e0 cd                 cpx #0xcd
+// BLOCK             d0 04                 bne 0x008048
+// BLOCK             c0 ef                 cpy #0xef
+// BLOCK             f0 f4                 beq 0x00803c
+LogicalOrAndTestLabel:
+    goto LogicalOrAndTestLabel if
+        a == 0xab
+        || x == 0xcd
+        && y == 0xef;
+
+
+
+// ::BUG Invalid code (correct assembly is below)::
+// BLOCK 000048      c5 00                 cmp 0x00
+// BLOCK             f0 04                 beq 0x008050
+// BLOCK             c5 01                 cmp 0x01
+// BLOCK             d0 13                 bne 0x008063
+// BLOCK 000050      ec 00 02              cpx 0x0200
+// BLOCK             f0 05                 beq 0x00805a
+// BLOCK             ec 01 02              cpx 0x0201
+// BLOCK             d0 09                 bne 0x008063
+// BLOCK 00005a      c4 08                 cpy 0x08
+// BLOCK             90 ea                 bcc 0x008048
+// BLOCK             cc 06 02              cpy 0x0206
+// BLOCK             90 e5                 bcc 0x008048
+LogicalOrAndParenthesisTestLabel:
+    goto LogicalOrAndParenthesisTestLabel if
+           (a == zp_u8_00       || a == zp_u8_01)
+        && (ram_u8_200 == x     || ram_u8_201 == x)
+        && (y < zp_block_08[0]  || y < ram_block_206[0]);
+
+
+
+// BLOCK 000063      c5 00                 cmp 0x00
+// BLOCK             b0 04                 bcs 0x00806b
+// BLOCK             c5 01                 cmp 0x01
+// BLOCK             b0 f8                 bcs 0x008063
+// BLOCK 00006b      ec 00 02              cpx 0x0200
+// BLOCK             f0 09                 beq 0x008079
+// BLOCK             90 07                 bcc 0x008079
+// BLOCK             ec 01 02              cpx 0x0201
+// BLOCK             f0 ec                 beq 0x008063
+// BLOCK             90 ea                 bcc 0x008063
+// BLOCK 000079      c4 08                 cpy 0x08
+// BLOCK             b0 05                 bcs 0x008082
+// BLOCK             cc 06 02              cpy 0x0206
+// BLOCK             b0 e1                 bcs 0x008063
+LogicalAndOrParenthesisTestLabel:
+    goto LogicalAndOrParenthesisTestLabel if
+           (a < zp_u8_00        && a >= zp_u8_01)
+        || (ram_u8_200 < x      && ram_u8_201 >= x)
+        || (y < zp_block_08[0]  && y >= ram_block_206[0]);
+
+
+
+// ::BUG Invalid code (correct(ish) assembly is below)::
+// ::BUG not size optimal::
+// BLOCK 000082      c9 64                 cmp #0x64
+// BLOCK             f0 03                 beq 0x008089
+// BLOCK             4c b1 80              jmp 0x80b1
+// BLOCK 000089      c9 2a                 cmp #0x2a
+// BLOCK             d0 03                 bne 0x008090
+// BLOCK             4c b1 80              jmp 0x80b1
+// BLOCK 000090      cd 00 02              cmp 0x0200
+// BLOCK             b0 03                 bcs 0x008098
+// BLOCK             4c b1 80              jmp 0x80b1
+// BLOCK 000098      c5 01                 cmp 0x01
+// BLOCK             d0 03                 bne 0x00809f
+// BLOCK             4c a4 80              jmp 0x80a4
+// BLOCK 00009f      90 03                 bcc 0x0080a4
+// BLOCK             4c b1 80              jmp 0x80b1
+// BLOCK 0000a4      cd 01 02              cmp 0x0201
+// BLOCK             d0 03                 bne 0x0080ac
+// BLOCK             4c b1 80              jmp 0x80b1
+// BLOCK 0000ac      90 03                 bcc 0x0080b1
+// BLOCK             4c ed fe              jmp 0xfeed
+    ^goto FarLabel if
+        a == 100
+        && (a != 42
+        && (a >= ram_u8_200
+        && (a <= zp_u8_01
+        && (a > ram_u8_201))));
+
+
+// ::BUG not size optimal::
+// BLOCK 0000b1      c9 64                 cmp #0x64
+// BLOCK             d0 03                 bne 0x0080b8
+// BLOCK             4c ed fe              jmp 0xfeed
+// BLOCK 0000b8      c9 2a                 cmp #0x2a
+// BLOCK             f0 03                 beq 0x0080bf
+// BLOCK             4c ed fe              jmp 0xfeed
+// BLOCK 0000bf      c5 00                 cmp 0x00
+// BLOCK             b0 03                 bcs 0x0080c6
+// BLOCK             4c ed fe              jmp 0xfeed
+// BLOCK 0000c6      cd 00 02              cmp 0x0200
+// BLOCK             90 03                 bcc 0x0080ce
+// BLOCK             4c ed fe              jmp 0xfeed
+// BLOCK 0000ce      c5 01                 cmp 0x01
+// BLOCK             d0 03                 bne 0x0080d5
+// BLOCK             4c ed fe              jmp 0xfeed
+// BLOCK 0000d5      b0 03                 bcs 0x0080da
+// BLOCK             4c ed fe              jmp 0xfeed
+// BLOCK 0000da      cd 01 02              cmp 0x0201
+// BLOCK             d0 03                 bne 0x0080e2
+// BLOCK             4c e7 80              jmp 0x80e7
+// BLOCK 0000e2      90 03                 bcc 0x0080e7
+// BLOCK             4c ed fe              jmp 0xfeed
+    ^goto FarLabel if
+        a == 100
+        || a != 42
+        || a < zp_u8_00
+        || a >= ram_u8_200
+        || a <= zp_u8_01
+        || a > ram_u8_201;
+
+
+
+// Branch order matches gcc and clang compiler
+// ::BUG not size optimal::
+// BLOCK 0000e7      c9 ab                 cmp #0xab
+// BLOCK             d0 03                 bne 0x0080ee
+// BLOCK             4c ed fe              jmp 0xfeed
+// BLOCK 0000ee      e0 cd                 cpx #0xcd
+// BLOCK             f0 03                 beq 0x0080f5
+// BLOCK             4c fc 80              jmp 0x80fc
+// BLOCK 0000f5      c0 ef                 cpy #0xef
+// BLOCK             d0 03                 bne 0x0080fc
+// BLOCK             4c ed fe              jmp 0xfeed
+    ^goto FarLabel if
+        a == 0xab
+        || x == 0xcd
+        && y == 0xef;
+
+
+
+// ::BUG Invalid code (correct(ish) assembly is below)::
+// ::BUG not size optimal::
+// BLOCK 0000fc      c5 00                 cmp 0x00
+// BLOCK             d0 03                 bne 0x008103
+// BLOCK             4c 0a 81              jmp 0x810a
+// BLOCK 000103      c5 01                 cmp 0x01
+// BLOCK             f0 03                 beq 0x00810a
+// BLOCK             4c 29 81              jmp 0x8129
+// BLOCK 00010a      ec 00 02              cpx 0x0200
+// BLOCK             d0 03                 bne 0x008112
+// BLOCK             4c 1a 81              jmp 0x811a
+// BLOCK 000112      ec 01 02              cpx 0x0201
+// BLOCK             f0 03                 beq 0x00811a
+// BLOCK             4c 29 81              jmp 0x8129
+// BLOCK 00011a      c4 08                 cpy 0x08
+// BLOCK             b0 03                 bcs 0x008121
+// BLOCK             4c ed fe              jmp 0xfeed
+// BLOCK 000121      cc 06 02              cpy 0x0206
+// BLOCK             b0 03                 bcs 0x008129
+// BLOCK             4c ed fe              jmp 0xfeed
+    ^goto FarLabel if
+           (a == zp_u8_00        || a == zp_u8_01)
+        && (ram_u8_200 == x     || ram_u8_201 == x)
+        && (y < zp_block_08[0]  || y < ram_block_206[0]);
+
+
+
+// ::BUG not size optimal::
+// BLOCK 000129      c5 00                 cmp 0x00
+// BLOCK             90 03                 bcc 0x008130
+// BLOCK             4c 37 81              jmp 0x8137
+// BLOCK 000130      c5 01                 cmp 0x01
+// BLOCK             90 03                 bcc 0x008137
+// BLOCK             4c ed fe              jmp 0xfeed
+// BLOCK 000137      ec 00 02              cpx 0x0200
+// BLOCK             d0 03                 bne 0x00813f
+// BLOCK             4c 51 81              jmp 0x8151
+// BLOCK 00013f      b0 03                 bcs 0x008144
+// BLOCK             4c 51 81              jmp 0x8151
+// BLOCK 000144      ec 01 02              cpx 0x0201
+// BLOCK             d0 03                 bne 0x00814c
+// BLOCK             4c ed fe              jmp 0xfeed
+// BLOCK 00014c      b0 03                 bcs 0x008151
+// BLOCK             4c ed fe              jmp 0xfeed
+// BLOCK 000151      c4 08                 cpy 0x08
+// BLOCK             90 03                 bcc 0x008158
+// BLOCK             4c 60 81              jmp 0x8160
+// BLOCK 000158      cc 06 02              cpy 0x0206
+// BLOCK             90 03                 bcc 0x008160
+// BLOCK             4c ed fe              jmp 0xfeed
+    ^goto FarLabel if
+           (a < zp_u8_00        && a >= zp_u8_01)
+        || (ram_u8_200 < x      && ram_u8_201 >= x)
+        || (y < zp_block_08[0]  && y >= ram_block_206[0]);
+
+// BLOCK 000160      60                    rts
+}
+
+// BLOCK ff
+}
+

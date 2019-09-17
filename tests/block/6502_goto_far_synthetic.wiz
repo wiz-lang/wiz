@@ -1,0 +1,112 @@
+// SYSTEM  6502 65c02 wdc65c02 rockwell65c02
+// ::TODO huc6280::
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -a6502 -m0x8000 6502_goto_far.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+in prg {
+
+let far_label = 0xfeed as func;
+
+// ::BUG the emitted code is valid, but not optimal::
+
+func goto_far_synthetic {
+
+// BLOCK 000000      c9 01                 cmp #0x01
+// BLOCK             d0 03                 bne 0x008007
+// BLOCK             4c ed fe              jmp 0xfeed
+// BLOCK 000007      b0 03                 bcs 0x00800c
+// BLOCK             4c ed fe              jmp 0xfeed
+    ^goto far_label if a <= 1;
+
+// BLOCK 00000c      e0 03                 cpx #0x03
+// BLOCK             d0 03                 bne 0x008013
+// BLOCK             4c ed fe              jmp 0xfeed
+// BLOCK 000013      b0 03                 bcs 0x008018
+// BLOCK             4c ed fe              jmp 0xfeed
+    ^goto far_label if x <= 3;
+
+// BLOCK 000018      c0 05                 cpy #0x05
+// BLOCK             d0 03                 bne 0x00801f
+// BLOCK             4c ed fe              jmp 0xfeed
+// BLOCK 00001f      b0 03                 bcs 0x008024
+// BLOCK             4c ed fe              jmp 0xfeed
+    ^goto far_label if y <= 5;
+
+// BLOCK 000024      c9 07                 cmp #0x07
+// BLOCK             d0 03                 bne 0x00802b
+// BLOCK             4c ed fe              jmp 0xfeed
+// BLOCK 00002b      b0 03                 bcs 0x008030
+// BLOCK             4c ed fe              jmp 0xfeed
+    ^goto far_label if 7 >= a;
+
+// BLOCK 000030      c9 09                 cmp #0x09
+// BLOCK             d0 03                 bne 0x008037
+// BLOCK             4c ed fe              jmp 0xfeed
+// BLOCK 000037      b0 03                 bcs 0x00803c
+// BLOCK             4c ed fe              jmp 0xfeed
+    ^goto far_label if !(a > 9);
+
+// BLOCK 00003c      c9 0b                 cmp #0x0b
+// BLOCK             d0 03                 bne 0x008043
+// BLOCK             4c ed fe              jmp 0xfeed
+// BLOCK 000043      b0 03                 bcs 0x008048
+// BLOCK             4c ed fe              jmp 0xfeed
+    ^goto far_label if !(11 < a);
+
+
+
+// BLOCK 000048      c9 01                 cmp #0x01
+// BLOCK             d0 03                 bne 0x00804f
+// BLOCK             4c 54 80              jmp 0x8054
+// BLOCK 00004f      90 03                 bcc 0x008054
+// BLOCK             4c ed fe              jmp 0xfeed
+    ^goto far_label if a > 1;
+
+// BLOCK 000054      e0 03                 cpx #0x03
+// BLOCK             d0 03                 bne 0x00805b
+// BLOCK             4c 60 80              jmp 0x8060
+// BLOCK 00005b      90 03                 bcc 0x008060
+// BLOCK             4c ed fe              jmp 0xfeed
+    ^goto far_label if x > 3;
+
+// BLOCK 000060      c0 05                 cpy #0x05
+// BLOCK             d0 03                 bne 0x008067
+// BLOCK             4c 6c 80              jmp 0x806c
+// BLOCK 000067      90 03                 bcc 0x00806c
+// BLOCK             4c ed fe              jmp 0xfeed
+    ^goto far_label if y > 5;
+
+// BLOCK 00006c      c9 07                 cmp #0x07
+// BLOCK             d0 03                 bne 0x008073
+// BLOCK             4c 78 80              jmp 0x8078
+// BLOCK 000073      90 03                 bcc 0x008078
+// BLOCK             4c ed fe              jmp 0xfeed
+    ^goto far_label if 7 < a;
+
+// BLOCK 000078      c9 09                 cmp #0x09
+// BLOCK             d0 03                 bne 0x00807f
+// BLOCK             4c 84 80              jmp 0x8084
+// BLOCK 00007f      90 03                 bcc 0x008084
+// BLOCK             4c ed fe              jmp 0xfeed
+    ^goto far_label if !(a <= 9);
+
+// BLOCK 000084      c9 0b                 cmp #0x0b
+// BLOCK             d0 03                 bne 0x00808b
+// BLOCK             4c 90 80              jmp 0x8090
+// BLOCK 00008b      90 03                 bcc 0x008090
+// BLOCK             4c ed fe              jmp 0xfeed
+    ^goto far_label if !(11 >= a);
+
+// BLOCK 000090      60                    rts
+}
+
+// BLOCK ff
+}
+

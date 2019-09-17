@@ -1,0 +1,34 @@
+// SYSTEM  6502
+// ::TODO other systems::
+//
+// Opcodes tested from site: http://6502.org/tutorials/6502opcodes.html
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -a6502 -m0x8000 6502_push_pop.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+// BLOCK 0x000000
+in prg {
+
+func push_pop {
+// BLOCK    08                    php
+// BLOCK    48                    pha
+    push(p);
+    push(a);
+
+// BLOCK    68                    pla
+// BLOCK    28                    plp
+    a = pop();
+    p = pop();
+
+// BLOCK    60                    rts
+}
+
+// BLOCK    ff
+}
+

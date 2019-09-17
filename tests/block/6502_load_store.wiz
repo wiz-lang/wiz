@@ -1,0 +1,793 @@
+// SYSTEM  6502 65c02 wdc65c02 rockwell65c02
+// ::TODO huc6280::
+//
+// Opcodes tested from site: http://6502.org/tutorials/6502opcodes.html
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -a6502 -m0x8000 6502_load_store.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+// BLOCK 0x000000
+in prg {
+
+func load {
+// BLOCK    a9 01                 lda #0x01
+// BLOCK    a2 02                 ldx #0x02
+// BLOCK    a0 03                 ldy #0x03
+    a = 1;
+    x = 2;
+    y = 3;
+
+// BLOCK    a5 00                 lda 0x00
+// BLOCK    a5 02                 lda 0x02
+// BLOCK    a5 03                 lda 0x03
+// BLOCK    a5 04                 lda 0x04
+// BLOCK    a5 05                 lda 0x05
+    a = zp_u8_00;
+    a = <:zp_u16_02;
+    a = >:zp_u16_02;
+    a = <:zp_ptr_04;
+    a = >:zp_ptr_04;
+
+// BLOCK    a6 00                 ldx 0x00
+// BLOCK    a6 02                 ldx 0x02
+// BLOCK    a6 03                 ldx 0x03
+// BLOCK    a6 04                 ldx 0x04
+// BLOCK    a6 05                 ldx 0x05
+    x = zp_u8_00;
+    x = <:zp_u16_02;
+    x = >:zp_u16_02;
+    x = <:zp_ptr_04;
+    x = >:zp_ptr_04;
+
+// BLOCK    a4 00                 ldy 0x00
+// BLOCK    a4 02                 ldy 0x02
+// BLOCK    a4 03                 ldy 0x03
+// BLOCK    a4 04                 ldy 0x04
+// BLOCK    a4 05                 ldy 0x05
+    y = zp_u8_00;
+    y = <:zp_u16_02;
+    y = >:zp_u16_02;
+    y = <:zp_ptr_04;
+    y = >:zp_ptr_04;
+
+
+
+// BLOCK    ad 00 02              lda 0x0200
+// BLOCK    ad 02 02              lda 0x0202
+// BLOCK    ad 03 02              lda 0x0203
+    a = ram_u8_200;
+    a = <:ram_u16_202;
+    a = >:ram_u16_202;
+
+// BLOCK    ae 01 02              ldx 0x0201
+// BLOCK    ae 04 02              ldx 0x0204
+// BLOCK    ae 05 02              ldx 0x0205
+    x = ram_u8_201;
+    x = <:ram_u16_204;
+    x = >:ram_u16_204;
+
+// BLOCK    ac 00 02              ldy 0x0200
+// BLOCK    ac 02 02              ldy 0x0202
+// BLOCK    ac 03 02              ldy 0x0203
+    y = ram_u8_200;
+    y = <:ram_u16_202;
+    y = >:ram_u16_202;
+
+// BLOCK    ad 01 f0              lda 0xf001
+// BLOCK    ae 01 f0              ldx 0xf001
+// BLOCK    ac 01 f0              ldy 0xf001
+    a = ro_register;
+    x = ro_register;
+    y = ro_register;
+
+
+// BLOCK    a5 09                 lda 0x09
+// BLOCK    a6 0a                 ldx 0x0a
+// BLOCK    a4 0b                 ldy 0x0b
+    a = zp_block_08[1];
+    x = zp_block_08[2];
+    y = zp_block_08[3];
+
+// BLOCK    ad 0a 02              lda 0x020a
+// BLOCK    ae 0b 02              ldx 0x020b
+// BLOCK    ac 0c 02              ldy 0x020c
+    a = ram_block_206[4];
+    x = ram_block_206[5];
+    y = ram_block_206[6];
+
+// BLOCK    a5 12                 lda 0x12
+// BLOCK    a5 13                 lda 0x13
+// BLOCK    a6 14                 ldx 0x14
+// BLOCK    a6 15                 ldx 0x15
+// BLOCK    a4 16                 ldy 0x16
+// BLOCK    a4 17                 ldy 0x17
+    a = <:zp_wblock_10[1];
+    a = >:zp_wblock_10[1];
+    x = <:zp_wblock_10[2];
+    x = >:zp_wblock_10[2];
+    y = <:zp_wblock_10[3];
+    y = >:zp_wblock_10[3];
+
+// BLOCK    ad 12 02              lda 0x0212
+// BLOCK    ad 13 02              lda 0x0213
+// BLOCK    ae 14 02              ldx 0x0214
+// BLOCK    ae 15 02              ldx 0x0215
+// BLOCK    ac 16 02              ldy 0x0216
+// BLOCK    ac 17 02              ldy 0x0217
+    a = <:ram_wblock_210[1];
+    a = >:ram_wblock_210[1];
+    x = <:ram_wblock_210[2];
+    x = >:ram_wblock_210[2];
+    y = <:ram_wblock_210[3];
+    y = >:ram_wblock_210[3];
+
+
+
+// BLOCK    b5 08                 lda 0x08,x
+    a = zp_block_08[x];
+
+    // ::ANNOY: have to include both u16 in these blocks
+    // System will detect address is < 0x100 and use zero page
+// BLOCK    b5 08                 lda 0x08,x
+// BLOCK    b5 0a                 lda 0x0a,x
+// BLOCK    b5 0a                 lda 0x0a,x
+    a = *((&zp_block_08 as u16 + x as u16) as *u8);              // a = zp_block_08[x]
+    a = *((&zp_block_08 as u16 + 2 + x as u16) as *u8);          // a = zp_block_08[2 + x]
+    a = *((&zp_block_08[2] as u16 + x as u16) as *u8);           // a = zp_block_08[2 + x]
+
+
+// BLOCK    b5 10                 lda 0x10,x
+// BLOCK    b5 11                 lda 0x11,x
+    a = (&<:zp_wblock_10[0] as *u8)[x];                         // low byte
+    a = (&>:zp_wblock_10[0] as *u8)[x];                         // high byte
+
+// BLOCK    b5 10                 lda 0x10,x
+// BLOCK    b5 11                 lda 0x11,x
+    a = (&zp_wblock_10 as *u8)[x];                              // low byte
+    a = ((&zp_wblock_10 as u16 + 1) as *u8)[x];                 // high byte
+
+// BLOCK    b5 10                 lda 0x10,x
+// BLOCK    b5 11                 lda 0x11,x
+    a = *((&<:zp_wblock_10[0] as u16 + x as u16) as *u8);       // low byte
+    a = *((&>:zp_wblock_10[0] as u16 + x as u16) as *u8);       // high byte
+
+
+
+    // Will always use absolute,y addressing mode
+
+// BLOCK    b9 08 00              lda 0x0008,y
+    a = zp_block_08[y];
+
+// BLOCK    b9 10 00              lda 0x0010,y
+// BLOCK    b9 10 00              lda 0x0010,y
+// BLOCK    b9 11 00              lda 0x0011,y
+    a = *((&zp_wblock_10 as u16 + y as u16) as *u8);
+    a = *((&<:zp_wblock_10[0] as u16 + y as u16) as *u8);
+    a = *((&>:zp_wblock_10[0] as u16 + y as u16) as *u8);
+
+
+
+// BLOCK    bd 06 02              lda 0x0206,x
+    a = ram_block_206[x];
+
+// BLOCK    bd 06 02              lda 0x0206,x
+// BLOCK    bd 09 02              lda 0x0209,x
+// BLOCK    bd 09 02              lda 0x0209,x
+    a = *((&ram_block_206 as u16 + x as u16) as *u8);           // a = ram_block_206[x]
+    a = *((&ram_block_206 as u16 + 3 + x as u16) as *u8);       // a = ram_block_206[3 + x]
+    a = *((&ram_block_206[3] as u16 + x as u16) as *u8);        // a = ram_block_206[3 + x]
+
+// BLOCK    bd 10 02              lda 0x0210,x
+// BLOCK    bd 11 02              lda 0x0211,x
+    a = (&<:ram_wblock_210[0] as *u8)[x];                       // low byte
+    a = (&>:ram_wblock_210[0] as *u8)[x];                       // high byte
+
+// BLOCK    bd 10 02              lda 0x0210,x
+// BLOCK    bd 11 02              lda 0x0211,x
+    a = (&ram_wblock_210 as *u8)[x];                            // low byte
+    a = ((&ram_wblock_210 as u16 + 1) as *u8)[x];               // high byte
+
+// BLOCK    bd 10 02              lda 0x0210,x
+// BLOCK    bd 11 02              lda 0x0211,x
+    a = *((&<:ram_wblock_210[0] as u16 + x as u16) as *u8);     // low byte
+    a = *((&>:ram_wblock_210[0] as u16 + x as u16) as *u8);     // high byte
+
+
+
+// BLOCK    b9 06 02              lda 0x0206,y
+    a = ram_block_206[y];
+
+// BLOCK    b9 06 02              lda 0x0206,y
+// BLOCK    b9 0a 02              lda 0x020a,y
+// BLOCK    b9 0a 02              lda 0x020a,y
+    a = *((&ram_block_206 as u16 + y as u16) as *u8);           // a = ram_block_206[y]
+    a = *((&ram_block_206 as u16 + 4 + y as u16) as *u8);       // a = ram_block_206[4 + y]
+    a = *((&ram_block_206[4] as u16 + y as u16) as *u8);        // a = ram_block_206[4 + y]
+
+// BLOCK    b9 10 02              lda 0x0210,y
+// BLOCK    b9 11 02              lda 0x0211,y
+    a = (&<:ram_wblock_210[0] as *u8)[y];                       // low byte
+    a = (&>:ram_wblock_210[0] as *u8)[y];                       // high byte
+
+// BLOCK    b9 10 02              lda 0x0210,y
+// BLOCK    b9 11 00              lda 0x0011,y
+    a = (&ram_wblock_210 as *u8)[y];                            // low byte
+    a = ((&ram_wblock_210 as u8 + 1) as *u8)[y];                // high byte
+
+// BLOCK    b9 10 02              lda 0x0210,y
+// BLOCK    b9 11 02              lda 0x0211,y
+    a = *((&<:ram_wblock_210[0] as u16 + y as u16) as *u8);     // low byte
+    a = *((&>:ram_wblock_210[0] as u16 + y as u16) as *u8);     // high byte
+
+
+
+// BLOCK    a1 20                 lda (0x20,x)
+    a = *(*((&zp_array_ptr_20 as u16 + x as u16) as *u16) as *u8);
+
+
+// BLOCK    b1 04                 lda (0x04),y
+    a = *((zp_ptr_04 as u16 + y as u16) as *u8);
+
+
+
+
+// BLOCK    b6 08                 ldx 0x08,y
+    x = zp_block_08[y];
+
+// BLOCK    b6 08                 ldx 0x08,y
+// BLOCK    b6 0a                 ldx 0x0a,y
+// BLOCK    b6 0a                 ldx 0x0a,y
+    x = *((&zp_block_08 as u16 + y as u16) as *u8);              // x = zp_block_08[y]
+    x = *((&zp_block_08 as u16 + 2 + y as u16) as *u8);          // x = zp_block_08[2 + y]
+    x = *((&zp_block_08[2] as u16 + y as u16) as *u8);           // x = zp_block_08[2 + y]
+
+// BLOCK    be 06 02              ldx 0x0206,y
+    x = ram_block_206[y];
+
+// BLOCK    be 06 02              ldx 0x0206,y
+    x = *((&ram_block_206 as u16 + y as u16) as *u8);           // x = ram_block_206[y]
+
+// BLOCK    be 0a 02              ldx 0x020a,y
+// BLOCK    be 0a 02              ldx 0x020a,y
+    x = *((&ram_block_206 as u16 + 4 + y as u16) as *u8);       // x = ram_block_206[4 + y]
+    x = *((&ram_block_206[4] as u16 + y as u16) as *u8);        // x = ram_block_206[4 + y]
+
+// BLOCK    be 10 02              ldx 0x0210,y
+// BLOCK    be 11 02              ldx 0x0211,y
+    x = (&<:ram_wblock_210[0] as *u8)[y];                       // low byte
+    x = (&>:ram_wblock_210[0] as *u8)[y];                       // high byte
+
+// BLOCK    be 10 02              ldx 0x0210,y
+// BLOCK    be 11 02              ldx 0x0211,y
+    x = (&ram_wblock_210 as *u8)[y];                            // low byte
+    x = ((&ram_wblock_210 as u16 + 1) as *u8)[y];               // high byte
+
+// BLOCK    be 10 02              ldx 0x0210,y
+// BLOCK    be 11 02              ldx 0x0211,y
+    x = *((&<:ram_wblock_210[0] as u16 + y as u16) as *u8);     // low byte
+    x = *((&>:ram_wblock_210[0] as u16 + y as u16) as *u8);     // high byte
+
+
+
+// BLOCK    b4 08                 ldy 0x08,x
+    y = zp_block_08[x];
+
+// BLOCK    b4 08                 ldy 0x08,x
+// BLOCK    b4 0a                 ldy 0x0a,x
+// BLOCK    b4 0a                 ldy 0x0a,x
+    y = *((&zp_block_08 as u16 + x as u16) as *u8);             // y = zp_block_08[x]
+    y = *((&zp_block_08 as u16 + 2 + x as u16) as *u8);         // y = zp_block_08[2 + x]
+    y = *((&zp_block_08[2] as u16 + x as u16) as *u8);          // y = zp_block_08[2 + x]
+
+// BLOCK    bc 06 02              ldy 0x0206,x
+    y = ram_block_206[x];
+
+// BLOCK    bc 06 02              ldy 0x0206,x
+// BLOCK    bc 09 02              ldy 0x0209,x
+// BLOCK    bc 09 02              ldy 0x0209,x
+    y = *((&ram_block_206 as u16 + x as u16) as *u8);           // y = ram_block_206[x]
+    y = *((&ram_block_206 as u16 + 3 + x as u16) as *u8);       // y = ram_block_206[3 + x]
+    y = *((&ram_block_206[3] as u16 + x as u16) as *u8);        // y = ram_block_206[3 + x]
+
+
+// BLOCK    bc 10 02              ldy 0x0210,x
+// BLOCK    bc 11 02              ldy 0x0211,x
+    y = (&<:ram_wblock_210[0] as *u8)[x];                       // low byte
+    y = (&>:ram_wblock_210[0] as *u8)[x];                       // high byte
+
+// BLOCK    bc 10 02              ldy 0x0210,x
+// BLOCK    bc 11 02              ldy 0x0211,x
+    y = (&ram_wblock_210 as *u8)[x];                            // low byte
+    y = ((&ram_wblock_210 as u16 + 1) as *u8)[x];               // high byte
+
+// BLOCK    bc 10 02              ldy 0x0210,x
+// BLOCK    bc 11 02              ldy 0x0211,x
+    y = *((&<:ram_wblock_210[0] as u16 + x as u16) as *u8);     // low byte
+    y = *((&>:ram_wblock_210[0] as u16 + x as u16) as *u8);     // high byte
+
+// BLOCK    60                    rts
+}
+
+
+
+func store {
+// BLOCK    85 00                 sta 0x00
+// BLOCK    85 02                 sta 0x02
+// BLOCK    85 03                 sta 0x03
+// BLOCK    85 04                 sta 0x04
+// BLOCK    85 05                 sta 0x05
+    zp_u8_00 = a;
+    <:zp_u16_02 = a;
+    >:zp_u16_02 = a;
+    <:zp_ptr_04 = a;
+    >:zp_ptr_04 = a;
+
+// BLOCK    86 00                 stx 0x00
+// BLOCK    86 02                 stx 0x02
+// BLOCK    86 03                 stx 0x03
+// BLOCK    86 04                 stx 0x04
+// BLOCK    86 05                 stx 0x05
+    zp_u8_00 = x;
+    <:zp_u16_02 = x;
+    >:zp_u16_02 = x;
+    <:zp_ptr_04 = x;
+    >:zp_ptr_04 = x;
+
+// BLOCK    84 00                 sty 0x00
+// BLOCK    84 02                 sty 0x02
+// BLOCK    84 03                 sty 0x03
+// BLOCK    84 04                 sty 0x04
+// BLOCK    84 05                 sty 0x05
+    zp_u8_00 = y;
+    <:zp_u16_02 = y;
+    >:zp_u16_02 = y;
+    <:zp_ptr_04 = y;
+    >:zp_ptr_04 = y;
+
+
+
+// BLOCK    8d 00 02              sta 0x0200
+// BLOCK    8d 02 02              sta 0x0202
+// BLOCK    8d 03 02              sta 0x0203
+    ram_u8_200 = a;
+    <:ram_u16_202 = a;
+    >:ram_u16_202 = a;
+
+// BLOCK    8e 01 02              stx 0x0201
+// BLOCK    8e 04 02              stx 0x0204
+// BLOCK    8e 05 02              stx 0x0205
+    ram_u8_201 = x;
+    <:ram_u16_204 = x;
+    >:ram_u16_204 = x;
+
+// BLOCK    8c 00 02              sty 0x0200
+// BLOCK    8c 02 02              sty 0x0202
+// BLOCK    8c 03 02              sty 0x0203
+    ram_u8_200 = y;
+    <:ram_u16_202 = y;
+    >:ram_u16_202 = y;
+
+
+
+// BLOCK    85 09                 sta 0x09
+// BLOCK    86 0a                 stx 0x0a
+// BLOCK    84 0b                 sty 0x0b
+    zp_block_08[1] = a;
+    zp_block_08[2] = x;
+    zp_block_08[3] = y;
+
+// BLOCK    8d 0a 02              sta 0x020a
+// BLOCK    8e 0b 02              stx 0x020b
+// BLOCK    8c 0c 02              sty 0x020c
+    ram_block_206[4] = a;
+    ram_block_206[5] = x;
+    ram_block_206[6] = y;
+
+// BLOCK    85 12                 sta 0x12
+// BLOCK    85 13                 sta 0x13
+// BLOCK    86 14                 stx 0x14
+// BLOCK    86 15                 stx 0x15
+// BLOCK    84 16                 sty 0x16
+// BLOCK    84 17                 sty 0x17
+    <:zp_wblock_10[1] = a;
+    >:zp_wblock_10[1] = a;
+    <:zp_wblock_10[2] = x;
+    >:zp_wblock_10[2] = x;
+    <:zp_wblock_10[3] = y;
+    >:zp_wblock_10[3] = y;
+
+// BLOCK    8d 18 02              sta 0x0218
+// BLOCK    8d 19 02              sta 0x0219
+// BLOCK    8e 1a 02              stx 0x021a
+// BLOCK    8e 1b 02              stx 0x021b
+// BLOCK    8c 1c 02              sty 0x021c
+// BLOCK    8c 1d 02              sty 0x021d
+    <:ram_wblock_210[4] = a;
+    >:ram_wblock_210[4] = a;
+    <:ram_wblock_210[5] = x;
+    >:ram_wblock_210[5] = x;
+    <:ram_wblock_210[6] = y;
+    >:ram_wblock_210[6] = y;
+
+
+
+// BLOCK    85 00                 sta 0x00
+// BLOCK    85 02                 sta 0x02
+// BLOCK    85 03                 sta 0x03
+// BLOCK    85 04                 sta 0x04
+// BLOCK    85 05                 sta 0x05
+    zp_u8_00 = a;
+    <:zp_u16_02 = a;
+    >:zp_u16_02 = a;
+    <:zp_ptr_04 = a;
+    >:zp_ptr_04 = a;
+
+// BLOCK    86 00                 stx 0x00
+// BLOCK    86 02                 stx 0x02
+// BLOCK    86 03                 stx 0x03
+// BLOCK    86 04                 stx 0x04
+// BLOCK    86 05                 stx 0x05
+    zp_u8_00 = x;
+    <:zp_u16_02 = x;
+    >:zp_u16_02 = x;
+    <:zp_ptr_04 = x;
+    >:zp_ptr_04 = x;
+
+// BLOCK    84 00                 sty 0x00
+// BLOCK    84 02                 sty 0x02
+// BLOCK    84 03                 sty 0x03
+// BLOCK    84 04                 sty 0x04
+// BLOCK    84 05                 sty 0x05
+    zp_u8_00 = y;
+    <:zp_u16_02 = y;
+    >:zp_u16_02 = y;
+    <:zp_ptr_04 = y;
+    >:zp_ptr_04 = y;
+
+
+
+// BLOCK    8d 00 02              sta 0x0200
+// BLOCK    8d 02 02              sta 0x0202
+// BLOCK    8d 03 02              sta 0x0203
+    ram_u8_200 = a;
+    <:ram_u16_202 = a;
+    >:ram_u16_202 = a;
+
+// BLOCK    8e 01 02              stx 0x0201
+// BLOCK    8e 04 02              stx 0x0204
+// BLOCK    8e 05 02              stx 0x0205
+    ram_u8_201 = x;
+    <:ram_u16_204 = x;
+    >:ram_u16_204 = x;
+
+// BLOCK    8c 00 02              sty 0x0200
+// BLOCK    8c 02 02              sty 0x0202
+// BLOCK    8c 03 02              sty 0x0203
+    ram_u8_200 = y;
+    <:ram_u16_202 = y;
+    >:ram_u16_202 = y;
+
+// BLOCK    8d 00 f0              sta 0xf000
+// BLOCK    8e 00 f0              stx 0xf000
+// BLOCK    8c 00 f0              sty 0xf000
+    wo_register = a;
+    wo_register = x;
+    wo_register = y;
+
+
+
+// BLOCK    85 09                 sta 0x09
+// BLOCK    86 0a                 stx 0x0a
+// BLOCK    84 0b                 sty 0x0b
+    zp_block_08[1] = a;
+    zp_block_08[2] = x;
+    zp_block_08[3] = y;
+
+// BLOCK    8d 0a 02              sta 0x020a
+// BLOCK    8e 0b 02              stx 0x020b
+// BLOCK    8c 0c 02              sty 0x020c
+    ram_block_206[4] = a;
+    ram_block_206[5] = x;
+    ram_block_206[6] = y;
+
+// BLOCK    85 12                 sta 0x12
+// BLOCK    85 13                 sta 0x13
+// BLOCK    86 14                 stx 0x14
+// BLOCK    86 15                 stx 0x15
+// BLOCK    84 16                 sty 0x16
+// BLOCK    84 17                 sty 0x17
+    <:zp_wblock_10[1] = a;
+    >:zp_wblock_10[1] = a;
+    <:zp_wblock_10[2] = x;
+    >:zp_wblock_10[2] = x;
+    <:zp_wblock_10[3] = y;
+    >:zp_wblock_10[3] = y;
+
+// BLOCK    8d 12 02              sta 0x0212
+// BLOCK    8d 13 02              sta 0x0213
+// BLOCK    8e 14 02              stx 0x0214
+// BLOCK    8e 15 02              stx 0x0215
+// BLOCK    8c 16 02              sty 0x0216
+// BLOCK    8c 17 02              sty 0x0217
+    <:ram_wblock_210[1] = a;
+    >:ram_wblock_210[1] = a;
+    <:ram_wblock_210[2] = x;
+    >:ram_wblock_210[2] = x;
+    <:ram_wblock_210[3] = y;
+    >:ram_wblock_210[3] = y;
+
+
+
+// BLOCK    95 08                 sta 0x08,x
+    zp_block_08[x] = a;
+
+    // ::ANNOY: have to include both u16 in these blocks
+    // System will detect address is < 0x100 and use zero page
+// BLOCK    95 08                 sta 0x08,x
+// BLOCK    95 0a                 sta 0x0a,x
+// BLOCK    95 0a                 sta 0x0a,x
+    *((&zp_block_08 as u16 + x as u16) as *u8) = a;              // zp_block_08[x] = a
+    *((&zp_block_08 as u16 + 2 + x as u16) as *u8) = a;          // zp_block_08[2 + x] = a
+    *((&zp_block_08[2] as u16 + x as u16) as *u8) = a;           // zp_block_08[2 + x] = a
+
+
+// BLOCK    95 10                 sta 0x10,x
+// BLOCK    95 11                 sta 0x11,x
+    (&<:zp_wblock_10[0] as *u8)[x] = a;                         // low byte
+    (&>:zp_wblock_10[0] as *u8)[x] = a;                         // high byte
+
+// BLOCK    95 10                 sta 0x10,x
+// BLOCK    95 11                 sta 0x11,x
+    (&zp_wblock_10 as *u8)[x] = a;                              // low byte
+    ((&zp_wblock_10 as u16 + 1) as *u8)[x] = a;                 // high byte
+
+// BLOCK    95 10                 sta 0x10,x
+// BLOCK    95 11                 sta 0x11,x
+    *((&<:zp_wblock_10[0] as u16 + x as u16) as *u8) = a;       // low byte
+    *((&>:zp_wblock_10[0] as u16 + x as u16) as *u8) = a;       // high byte
+
+
+
+    // Will always use absolute,y addressing mode
+
+// BLOCK    99 08 00              sta 0x0008,y
+    zp_block_08[y] = a;
+
+// BLOCK    99 10 00              sta 0x0010,y
+// BLOCK    99 10 00              sta 0x0010,y
+// BLOCK    99 11 00              sta 0x0011,y
+    *((&zp_wblock_10 as u16 + y as u16) as *u8) = a;
+    *((&<:zp_wblock_10[0] as u16 + y as u16) as *u8) = a;
+    *((&>:zp_wblock_10[0] as u16 + y as u16) as *u8) = a;
+
+
+
+// BLOCK    9d 06 02              sta 0x0206,x
+    ram_block_206[x] = a;
+
+// BLOCK    9d 06 02              sta 0x0206,x
+// BLOCK    9d 09 02              sta 0x0209,x
+// BLOCK    9d 09 02              sta 0x0209,x
+    *((&ram_block_206 as u16 + x as u16) as *u8) = a;           // ram_block_206[x] = a
+    *((&ram_block_206 as u16 + 3 + x as u16) as *u8) = a;       // ram_block_206[3 + x] = a
+    *((&ram_block_206[3] as u16 + x as u16) as *u8) = a;        // ram_block_206[3 + x] = a
+
+// BLOCK    9d 10 02              sta 0x0210,x
+// BLOCK    9d 11 02              sta 0x0211,x
+    (&<:ram_wblock_210[0] as *u8)[x] = a;                       // low byte
+    (&>:ram_wblock_210[0] as *u8)[x] = a;                       // high byte
+
+// BLOCK    9d 10 02              sta 0x0210,x
+// BLOCK    9d 11 02              sta 0x0211,x
+    (&ram_wblock_210 as *u8)[x] = a;                            // low byte
+    ((&ram_wblock_210 as u16 + 1) as *u8)[x] = a;               // high byte
+
+// BLOCK    9d 10 02              sta 0x0210,x
+// BLOCK    9d 11 02              sta 0x0211,x
+    *((&<:ram_wblock_210[0] as u16 + x as u16) as *u8) = a;     // low byte
+    *((&>:ram_wblock_210[0] as u16 + x as u16) as *u8) = a;     // high byte
+
+
+
+// BLOCK    99 06 02              sta 0x0206,y
+    ram_block_206[y] = a;
+
+// BLOCK    99 06 02              sta 0x0206,y
+// BLOCK    99 0a 02              sta 0x020a,y
+// BLOCK    99 0a 02              sta 0x020a,y
+    *((&ram_block_206 as u16 + y as u16) as *u8) = a;           // ram_block_206[y] = a
+    *((&ram_block_206 as u16 + 4 + y as u16) as *u8) = a;       // ram_block_206[4 + y] = a
+    *((&ram_block_206[4] as u16 + y as u16) as *u8) = a;        // ram_block_206[4 + y] = a
+
+// BLOCK    99 10 02              sta 0x0210,y
+// BLOCK    99 11 02              sta 0x0211,y
+    (&<:ram_wblock_210[0] as *u8)[y] = a;                       // low byte
+    (&>:ram_wblock_210[0] as *u8)[y] = a;                       // high byte
+
+// BLOCK    99 10 02              sta 0x0210,y
+// BLOCK    99 11 00              sta 0x0011,y
+    (&ram_wblock_210 as *u8)[y] = a;                            // low byte
+    ((&ram_wblock_210 as u8 + 1) as *u8)[y] = a;                // high byte
+
+// BLOCK    99 10 02              sta 0x0210,y
+// BLOCK    99 11 02              sta 0x0211,y
+    *((&<:ram_wblock_210[0] as u16 + y as u16) as *u8) = a;     // low byte
+    *((&>:ram_wblock_210[0] as u16 + y as u16) as *u8) = a;     // high byte
+
+
+
+// BLOCK    81 20                 sta (0x20,x)
+    *(*((&zp_array_ptr_20 as u16 + x as u16) as *u16) as *u8) = a;
+
+
+// BLOCK    91 04                 sta (0x04),y
+    *((zp_ptr_04 as u16 + y as u16) as *u8) = a;
+
+
+
+
+// BLOCK    96 08                 stx 0x08,y
+    zp_block_08[y] = x;
+
+// BLOCK    96 08                 stx 0x08,y
+// BLOCK    96 0a                 stx 0x0a,y
+// BLOCK    96 0a                 stx 0x0a,y
+    *((&zp_block_08 as u16 + y as u16) as *u8) = x;             // zp_block_08[y] = x
+    *((&zp_block_08 as u16 + 2 + y as u16) as *u8) = x;         // zp_block_08[2 + y] = x
+    *((&zp_block_08[2] as u16 + y as u16) as *u8) = x;          // zp_block_08[2 + y] = x
+
+    // no STX addr,y
+
+
+
+// BLOCK    94 08                 sty 0x08,x
+    zp_block_08[x] = y;
+
+// BLOCK    94 08                 sty 0x08,x
+// BLOCK    94 0a                 sty 0x0a,x
+// BLOCK    94 0a                 sty 0x0a,x
+    *((&zp_block_08 as u16 + x as u16) as *u8) = y;             // zp_block_08[x] = y
+    *((&zp_block_08 as u16 + 2 + x as u16) as *u8) = y;         // zp_block_08[2 + x] = y
+    *((&zp_block_08[2] as u16 + x as u16) as *u8) = y;          // zp_block_08[2 + x] = y
+
+    // no STY addr,x
+
+// BLOCK    60                    rts
+}
+
+
+
+func variable_assignment {
+    let A_WORD = 0x7e57;
+    let B_WORD = 0xc0de;
+
+// BLOCK    a9 01                 lda #0x01
+// BLOCK    85 00                 sta 0x00
+    zp_u8_00 = a = 1;
+
+// BLOCK    a9 57                 lda #0x57
+// BLOCK    85 02                 sta 0x02
+// BLOCK    a9 7e                 lda #0x7e
+// BLOCK    85 03                 sta 0x03
+    <:zp_u16_02 = a = <:A_WORD;
+    >:zp_u16_02 = a = >:A_WORD;
+
+// BLOCK    a2 02                 ldx #0x02
+// BLOCK    86 00                 stx 0x00
+// BLOCK    a0 03                 ldy #0x03
+// BLOCK    84 00                 sty 0x00
+    zp_u8_00 = x = 2;
+    zp_u8_00 = y = 3;
+
+// BLOCK    a2 de                 ldx #0xde
+// BLOCK    86 06                 stx 0x06
+// BLOCK    a0 c0                 ldy #0xc0
+// BLOCK    84 07                 sty 0x07
+    <:zp_ptr_u16_06 = x = <:B_WORD;
+    >:zp_ptr_u16_06 = y = >:B_WORD;
+
+
+// BLOCK    a9 04                 lda #0x04
+// BLOCK    8d 00 02              sta 0x0200
+    ram_u8_200 = a = 4;
+
+// BLOCK    a9 57                 lda #0x57
+// BLOCK    8d 02 02              sta 0x0202
+// BLOCK    a9 7e                 lda #0x7e
+// BLOCK    8d 03 02              sta 0x0203
+    <:ram_u16_202 = a = <:A_WORD;
+    >:ram_u16_202 = a = >:A_WORD;
+
+// BLOCK    a2 05                 ldx #0x05
+// BLOCK    8e 00 02              stx 0x0200
+// BLOCK    a0 06                 ldy #0x06
+// BLOCK    8c 01 02              sty 0x0201
+    ram_u8_200 = x = 5;
+    ram_u8_201 = y = 6;
+
+// BLOCK    a2 de                 ldx #0xde
+// BLOCK    8e 04 02              stx 0x0204
+// BLOCK    a0 c0                 ldy #0xc0
+// BLOCK    8c 05 02              sty 0x0205
+    <:ram_u16_204 = x = <:B_WORD;
+    >:ram_u16_204 = y = >:B_WORD;
+
+// BLOCK    a9 07                 lda #0x07
+// BLOCK    8d 00 f0              sta 0xf000
+// BLOCK    a2 08                 ldx #0x08
+// BLOCK    8e 00 f0              stx 0xf000
+// BLOCK    a0 09                 ldy #0x09
+// BLOCK    8c 00 f0              sty 0xf000
+    wo_register = a = 7;
+    wo_register = x = 8;
+    wo_register = y = 9;
+
+
+
+// BLOCK    b9 08 00              lda 0x0008,y
+// BLOCK    95 08                 sta 0x08,x
+// BLOCK    b5 08                 lda 0x08,x
+// BLOCK    99 08 00              sta 0x0008,y
+    zp_block_08[x] = a = zp_block_08[y];
+    zp_block_08[y] = a = zp_block_08[x];
+
+// BLOCK    b9 06 02              lda 0x0206,y
+// BLOCK    9d 06 02              sta 0x0206,x
+// BLOCK    bd 06 02              lda 0x0206,x
+// BLOCK    99 06 02              sta 0x0206,y
+    ram_block_206[x] = a = ram_block_206[y];
+    ram_block_206[y] = a = ram_block_206[x];
+
+
+
+// BLOCK    a1 20                 lda (0x20,x)
+// BLOCK    91 04                 sta (0x04),y
+    *((zp_ptr_04 as u16 + y as u16) as *u8) = a = *(*((&zp_array_ptr_20 as u16 + x as u16) as *u16) as *u8);
+
+// BLOCK    b1 04                 lda (0x04),y
+// BLOCK    81 20                 sta (0x20,x)
+    *(*((&zp_array_ptr_20 as u16 + x as u16) as *u16) as *u8) = a = *((zp_ptr_04 as u16 + y as u16) as *u8);
+
+
+// BLOCK    60                    rts
+}
+
+
+
+func transfer_registers {
+    // does nothing
+    a = a;
+    x = x;
+    y = y;
+
+
+// BLOCK    8a                    txa
+// BLOCK    aa                    tax
+    a = x;
+    x = a;
+
+// BLOCK    98                    tya
+// BLOCK    a8                    tay
+    a = y;
+    y = a;
+
+    // no x = y
+    // no y = x
+
+// BLOCK    ba                    tsx
+// BLOCK    9a                    txs
+    x = s;
+    s = x;
+
+// BLOCK    60                    rts
+}
+
+// BLOCK    ff
+}
+

@@ -1,0 +1,131 @@
+// SYSTEM  6502 65c02 wdc65c02 rockwell65c02
+// ::TODO huc6280::
+//
+// Opcodes tested from site: http://6502.org/tutorials/6502opcodes.html
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -a6502 -m0x8000 6502_inc_dec.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+// BLOCK 0x000000
+in prg {
+
+func increment {
+// BLOCK    e8                    inx
+// BLOCK    c8                    iny
+    x++;
+    y++;
+
+// BLOCK    e6 01                 inc 0x01
+// BLOCK    ee 01 02              inc 0x0201
+// BLOCK    f6 08                 inc 0x08,x
+// BLOCK    fe 06 02              inc 0x0206,x
+    zp_u8_01++;
+    ram_u8_201++;
+    zp_block_08[x]++;
+    ram_block_206[x]++;
+
+
+// BLOCK    e8                    inx
+// BLOCK    c8                    iny
+    ++x;
+    ++y;
+
+// BLOCK    e6 01                 inc 0x01
+// BLOCK    ee 01 02              inc 0x0201
+// BLOCK    f6 08                 inc 0x08,x
+// BLOCK    fe 06 02              inc 0x0206,x
+    ++zp_u8_01;
+    ++ram_u8_201;
+    ++zp_block_08[x];
+    ++ram_block_206[x];
+
+
+    // 16 bit increment
+
+// BLOCK    e6 02                 inc 0x02
+// BLOCK    d0 02                 bne 0x00801e
+// BLOCK    e6 03                 inc 0x03
+    (<:zp_u16_02)++;
+    if zero {
+        (>:zp_u16_02)++;
+    }
+
+// BLOCK    ee 02 02              inc 0x0202
+// BLOCK    d0 03                 bne 0x008026
+// BLOCK    ee 03 02              inc 0x0203
+    (<:ram_u16_202)++;
+    if zero {
+        (>:ram_u16_202)++;
+    }
+
+
+// BLOCK    60                    rts
+}
+
+
+
+func decrement {
+// BLOCK    ca                    dex
+// BLOCK    88                    dey
+    x--;
+    y--;
+
+// BLOCK    c6 01                 dec 0x01
+// BLOCK    ce 01 02              dec 0x0201
+// BLOCK    d6 08                 dec 0x08,x
+// BLOCK    de 06 02              dec 0x0206,x
+    zp_u8_01--;
+    ram_u8_201--;
+    zp_block_08[x]--;
+    ram_block_206[x]--;
+
+
+// BLOCK    ca                    dex
+// BLOCK    88                    dey
+    --x;
+    --y;
+
+// BLOCK    c6 01                 dec 0x01
+// BLOCK    ce 01 02              dec 0x0201
+// BLOCK    d6 08                 dec 0x08,x
+// BLOCK    de 06 02              dec 0x0206,x
+    zp_u8_01--;
+    ram_u8_201--;
+    zp_block_08[x]--;
+    ram_block_206[x]--;
+
+
+    // 16 bit decrement
+
+// BLOCK    a5 02                 lda 0x02
+// BLOCK    d0 02                 bne 0x008045
+// BLOCK    c6 03                 dec 0x03
+// BLOCK    c6 02                 dec 0x02
+    a = <:zp_u16_02;
+    if zero {
+        (>:zp_u16_02)--;
+    }
+    (<:zp_u16_02)--;
+
+// BLOCK    ad 02 02              lda 0x0202
+// BLOCK    d0 03                 bne 0x00804f
+// BLOCK    ce 03 02              dec 0x0203
+// BLOCK    ce 02 02              dec 0x0202
+    a = <:ram_u16_202;
+    if zero {
+        (>:ram_u16_202)--;
+    }
+    (<:ram_u16_202)--;
+
+// BLOCK    60                    rts
+}
+
+// BLOCK ff
+}
+

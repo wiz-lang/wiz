@@ -1,0 +1,66 @@
+// SYSTEM  6502 65c02 wdc65c02 rockwell65c02 huc6280
+//
+// Opcodes tested from site: http://6502.org/tutorials/6502opcodes.html
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -a6502 -m0x8000 6502_interrupts.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+// BLOCK 000000
+in prg {
+
+#[nmi]
+func nmi_test {
+// BLOCK    40                    rti
+    return;
+
+// BLOCK    ea                    nop
+    nop();
+
+// BLOCK    40                    rti
+}
+
+
+
+#[irq]
+func irq_test {
+// BLOCK    40                    rti
+    return;
+
+// BLOCK    ea                    nop
+    nop();
+
+// BLOCK    40                    rti
+}
+
+
+
+func irqcall_test {
+// BLOCK     00 42                brk #42
+    irqcall(0x42);
+
+// BLOCK     60                   rts
+}
+
+
+
+func rti_test {
+// BLOCK     40                   rti
+// BLOCK     40                   rti
+    irqreturn;
+    nmireturn;
+
+// BLOCK    ea                    nop
+    nop();
+
+// BLOCK     60                   rts
+}
+
+// BLOCK    ff
+}
+

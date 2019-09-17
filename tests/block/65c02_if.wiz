@@ -1,0 +1,273 @@
+// SYSTEM  65c02 wdc65c02 rockwell65c02 huc6280
+//
+// NOTE: does not use zero-page instructions so huc6280 can be tested
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -asnes -m0x8000 65c02_if.65c02.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+in prg {
+
+// ANNOY radare2 does not have a 65c02 disassembler
+// the following line forces the radare2 65816 disassembler to use 8 bit A/X.
+const mem8idx8 : [u8] = [0xe2, 0x30];
+
+
+func far_if_tests {
+// BLOCK 000002      f0 03                 beq 0x008007
+// BLOCK             4c 17 80              jmp 0x8017
+// BLOCK 000007      b0 03                 bcs 0x00800c
+// BLOCK             4c 17 80              jmp 0x8017
+// BLOCK 00000c      30 03                 bmi 0x008011
+// BLOCK             4c 17 80              jmp 0x8017
+// BLOCK 000011      70 03                 bvs 0x008016
+// BLOCK             4c 17 80              jmp 0x8017
+// BLOCK 000016      ea                    nop
+    ^if zero {
+        ^if carry {
+            ^if negative {
+                ^if overflow {
+                    nop();
+                }
+            }
+        }
+    }
+
+// BLOCK 000017      d0 03                 bne 0x00801c
+// BLOCK             4c 2c 80              jmp 0x802c
+// BLOCK 00001c      90 03                 bcc 0x008021
+// BLOCK             4c 2c 80              jmp 0x802c
+// BLOCK 000021      10 03                 bpl 0x008026
+// BLOCK             4c 2c 80              jmp 0x802c
+// BLOCK 000026      50 03                 bvc 0x00802b
+// BLOCK             4c 2c 80              jmp 0x802c
+// BLOCK 00002b      ea                    nop
+    ^if !zero {
+        ^if !carry {
+            ^if !negative {
+                ^if !overflow {
+                    nop();
+                }
+            }
+        }
+    }
+
+
+
+// BLOCK 00002c      c9 06                 cmp #0x06
+// BLOCK             f0 03                 beq 0x008033
+// BLOCK             4c 37 80              jmp 0x8037
+// BLOCK 000033      ea                    nop
+// BLOCK             4c 43 80              jmp 0x8043
+// BLOCK             c9 02                 cmp #0x02
+// BLOCK             f0 03                 beq 0x00803e
+// BLOCK             4c 42 80              jmp 0x8042
+// BLOCK 00003e      e8                    inx
+// BLOCK             4c 43 80              jmp 0x8043
+// BLOCK             c8                    iny
+    ^if a == 6 {
+        nop();
+    }
+    else if a == 2 {
+        x++;
+    }
+    else {
+        y++;
+    }
+
+// BLOCK 000043      60                    rts
+}
+
+
+
+func if_tests {
+// BLOCK 000044      d0 07                 bne 0x00804d
+// BLOCK             90 05                 bcc 0x00804d
+// BLOCK             10 03                 bpl 0x00804d
+// BLOCK             50 01                 bvc 0x00804d
+// BLOCK             ea                    nop
+    if zero {
+        if carry {
+            if negative {
+                if overflow {
+                    nop();
+                }
+            }
+        }
+    }
+
+// BLOCK 00004d      f0 07                 beq 0x008056
+// BLOCK             b0 05                 bcs 0x008056
+// BLOCK             30 03                 bmi 0x008056
+// BLOCK             70 01                 bvs 0x008056
+// BLOCK             ea                    nop
+    if !zero {
+        if !carry {
+            if !negative {
+                if !overflow {
+                    nop();
+                }
+            }
+        }
+    }
+
+
+
+// BLOCK 000056      e0 00                 cpx #0x00
+// BLOCK             f0 01                 beq 0x00805b
+// BLOCK             ca                    dex
+    if x != 0 {
+        x--;
+    }
+
+// BLOCK 00005b      c9 05                 cmp #0x05
+// BLOCK             f0 02                 beq 0x008061
+// BLOCK             b0 01                 bcs 0x008062
+// BLOCK 000061      ea                    nop
+    if a <= 5 {
+        nop();
+    }
+
+
+// BLOCK 000062      c9 01                 cmp #0x01
+// BLOCK             d0 03                 bne 0x008069
+// BLOCK             ea                    nop
+// BLOCK             80 16                 bra 0x00807f
+// BLOCK 000069      c9 02                 cmp #0x02
+// BLOCK             d0 03                 bne 0x008070
+// BLOCK             ea                    nop
+// BLOCK             80 0f                 bra 0x00807f
+// BLOCK 000070      c9 03                 cmp #0x03
+// BLOCK             d0 03                 bne 0x008077
+// BLOCK             ea                    nop
+// BLOCK             80 08                 bra 0x00807f
+// BLOCK 000077      c9 04                 cmp #0x04
+// BLOCK             d0 03                 bne 0x00807e
+// BLOCK             ea                    nop
+// BLOCK             80 01                 bra 0x00807f
+// BLOCK 00007e      ea                    nop
+    if a == 1 {
+        nop();
+    }
+    else if a == 2 {
+        nop();
+    }
+    else if a == 3 {
+        nop();
+    }
+    else if a == 4 {
+        nop();
+    }
+    else {
+        nop();
+    }
+
+
+
+
+
+    // Multi command if statements
+
+// BLOCK 00007f      ad 01 02              lda 0x0201
+// BLOCK             c9 05                 cmp #0x05
+// BLOCK             b0 01                 bcs 0x008087
+// BLOCK             ea                    nop
+    if { a = ram_u8_201; } && a < 5 {
+        nop();
+    }
+
+// BLOCK 000087      ad 00 02              lda 0x0200
+// BLOCK             38                    sec
+// BLOCK             ed 01 02              sbc 0x0201
+// BLOCK             b0 02                 bcs 0x008092
+// BLOCK             d0 01                 bne 0x008093
+// BLOCK 000092      ea                    nop
+    if { a = ram_u8_200 - ram_u8_201; } && (carry || zero) {
+        nop();
+    }
+
+// BLOCK 000093      ad 00 02              lda 0x0200
+// BLOCK             18                    clc
+// BLOCK             6d 01 02              adc 0x0201
+// BLOCK             c9 0f                 cmp #0x0f
+// BLOCK             90 01                 bcc 0x00809f
+// BLOCK             ea                    nop
+    if { a = ram_u8_200 + ram_u8_201; } && (a >= 15) {
+        nop();
+    }
+
+
+// BLOCK 00009f      ad 00 02              lda 0x0200
+// BLOCK             c9 03                 cmp #0x03
+// BLOCK             b0 03                 bcs 0x0080a9
+// BLOCK             ea                    nop
+// BLOCK             80 12                 bra 0x0080bb
+// BLOCK 0000a9      ad 01 02              lda 0x0201
+// BLOCK             c9 05                 cmp #0x05
+// BLOCK             b0 03                 bcs 0x0080b3
+// BLOCK             e8                    inx
+// BLOCK             80 08                 bra 0x0080bb
+// BLOCK 0000b3      ad 01 02              lda 0x0201
+// BLOCK             c9 07                 cmp #0x07
+// BLOCK             b0 01                 bcs 0x0080bb
+// BLOCK             ca                    dex
+    if {a = ram_u8_200; } && a < 3 {
+        nop();
+    }
+    else if {a = ram_u8_201; } && a < 5 {
+        x++;
+    }
+    else if {a = ram_u8_201; } && a < 7 {
+        x--;
+    }
+
+
+
+// BLOCK 0000bb      c8                    iny
+    if true {
+        y++;
+    }
+    else {
+    // Should not be emitted
+        x++;
+    }
+
+// BLOCK 0000bc      ea                    nop
+    if false {
+    // Should not be emitted
+        x++;
+    }
+    else if true {
+        nop();
+    }
+    else {
+    // Should not be emitted
+        x++;
+    }
+
+// BLOCK 0000bd      c8                    iny
+    if false {
+    // Should not be emitted
+        x++;
+        x++;
+    }
+    else if false {
+    // Should not be emitted
+        x++;
+        x++;
+    }
+    else {
+        y++;
+    }
+
+// BLOCK 0000be      60                    rts
+}
+
+// BLOCK ff
+}
+

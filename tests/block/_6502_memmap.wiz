@@ -1,0 +1,37 @@
+
+// ::TODO need to remap zeropage to 0x2000 on huc6280::
+// ::: currently the huc2680 is untested::
+
+bank zeropage @ 0x00    : [vardata;    0x100];
+bank stack    @ 0x100   : [vardata;    0x100];
+bank ram      @ 0x200   : [vardata;    0x600];
+bank prg      @ 0x8000  : [constdata; 0x8000];
+
+in zeropage {
+    var zp_u8_00        : u8;   // address 0x00
+    var zp_u8_01        : u8;   // address 0x00
+    var zp_u16_02       : u16;  // address 0x02
+    var zp_ptr_04       : *u8;  // address 0x04
+    var zp_ptr_u16_06   : *u16; // address 0x06 (pointer to a u16)
+
+    var zp_block_08     : [u8 ; 8]; // address 0x08-0x0f
+    var zp_wblock_10    : [u16 ; 8]; // address 0x10-0x1f
+
+    var zp_array_ptr_20 : [*u8 ; 2]; // address 0x20 - 0x24
+}
+
+in ram {
+    var ram_u8_200      : u8;   // address 0x200
+    var ram_u8_201      : u8;   // address 0x201
+    var ram_u16_202     : u16;  // address 0x202
+    var ram_u16_204     : u16;  // address 0x204
+
+    var ram_block_206   : [u8 ; 10]; // addresses 0x206 - 0x20f
+    var ram_wblock_210  : [u16 ; 8]; // addresses 0x210 - 0x21f
+
+    var ram_func_ptr_220: func;
+}
+
+extern writeonly wo_register @ 0xf000 : u8;
+extern const     ro_register @ 0xf001 : u8;
+

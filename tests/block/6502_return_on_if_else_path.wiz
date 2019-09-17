@@ -1,0 +1,33 @@
+// SYSTEM  6502 65c02 wdc65c02 rockwell65c02 huc6280
+// ::TODO wdc65816::
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -a6502 -m0x8000 6502_return_on_if_else_path.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+// BLOCK 000000
+in prg {
+
+func test_return_on_if_else_path(arg : u8 in a, index1 : u8 in x, index2 : u8 in y) : u8 in a {
+// BLOCK    c9 80                 cmp #0x80
+// BLOCK    b0 04                 bcs 0x008008
+// BLOCK    bd 06 02              lda 0x0206,x
+// BLOCK    60                    rts
+// BLOCK    b9 06 02              lda 0x0206,y
+// BLOCK    60                    rts
+    if arg < 0x80 {
+        return ram_block_206[x];
+    }
+    else {
+        return ram_block_206[y];
+    }
+}
+
+// BLOCK    ff
+}
+

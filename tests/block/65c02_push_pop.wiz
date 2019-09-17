@@ -1,0 +1,41 @@
+// SYSTEM  65c02 wdc65c02 rockwell65c02 huc6280
+//
+// Opcodes tested from site: http://6502.org/tutorials/6502opcodes.html
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -asnes -m0x8000 6502_push_pop.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+// BLOCK 0x000000
+in prg {
+
+func push_pop {
+// BLOCK    08                    php
+// BLOCK    48                    pha
+// BLOCK    da                    phx
+// BLOCK    5a                    phy
+    push(p);
+    push(a);
+    push(x);
+    push(y);
+
+// BLOCK    7a                    ply
+// BLOCK    fa                    plx
+// BLOCK    68                    pla
+// BLOCK    28                    plp
+    y = pop();
+    x = pop();
+    a = pop();
+    p = pop();
+
+// BLOCK    60                    rts
+}
+
+// BLOCK    ff
+}
+

@@ -1,0 +1,93 @@
+// SYSTEM  6502 65c02 wdc65c02 rockwell65c02
+// ::TODO huc6280::
+//
+// Opcodes tested from site: http://6502.org/tutorials/6502opcodes.html
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -a6502 -m0x8000 6502_goto.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+// BLOCK 0x000000
+in prg {
+
+func goto_if_bit_a {
+
+BitTestLabel:
+
+// BLOCK 000000      24 00                 bit 0x00
+// BLOCK             f0 fc                 beq 0x008000
+// BLOCK             24 00                 bit 0x00
+    goto BitTestLabel if a & zp_u8_00 == 0;
+// BLOCK             2c 00 02              bit 0x0200
+// BLOCK             f0 f7                 beq 0x008000
+    goto BitTestLabel if a & ram_u8_200 == 0;
+// BLOCK             24 00                 bit 0x00
+// BLOCK             d0 f3                 bne 0x008000
+    goto BitTestLabel if a & zp_u8_00 != 0;
+// BLOCK             2c 00 02              bit 0x0200
+// BLOCK             d0 ee                 bne 0x008000
+    goto BitTestLabel if a & ram_u8_200 != 0;
+
+
+// BLOCK             24 00                 bit 0x00
+// BLOCK             f0 ea                 beq 0x008000
+    goto BitTestLabel if (zp_u8_00 & a) == 0;
+// BLOCK             2c 00 02              bit 0x0200
+// BLOCK             f0 e5                 beq 0x008000
+    goto BitTestLabel if (ram_u8_200 & a) == 0;
+// BLOCK             24 00                 bit 0x00
+// BLOCK             d0 e1                 bne 0x008000
+    goto BitTestLabel if (zp_u8_00 & a) != 0;
+// BLOCK             2c 00 02              bit 0x0200
+// BLOCK             d0 dc                 bne 0x008000
+    goto BitTestLabel if (ram_u8_200 & a) != 0;
+
+
+
+// BLOCK 000024      24 00                 bit 0x00
+// BLOCK             d0 03                 bne 0x00802b
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto BitTestLabel if a & zp_u8_00 == 0;
+// BLOCK 00002b      2c 00 02              bit 0x0200
+// BLOCK             d0 03                 bne 0x008033
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto BitTestLabel if a & ram_u8_200 == 0;
+// BLOCK 000033      24 00                 bit 0x00
+// BLOCK             f0 03                 beq 0x00803a
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto BitTestLabel if a & zp_u8_00 != 0;
+// BLOCK 00003a      2c 00 02              bit 0x0200
+// BLOCK             f0 03                 beq 0x008042
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto BitTestLabel if a & ram_u8_200 != 0;
+
+
+// BLOCK 000042      24 00                 bit 0x00
+// BLOCK             d0 03                 bne 0x008049
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto BitTestLabel if (zp_u8_00 & a) == 0;
+// BLOCK 000049      2c 00 02              bit 0x0200
+// BLOCK             d0 03                 bne 0x008051
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto BitTestLabel if (ram_u8_200 & a) == 0;
+// BLOCK 000051      24 00                 bit 0x00
+// BLOCK             f0 03                 beq 0x008058
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto BitTestLabel if (zp_u8_00 & a) != 0;
+// BLOCK 000058      2c 00 02              bit 0x0200
+// BLOCK             f0 03                 beq 0x008060
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto BitTestLabel if (ram_u8_200 & a) != 0;
+
+
+// BLOCK 000060      60                    rts
+}
+
+// BLOCK ff
+}
+

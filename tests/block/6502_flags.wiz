@@ -1,0 +1,41 @@
+// SYSTEM  6502 65c02 wdc65c02 rockwell65c02 huc6280
+//
+// Opcodes tested from site: http://6502.org/tutorials/6502opcodes.html
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -a6502 -m0x8000 6502_flags.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+// BLOCK 000000
+in prg {
+
+func set_clear_flags {
+// BLOCK    18                    clc
+// BLOCK    38                    sec
+    carry = false;
+    carry = true;
+
+// BLOCK    d8                    cld
+// BLOCK    f8                    sed
+    decimal = false;
+    decimal = true;
+
+// BLOCK    58                    cli
+// BLOCK    78                    sei
+    nointerrupt = false;
+    nointerrupt = true;
+
+// BLOCK    b8                    clv
+    overflow = false;
+
+// BLOCK    60                    rts
+}
+
+// BLOCK    ff
+}
+

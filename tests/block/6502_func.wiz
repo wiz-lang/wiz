@@ -1,0 +1,160 @@
+// SYSTEM  6502 65c02 wdc65c02 rockwell65c02
+// ::TODO huc6280 wdc65816::
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -a6502 -m0x8000 6502_func.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+// BLOCK 000000
+in prg {
+
+
+func first_function {
+// BLOCK 000000     60                    rts
+}
+
+
+
+func return_fixed_value_test : u8 in a {
+// BLOCK 000001     a9 05                 lda #0x05
+// BLOCK            60                    rts
+    return 5;
+}
+
+
+
+func return_value_test_a() : u8 in a {
+// BLOCK 000004     a5 00                 lda 0x00
+// BLOCK            18                    clc
+// BLOCK            65 01                 adc 0x01
+// BLOCK            60                    rts
+    return zp_u8_00 + zp_u8_01;
+}
+
+
+
+func return_value_test_x() : u8 in x {
+// BLOCK 00000a     a5 00                 lda 0x00
+// BLOCK            18                    clc
+// BLOCK            65 01                 adc 0x01
+// BLOCK            aa                    tax
+// BLOCK            60                    rts
+    return a = zp_u8_00 + zp_u8_01;
+}
+
+
+
+func mul_a4(i : u8 in a) : u8 in a {
+// BLOCK 000011     0a                    asl a
+// BLOCK            0a                    asl a
+// BLOCK            60                    rts
+    return i << 2;
+}
+
+
+
+func mul_xa4(i : u8 in x) : u8 in x {
+// BLOCK 000014     8a                    txa
+// BLOCK            0a                    asl a
+// BLOCK            0a                    asl a
+// BLOCK            aa                    tax
+// BLOCK            60                    rts
+    return a = i << 2;
+}
+
+
+
+func test_multiple_args(arg : u8 in a, index1 : u8 in x, index2 : u8 in y) : u8 in a {
+// BLOCK 000019      18                    clc
+// BLOCK             7d 06 02              adc 0x0206,x
+// BLOCK             18                    clc
+// BLOCK             79 06 02              adc 0x0206,y
+// BLOCK             60                    rts
+    return arg + ram_block_206[index1] + ram_block_206[index2];
+}
+
+
+
+func test_variable_args(value1 : u8 in zp_u8_00, value2 : u8 in ram_u8_200, store_ptr : *u8 in zp_ptr_04) {
+// BLOCK 000022      a0 00                 ldy #0x00
+// BLOCK             a5 00                 lda 0x00
+// BLOCK             18                    clc
+// BLOCK             6d 00 02              adc 0x0200
+// BLOCK             91 04                 sta (0x04),y
+// BLOCK             60                    rts
+    y = 0;
+    *((zp_ptr_04 as u16 + y as u16) as *u8) = a = value1 + value2;
+}
+
+
+
+func call_test {
+// BLOCK 00002d      20 00 80              jsr 0x8000
+    first_function();
+
+// BLOCK             a5 01                 lda 0x01
+// BLOCK             20 11 80              jsr 0x8011
+// BLOCK             85 00                 sta 0x00
+    zp_u8_00 = a = mul_a4(zp_u8_01);
+
+// BLOCK             20 04 80              jsr 0x8004
+    return_value_test_a();
+
+// BLOCK             20 04 80              jsr 0x8004
+// BLOCK             aa                    tax
+    x = a = return_value_test_a();
+
+// BLOCK             20 0a 80              jsr 0x800a
+    x = return_value_test_x();
+
+// BLOCK             a9 05                 lda #0x05
+// BLOCK             a2 06                 ldx #0x06
+// BLOCK             a0 07                 ldy #0x07
+// BLOCK             20 19 80              jsr 0x8019
+    test_multiple_args(5, 6, 7);
+
+// BLOCK             ad 00 02              lda 0x0200
+// BLOCK             ae 01 02              ldx 0x0201
+// BLOCK             a4 01                 ldy 0x01
+// BLOCK             20 19 80              jsr 0x8019
+// BLOCK             85 01                 sta 0x01
+    zp_u8_01 = a = test_multiple_args(a = ram_u8_200, x = ram_u8_201, y = zp_u8_01);
+
+// BLOCK             ea                    nop
+    nop();
+
+// BLOCK             20 19 80              jsr 0x8019
+    a = test_multiple_args(a, x, y);
+
+// BLOCK             a9 04                 lda #0x04
+// BLOCK             20 11 80              jsr 0x8011
+// BLOCK             20 11 80              jsr 0x8011
+// BLOCK             20 11 80              jsr 0x8011
+    a = mul_a4(4);
+    a = mul_a4(a);
+    a = mul_a4(a);
+
+// BLOCK             a2 06                 ldx #0x06
+// BLOCK             86 04                 stx 0x04
+// BLOCK             a2 02                 ldx #0x02
+// BLOCK             86 05                 stx 0x05
+// BLOCK             a9 01                 lda #0x01
+// BLOCK             85 00                 sta 0x00
+// BLOCK             a9 02                 lda #0x02
+// BLOCK             8d 00 02              sta 0x0200
+// BLOCK             20 22 80              jsr 0x8022
+    <:zp_ptr_04 = x = <:&ram_block_206;
+    >:zp_ptr_04 = x = >:&ram_block_206;
+    test_variable_args(a = 1, a = 2, zp_ptr_04);
+
+// BLOCK             60                    rts
+}
+
+// BLOCK ff
+}
+

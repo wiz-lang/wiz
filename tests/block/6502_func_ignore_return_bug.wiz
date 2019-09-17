@@ -1,0 +1,38 @@
+// SYSTEM  6502 65c02 wdc65c02 rockwell65c02 huc6280
+// ::TODO wdc65816::
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -a6502 -m0x8000 6502_func_ignore_return_bug.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+// BLOCK 000000
+in prg {
+
+
+func return_a() : u8 in a {
+// BLOCK 000000      a9 05                 lda #0x05
+// BLOCK             60                    rts
+    return 5;
+}
+
+
+func test() {
+// BLOCK 000003      20 00 80              jsr 0x8000
+// BLOCK             aa                    tax
+    x = return_a();
+
+// BLOCK             20 00 80              jsr 0x8000
+// BLOCK             8d 01 02              sta 0x0201
+    ram_u8_201 = return_a();
+
+// BLOCK             60                    rts
+}
+
+// BLOCK ff
+}
+

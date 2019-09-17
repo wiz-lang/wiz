@@ -1,0 +1,37 @@
+// SYSTEM  6502 65c02 wdc65c02 rockwell65c02 huc6280 wdc65816
+//
+// Opcodes tested from site: http://6502.org/tutorials/6502opcodes.html
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -a6502 -m0x8000 6502_func_tail_call.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+// BLOCK 000000
+in prg {
+
+func first_function {
+// BLOCK 000000      60                    rts
+}
+
+
+const blank_bytes : [u8] = [0 ; 0xff];
+
+
+func tail_call_test() {
+// BLOCK 000100      4c 00 80              jmp 0x8000
+    return first_function();
+}
+
+func tail_call_test2() {
+// BLOCK 000103      4c 00 80              jmp 0x8000
+    first_function();
+}
+
+// BLOCK    ff
+}
+

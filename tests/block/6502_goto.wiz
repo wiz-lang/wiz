@@ -1,0 +1,588 @@
+// SYSTEM  6502 65c02 wdc65c02 rockwell65c02
+// ::TODO huc6280::
+//
+// Opcodes tested from site: http://6502.org/tutorials/6502opcodes.html
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -a6502 -m0x8000 6502_goto.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+// BLOCK 000000
+in prg {
+
+let external_func = 0xfeed as func;
+
+
+func goto_tests {
+
+// Does not emit code
+    goto NoMovementLabel;
+NoMovementLabel:
+
+
+// BLOCK    f0 fe                 beq 0x00864f
+// BLOCK    d0 fc                 bne 0x00864f
+// BLOCK    b0 fa                 bcs 0x00864f
+// BLOCK    90 f8                 bcc 0x00864f
+// BLOCK    30 f6                 bmi 0x00864f
+// BLOCK    10 f4                 bpl 0x00864f
+// BLOCK    70 f2                 bvs 0x00864f
+// BLOCK    50 f0                 bvc 0x00864f
+BackwardsLabel:
+    goto BackwardsLabel if zero;
+    goto BackwardsLabel if !zero;
+    goto BackwardsLabel if carry;
+    goto BackwardsLabel if !carry;
+    goto BackwardsLabel if negative;
+    goto BackwardsLabel if !negative;
+    goto BackwardsLabel if overflow;
+    goto BackwardsLabel if !overflow;
+
+// BLOCK    f0 0f                 beq 0x008670
+// BLOCK    d0 0d                 bne 0x008670
+// BLOCK    b0 0b                 bcs 0x008670
+// BLOCK    90 09                 bcc 0x008670
+// BLOCK    30 07                 bmi 0x008670
+// BLOCK    10 05                 bpl 0x008670
+// BLOCK    70 03                 bvs 0x008670
+// BLOCK    50 01                 bvc 0x008670
+    goto ForwardsLabel if zero;
+    goto ForwardsLabel if !zero;
+    goto ForwardsLabel if carry;
+    goto ForwardsLabel if !carry;
+    goto ForwardsLabel if negative;
+    goto ForwardsLabel if !negative;
+    goto ForwardsLabel if overflow;
+    goto ForwardsLabel if !overflow;
+
+// BLOCK    ea                    nop
+    nop();
+ForwardsLabel:
+
+
+
+BitTestLabel:
+// BLOCK    24 00                 bit 0x00
+// BLOCK    30 fc                 bmi 0x008670
+    goto BitTestLabel if zp_u8_00 $ 7;        // goto if bit 7 of zp_u8_00 set
+// BLOCK    2c 00 02              bit 0x0200
+// BLOCK    30 f7                 bmi 0x008670
+    goto BitTestLabel if ram_u8_200 $ 7;
+// BLOCK    24 00                 bit 0x00
+// BLOCK    70 f3                 bvs 0x008670
+    goto BitTestLabel if zp_u8_00 $ 6;        // goto if bit 6 of zp_u8_00 set
+// BLOCK    2c 00 02              bit 0x0200
+// BLOCK    70 ee                 bvs 0x008670
+    goto BitTestLabel if ram_u8_200 $ 6;
+// BLOCK    24 00                 bit 0x00
+// BLOCK    10 ea                 bpl 0x008670
+
+
+    goto BitTestLabel if !zp_u8_00 $ 7;       // goto if bit 7 of zp_u8_00 is clear
+// BLOCK    2c 00 02              bit 0x0200
+// BLOCK    10 e5                 bpl 0x008670
+    goto BitTestLabel if !ram_u8_200 $ 7;
+// BLOCK    24 00                 bit 0x00
+// BLOCK    50 e1                 bvc 0x008670
+    goto BitTestLabel if !zp_u8_00 $ 6;
+// BLOCK    2c 00 02              bit 0x0200
+// BLOCK    50 dc                 bvc 0x008670
+    goto BitTestLabel if !ram_u8_200 $ 6;
+
+
+// BLOCK    24 00                 bit 0x00
+// BLOCK    f0 d8                 beq 0x008670
+    goto BitTestLabel if a & zp_u8_00 == 0;
+// BLOCK    2c 00 02              bit 0x0200
+// BLOCK    f0 d3                 beq 0x008670
+    goto BitTestLabel if a & ram_u8_200 == 0;
+// BLOCK    24 00                 bit 0x00
+// BLOCK    d0 cf                 bne 0x008670
+    goto BitTestLabel if a & zp_u8_00 != 0;
+// BLOCK    2c 00 02              bit 0x0200
+// BLOCK    d0 ca                 bne 0x008670
+    goto BitTestLabel if a & ram_u8_200 != 0;
+
+
+
+EqualTestLabel:
+// BLOCK    c9 01                 cmp #0x01
+// BLOCK    f0 fc                 beq 0x0086a6
+    goto EqualTestLabel if a == 1;
+// BLOCK    c5 00                 cmp 0x00
+// BLOCK    f0 f8                 beq 0x0086a6
+    goto EqualTestLabel if a == zp_u8_00;
+// BLOCK    d5 08                 cmp 0x08,x
+// BLOCK    f0 f4                 beq 0x0086a6
+    goto EqualTestLabel if a == zp_block_08[x];
+// BLOCK    d9 08 00              cmp 0x0008,y
+// BLOCK    f0 ef                 beq 0x0086a6
+    goto EqualTestLabel if a == zp_block_08[y];
+// BLOCK    cd 00 02              cmp 0x0200
+// BLOCK    f0 ea                 beq 0x0086a6
+    goto EqualTestLabel if a == ram_u8_200;
+// BLOCK    dd 06 02              cmp 0x0206,x
+// BLOCK    f0 e5                 beq 0x0086a6
+    goto EqualTestLabel if a == ram_block_206[x];
+// BLOCK    d9 06 02              cmp 0x0206,y
+// BLOCK    f0 e0                 beq 0x0086a6
+    goto EqualTestLabel if a == ram_block_206[y];
+// BLOCK    c1 20                 cmp (0x20,x)
+// BLOCK    f0 dc                 beq 0x0086a6
+    goto EqualTestLabel if a == *(*((&zp_array_ptr_20 as u16 + x as u16) as *u16) as *u8);
+// BLOCK    d1 04                 cmp (0x04),y
+// BLOCK    f0 d8                 beq 0x0086a6
+    goto EqualTestLabel if a == *((zp_ptr_04 as u16 + y as u16) as *u8);
+
+// BLOCK    e0 03                 cpx #0x03
+// BLOCK    f0 d4                 beq 0x0086a6
+    goto EqualTestLabel if x == 3;
+// BLOCK    e4 00                 cpx 0x00
+// BLOCK    f0 d0                 beq 0x0086a6
+    goto EqualTestLabel if x == zp_u8_00;
+// BLOCK    ec 00 02              cpx 0x0200
+// BLOCK    f0 cb                 beq 0x0086a6
+    goto EqualTestLabel if x == ram_u8_200;
+// BLOCK    c0 05                 cpy #0x05
+// BLOCK    f0 c7                 beq 0x0086a6
+    goto EqualTestLabel if y == 5;
+// BLOCK    c4 00                 cpy 0x00
+// BLOCK    f0 c3                 beq 0x0086a6
+    goto EqualTestLabel if y == zp_u8_00;
+// BLOCK    cc 00 02              cpy 0x0200
+// BLOCK    f0 be                 beq 0x0086a6
+    goto EqualTestLabel if y == ram_u8_200;
+
+// BLOCK    c9 07                 cmp #0x07
+// BLOCK    f0 ba                 beq 0x0086a6
+    goto EqualTestLabel if 7 == a;
+// BLOCK    c5 00                 cmp 0x00
+// BLOCK    f0 b6                 beq 0x0086a6
+    goto EqualTestLabel if zp_u8_00 == a;
+// BLOCK    d1 04                 cmp (0x04),y
+// BLOCK    f0 b2                 beq 0x0086a6
+    goto EqualTestLabel if *((zp_ptr_04 as u16 + y as u16) as *u8) == a;
+// BLOCK    e4 00                 cpx 0x00
+// BLOCK    f0 ae                 beq 0x0086a6
+    goto EqualTestLabel if zp_u8_00 == x;
+// BLOCK    cc 00 02              cpy 0x0200
+// BLOCK    f0 a9                 beq 0x0086a6
+    goto EqualTestLabel if ram_u8_200 == y;
+// BLOCK    c9 09                 cmp #0x09
+// BLOCK    f0 a5                 beq 0x0086a6
+    goto EqualTestLabel if !(a != 9);
+// BLOCK    c9 0b                 cmp #0x0b
+// BLOCK    f0 a1                 beq 0x0086a6
+    goto EqualTestLabel if !(11 != a);
+
+
+
+NotEqualTestLabel:
+// BLOCK    c9 01                 cmp #0x01
+// BLOCK    d0 fc                 bne 0x008705
+    goto NotEqualTestLabel if a != 1;
+// BLOCK    c5 00                 cmp 0x00
+// BLOCK    d0 f8                 bne 0x008705
+    goto NotEqualTestLabel if a != zp_u8_00;
+// BLOCK    d5 08                 cmp 0x08,x
+// BLOCK    d0 f4                 bne 0x008705
+    goto NotEqualTestLabel if a != zp_block_08[x];
+// BLOCK    d9 08 00              cmp 0x0008,y
+// BLOCK    d0 ef                 bne 0x008705
+    goto NotEqualTestLabel if a != zp_block_08[y];
+// BLOCK    cd 00 02              cmp 0x0200
+// BLOCK    d0 ea                 bne 0x008705
+    goto NotEqualTestLabel if a != ram_u8_200;
+// BLOCK    dd 06 02              cmp 0x0206,x
+// BLOCK    d0 e5                 bne 0x008705
+    goto NotEqualTestLabel if a != ram_block_206[x];
+// BLOCK    d9 06 02              cmp 0x0206,y
+// BLOCK    d0 e0                 bne 0x008705
+    goto NotEqualTestLabel if a != ram_block_206[y];
+// BLOCK    c1 20                 cmp (0x20,x)
+// BLOCK    d0 dc                 bne 0x008705
+    goto NotEqualTestLabel if a != *(*((&zp_array_ptr_20 as u16 + x as u16) as *u16) as *u8);
+// BLOCK    d1 04                 cmp (0x04),y
+// BLOCK    d0 d8                 bne 0x008705
+    goto NotEqualTestLabel if a != *((zp_ptr_04 as u16 + y as u16) as *u8);
+
+// BLOCK    e0 03                 cpx #0x03
+// BLOCK    d0 d4                 bne 0x008705
+    goto NotEqualTestLabel if x != 3;
+// BLOCK    e4 00                 cpx 0x00
+// BLOCK    d0 d0                 bne 0x008705
+    goto NotEqualTestLabel if x != zp_u8_00;
+// BLOCK    ec 00 02              cpx 0x0200
+// BLOCK    d0 cb                 bne 0x008705
+    goto NotEqualTestLabel if x != ram_u8_200;
+// BLOCK    c0 05                 cpy #0x05
+// BLOCK    d0 c7                 bne 0x008705
+    goto NotEqualTestLabel if y != 5;
+// BLOCK    c4 00                 cpy 0x00
+// BLOCK    d0 c3                 bne 0x008705
+    goto NotEqualTestLabel if y != zp_u8_00;
+// BLOCK    cc 00 02              cpy 0x0200
+// BLOCK    d0 be                 bne 0x008705
+    goto NotEqualTestLabel if y != ram_u8_200;
+
+// BLOCK    c9 07                 cmp #0x07
+// BLOCK    d0 ba                 bne 0x008705
+    goto NotEqualTestLabel if 7 != a;
+// BLOCK    d5 08                 cmp 0x08,x
+// BLOCK    d0 b6                 bne 0x008705
+    goto NotEqualTestLabel if zp_block_08[x] != a;
+// BLOCK    c1 20                 cmp (0x20,x)
+// BLOCK    d0 b2                 bne 0x008705
+    goto NotEqualTestLabel if *(*((&zp_array_ptr_20 as u16 + x as u16) as *u16) as *u8) != a;
+// BLOCK    e4 00                 cpx 0x00
+// BLOCK    d0 ae                 bne 0x008705
+    goto NotEqualTestLabel if zp_u8_00 != x;
+// BLOCK    cc 00 02              cpy 0x0200
+// BLOCK    d0 a9                 bne 0x008705
+    goto NotEqualTestLabel if ram_u8_200 != y;
+// BLOCK    c9 09                 cmp #0x09
+// BLOCK    d0 a5                 bne 0x008705
+    goto NotEqualTestLabel if !(a == 9);
+// BLOCK    c9 0b                 cmp #0x0b
+// BLOCK    d0 a1                 bne 0x008705
+    goto NotEqualTestLabel if !(11 == a);
+
+
+
+LessThanTestLabel:
+// BLOCK    c9 01                 cmp #0x01
+// BLOCK    90 fc                 bcc 0x008764
+    goto LessThanTestLabel if a < 1;
+// BLOCK    c5 00                 cmp 0x00
+// BLOCK    90 f8                 bcc 0x008764
+    goto LessThanTestLabel if a < zp_u8_00;
+// BLOCK    d5 08                 cmp 0x08,x
+// BLOCK    90 f4                 bcc 0x008764
+    goto LessThanTestLabel if a < zp_block_08[x];
+// BLOCK    d9 08 00              cmp 0x0008,y
+// BLOCK    90 ef                 bcc 0x008764
+    goto LessThanTestLabel if a < zp_block_08[y];
+// BLOCK    cd 00 02              cmp 0x0200
+// BLOCK    90 ea                 bcc 0x008764
+    goto LessThanTestLabel if a < ram_u8_200;
+// BLOCK    dd 06 02              cmp 0x0206,x
+// BLOCK    90 e5                 bcc 0x008764
+    goto LessThanTestLabel if a < ram_block_206[x];
+// BLOCK    d9 06 02              cmp 0x0206,y
+// BLOCK    90 e0                 bcc 0x008764
+    goto LessThanTestLabel if a < ram_block_206[y];
+// BLOCK    c1 20                 cmp (0x20,x)
+// BLOCK    90 dc                 bcc 0x008764
+    goto LessThanTestLabel if a < *(*((&zp_array_ptr_20 as u16 + x as u16) as *u16) as *u8);
+// BLOCK    d1 04                 cmp (0x04),y
+// BLOCK    90 d8                 bcc 0x008764
+    goto LessThanTestLabel if a < *((zp_ptr_04 as u16 + y as u16) as *u8);
+
+// BLOCK    e0 03                 cpx #0x03
+// BLOCK    90 d4                 bcc 0x008764
+    goto LessThanTestLabel if x < 3;
+// BLOCK    e4 00                 cpx 0x00
+// BLOCK    90 d0                 bcc 0x008764
+    goto LessThanTestLabel if x < zp_u8_00;
+// BLOCK    ec 00 02              cpx 0x0200
+// BLOCK    90 cb                 bcc 0x008764
+    goto LessThanTestLabel if x < ram_u8_200;
+// BLOCK    c0 05                 cpy #0x05
+// BLOCK    90 c7                 bcc 0x008764
+    goto LessThanTestLabel if y < 5;
+// BLOCK    c4 00                 cpy 0x00
+// BLOCK    90 c3                 bcc 0x008764
+    goto LessThanTestLabel if y < zp_u8_00;
+// BLOCK    cc 00 02              cpy 0x0200
+// BLOCK    90 be                 bcc 0x008764
+    goto LessThanTestLabel if y < ram_u8_200;
+
+// BLOCK    c9 07                 cmp #0x07
+// BLOCK    90 ba                 bcc 0x008764
+    goto LessThanTestLabel if 7 > a;
+// BLOCK    d9 08 00              cmp 0x0008,y
+// BLOCK    90 b5                 bcc 0x008764
+    goto LessThanTestLabel if zp_block_08[y] > a;
+// BLOCK    d9 06 02              cmp 0x0206,y
+// BLOCK    90 b0                 bcc 0x008764
+    goto LessThanTestLabel if ram_block_206[y] > a;
+// BLOCK    e4 00                 cpx 0x00
+// BLOCK    90 ac                 bcc 0x008764
+    goto LessThanTestLabel if zp_u8_00 > x;
+// BLOCK    cc 00 02              cpy 0x0200
+// BLOCK    90 a7                 bcc 0x008764
+    goto LessThanTestLabel if ram_u8_200 > y;
+
+// BLOCK    c9 09                 cmp #0x09
+// BLOCK    90 a3                 bcc 0x008764
+    goto LessThanTestLabel if !(a >= 9);
+// BLOCK    c9 0b                 cmp #0x0b
+// BLOCK    90 9f                 bcc 0x008764
+    goto LessThanTestLabel if !(11 <= a);
+
+
+
+GreaterThanOrEqualTestLabel:
+// BLOCK    c9 01                 cmp #0x01
+// BLOCK    b0 fc                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if a >= 1;
+// BLOCK    c5 00                 cmp 0x00
+// BLOCK    b0 f8                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if a >= zp_u8_00;
+// BLOCK    d5 08                 cmp 0x08,x
+// BLOCK    b0 f4                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if a >= zp_block_08[x];
+// BLOCK    d9 08 00              cmp 0x0008,y
+// BLOCK    b0 ef                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if a >= zp_block_08[y];
+// BLOCK    cd 00 02              cmp 0x0200
+// BLOCK    b0 ea                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if a >= ram_u8_200;
+// BLOCK    dd 06 02              cmp 0x0206,x
+// BLOCK    b0 e5                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if a >= ram_block_206[x];
+// BLOCK    d9 06 02              cmp 0x0206,y
+// BLOCK    b0 e0                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if a >= ram_block_206[y];
+// BLOCK    c1 20                 cmp (0x20,x)
+// BLOCK    b0 dc                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if a >= *(*((&zp_array_ptr_20 as u16 + x as u16) as *u16) as *u8);
+// BLOCK    d1 04                 cmp (0x04),y
+// BLOCK    b0 d8                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if a >= *((zp_ptr_04 as u16 + y as u16) as *u8);
+
+// BLOCK    e0 03                 cpx #0x03
+// BLOCK    b0 d4                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if x >= 3;
+// BLOCK    e4 00                 cpx 0x00
+// BLOCK    b0 d0                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if x >= zp_u8_00;
+// BLOCK    ec 00 02              cpx 0x0200
+// BLOCK    b0 cb                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if x >= ram_u8_200;
+// BLOCK    c0 05                 cpy #0x05
+// BLOCK    b0 c7                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if y >= 5;
+// BLOCK    c4 00                 cpy 0x00
+// BLOCK    b0 c3                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if y >= zp_u8_00;
+// BLOCK    cc 00 02              cpy 0x0200
+// BLOCK    b0 be                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if y >= ram_u8_200;
+
+// BLOCK    c9 07                 cmp #0x07
+// BLOCK    b0 ba                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if 7 <= a;
+// BLOCK    cd 00 02              cmp 0x0200
+// BLOCK    b0 b5                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if ram_u8_200 <= a;
+// BLOCK    dd 06 02              cmp 0x0206,x
+// BLOCK    b0 b0                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if ram_block_206[x] <= a;
+// BLOCK    e4 00                 cpx 0x00
+// BLOCK    b0 ac                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if zp_u8_00 <= x;
+// BLOCK    cc 00 02              cpy 0x0200
+// BLOCK    b0 a7                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if ram_u8_200 <= y;
+
+// BLOCK    c9 09                 cmp #0x09
+// BLOCK    b0 a3                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if !(a < 9);
+// BLOCK    c9 0b                 cmp #0x0b
+// BLOCK    b0 9f                 bcs 0x0087c5
+    goto GreaterThanOrEqualTestLabel if !(11 > a);
+
+
+
+LessThanOrEqualTestLabel:
+// BLOCK    c9 01                 cmp #0x01
+// BLOCK    f0 fc                 beq 0x008826
+// BLOCK    90 fa                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if a <= 1;
+// BLOCK    c5 00                 cmp 0x00
+// BLOCK    f0 f6                 beq 0x008826
+// BLOCK    90 f4                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if a <= zp_u8_00;
+// BLOCK    d5 08                 cmp 0x08,x
+// BLOCK    f0 f0                 beq 0x008826
+// BLOCK    90 ee                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if a <= zp_block_08[x];
+// BLOCK    d9 08 00              cmp 0x0008,y
+// BLOCK    f0 e9                 beq 0x008826
+// BLOCK    90 e7                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if a <= zp_block_08[y];
+// BLOCK    cd 00 02              cmp 0x0200
+// BLOCK    f0 e2                 beq 0x008826
+// BLOCK    90 e0                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if a <= ram_u8_200;
+// BLOCK    dd 06 02              cmp 0x0206,x
+// BLOCK    f0 db                 beq 0x008826
+// BLOCK    90 d9                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if a <= ram_block_206[x];
+// BLOCK    d9 06 02              cmp 0x0206,y
+// BLOCK    f0 d4                 beq 0x008826
+// BLOCK    90 d2                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if a <= ram_block_206[y];
+// BLOCK    c1 20                 cmp (0x20,x)
+// BLOCK    f0 ce                 beq 0x008826
+// BLOCK    90 cc                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if a <= *(*((&zp_array_ptr_20 as u16 + x as u16) as *u16) as *u8);
+// BLOCK    d1 04                 cmp (0x04),y
+// BLOCK    f0 c8                 beq 0x008826
+// BLOCK    90 c6                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if a <= *((zp_ptr_04 as u16 + y as u16) as *u8);
+
+// BLOCK    e0 03                 cpx #0x03
+// BLOCK    f0 c2                 beq 0x008826
+// BLOCK    90 c0                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if x <= 3;
+// BLOCK    e4 00                 cpx 0x00
+// BLOCK    f0 bc                 beq 0x008826
+// BLOCK    90 ba                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if x <= zp_u8_00;
+// BLOCK    ec 00 02              cpx 0x0200
+// BLOCK    f0 b5                 beq 0x008826
+// BLOCK    90 b3                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if x <= ram_u8_200;
+// BLOCK    c0 05                 cpy #0x05
+// BLOCK    f0 af                 beq 0x008826
+// BLOCK    90 ad                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if y <= 5;
+// BLOCK    c4 00                 cpy 0x00
+// BLOCK    f0 a9                 beq 0x008826
+// BLOCK    90 a7                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if y <= zp_u8_00;
+// BLOCK    cc 00 02              cpy 0x0200
+// BLOCK    f0 a2                 beq 0x008826
+// BLOCK    90 a0                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if y <= ram_u8_200;
+
+// BLOCK    c9 07                 cmp #0x07
+// BLOCK    f0 9c                 beq 0x008826
+// BLOCK    90 9a                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if 7 >= a;
+// BLOCK    e4 00                 cpx 0x00
+// BLOCK    f0 96                 beq 0x008826
+// BLOCK    90 94                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if zp_u8_00 >= x;
+// BLOCK    cc 00 02              cpy 0x0200
+// BLOCK    f0 8f                 beq 0x008826
+// BLOCK    90 8d                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if ram_u8_200 >= y;
+
+// BLOCK    c9 09                 cmp #0x09
+// BLOCK    f0 89                 beq 0x008826
+// BLOCK    90 87                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if !(a > 9);
+// BLOCK    c9 0b                 cmp #0x0b
+// BLOCK    f0 83                 beq 0x008826
+// BLOCK    90 81                 bcc 0x008826
+    goto LessThanOrEqualTestLabel if !(11 < a);
+
+
+
+GreaterThanTestLabel:
+// BLOCK    c9 01                 cmp #0x01
+// BLOCK    f0 02                 beq 0x0088ab
+// BLOCK    b0 fa                 bcs 0x0088a5
+    goto GreaterThanTestLabel if a > 1;
+// BLOCK    c5 00                 cmp 0x00
+// BLOCK    f0 02                 beq 0x0088b1
+// BLOCK    b0 f4                 bcs 0x0088a5
+    goto GreaterThanTestLabel if a > zp_u8_00;
+// BLOCK    d5 08                 cmp 0x08,x
+// BLOCK    f0 02                 beq 0x0088b7
+// BLOCK    b0 ee                 bcs 0x0088a5
+    goto GreaterThanTestLabel if a > zp_block_08[x];
+// BLOCK    d9 08 00              cmp 0x0008,y
+// BLOCK    f0 02                 beq 0x0088be
+// BLOCK    b0 e7                 bcs 0x0088a5
+    goto GreaterThanTestLabel if a > zp_block_08[y];
+// BLOCK    cd 00 02              cmp 0x0200
+// BLOCK    f0 02                 beq 0x0088c5
+// BLOCK    b0 e0                 bcs 0x0088a5
+    goto GreaterThanTestLabel if a > ram_u8_200;
+// BLOCK    dd 06 02              cmp 0x0206,x
+// BLOCK    f0 02                 beq 0x0088cc
+// BLOCK    b0 d9                 bcs 0x0088a5
+    goto GreaterThanTestLabel if a > ram_block_206[x];
+// BLOCK    d9 06 02              cmp 0x0206,y
+// BLOCK    f0 02                 beq 0x0088d3
+// BLOCK    b0 d2                 bcs 0x0088a5
+    goto GreaterThanTestLabel if a > ram_block_206[y];
+// BLOCK    c1 20                 cmp (0x20,x)
+// BLOCK    f0 02                 beq 0x0088d9
+// BLOCK    b0 cc                 bcs 0x0088a5
+    goto GreaterThanTestLabel if a > *(*((&zp_array_ptr_20 as u16 + x as u16) as *u16) as *u8);
+// BLOCK    d1 04                 cmp (0x04),y
+// BLOCK    f0 02                 beq 0x0088df
+// BLOCK    b0 c6                 bcs 0x0088a5
+    goto GreaterThanTestLabel if a > *((zp_ptr_04 as u16 + y as u16) as *u8);
+
+// BLOCK    e0 03                 cpx #0x03
+// BLOCK    f0 02                 beq 0x0088e5
+// BLOCK    b0 c0                 bcs 0x0088a5
+    goto GreaterThanTestLabel if x > 3;
+// BLOCK    e4 00                 cpx 0x00
+// BLOCK    f0 02                 beq 0x0088eb
+// BLOCK    b0 ba                 bcs 0x0088a5
+    goto GreaterThanTestLabel if x > zp_u8_00;
+// BLOCK    ec 00 02              cpx 0x0200
+// BLOCK    f0 02                 beq 0x0088f2
+// BLOCK    b0 b3                 bcs 0x0088a5
+    goto GreaterThanTestLabel if x > ram_u8_200;
+// BLOCK    c0 05                 cpy #0x05
+// BLOCK    f0 02                 beq 0x0088f8
+// BLOCK    b0 ad                 bcs 0x0088a5
+    goto GreaterThanTestLabel if y > 5;
+// BLOCK    c4 00                 cpy 0x00
+// BLOCK    f0 02                 beq 0x0088fe
+// BLOCK    b0 a7                 bcs 0x0088a5
+    goto GreaterThanTestLabel if y > zp_u8_00;
+// BLOCK    cc 00 02              cpy 0x0200
+// BLOCK    f0 02                 beq 0x008905
+// BLOCK    b0 a0                 bcs 0x0088a5
+    goto GreaterThanTestLabel if y > ram_u8_200;
+
+// BLOCK    c9 07                 cmp #0x07
+// BLOCK    f0 02                 beq 0x00890b
+// BLOCK    b0 9a                 bcs 0x0088a5
+    goto GreaterThanTestLabel if 7 < a;
+// BLOCK    e4 00                 cpx 0x00
+// BLOCK    f0 02                 beq 0x008911
+// BLOCK    b0 94                 bcs 0x0088a5
+    goto GreaterThanTestLabel if zp_u8_00 < x;
+// BLOCK    cc 00 02              cpy 0x0200
+// BLOCK    f0 02                 beq 0x008918
+// BLOCK    b0 8d                 bcs 0x0088a5
+    goto GreaterThanTestLabel if ram_u8_200 < y;
+
+// BLOCK    c9 09                 cmp #0x09
+// BLOCK    f0 02                 beq 0x00891e
+// BLOCK    b0 87                 bcs 0x0088a5
+    goto GreaterThanTestLabel if !(a <= 9);
+// BLOCK    c9 0b                 cmp #0x0b
+// BLOCK    f0 02                 beq 0x008924
+// BLOCK    b0 81                 bcs 0x0088a5
+    goto GreaterThanTestLabel if !(11 >= a);
+
+
+
+// BLOCK    4c ed fe              jmp 0xfeed
+    ^goto external_func;                            // Must use ^ on 65c02
+
+// BLOCK    6c 20 02              jmp (0x0220)
+    goto ram_func_ptr_220;
+// BLOCK    6c 34 12              jmp (0x1234)
+    goto *(0x1234 as *func);
+}
+
+// BLOCK    ff
+}
+

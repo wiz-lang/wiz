@@ -1,0 +1,64 @@
+// SYSTEM  6502
+//
+// Opcodes tested from site: http://6502.org/tutorials/6502opcodes.html
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -a6502 -m0x8000 6502_func_inline.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+// BLOCK 000000
+in prg {
+
+
+// BLOCK 000000      ae 00 02              ldx 0x0200
+// BLOCK             e0 2a                 cpx #0x2a
+// BLOCK             b0 04                 bcs 0x00800b
+// BLOCK             e8                    inx
+// BLOCK             4c 0c 80              jmp 0x800c
+// BLOCK 00000b      ca                    dex
+// BLOCK 00000c      ea                    nop
+// BLOCK             60                    rts
+inline func inline_return(x : u8 in x) {
+    if x < 42 {
+        x++;
+        return;
+    }
+    x--;
+}
+func inline_return_call() {
+    inline_return(ram_u8_200);
+
+    nop();
+}
+
+
+// BLOCK 00000e      ad 01 02              lda 0x0201
+// BLOCK             18                    clc
+// BLOCK             69 0f                 adc #0x0f
+// BLOCK             18                    clc
+// BLOCK             7d 06 02              adc 0x0206,x
+// BLOCK             18                    clc
+// BLOCK             69 0f                 adc #0x0f
+// BLOCK             60                    rts
+inline func inline_func1(a : u8 in a, x : u8 in x) : u8 in a {
+    return a + ram_block_206[x];
+}
+inline func inline_func2(a : u8 in a) : u8 in a {
+    return a + 15;
+}
+func call_inline_func() {
+    a = ram_u8_201;
+    a = inline_func2(a);
+    a = inline_func1(a, x);
+    a = inline_func2(a);
+}
+
+
+// BLOCK ff
+}
+

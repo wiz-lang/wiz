@@ -1,0 +1,67 @@
+// SYSTEM  65c02 wdc65c02 rockwell65c02 huc6280
+//
+// NOTE: does not use zero-page instructions so huc6280 can be tested
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -asnes -m0x8000 65c02_func_inline.65c02.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+in prg {
+
+// ANNOY radare2 does not have a 65c02 disassembler
+// the following line forces the radare2 65816 disassembler to use 8 bit A/X.
+const mem8idx8 : [u8] = [0xe2, 0x30];
+
+
+// BLOCK 000002      ae 00 02              ldx 0x0200
+// BLOCK             e0 2a                 cpx #0x2a
+// BLOCK             b0 03                 bcs 0x00800c
+// BLOCK             e8                    inx
+// BLOCK             80 01                 bra 0x00800d
+// BLOCK 00000c      ca                    dex
+// BLOCK 00000d      ea                    nop
+// BLOCK             60                    rts
+inline func inline_return(x : u8 in x) {
+    if x < 42 {
+        x++;
+        return;
+    }
+    x--;
+}
+func inline_return_call() {
+    inline_return(ram_u8_200);
+
+    nop();
+}
+
+
+
+// BLOCK 00000f      ad 01 02              lda 0x0201
+// BLOCK             18                    clc
+// BLOCK             69 0f                 adc #0x0f
+// BLOCK             18                    clc
+// BLOCK             7d 06 02              adc 0x0206,x
+// BLOCK             18                    clc
+// BLOCK             69 0f                 adc #0x0f
+// BLOCK             60                    rts
+inline func inline_func1(a : u8 in a, x : u8 in x) : u8 in a {
+    return a + ram_block_206[x];
+}
+inline func inline_func2(a : u8 in a) : u8 in a {
+    return a + 15;
+}
+func call_inline_func() {
+    a = ram_u8_201;
+    a = inline_func2(a);
+    a = inline_func1(a, x);
+    a = inline_func2(a);
+}
+
+// BLOCK ff
+}
+

@@ -1,0 +1,94 @@
+// SYSTEM  6502
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -a6502 -m0x8000 6502_nested_while.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+in prg {
+
+// This test was created by manually writing `goto if` statements
+// and later replacing them with `continue if` and `break if` statements
+
+// BLOCK 000000      c9 32                 cmp #0x32
+// BLOCK             b0 4e                 bcs 0x008052
+// BLOCK             c9 01                 cmp #0x01
+// BLOCK             f0 f8                 beq 0x008000
+// BLOCK             c9 02                 cmp #0x02
+// BLOCK             f0 46                 beq 0x008052
+// BLOCK             a2 80                 ldx #0x80
+// BLOCK 00000e      c9 03                 cmp #0x03
+// BLOCK             f0 32                 beq 0x008044
+// BLOCK             c9 04                 cmp #0x04
+// BLOCK             f0 31                 beq 0x008047
+// BLOCK 000016      c0 32                 cpy #0x32
+// BLOCK             b0 22                 bcs 0x00803c
+// BLOCK             c9 05                 cmp #0x05
+// BLOCK             f0 f8                 beq 0x008016
+// BLOCK             c9 06                 cmp #0x06
+// BLOCK             f0 1a                 beq 0x00803c
+// BLOCK             e0 00                 cpx #0x00
+// BLOCK             f0 0b                 beq 0x008031
+// BLOCK             ea                    nop
+// BLOCK             e0 01                 cpx #0x01
+// BLOCK             f0 06                 beq 0x008031
+// BLOCK             ea                    nop
+// BLOCK             e0 02                 cpx #0x02
+// BLOCK             f0 01                 beq 0x008031
+// BLOCK             ea                    nop
+// BLOCK 000031      c9 07                 cmp #0x07
+// BLOCK             f0 e1                 beq 0x008016
+// BLOCK             c9 08                 cmp #0x08
+// BLOCK             f0 03                 beq 0x00803c
+// BLOCK             4c 16 80              jmp 0x8016
+// BLOCK 00003c      c9 09                 cmp #0x09
+// BLOCK             f0 04                 beq 0x008044
+// BLOCK             c9 0a                 cmp #0x0a
+// BLOCK             f0 03                 beq 0x008047
+// BLOCK 000044      ca                    dex
+// BLOCK             f0 c7                 beq 0x00800e
+// BLOCK 000047      c9 0b                 cmp #0x0b
+// BLOCK             f0 b5                 beq 0x008000
+// BLOCK             c9 0c                 cmp #0x0c
+// BLOCK             f0 03                 beq 0x008052
+// BLOCK             4c 00 80              jmp 0x8000
+// BLOCK 000052      60                    rts
+func nested_while_test {
+    while a < 50 {
+        continue if a == 1;
+        break if a == 2;
+
+        x = 128;
+        do {
+            continue if a == 3;
+            break if a == 4;
+
+            while y < 50 {
+                continue if a == 5;
+                break if a == 6;
+
+                inline for let i in 0 .. 2 {
+                    break if x == i;
+                    nop();
+                }
+
+                continue if a == 7;
+                break if a == 8;
+            }
+
+            continue if a == 9;
+            break if a == 10;
+
+        } while {x--;} && zero;
+
+        continue if a == 11;
+        break if a == 12;
+    }
+}
+
+}
+

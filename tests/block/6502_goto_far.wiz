@@ -1,0 +1,507 @@
+// SYSTEM  6502 65c02 wdc65c02 rockwell65c02
+// ::TODO huc6280::
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -a6502 -m0x8000 6502_goto_far.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+// BLOCK 000000
+in prg {
+
+let external_func = 0xfeed as func;
+
+func goto_far_tests {
+FarLabel:
+
+// BLOCK 000000      4c 00 80              jmp 0x8000
+    ^goto FarLabel;
+
+// Does not emit code
+    ^goto SkipGotoTestLabel;
+SkipGotoTestLabel:
+
+// BLOCK 000003      d0 03                 bne 0x008008
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if zero;
+// BLOCK 000008      f0 03                 beq 0x00800d
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if !zero;
+// BLOCK 00000d      90 03                 bcc 0x008012
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if carry;
+// BLOCK 000012      b0 03                 bcs 0x008017
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if !carry;
+// BLOCK 000017      10 03                 bpl 0x00801c
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if negative;
+// BLOCK 00001c      30 03                 bmi 0x008021
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if !negative;
+// BLOCK 000021      50 03                 bvc 0x008026
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if overflow;
+// BLOCK 000026      70 03                 bvs 0x00802b
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if !overflow;
+
+
+
+// BLOCK 00002b      24 00                 bit 0x00
+// BLOCK             10 03                 bpl 0x008032
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if zp_u8_00 $ 7;                         // ^goto if bit 7 of zp_u8_00 set
+// BLOCK 000032      2c 00 02              bit 0x0200
+// BLOCK             10 03                 bpl 0x00803a
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if ram_u8_200 $ 7;
+// BLOCK 00003a      24 00                 bit 0x00
+// BLOCK             50 03                 bvc 0x008041
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if zp_u8_00 $ 6;                         // ^goto if bit 6 of zp_u8_00 set
+// BLOCK 000041      2c 00 02              bit 0x0200
+// BLOCK             50 03                 bvc 0x008049
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if ram_u8_200 $ 6;
+
+
+
+// BLOCK 000049      24 00                 bit 0x00
+// BLOCK             30 03                 bmi 0x008050
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if !zp_u8_00 $ 7;                        // ^goto if bit 7 of zp_u8_00 is clear
+// BLOCK 000050      2c 00 02              bit 0x0200
+// BLOCK             30 03                 bmi 0x008058
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if !ram_u8_200 $ 7;
+// BLOCK 000058      24 00                 bit 0x00
+// BLOCK             70 03                 bvs 0x00805f
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if !zp_u8_00 $ 6;
+// BLOCK 00005f      2c 00 02              bit 0x0200
+// BLOCK             70 03                 bvs 0x008067
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if !ram_u8_200 $ 6;
+
+
+
+// BLOCK 000067      24 00                 bit 0x00
+// BLOCK             d0 03                 bne 0x00806e
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a & zp_u8_00 == 0;
+// BLOCK 00006e      2c 00 02              bit 0x0200
+// BLOCK             d0 03                 bne 0x008076
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a & ram_u8_200 == 0;
+// BLOCK 000076      24 00                 bit 0x00
+// BLOCK             f0 03                 beq 0x00807d
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a & zp_u8_00 != 0;
+// BLOCK 00007d      2c 00 02              bit 0x0200
+// BLOCK             f0 03                 beq 0x008085
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a & ram_u8_200 != 0;
+
+
+/*
+ ::BUG error: equality comparison `==` operator is not allowed in conditional ::
+ :::   error: branch instruction could not be generated ::
+    ^goto FarLabel if (zp_u8_00 & a) == 0;
+    ^goto FarLabel if (ram_u8_200 & a) == 0;
+    ^goto FarLabel if (zp_u8_00 & a) != 0;
+    ^goto FarLabel if (ram_u8_200 & a) != 0;
+ */
+
+
+
+// BLOCK 000085      c9 01                 cmp #0x01
+// BLOCK             d0 03                 bne 0x00808c
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a == 1;
+// BLOCK 00008c      c5 00                 cmp 0x00
+// BLOCK             d0 03                 bne 0x008093
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a == zp_u8_00;
+// BLOCK 000093      d5 08                 cmp 0x08,x
+// BLOCK             d0 03                 bne 0x00809a
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a == zp_block_08[x];
+// BLOCK 00009a      d9 08 00              cmp 0x0008,y
+// BLOCK             d0 03                 bne 0x0080a2
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a == zp_block_08[y];
+// BLOCK 0000a2      cd 00 02              cmp 0x0200
+// BLOCK             d0 03                 bne 0x0080aa
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a == ram_u8_200;
+// BLOCK 0000aa      dd 06 02              cmp 0x0206,x
+// BLOCK             d0 03                 bne 0x0080b2
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a == ram_block_206[x];
+// BLOCK 0000b2      d9 06 02              cmp 0x0206,y
+// BLOCK             d0 03                 bne 0x0080ba
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a == ram_block_206[y];
+// BLOCK 0000ba      c1 20                 cmp (0x20,x)
+// BLOCK             d0 03                 bne 0x0080c1
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a == *(*((&zp_array_ptr_20 as u16 + x as u16) as *u16) as *u8);
+// BLOCK 0000c1      d1 04                 cmp (0x04),y
+// BLOCK             d0 03                 bne 0x0080c8
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a == *((zp_ptr_04 as u16 + y as u16) as *u8);
+
+// BLOCK 0000c8      e0 03                 cpx #0x03
+// BLOCK             d0 03                 bne 0x0080cf
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if x == 3;
+// BLOCK 0000cf      e4 00                 cpx 0x00
+// BLOCK             d0 03                 bne 0x0080d6
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if x == zp_u8_00;
+// BLOCK 0000d6      ec 00 02              cpx 0x0200
+// BLOCK             d0 03                 bne 0x0080de
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if x == ram_u8_200;
+// BLOCK 0000de      c0 05                 cpy #0x05
+// BLOCK             d0 03                 bne 0x0080e5
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if y == 5;
+// BLOCK 0000e5      c4 00                 cpy 0x00
+// BLOCK             d0 03                 bne 0x0080ec
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if y == zp_u8_00;
+// BLOCK 0000ec      cc 00 02              cpy 0x0200
+// BLOCK             d0 03                 bne 0x0080f4
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if y == ram_u8_200;
+
+// BLOCK 0000f4      c9 07                 cmp #0x07
+// BLOCK             d0 03                 bne 0x0080fb
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if 7 == a;
+// BLOCK 0000fb      c5 00                 cmp 0x00
+// BLOCK             d0 03                 bne 0x008102
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if zp_u8_00 == a;
+// BLOCK 000102      d1 04                 cmp (0x04),y
+// BLOCK             d0 03                 bne 0x008109
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if *((zp_ptr_04 as u16 + y as u16) as *u8) == a;
+// BLOCK 000109      e4 00                 cpx 0x00
+// BLOCK             d0 03                 bne 0x008110
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if zp_u8_00 == x;
+// BLOCK 000110      cc 00 02              cpy 0x0200
+// BLOCK             d0 03                 bne 0x008118
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if ram_u8_200 == y;
+// BLOCK 000118      c9 09                 cmp #0x09
+// BLOCK             d0 03                 bne 0x00811f
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if !(a != 9);
+// BLOCK 00011f      c9 0b                 cmp #0x0b
+// BLOCK             d0 03                 bne 0x008126
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if !(11 != a);
+
+
+
+// BLOCK 000126      c9 01                 cmp #0x01
+// BLOCK             f0 03                 beq 0x00812d
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a != 1;
+// BLOCK 00012d      c5 00                 cmp 0x00
+// BLOCK             f0 03                 beq 0x008134
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a != zp_u8_00;
+// BLOCK 000134      d5 08                 cmp 0x08,x
+// BLOCK             f0 03                 beq 0x00813b
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a != zp_block_08[x];
+// BLOCK 00013b      d9 08 00              cmp 0x0008,y
+// BLOCK             f0 03                 beq 0x008143
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a != zp_block_08[y];
+// BLOCK 000143      cd 00 02              cmp 0x0200
+// BLOCK             f0 03                 beq 0x00814b
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a != ram_u8_200;
+// BLOCK 00014b      dd 06 02              cmp 0x0206,x
+// BLOCK             f0 03                 beq 0x008153
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a != ram_block_206[x];
+// BLOCK 000153      d9 06 02              cmp 0x0206,y
+// BLOCK             f0 03                 beq 0x00815b
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a != ram_block_206[y];
+// BLOCK 00015b      c1 20                 cmp (0x20,x)
+// BLOCK             f0 03                 beq 0x008162
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a != *(*((&zp_array_ptr_20 as u16 + x as u16) as *u16) as *u8);
+// BLOCK 000162      d1 04                 cmp (0x04),y
+// BLOCK             f0 03                 beq 0x008169
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a != *((zp_ptr_04 as u16 + y as u16) as *u8);
+
+// BLOCK 000169      e0 03                 cpx #0x03
+// BLOCK             f0 03                 beq 0x008170
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if x != 3;
+// BLOCK 000170      e4 00                 cpx 0x00
+// BLOCK             f0 03                 beq 0x008177
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if x != zp_u8_00;
+// BLOCK 000177      ec 00 02              cpx 0x0200
+// BLOCK             f0 03                 beq 0x00817f
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if x != ram_u8_200;
+// BLOCK 00017f      c0 05                 cpy #0x05
+// BLOCK             f0 03                 beq 0x008186
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if y != 5;
+// BLOCK 000186      c4 00                 cpy 0x00
+// BLOCK             f0 03                 beq 0x00818d
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if y != zp_u8_00;
+// BLOCK 00018d      cc 00 02              cpy 0x0200
+// BLOCK             f0 03                 beq 0x008195
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if y != ram_u8_200;
+
+// BLOCK 000195      c9 07                 cmp #0x07
+// BLOCK             f0 03                 beq 0x00819c
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if 7 != a;
+// BLOCK 00019c      d5 08                 cmp 0x08,x
+// BLOCK             f0 03                 beq 0x0081a3
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if zp_block_08[x] != a;
+// BLOCK 0001a3      c1 20                 cmp (0x20,x)
+// BLOCK             f0 03                 beq 0x0081aa
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if *(*((&zp_array_ptr_20 as u16 + x as u16) as *u16) as *u8) != a;
+// BLOCK 0001aa      e4 00                 cpx 0x00
+// BLOCK             f0 03                 beq 0x0081b1
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if zp_u8_00 != x;
+// BLOCK 0001b1      cc 00 02              cpy 0x0200
+// BLOCK             f0 03                 beq 0x0081b9
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if ram_u8_200 != y;
+// BLOCK 0001b9      c9 09                 cmp #0x09
+// BLOCK             f0 03                 beq 0x0081c0
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if !(a == 9);
+// BLOCK 0001c0      c9 0b                 cmp #0x0b
+// BLOCK             f0 03                 beq 0x0081c7
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if !(11 == a);
+
+
+
+// BLOCK 0001c7      c9 01                 cmp #0x01
+// BLOCK             b0 03                 bcs 0x0081ce
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a < 1;
+// BLOCK 0001ce      c5 00                 cmp 0x00
+// BLOCK             b0 03                 bcs 0x0081d5
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a < zp_u8_00;
+// BLOCK 0001d5      d5 08                 cmp 0x08,x
+// BLOCK             b0 03                 bcs 0x0081dc
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a < zp_block_08[x];
+// BLOCK 0001dc      d9 08 00              cmp 0x0008,y
+// BLOCK             b0 03                 bcs 0x0081e4
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a < zp_block_08[y];
+// BLOCK 0001e4      cd 00 02              cmp 0x0200
+// BLOCK             b0 03                 bcs 0x0081ec
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a < ram_u8_200;
+// BLOCK 0001ec      dd 06 02              cmp 0x0206,x
+// BLOCK             b0 03                 bcs 0x0081f4
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a < ram_block_206[x];
+// BLOCK 0001f4      d9 06 02              cmp 0x0206,y
+// BLOCK             b0 03                 bcs 0x0081fc
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a < ram_block_206[y];
+// BLOCK 0001fc      c1 20                 cmp (0x20,x)
+// BLOCK             b0 03                 bcs 0x008203
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a < *(*((&zp_array_ptr_20 as u16 + x as u16) as *u16) as *u8);
+// BLOCK 000203      d1 04                 cmp (0x04),y
+// BLOCK             b0 03                 bcs 0x00820a
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a < *((zp_ptr_04 as u16 + y as u16) as *u8);
+
+
+// BLOCK 00020a      e0 03                 cpx #0x03
+// BLOCK             b0 03                 bcs 0x008211
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if x < 3;
+// BLOCK 000211      e4 00                 cpx 0x00
+// BLOCK             b0 03                 bcs 0x008218
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if x < zp_u8_00;
+// BLOCK 000218      ec 00 02              cpx 0x0200
+// BLOCK             b0 03                 bcs 0x008220
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if x < ram_u8_200;
+// BLOCK 000220      c0 05                 cpy #0x05
+// BLOCK             b0 03                 bcs 0x008227
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if y < 5;
+// BLOCK 000227      c4 00                 cpy 0x00
+// BLOCK             b0 03                 bcs 0x00822e
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if y < zp_u8_00;
+// BLOCK 00022e      cc 00 02              cpy 0x0200
+// BLOCK             b0 03                 bcs 0x008236
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if y < ram_u8_200;
+
+// BLOCK 000236      c9 07                 cmp #0x07
+// BLOCK             b0 03                 bcs 0x00823d
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if 7 > a;
+// BLOCK 00023d      d9 08 00              cmp 0x0008,y
+// BLOCK             b0 03                 bcs 0x008245
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if zp_block_08[y] > a;
+// BLOCK 000245      d9 06 02              cmp 0x0206,y
+// BLOCK             b0 03                 bcs 0x00824d
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if ram_block_206[y] > a;
+// BLOCK 00024d      e4 00                 cpx 0x00
+// BLOCK             b0 03                 bcs 0x008254
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if zp_u8_00 > x;
+// BLOCK 000254      cc 00 02              cpy 0x0200
+// BLOCK             b0 03                 bcs 0x00825c
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if ram_u8_200 > y;
+
+// BLOCK 00025c      c9 09                 cmp #0x09
+// BLOCK             b0 03                 bcs 0x008263
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if !(a >= 9);
+// BLOCK 000263      c9 0b                 cmp #0x0b
+// BLOCK             b0 03                 bcs 0x00826a
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if !(11 <= a);
+
+
+
+// BLOCK 00026a      c9 01                 cmp #0x01
+// BLOCK             90 03                 bcc 0x008271
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a >= 1;
+// BLOCK 000271      c5 00                 cmp 0x00
+// BLOCK             90 03                 bcc 0x008278
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a >= zp_u8_00;
+// BLOCK 000278      d5 08                 cmp 0x08,x
+// BLOCK             90 03                 bcc 0x00827f
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a >= zp_block_08[x];
+// BLOCK 00027f      d9 08 00              cmp 0x0008,y
+// BLOCK             90 03                 bcc 0x008287
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a >= zp_block_08[y];
+// BLOCK 000287      cd 00 02              cmp 0x0200
+// BLOCK             90 03                 bcc 0x00828f
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a >= ram_u8_200;
+// BLOCK 00028f      dd 06 02              cmp 0x0206,x
+// BLOCK             90 03                 bcc 0x008297
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a >= ram_block_206[x];
+// BLOCK 000297      d9 06 02              cmp 0x0206,y
+// BLOCK             90 03                 bcc 0x00829f
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a >= ram_block_206[y];
+// BLOCK 00029f      c1 20                 cmp (0x20,x)
+// BLOCK             90 03                 bcc 0x0082a6
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a >= *(*((&zp_array_ptr_20 as u16 + x as u16) as *u16) as *u8);
+// BLOCK 0002a6      d1 04                 cmp (0x04),y
+// BLOCK             90 03                 bcc 0x0082ad
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if a >= *((zp_ptr_04 as u16 + y as u16) as *u8);
+
+// BLOCK 0002ad      e0 03                 cpx #0x03
+// BLOCK             90 03                 bcc 0x0082b4
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if x >= 3;
+// BLOCK 0002b4      e4 00                 cpx 0x00
+// BLOCK             90 03                 bcc 0x0082bb
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if x >= zp_u8_00;
+// BLOCK 0002bb      ec 00 02              cpx 0x0200
+// BLOCK             90 03                 bcc 0x0082c3
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if x >= ram_u8_200;
+// BLOCK 0002c3      c0 05                 cpy #0x05
+// BLOCK             90 03                 bcc 0x0082ca
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if y >= 5;
+// BLOCK 0002ca      c4 00                 cpy 0x00
+// BLOCK             90 03                 bcc 0x0082d1
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if y >= zp_u8_00;
+// BLOCK 0002d1      cc 00 02              cpy 0x0200
+// BLOCK             90 03                 bcc 0x0082d9
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if y >= ram_u8_200;
+
+// BLOCK 0002d9      c9 07                 cmp #0x07
+// BLOCK             90 03                 bcc 0x0082e0
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if 7 <= a;
+// BLOCK 0002e0      cd 00 02              cmp 0x0200
+// BLOCK             90 03                 bcc 0x0082e8
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if ram_u8_200 <= a;
+// BLOCK 0002e8      dd 06 02              cmp 0x0206,x
+// BLOCK             90 03                 bcc 0x0082f0
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if ram_block_206[x] <= a;
+// BLOCK 0002f0      e4 00                 cpx 0x00
+// BLOCK             90 03                 bcc 0x0082f7
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if zp_u8_00 <= x;
+// BLOCK 0002f7      cc 00 02              cpy 0x0200
+// BLOCK             90 03                 bcc 0x0082ff
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if ram_u8_200 <= y;
+
+// BLOCK 0002ff      c9 09                 cmp #0x09
+// BLOCK             90 03                 bcc 0x008306
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if !(a < 9);
+// BLOCK 000306      c9 0b                 cmp #0x0b
+// BLOCK             90 03                 bcc 0x00830d
+// BLOCK             4c 00 80              jmp 0x8000
+    ^goto FarLabel if !(11 > a);
+
+
+// BLOCK 00030d      4c ed fe              jmp 0xfeed
+    ^goto external_func;
+
+// BLOCK             6c 20 02              jmp (0x0220)
+    goto ram_func_ptr_220;
+// BLOCK             6c 34 12              jmp (0x1234)
+    goto *(0x1234 as *func);
+}
+
+// BLOCK ff
+}
+

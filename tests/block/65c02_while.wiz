@@ -1,0 +1,262 @@
+// SYSTEM 65c02 wdc65c02 rockwell65c02 huc6280
+//
+// Opcodes tested from site: http://6502.org/tutorials/6502opcodes.html
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -asnes -m0x8000 65c02_while.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+in prg {
+
+// ANNOY radare2 does not have a 65c02 disassembler
+// the following line forces the radare2 65816 disassembler to use 8 bit A/X.
+const mem8idx8 : [u8] = [0xe2, 0x30];
+
+func far_while_tests {
+// BLOCK 000002      f0 03                 beq 0x008007
+// BLOCK             4c 23 80              jmp 0x8023
+// BLOCK 000007      b0 03                 bcs 0x00800c
+// BLOCK             4c 20 80              jmp 0x8020
+// BLOCK 00000c      30 03                 bmi 0x008011
+// BLOCK             4c 1d 80              jmp 0x801d
+// BLOCK 000011      70 03                 bvs 0x008016
+// BLOCK             4c 1a 80              jmp 0x801a
+// BLOCK             ea                    nop
+// BLOCK             4c 11 80              jmp 0x8011
+// BLOCK             4c 0c 80              jmp 0x800c
+// BLOCK             4c 07 80              jmp 0x8007
+// BLOCK             4c 02 80              jmp 0x8002
+    ^while zero {
+        ^while carry {
+            ^while negative {
+                ^while overflow {
+                    nop();
+                }
+            }
+        }
+    }
+
+// BLOCK 000023      d0 03                 bne 0x008028
+// BLOCK             4c 44 80              jmp 0x8044
+// BLOCK 000028      90 03                 bcc 0x00802d
+// BLOCK             4c 41 80              jmp 0x8041
+// BLOCK 00002d      10 03                 bpl 0x008032
+// BLOCK             4c 3e 80              jmp 0x803e
+// BLOCK 000032      50 03                 bvc 0x008037
+// BLOCK             4c 3b 80              jmp 0x803b
+// BLOCK             ea                    nop
+// BLOCK             4c 32 80              jmp 0x8032
+// BLOCK             4c 2d 80              jmp 0x802d
+// BLOCK             4c 28 80              jmp 0x8028
+// BLOCK             4c 23 80              jmp 0x8023
+    ^while !zero {
+        ^while !carry {
+            ^while !negative {
+                ^while !overflow {
+                    nop();
+                }
+            }
+        }
+    }
+
+
+
+// BLOCK 000044      ad 00 02              lda 0x0200
+// BLOCK             f0 03                 beq 0x00804c
+// BLOCK             4c 5e 80              jmp 0x805e
+// BLOCK 00004c      ea                    nop
+// BLOCK             cd 01 02              cmp 0x0201
+// BLOCK             f0 03                 beq 0x008055
+// BLOCK             4c 5e 80              jmp 0x805e
+// BLOCK 000055      cd 01 02              cmp 0x0201
+// BLOCK             d0 ea                 bne 0x008044
+// BLOCK             ea                    nop
+// BLOCK             4c 44 80              jmp 0x8044
+    ^while {a = ram_u8_200;} && zero {
+        nop();
+        ^break if a != ram_u8_201;
+        continue if a != ram_u8_201;
+        nop();
+    }
+
+// BLOCK 00005e      cd 01 02              cmp 0x0201
+// BLOCK             b0 03                 bcs 0x008066
+// BLOCK             4c 78 80              jmp 0x8078
+// BLOCK 000066      ea                    nop
+// BLOCK             ec 01 02              cpx 0x0201
+// BLOCK             90 0c                 bcc 0x008078
+// BLOCK             ec 01 02              cpx 0x0201
+// BLOCK             b0 03                 bcs 0x008074
+// BLOCK             4c 5e 80              jmp 0x805e
+// BLOCK 000074      ea                    nop
+// BLOCK             4c 5e 80              jmp 0x805e
+    ^while a >= ram_u8_201 {
+        nop();
+        break if x < ram_u8_201;
+        ^continue if x < ram_u8_201;
+        nop();
+    }
+
+// BLOCK 000078      e0 0a                 cpx #0x0a
+// BLOCK             90 03                 bcc 0x00807f
+// BLOCK             4c 88 80              jmp 0x8088
+// BLOCK 00007f      ea                    nop
+// BLOCK             80 06                 bra 0x008088
+// BLOCK             80 f4                 bra 0x008078
+// BLOCK             ea                    nop
+// BLOCK             4c 78 80              jmp 0x8078
+    ^while x < 10 {
+        nop();
+        break;
+        continue;
+        nop();
+    }
+
+
+
+// BLOCK 000088      e8                    inx
+// BLOCK 000089      4c 88 80              jmp 0x8088
+    ^while true {
+        x++;
+    }
+
+// ::BUG should not be evaluated::
+// BLOCK 00008c      4c 98 80              jmp 0x8098
+// BLOCK             ea                    nop
+// BLOCK             80 06                 bra 0x008098
+// BLOCK             80 f8                 bra 0x00808c
+// BLOCK             ea                    nop
+// BLOCK             4c 8c 80              jmp 0x808c
+    ^while false {
+        nop();
+        break;
+        continue;
+        nop();
+    }
+
+// BLOCK 000098      60                    rts
+}
+
+
+
+func while_tests {
+// BLOCK 000099      d0 0f                 bne 0x0080aa
+// BLOCK 00009b      90 0b                 bcc 0x0080a8
+// BLOCK 00009d      10 07                 bpl 0x0080a6
+// BLOCK 00009f      50 03                 bvc 0x0080a4
+// BLOCK             ea                    nop
+// BLOCK             80 fb                 bra 0x00809f
+// BLOCK             80 f7                 bra 0x00809d
+// BLOCK             80 f3                 bra 0x00809b
+// BLOCK             80 ef                 bra 0x008099
+    while zero {
+        while carry {
+            while negative {
+                while overflow {
+                    nop();
+                }
+            }
+        }
+    }
+
+// BLOCK             f0 0f                 beq 0x0080bb
+// BLOCK             b0 0b                 bcs 0x0080b9
+// BLOCK             30 07                 bmi 0x0080b7
+// BLOCK             70 03                 bvs 0x0080b5
+// BLOCK             ea                    nop
+// BLOCK             80 fb                 bra 0x0080b0
+// BLOCK             80 f7                 bra 0x0080ae
+// BLOCK             80 f3                 bra 0x0080ac
+// BLOCK             80 ef                 bra 0x0080aa
+    while !zero {
+        while !carry {
+            while !negative {
+                while !overflow {
+                    nop();
+                }
+            }
+        }
+    }
+
+
+
+// BLOCK 0000bb      ad 00 02              lda 0x0200
+// BLOCK             d0 0e                 bne 0x0080ce
+// BLOCK             ea                    nop
+// BLOCK             cd 01 02              cmp 0x0201
+// BLOCK             d0 08                 bne 0x0080ce
+// BLOCK             cd 01 02              cmp 0x0201
+// BLOCK             d0 f0                 bne 0x0080bb
+// BLOCK             ea                    nop
+// BLOCK             80 ed                 bra 0x0080bb
+    while {a = ram_u8_200;} && zero {
+        nop();
+        break if a != ram_u8_201;
+        continue if a != ram_u8_201;
+        nop();
+    }
+
+// BLOCK 0000ce      cd 01 02              cmp 0x0201
+// BLOCK             90 0e                 bcc 0x0080e1
+// BLOCK             ea                    nop
+// BLOCK             ec 01 02              cpx 0x0201
+// BLOCK             90 08                 bcc 0x0080e1
+// BLOCK             ec 01 02              cpx 0x0201
+// BLOCK             90 f0                 bcc 0x0080ce
+// BLOCK             ea                    nop
+// BLOCK             80 ed                 bra 0x0080ce
+    while a >= ram_u8_201 {
+        nop();
+        break if x < ram_u8_201;
+        continue if x < ram_u8_201;
+        nop();
+    }
+
+// BLOCK 0000e1      e0 0a                 cpx #0x0a
+// BLOCK             b0 08                 bcs 0x0080ed
+// BLOCK             ea                    nop
+// BLOCK             80 05                 bra 0x0080ed
+// BLOCK             80 f7                 bra 0x0080e1
+// BLOCK             ea                    nop
+// BLOCK             80 f4                 bra 0x0080e1
+    while x < 10 {
+        nop();
+        break;
+        continue;
+        nop();
+    }
+
+
+// BLOCK 0000ed      ea                    nop
+// BLOCK             80 fd                 bra 0x0080ed
+    while true {
+        nop();
+    }
+
+
+
+// ::BUG should not be evaluated::
+// BLOCK 0000f0      80 08                 bra 0x0080fa
+// BLOCK             ea                    nop
+// BLOCK             80 05                 bra 0x0080fa
+// BLOCK             80 f9                 bra 0x0080f0
+// BLOCK             ea                    nop
+// BLOCK             80 f6                 bra 0x0080f0
+    while false {
+        nop();
+        break;
+        continue;
+        nop();
+    }
+
+// BLOCK 0000fa      60                    rts
+}
+
+// BLOCK ff
+}
+

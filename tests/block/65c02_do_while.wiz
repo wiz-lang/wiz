@@ -1,0 +1,206 @@
+// SYSTEM 65c02 wdc65c02 rockwell65c02 huc6280
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -asnes -m0x8000 65c02_do_while.65c02.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+in prg {
+
+// ANNOY radare2 does not have a 65c02 disassembler
+// the following line forces the radare2 65816 disassembler to use 8 bit A/X.
+const mem8idx8 : [u8] = [0xe2, 0x30];
+
+
+func far_do_while_tests {
+// BLOCK 000002      ea                    nop
+// BLOCK             d0 03                 bne 0x008008
+// BLOCK             4c 02 80              jmp 0x8002
+// BLOCK 000008      90 03                 bcc 0x00800d
+// BLOCK             4c 02 80              jmp 0x8002
+// BLOCK 00000d      10 03                 bpl 0x008012
+// BLOCK             4c 02 80              jmp 0x8002
+// BLOCK 000012      50 03                 bvc 0x008017
+// BLOCK             4c 02 80              jmp 0x8002
+    ^do {
+        ^do {
+            ^do {
+                ^do {
+                    nop();
+                } while zero;
+            } while carry;
+        } while negative;
+    } while overflow;
+
+
+
+// BLOCK 000017      ea                    nop
+// BLOCK             f0 03                 beq 0x00801d
+// BLOCK             4c 17 80              jmp 0x8017
+// BLOCK 00001d      b0 03                 bcs 0x008022
+// BLOCK             4c 17 80              jmp 0x8017
+// BLOCK 000022      30 03                 bmi 0x008027
+// BLOCK             4c 17 80              jmp 0x8017
+// BLOCK 000027      70 03                 bvs 0x00802c
+// BLOCK             4c 17 80              jmp 0x8017
+    ^do {
+        ^do {
+            ^do {
+                ^do {
+                    nop();
+                } while !zero;
+            } while !carry;
+        } while !negative;
+    } while !overflow;
+
+
+
+// BLOCK 00002c      ea                    nop
+// BLOCK             e0 05                 cpx #0x05
+// BLOCK             d0 03                 bne 0x008034
+// BLOCK             4c 44 80              jmp 0x8044
+// BLOCK 000034      e0 06                 cpx #0x06
+// BLOCK             d0 03                 bne 0x00803b
+// BLOCK             4c 3c 80              jmp 0x803c
+// BLOCK 00003b      ea                    nop
+// BLOCK 00003c      ce 01 02              dec 0x0201
+// BLOCK             f0 03                 beq 0x008044
+// BLOCK             4c 2c 80              jmp 0x802c
+    ^do {
+        nop();
+        ^break if x == 5;
+        ^continue if x == 6;
+        nop();
+    } while { --ram_u8_201; } && !zero;
+
+
+
+// BLOCK 000044      ea                    nop
+// BLOCK             80 06                 bra 0x00804d
+// BLOCK             80 01                 bra 0x00804a
+// BLOCK             ea                    nop
+// BLOCK 00004a      4c 44 80              jmp 0x8044
+    ^do {
+        nop();
+        break;
+        continue;
+        nop();
+    } while true;
+
+// BLOCK 00004d      ea                    nop
+// BLOCK             80 03                 bra 0x008053
+// BLOCK             80 01                 bra 0x008053
+// BLOCK             ea                    nop
+    ^do {
+        nop();
+        break;
+        continue;
+        nop();
+    } while false;
+
+
+// BLOCK 000053      60                    rts
+}
+
+
+
+func do_while_tests {
+// BLOCK 000054      ea                    nop
+// BLOCK             f0 fd                 beq 0x008054
+// BLOCK             b0 fb                 bcs 0x008054
+// BLOCK             30 f9                 bmi 0x008054
+// BLOCK             70 f7                 bvs 0x008054
+    do {
+        do {
+            do {
+                do {
+                    nop();
+                } while zero;
+            } while carry;
+        } while negative;
+    } while overflow;
+
+
+
+// BLOCK 00005d      ea                    nop
+// BLOCK             d0 fd                 bne 0x00805d
+// BLOCK             90 fb                 bcc 0x00805d
+// BLOCK             10 f9                 bpl 0x00805d
+// BLOCK             50 f7                 bvc 0x00805d
+    do {
+        do {
+            do {
+                do {
+                    nop();
+                } while !zero;
+            } while !carry;
+        } while !negative;
+    } while !overflow;
+
+
+
+// BLOCK 000066      ea                    nop
+// BLOCK             e0 05                 cpx #0x05
+// BLOCK             f0 0a                 beq 0x008075
+// BLOCK             e0 06                 cpx #0x06
+// BLOCK             f0 01                 beq 0x008070
+// BLOCK             c8                    iny
+// BLOCK 000070      ce 01 02              dec 0x0201
+// BLOCK             d0 f1                 bne 0x008066
+    do {
+        nop();
+
+        break if x == 5;
+        continue if x == 6;
+        y++;
+    } while { --ram_u8_201; } && !zero;
+
+
+
+// BLOCK 000075      a2 01                 ldx #0x01
+// BLOCK 000077      ea                    nop
+// BLOCK             e8                    inx
+// BLOCK             e0 40                 cpx #0x40
+// BLOCK             90 fa                 bcc 0x008077
+    x = 1;                                                  // cannot use `x = 0` in huc6280
+    do {
+        nop();
+    } while { x++; } && x < 64;
+
+
+
+// BLOCK 00007d      ea                    nop
+// BLOCK             80 05                 bra 0x008085
+// BLOCK             80 01                 bra 0x008083
+// BLOCK             ea                    nop
+// BLOCK 000083      80 f8                 bra 0x00807d
+    do {
+        nop();
+        break;
+        continue;
+        nop();
+    } while true;
+
+// BLOCK 000085      ea                    nop
+// BLOCK             80 05                 bra 0x00808d
+// BLOCK             80 fb                 bra 0x008085
+// BLOCK             80 01                 bra 0x00808d
+// BLOCK             ea                    nop
+    do {
+        nop();
+        break;
+        continue;
+        nop();
+    } while false;
+
+
+// BLOCK 00008d      60                    rts
+}
+
+// BLOCK ff
+}
+

@@ -1,0 +1,64 @@
+// SYSTEM  6502 65c02 wdc65c02 rockwell65c02 huc6280
+//
+// NOTE: does not use zero-page instructions so huc6280 can be tested
+//
+// Opcodes tested from site: http://6502.org/tutorials/6502opcodes.html
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -a6502 -m0x8000 6502_func_fallthrough.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+// BLOCK 000000
+in prg {
+
+
+#[fallthrough]
+func fallthrough_test_1() {
+// BLOCK 000000      ad 00 02              lda 0x0200
+    a = ram_u8_200;
+}
+func fallthrough_test_1_a(value : u8 in a) {
+// BLOCK 000003      8d 06 02              sta 0x0206
+// BLOCK             60                    rts
+    ram_block_206[0] = value;
+}
+
+
+
+func fallthrough_test_2() {
+// BLOCK 000007      ad 01 02              lda 0x0201
+    return fallthrough_test_2_a(a = ram_u8_201);
+}
+func fallthrough_test_2_a(value : u8 in a) {
+// BLOCK 00000a      8d 07 02              sta 0x0207
+// BLOCK             60                    rts
+    ram_block_206[1] = value;
+}
+
+
+func call_test() {
+// BLOCK 00000e      20 00 80              jsr 0x8000
+    fallthrough_test_1();
+
+// BLOCK             a9 01                 lda #0x01
+// BLOCK             20 03 80              jsr 0x8003
+    fallthrough_test_1_a(1);
+
+// BLOCK             20 07 80              jsr 0x8007
+    fallthrough_test_2();
+
+// BLOCK             a9 02                 lda #0x02
+// BLOCK             20 0a 80              jsr 0x800a
+    fallthrough_test_2_a(2);
+
+// BLOCK             60                    rts
+}
+
+// BLOCK ff
+}
+
