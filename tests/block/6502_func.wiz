@@ -1,5 +1,5 @@
-// SYSTEM  6502 65c02 wdc65c02 rockwell65c02
-// ::TODO huc6280 wdc65816::
+// SYSTEM  6502 65c02 wdc65c02 rockwell65c02 huc6280
+// ::TODO wdc65816::
 //
 // Disassembly created using radare2
 //
@@ -81,13 +81,15 @@ func test_multiple_args(arg : u8 in a, index1 : u8 in x, index2 : u8 in y) : u8 
 
 
 func test_variable_args(value1 : u8 in zp_u8_00, value2 : u8 in ram_u8_200, store_ptr : *u8 in zp_ptr_04) {
-// BLOCK 000022      a0 00                 ldy #0x00
+// BLOCK 000022      a0 01                 ldy #0x01
 // BLOCK             a5 00                 lda 0x00
 // BLOCK             18                    clc
 // BLOCK             6d 00 02              adc 0x0200
 // BLOCK             91 04                 sta (0x04),y
 // BLOCK             60                    rts
-    y = 0;
+
+    // Y must not be 0 for huc6280 test
+    y = 1;
     *((zp_ptr_04 as u16 + y as u16) as *u8) = a = value1 + value2;
 }
 

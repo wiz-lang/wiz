@@ -1,5 +1,5 @@
-// SYSTEM  6502 65c02 wdc65c02 rockwell65c02
-// ::TODO huc6280::
+// SYSTEM  6502 65c02 wdc65c02 rockwell65c02 huc6280
+// ::TODO move zp_block_08[y] into a separate file for huc6280 test::
 //
 // Opcodes tested from site: http://6502.org/tutorials/6502opcodes.html
 //
