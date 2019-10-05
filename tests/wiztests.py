@@ -96,22 +96,21 @@ def read_test_file(filename):
 
 MISMATCHES_SHOWN_PER_BLOCK = 6
 
-def block_test(test, bin_fn, process, pout, perr):
+def block_test(test, bin_fn, returncode, pout, perr):
     errors = list()
 
-    if process.returncode != 0:
+    if returncode != 0:
         pout = pout.decode('utf-8')
         perr = perr.decode('utf-8')
 
-        errors.append(f"wiz returned failure code {process.returncode} in a block test")
-        errors.append('> ' + ' '.join(shlex.quote(x) for x in process.args))
+        errors.append(f"wiz returned failure code {returncode} in a block test")
         if pout:
             errors.append(pout)
         if perr:
             errors.append(perr)
 
     else:
-        # process.returncode == 0
+        # returncode == 0
 
         with open(bin_fn, 'br') as fp:
             output_binary = fp.read()
@@ -151,10 +150,10 @@ def lines_set_to_string(s : set):
 
 
 
-def error_test(test, process, pout, perr):
+def error_test(test, returncode, pout, perr):
     errors = list()
 
-    if process.returncode != 0:
+    if returncode != 0:
         pout = pout.decode('utf-8')
         perr = perr.decode('utf-8')
 
@@ -175,7 +174,6 @@ def error_test(test, process, pout, perr):
 
     else:
         errors.append(f"wiz returned EXIT_SUCCESS in an error test")
-        errors.append('> ' + ' '.join(shlex.quote(x) for x in process.args))
 
     return errors
 
@@ -187,36 +185,46 @@ WIZ_OUTPUT_DIR = None
 tests_passed = 0
 tests_failed = 0
 
-def do_test(test, system):
-    global tests_failed, tests_passed
+def do_test(test):
+    global tests_passed, tests_failed
 
-    print(f"{test.filename} {system}:", end='')
+    passed = True
+    print(f"{test.filename}:", end='')
 
-    bin_fn = os.path.join(WIZ_OUTPUT_DIR, os.path.splitext(os.path.basename(test.filename))[0] + '.' + system + '.bin')
+    for system in test.systems:
+        bin_fn = os.path.join(WIZ_OUTPUT_DIR, os.path.splitext(os.path.basename(test.filename))[0] + '.' + system + '.bin')
 
-    process = subprocess.Popen(
-        (WIZ_EXECUTABLE, "--system", system, "-o", bin_fn, test.filename),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
-    )
-    pout, perr = process.communicate()
-
-
-    if test.blocks:
-        errors = block_test(test, bin_fn, process, pout, perr)
-    else:
-        errors = error_test(test, process, pout, perr)
+        process = subprocess.Popen(
+            (WIZ_EXECUTABLE, "--system", system, "-o", bin_fn, test.filename),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        pout, perr = process.communicate()
 
 
-    if not errors:
-        tests_passed += 1
+        if test.blocks:
+            errors = block_test(test, bin_fn, process.returncode, pout, perr)
+        else:
+            errors = error_test(test, process.returncode, pout, perr)
+
+        if errors:
+            if passed:
+                # only show FAILED once
+                print(" FAILED")
+                passed = False
+
+            tests_failed += 1
+            print('\t> ' + ' '.join(shlex.quote(x) for x in process.args))
+            for e in errors:
+                print('\t', e.replace('\n', '\n\t'), sep='')
+            print()
+        else:
+            tests_passed += 1
+
+    if passed:
         print(" PASSED")
-    else:
-        tests_failed += 1
-        print(" FAILED")
-        for e in errors:
-            print('\t', e.replace('\n', '\n\t'), sep='')
-        print()
+
+    return passed
 
 
 
@@ -228,8 +236,7 @@ def do_test_files(test_files):
         tests.append(read_test_file(test_file))
 
     for test in tests:
-        for system in test.systems:
-            do_test(test, system)
+        do_test(test)
 
 
 
