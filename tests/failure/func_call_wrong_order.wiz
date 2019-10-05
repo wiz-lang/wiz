@@ -1,0 +1,23 @@
+// SYSTEM  all
+
+bank code @ 0x8000 : [constdata;  0x8000];
+
+in code {
+
+#[compile_if(__has("__cpu_z80") || __has("__cpu_gb"))] let x = b;
+#[compile_if(__has("__cpu_z80") || __has("__cpu_gb"))] let y = c;
+
+
+func call(arg0 : u8 in a, arg1 : u8 in x, arg2 : u8 in y) { }
+
+func caller() {
+    call(a, x, y);
+    call(a, y, x);  // ERROR
+    call(x, y, a);  // ERROR
+    call(y, x, a);  // ERROR
+    call(x, a, y);  // ERROR
+    call(y, a, x);  // ERROR
+}
+
+}
+

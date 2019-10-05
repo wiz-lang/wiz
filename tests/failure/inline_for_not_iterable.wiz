@@ -1,0 +1,22 @@
+// SYSTEM  all
+
+bank code @ 0x8000 : [constdata;  0x8000];
+
+in code {
+
+func test() {
+    inline for let i in 0 .. 4 {
+        a = i;
+    }
+
+    inline for let i in 3 {     // ERROR
+        a = i;
+    }
+
+    inline for let i in [1, 3, 5, 7, 9] {
+        a = i;
+    }
+}
+
+}
+

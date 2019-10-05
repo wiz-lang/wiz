@@ -1,0 +1,8 @@
+// SYSTEM  all
+
+let constant0 = 1;
+let dupe      = 0;  // REFERENCE
+let constant1 = 1;
+let dupe      = 0;  // ERROR
+let constant2 = 1;
+

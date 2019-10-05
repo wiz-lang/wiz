@@ -9,8 +9,9 @@ import shlex
 
 from collections import namedtuple
 
+ALL_SYSTEMS = ['6502', '65c02', 'rockwell65c02', 'wdc65c02', 'huc6280', 'wdc65816', 'spc700', 'z80', 'gb' ]
 
-BlockTestFile = namedtuple('BlockTestFile', ('filename', 'systems', 'blocks'))
+TestFile = namedtuple('TestFile', ('filename', 'systems', 'blocks', 'errors', 'references'))
 BlockData = namedtuple('BlockData', ('address', 'data'))
 
 def read_test_file(filename):
@@ -22,6 +23,8 @@ def read_test_file(filename):
 
     systems = list()
     blocks = list()
+    errors = set()
+    references = set()
 
     previous_block = None
 
@@ -41,6 +44,12 @@ def read_test_file(filename):
                 )
 
                 m = _block_regex.search(line)
+
+            if '// REFERENCE' in line:
+                references.add(lineno)
+
+            if '// ERROR' in line:
+                errors.add(lineno)
 
             if '// BLOCK' in line:
                 m = _block_regex.search(line)
@@ -65,19 +74,115 @@ def read_test_file(filename):
                         raise ValueError(f"{filename}:{lineno}: First `// BLOCK tag` must contain an address")
                     previous_block.data.extend(data)
 
+
+    if 'all' in systems:
+        systems = ALL_SYSTEMS
+
     if not systems:
         raise ValueError(f"{filename}: Expected at least one `// SYSTEM` tag")
 
-    if not blocks:
-        raise ValueError(f"{filename}: Expected at least one `// BLOCK` tag")
+    if blocks and errors:
+        raise ValueError(f"{filename}: Cannot have a `// BLOCK` and a `// ERROR` tags in the same test")
 
-    return BlockTestFile(filename, systems, blocks)
+    if blocks and references:
+        raise ValueError(f"{filename}: Cannot have a `// BLOCK` and a `// REFERENCE` tags in the same test")
+
+    if not blocks and not errors:
+        raise ValueError(f"{filename}: Expected at least one `// BLOCK` or `// ERROR` tag")
+
+    return TestFile(filename, systems, blocks, errors, references)
+
+
+
+MISMATCHES_SHOWN_PER_BLOCK = 6
+
+def block_test(test, bin_fn, process, pout, perr):
+    errors = list()
+
+    if process.returncode != 0:
+        pout = pout.decode('utf-8')
+        perr = perr.decode('utf-8')
+
+        errors.append(f"wiz returned failure code {process.returncode} in a block test")
+        errors.append('> ' + ' '.join(shlex.quote(x) for x in process.args))
+        if pout:
+            errors.append(pout)
+        if perr:
+            errors.append(perr)
+
+    else:
+        # process.returncode == 0
+
+        with open(bin_fn, 'br') as fp:
+            output_binary = fp.read()
+
+        last_byte = max([b.address + len(b.data) for b in test.blocks])
+
+        if len(output_binary) < last_byte:
+            errors.append(f"{bin_fn}: expected at least {last_byte} bytes in output file")
+        else:
+            for block in test.blocks:
+                if not output_binary.startswith(block.data, block.address):
+                    mismatches = 0
+                    for i, expected_byte in enumerate(block.data):
+                        addr = block.address + i
+                        got_byte = output_binary[addr]
+                        if got_byte != expected_byte:
+                            if mismatches < MISMATCHES_SHOWN_PER_BLOCK:
+                                errors.append(f"{bin_fn} 0x{addr:06x}: expected 0x{expected_byte:02x} got 0x{got_byte:02x}")
+                            mismatches += 1
+                    if mismatches > MISMATCHES_SHOWN_PER_BLOCK:
+                        errors.append(f"+ {mismatches - MISMATCHES_SHOWN_PER_BLOCK} more incorrect bytes")
+
+    return errors
+
+
+
+def lines_set_to_string(s : set):
+    lines = list(s)
+    lines.sort()
+    lines.reverse()
+
+    if len(lines) == 1:
+        return f"line {lines[0]}"
+    else:
+        lines = ', '.join(map(str, lines))
+        return f"lines {lines}"
+
+
+
+def error_test(test, process, pout, perr):
+    errors = list()
+
+    if process.returncode != 0:
+        pout = pout.decode('utf-8')
+        perr = perr.decode('utf-8')
+
+        def test_perr(name, match_string, expected):
+            regex = re.compile(r"^\s*" + re.escape(test.filename) + r":(\d+): " + match_string + ":", re.MULTILINE)
+            given = set(int(m.group(1)) for m in regex.finditer(perr))
+
+            missing    = expected - given
+            unexpected = given - expected
+
+            if missing:
+                errors.append(f"Missing {name} on {lines_set_to_string(missing)}")
+            if unexpected:
+                errors.append(f"Unexpected {name} on {lines_set_to_string(unexpected)}")
+
+        test_perr("error", 'error', test.errors)
+        test_perr("reference", 'note', test.references)
+
+    else:
+        errors.append(f"wiz returned EXIT_SUCCESS in an error test")
+        errors.append('> ' + ' '.join(shlex.quote(x) for x in process.args))
+
+    return errors
 
 
 
 WIZ_EXECUTABLE = None
 WIZ_OUTPUT_DIR = None
-MISMATCHES_SHOWN_PER_BLOCK = 6
 
 tests_passed = 0
 tests_failed = 0
@@ -97,46 +202,11 @@ def do_test(test, system):
     pout, perr = process.communicate()
 
 
-    errors = list()
-
-
-    if process.returncode != 0:
-        pout = pout.decode('utf-8')
-        perr = perr.decode('utf-8')
-
-        # ::TODO failure tests::
-
-        errors.append(f"wiz returned failure code {process.returncode}")
-        errors.append('> ' + ' '.join(shlex.quote(x) for x in process.args))
-        if pout:
-            errors.append(pout)
-        if perr:
-            errors.append(perr)
-
+    if test.blocks:
+        errors = block_test(test, bin_fn, process, pout, perr)
     else:
-        # process.returncode == 0
+        errors = error_test(test, process, pout, perr)
 
-        if test.blocks:
-            with open(bin_fn, 'br') as fp:
-                output_binary = fp.read()
-
-            last_byte = max([b.address + len(b.data) for b in test.blocks])
-
-            if len(output_binary) < last_byte:
-                errors.append(f"{bin_fn}: expected at least {last_byte} bytes in output file")
-            else:
-                for block in test.blocks:
-                    if not output_binary.startswith(block.data, block.address):
-                        mismatches = 0
-                        for i, expected_byte in enumerate(block.data):
-                            addr = block.address + i
-                            got_byte = output_binary[addr]
-                            if got_byte != expected_byte:
-                                if mismatches < MISMATCHES_SHOWN_PER_BLOCK:
-                                    errors.append(f"{bin_fn} 0x{addr:06x}: expected 0x{expected_byte:02x} got 0x{got_byte:02x}")
-                                mismatches += 1
-                        if mismatches > MISMATCHES_SHOWN_PER_BLOCK:
-                            errors.append(f"+ {mismatches - MISMATCHES_SHOWN_PER_BLOCK} more incorrect bytes")
 
     if not errors:
         tests_passed += 1

@@ -1,0 +1,21 @@
+// SYSTEM  all
+
+bank code @ 0x8000 : [constdata;  0x8000];
+
+in code {
+
+inline func inline_break() {
+    break;                  // ERROR
+}
+
+func caller() {
+    while true {
+        inline_break();
+    }
+    do {
+        inline_break();
+    } while true;
+}
+
+}
+

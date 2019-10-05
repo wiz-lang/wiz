@@ -1,0 +1,17 @@
+// SYSTEM  6502 65c02 wdc65c02 rockwell65c02 huc6280
+// ::TODO wdc65816::
+
+// https://github.com/wiz-lang/wiz/issues/41
+
+bank code @ 0x8000 : [constdata;  0x8000];
+
+extern writeonly wo_register @ 0x4300 : u8;
+
+in code {
+
+func broken() {
+    wo_register = a << 1;   // ERROR
+}
+
+}
+

@@ -1,0 +1,14 @@
+// SYSTEM  all
+
+bank code @ 0x8000 : [constdata;  0x8000];
+
+in code {
+
+func fun0() { }
+func dupe() { }     // REFERENCE
+func fun1() { }
+func dupe() { }     // ERROR
+func fun2() { }
+
+}
+

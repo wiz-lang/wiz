@@ -1,0 +1,16 @@
+// SYSTEM  all
+
+bank code @ 0x8000 : [constdata;  0x8000];
+
+#[__INVALID__]          // ERROR
+in code {
+
+#[__INVALID__]          // ERROR
+func test() {
+    #[__INVALID__] {    // ERROR
+        a = 0;
+    }
+}
+
+}
+

@@ -1,0 +1,15 @@
+// SYSTEM  all
+
+let dupe      = 0;
+let constant0 = 1;
+let constant1 = 1;
+let constant2 = 1;
+
+namespace n {
+    let constant0 = 1;
+    let dupe      = 0;  // REFERENCE
+    let constant1 = 1;
+    let dupe      = 0;  // ERROR
+    let constant2 = 1;
+}
+

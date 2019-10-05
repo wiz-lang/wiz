@@ -1,0 +1,12 @@
+// SYSTEM  all
+
+// Have to test this one in a separate test as wiz exits on a
+// `could not resolve identifier` error before displaying the
+// `type iexpr has unknown storage size` error.
+
+bank zeropage @ 0x00 : [vardata;  0x100];
+
+in zeropage {
+    var inv1 : iexpr;            // ERROR
+}
+

@@ -1,0 +1,12 @@
+// SYSTEM  all
+
+bank zeropage @ 0x00      : [vardata;    0x100]; // REFERENCE
+bank stack    @ 0x100     : [vardata;    0x100];
+bank ram      @ 0x200     : [vardata;    0x600];
+bank prg      @ 0x8000    : [constdata; 0x8000];
+bank rom1     @ 0x018000  : [constdata; 0x8000]; // REFERENCE
+bank rom2     @ 0x028000  : [constdata; 0x8000];
+
+bank zeropage @ 0x00      : [vardata;    0x100]; // ERROR
+bank rom1     @ 0x8000    : [constdata; 0x8000]; // ERROR
+

@@ -1,0 +1,6 @@
+// SYSTEM  all
+
+namespace n {       // REFERENCE
+    namespace m {   // REFERENCE
+
+// ERROR

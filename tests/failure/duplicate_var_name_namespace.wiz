@@ -1,0 +1,19 @@
+// SYSTEM  all
+
+bank zeropage @ 0x00 : [vardata;  0x100];
+
+in zeropage {
+    var dupe : u8;
+    var var0 : u8;
+    var var1 : u8;
+    var var2 : u8;
+
+    namespace n {
+        var var0 : u8;
+        var dupe : u8;  // REFERENCE
+        var var1 : u8;
+        var dupe : u16; // ERROR
+        var var2 : u8;
+    }
+}
+

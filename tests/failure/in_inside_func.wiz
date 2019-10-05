@@ -1,0 +1,26 @@
+// SYSTEM  all
+
+bank zeropage @ 0x0000 : [constdata;   0x100];
+bank code     @ 0x8000 : [constdata;  0x8000];
+
+in code {
+
+// in statements are allowed inside in statements
+in zeropage {
+    var var0 : u8;
+    var var1 : u8;
+    var var2 : u8;
+}
+
+func f() {
+    in zeropage {       // ERROR
+        var var0 : u8;
+        var var1 : u8;
+        var var2 : u8;
+    }
+    a = var0;
+    a = var1;
+    a = var2;
+}
+
+}

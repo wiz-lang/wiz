@@ -1,0 +1,20 @@
+// SYSTEM  all
+
+bank zeropage @ 0x00 : [vardata;  0x100];
+
+in zeropage {
+    var var0    : bool;
+    var var1    : u8;
+    var var2    : u16;
+    var var3    : u24;
+    var var4    : u32;
+    var var5    : u64;
+    var inv0    : unknown_type;     // ERROR
+    var var6    : i8;
+    var var7    : i16;
+    var var8    : i24;
+    var var9    : i32;
+    var var10   : i64;
+    var inv1    : unknown_type;     // ERROR
+}
+

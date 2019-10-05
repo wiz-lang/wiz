@@ -1,0 +1,26 @@
+// SYSTEM  all
+
+bank code @ 0x8000 : [constdata;  0x8000];
+bank zp   @ 0x0000 : [constdata;  0x0010];
+
+in zp {
+    var zTmp0   : u8;
+    var zTmp1   : u8;
+    var zTmp2   : u8;
+}
+
+in code {
+
+func call(a1 : u8 in zTmp0, a2 : u8 in zTmp1, a3 : u8 in zTmp2) { }
+
+func caller() {
+    call(zTmp0, zTmp1, zTmp2);
+    call(zTmp0, zTmp2, zTmp1);  // ERROR
+    call(zTmp1, zTmp2, zTmp0);  // ERROR
+    call(zTmp2, zTmp1, zTmp0);  // ERROR
+    call(zTmp1, zTmp0, zTmp2);  // ERROR
+    call(zTmp2, zTmp0, zTmp1);  // ERROR
+}
+
+}
+

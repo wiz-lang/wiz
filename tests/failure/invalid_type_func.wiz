@@ -1,0 +1,20 @@
+// SYSTEM  all
+
+bank code @ 0x8000 : [constdata;  0x8000];
+
+in code {
+    func valid_0(arg : u8 in a) { }
+    func valid_1(arg : i8 in a) { }
+    func valid_2(arg : bool in a) { }
+    func invalid_0(arg : u16 in a) { }          // ERROR
+    func invalid_1(arg : u24 in a) { }          // ERROR
+    func invalid_2(arg : u32 in a) { }          // ERROR
+    func invalid_3(arg : u64 in a) { }          // ERROR
+    func invalid_4(arg : unknown_type in a) { } // ERROR
+    func invalid_5(arg : i16 in a) { }          // ERROR
+    func invalid_6(arg : i24 in a) { }          // ERROR
+    func invalid_7(arg : i32 in a) { }          // ERROR
+    func invalid_8(arg : i64 in a) { }          // ERROR
+    func invalid_9(arg : iexpr in a) { }        // ERROR
+}
+

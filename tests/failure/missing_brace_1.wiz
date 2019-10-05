@@ -1,0 +1,8 @@
+// SYSTEM  all
+
+bank code @ 0x8000 : [constdata;  0x8000];
+
+in code {       // REFERENCE
+    func f() {  // REFERENCE
+
+// ERROR
