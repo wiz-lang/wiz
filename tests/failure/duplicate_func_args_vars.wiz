@@ -1,0 +1,17 @@
+// SYSTEM  all
+
+bank zeropage @ 0x00   : [vardata;    0x100];
+bank code     @ 0x8000 : [constdata; 0x8000];
+
+in zeropage {
+    var tmp1, tmp2, tmp3 : u8;
+}
+
+in code {
+
+func f(arg0 : u8 in tmp1, arg1 : u8 in tmp2, arg2 : u8 in tmp3) { }
+func g(arg0 : u8 in tmp1, arg1 : u8 in tmp2, dupe : u8 in tmp2) { } // ERROR // REFERENCE
+func h(dupe : u8 in tmp1, arg2 : u8 in tmp2, dupe : u8 in tmp3) { } // ERROR // REFERENCE
+
+}
+

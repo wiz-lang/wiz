@@ -8,8 +8,8 @@ bank code @ 0x8000 : [constdata;  0x8000];
 in code {
 
 func f(arg0 : u8 in a, arg1 : u8 in x, arg2 : u8 in y) { }
-func g(arg0 : u8 in a, arg1 : u8 in x, dupe : u8 in a) { } // ERROR
-func h(dupe : u8 in a, arg2 : u8 in x, dupe : u8 in y) { } // ERROR
+func g(arg0 : u8 in a, arg1 : u8 in x, dupe : u8 in a) { } // ERROR // REFERENCE
+func h(dupe : u8 in a, arg2 : u8 in x, dupe : u8 in y) { } // ERROR // REFERENCE
 
 }
 
