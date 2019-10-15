@@ -1,0 +1,15 @@
+// SYSTEM  all
+
+bank code @ 0x8000 : [constdata;  0x8000];
+bank zeropage @ 0x0000 : [vardata; 0x100];
+
+in code {
+    func call() : bool in carry {
+        return true;
+    }
+
+    func caller() {
+        a = call(); // ERROR
+    }
+}
+

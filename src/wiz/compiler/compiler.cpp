@@ -296,8 +296,8 @@ namespace wiz {
                             + getTypeName(reducedHolder->info->type.get())
                             + "` is not compatible with element type `"
                             + getTypeName(reducedElementType.get())
-                            + "` for `" + getTypeName(reducedElementType.get())
-                            + " in <designated storage>` type",
+                            + "` of designated storage type `"
+							+ getTypeName(typeExpression) + "`",
                             reducedHolder->location);
                         return nullptr;
                     }
@@ -3118,7 +3118,21 @@ namespace wiz {
             }
             case TypeExpression::VariantType::typeIndexOf<TypeExpression::DesignatedStorage>(): {
                 const auto& designatedStorageType = variant.get<TypeExpression::DesignatedStorage>();
-                return getTypeName(designatedStorageType.elementType.get()) + " in <designated storage>";
+
+				std::string result = getTypeName(designatedStorageType.elementType.get()) + " in ";
+				if (const auto& holder = designatedStorageType.holder) {
+					if (const auto& resolvedIdentifier = holder->variant.tryGet<Expression::ResolvedIdentifier>()) {
+						result += getResolvedIdentifierName(resolvedIdentifier->definition, resolvedIdentifier->pieces);
+						return result;
+					} else if (const auto& identifier = holder->variant.tryGet<Expression::Identifier>()) {
+						const auto& pieces = identifier->pieces;
+						result += text::join(pieces.begin(), pieces.end(), ".");
+						return result;
+					}
+				}
+
+				result += "<designated storage>"; 
+				return result;
             }
             case TypeExpression::VariantType::typeIndexOf<TypeExpression::Function>(): {
                 const auto& functionType = variant.get<TypeExpression::Function>();
@@ -4830,15 +4844,19 @@ namespace wiz {
                     }
                 }
 
-                if (tailCall && resultDestination != nullptr) {
+                if (resultDestination != nullptr) {
                     const auto returnType = functionType.returnType.get();
 
-                    if (auto designatedStorageType = returnType->variant.tryGet<TypeExpression::DesignatedStorage>()) {
-                        emitAssignmentExpressionIr(resultDestination, designatedStorageType->holder.get(), location);
-                    } else {
-                        report->error("could not generate assignment for `func " + definition->name.toString() + "` result of type `" + getTypeName(returnType) + "`", location);
-                    }
-                }
+					if (const auto designatedStorageType = returnType->variant.tryGet<TypeExpression::DesignatedStorage>()) {
+						auto destOperand = createOperandFromExpression(resultDestination, true);
+						auto sourceOperand = createOperandFromExpression(designatedStorageType->holder.get(), true);
+
+						if (destOperand == nullptr || sourceOperand == nullptr || *destOperand != *sourceOperand) {
+							report->error("could not generate assignment for `func " + definition->name.toString() + "` result of type `" + getTypeName(returnType) + "`", location);
+							return false;
+						}
+					}
+				}
 
                 return true;
             } else if (definition->variant.is<Definition::BuiltinVoidIntrinsic>()) {
