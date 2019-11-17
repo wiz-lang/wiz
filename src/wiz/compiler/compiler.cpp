@@ -5882,13 +5882,15 @@ namespace wiz {
 
                 const auto beginLabelDefinition = createAnonymousLabelDefinition("$loop"_sv);                
                 const auto beginLabelReferenceExpression = expressionPool.add(resolveDefinitionExpression(beginLabelDefinition, {}, statement->location));
+                const auto continueLabelDefinition = createAnonymousLabelDefinition("$continue"_sv);
                 const auto endLabelDefinition = createAnonymousLabelDefinition("$endloop"_sv);
 
-                continueLabel = beginLabelDefinition;
+                continueLabel = continueLabelDefinition;
                 breakLabel = endLabelDefinition;
 
                 irNodes.addNew(IrNode::Label(beginLabelDefinition), statement->location);
                 emitStatementIr(doWhileStatement.body.get());
+                irNodes.addNew(IrNode::Label(continueLabelDefinition), reducedCondition->location);
                 if (!emitBranchIr(doWhileStatement.distanceHint, BranchKind::Goto, beginLabelReferenceExpression, nullptr, false, reducedCondition, reducedCondition->location)) {
                     report->error("could not generate branch instruction for " + statement->getDescription().toString(), statement->location);
                     break;
@@ -5978,9 +5980,10 @@ namespace wiz {
                 
                 const auto beginLabelDefinition = createAnonymousLabelDefinition("$loop"_sv);
                 const auto beginLabelReferenceExpression = expressionPool.add(resolveDefinitionExpression(beginLabelDefinition, {}, statement->location));
+                const auto continueLabelDefinition = createAnonymousLabelDefinition("$continue"_sv);
                 const auto endLabelDefinition = createAnonymousLabelDefinition("$endloop"_sv);
 
-                continueLabel = beginLabelDefinition;
+                continueLabel = continueLabelDefinition;
                 breakLabel = endLabelDefinition;
 
                 auto initAssignment = makeFwdUnique<Expression>(
@@ -6056,12 +6059,15 @@ namespace wiz {
                     break;
                 }               
 
+                // TODO: decrement-and-branch optimization if the instruction exists.
+
                 if (!emitExpressionStatementIr(reducedInitAssignment, reducedInitAssignment->location)) {
                     report->error("could not generate initial assignment instruction for " + statement->getDescription().toString(), statement->location);
                     break;
                 }
                 irNodes.addNew(IrNode::Label(beginLabelDefinition), statement->location);
                 emitStatementIr(forStatement.body.get());
+                irNodes.addNew(IrNode::Label(continueLabelDefinition), reducedCondition->location);
                 irNodes.addNew(IrNode::Code(incrementInstruction, std::move(incrementOperandRoots)), reducedCondition->location);
                 if (!emitBranchIr(forStatement.distanceHint, BranchKind::Goto, beginLabelReferenceExpression, nullptr, conditionNegated, reducedCondition, reducedCondition->location)) {
                     report->error("could not generate branch instruction for " + statement->getDescription().toString(), statement->location);
@@ -6176,7 +6182,6 @@ namespace wiz {
                 const auto beginLabelDefinition = createAnonymousLabelDefinition("$loop"_sv);
                 const auto endLabelDefinition = createAnonymousLabelDefinition("$endloop"_sv);
 
-                continueLabel = beginLabelDefinition;
                 breakLabel = endLabelDefinition;
 
                 irNodes.addNew(IrNode::Label(beginLabelDefinition), statement->location);
@@ -6185,6 +6190,10 @@ namespace wiz {
                     enterInlineSite(registeredInlineSites.addNew());
                     enterScope(getOrCreateStatementScope(StringView(), statement, currentScope));
 
+                    const auto continueLabelDefinition = createAnonymousLabelDefinition("$continue"_sv);
+                    irNodes.addNew(IrNode::Label(continueLabelDefinition), statement->location);
+
+                    continueLabel = continueLabelDefinition;
                     const auto body = inlineForStatement.body.get();
 
                     bool valid = reserveDefinitions(body) && resolveDefinitionTypes() && reserveStorage(body);

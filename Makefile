@@ -35,6 +35,8 @@ endif
 
 WIZ_SRC := src
 WIZ_OUT_DIR := bin
+WIZ_TEST_DIR := tests
+WIZ_TEST_TMP_DIR := bin/test-tmp
 
 WIZ_H_MATCH := $(wildcard $(WIZ_SRC)/wiz/*.h $(WIZ_SRC)/wiz/ast/*.h $(WIZ_SRC)/wiz/compiler/*.h $(WIZ_SRC)/wiz/parser/*.h  $(WIZ_SRC)/wiz/utility/*.h $(WIZ_SRC)/wiz/definition/*.h $(WIZ_SRC)/wiz/platform/*.h $(WIZ_SRC)/wiz/format/*.h)
 WIZ_CPP_MATCH := $(wildcard $(WIZ_SRC)/wiz/*.cpp $(WIZ_SRC)/wiz/ast/*.cpp $(WIZ_SRC)/wiz/compiler/*.cpp $(WIZ_SRC)/wiz/parser/*.cpp  $(WIZ_SRC)/wiz/utility/*.cpp $(WIZ_SRC)/wiz/definition/*.cpp $(WIZ_SRC)/wiz/platform/*.cpp $(WIZ_SRC)/wiz/format/*.cpp)
@@ -96,6 +98,9 @@ all: $(WIZ_OUT_DIR) $(WIZ_OUT_DIR)/$(WIZ)
 $(WIZ_OUT_DIR):
 	mkdir $(WIZ_OUT_DIR)
 
+$(WIZ_TEST_TMP_DIR):
+	mkdir $(WIZ_TEST_TMP_DIR)
+
 $(WIZ_O): %.o: %.cpp
 	$(CXX) $(CXX_FLAGS) -c -o $@ $< $(INCLUDES)
 
@@ -108,5 +113,15 @@ clean:
 install: $(WIZ_OUT_DIR)/$(WIZ)
 	install -d $(DESTDIR)$(PREFIX)/bin/
 	install -m 755 $(WIZ_OUT_DIR)/$(WIZ) $(DESTDIR)$(PREFIX)/bin/
+
+tests: $(WIZ_OUT_DIR)/$(WIZ) $(WIZ_OUT_DIR) $(WIZ_TEST_TMP_DIR)
+	$(WIZ_TEST_DIR)/wiztests.sh -w $(WIZ_OUT_DIR)/$(WIZ) -b $(WIZ_TEST_TMP_DIR) $(WIZ_TEST_DIR)/block $(WIZ_TEST_DIR)/failure
+
+block-tests: $(WIZ_OUT_DIR)/$(WIZ) $(WIZ_TEST_TMP_DIR)
+	$(WIZ_TEST_DIR)/wiztests.sh -w $(WIZ_OUT_DIR)/$(WIZ) -b $(WIZ_TEST_TMP_DIR) $(WIZ_TEST_DIR)/block
+
+failure-tests: $(WIZ_OUT_DIR)/$(WIZ) $(WIZ_TEST_TMP_DIR)
+	$(WIZ_TEST_DIR)/wiztests.sh -w $(WIZ_OUT_DIR)/$(WIZ) -b $(WIZ_TEST_TMP_DIR) $(WIZ_TEST_DIR)/failure
+
 
 -include $(WIZ_DEPS)

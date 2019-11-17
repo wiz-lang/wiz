@@ -194,6 +194,7 @@ def do_test(test):
     for system in test.systems:
         bin_fn = os.path.join(WIZ_OUTPUT_DIR, os.path.splitext(os.path.basename(test.filename))[0] + '.' + system + '.bin')
 
+        print((WIZ_EXECUTABLE, "--system", system, "-o", bin_fn, test.filename))
         process = subprocess.Popen(
             (WIZ_EXECUTABLE, "--system", system, "-o", bin_fn, test.filename),
             stdout=subprocess.PIPE,
