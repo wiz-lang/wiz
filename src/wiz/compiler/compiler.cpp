@@ -6191,7 +6191,6 @@ namespace wiz {
                     enterScope(getOrCreateStatementScope(StringView(), statement, currentScope));
 
                     const auto continueLabelDefinition = createAnonymousLabelDefinition("$continue"_sv);
-                    irNodes.addNew(IrNode::Label(continueLabelDefinition), statement->location);
 
                     continueLabel = continueLabelDefinition;
                     const auto body = inlineForStatement.body.get();
@@ -6208,6 +6207,8 @@ namespace wiz {
 
                         valid = emitStatementIr(body);
                     }
+
+                    irNodes.addNew(IrNode::Label(continueLabelDefinition), statement->location);
 
                     exitScope();
                     exitInlineSite();
