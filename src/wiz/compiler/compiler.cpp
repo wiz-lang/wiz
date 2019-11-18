@@ -4799,6 +4799,16 @@ namespace wiz {
                     funcDefinition->returnKind = BranchKind::None;
                     funcDefinition->inlined = true;
 
+                    const auto oldContinueLabel = continueLabel;
+                    const auto oldBreakLabel = breakLabel;
+                    const auto onExit = makeScopeGuard([&]() {
+                        continueLabel = oldContinueLabel;
+                        breakLabel = oldBreakLabel;
+                    });
+
+                    continueLabel = nullptr;
+                    breakLabel = nullptr;
+
                     enterInlineSite(registeredInlineSites.addNew());
 
                     const auto funcDeclaration = definition->declaration;

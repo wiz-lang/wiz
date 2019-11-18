@@ -118,10 +118,10 @@ tests: $(WIZ_OUT_DIR)/$(WIZ) $(WIZ_OUT_DIR) $(WIZ_TEST_TMP_DIR)
 	$(WIZ_TEST_DIR)/wiztests.sh -w $(WIZ_OUT_DIR)/$(WIZ) -b $(WIZ_TEST_TMP_DIR) $(WIZ_TEST_DIR)/block $(WIZ_TEST_DIR)/failure
 
 block-tests: $(WIZ_OUT_DIR)/$(WIZ) $(WIZ_TEST_TMP_DIR)
-	$(WIZ_TEST_DIR)/wiztests.sh -w $(WIZ_OUT_DIR)/$(WIZ) -b $(WIZ_TEST_TMP_DIR) $(WIZ_TEST_DIR)/block
+	$(WIZ_TEST_DIR)/wiztests.sh -w $(WIZ_OUT_DIR)/$(WIZ) -b $(WIZ_TEST_TMP_DIR) $(WIZ_TEST_DIR)/block$(TEST_NAME:%=/%.wiz)
 
 failure-tests: $(WIZ_OUT_DIR)/$(WIZ) $(WIZ_TEST_TMP_DIR)
-	$(WIZ_TEST_DIR)/wiztests.sh -w $(WIZ_OUT_DIR)/$(WIZ) -b $(WIZ_TEST_TMP_DIR) $(WIZ_TEST_DIR)/failure
+	$(WIZ_TEST_DIR)/wiztests.sh -w $(WIZ_OUT_DIR)/$(WIZ) -b $(WIZ_TEST_TMP_DIR) $(WIZ_TEST_DIR)/failure$(TEST_NAME:%=/%.wiz)
 
 
 -include $(WIZ_DEPS)
