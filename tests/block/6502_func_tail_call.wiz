@@ -24,12 +24,13 @@ const blank_bytes : [u8] = [0 ; 0xff];
 
 func tail_call_test() {
 // BLOCK 000100      4c 00 80              jmp 0x8000
-    return first_function();
+    ^return first_function();
 }
 
 func tail_call_test2() {
-// BLOCK 000103      4c 00 80              jmp 0x8000
+// BLOCK 000103      20 00 80              jsr 0x8000
     first_function();
+// BLOCK 000106      60                    rts
 }
 
 // BLOCK    ff

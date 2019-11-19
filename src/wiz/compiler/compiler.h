@@ -147,7 +147,7 @@ namespace wiz {
             bool emitUnaryExpressionIr(const Expression* dest, UnaryOperatorKind op, const Expression* source, SourceLocation location);
             bool emitBinaryExpressionIr(const Expression* dest, BinaryOperatorKind op, const Expression* left, const Expression* right, SourceLocation location);
             bool emitArgumentPassIr(const TypeExpression* functionTypeExpression, const std::vector<Definition*>& parameters, const std::vector<FwdUniquePtr<const Expression>>& arguments, SourceLocation location);
-            bool emitCallExpressionIr(bool inlined, bool tailCall, const Expression* resultDestination, const Expression* function, const std::vector<FwdUniquePtr<const Expression>>& arguments, SourceLocation location);
+            bool emitCallExpressionIr(std::size_t distanceHint, bool inlined, bool tailCall, const Expression* resultDestination, const Expression* function, const std::vector<FwdUniquePtr<const Expression>>& arguments, SourceLocation location);
 
             void raiseEmitLoadError(const Expression* dest, const Expression* source, SourceLocation location);
             void raiseEmitUnaryExpressionError(const Expression* dest, UnaryOperatorKind op, const Expression* source, SourceLocation location);
@@ -156,7 +156,7 @@ namespace wiz {
 
             bool emitAssignmentExpressionIr(const Expression* dest, const Expression* source, SourceLocation location);
             bool emitExpressionStatementIr(const Expression* expression, SourceLocation location);
-            bool emitReturnAssignmentIr(const TypeExpression* returnType, const Expression* returnValue, SourceLocation location);
+            bool emitReturnAssignmentIr(std::size_t distanceHint, const TypeExpression* returnType, const Expression* returnValue, SourceLocation location);
 
             std::unique_ptr<PlatformTestAndBranch> getTestAndBranch(BinaryOperatorKind op, const Expression* left, const Expression* right, std::size_t distanceHint) const;
             bool emitBranchIr(std::size_t distanceHint, BranchKind kind, const Expression* destination, const Expression* returnValue, bool negated, const Expression* condition, SourceLocation location);

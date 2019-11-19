@@ -4780,7 +4780,7 @@ namespace wiz {
         return true;
     }
 
-    bool Compiler::emitCallExpressionIr(bool inlined, bool tailCall, const Expression* resultDestination, const Expression* function, const std::vector<FwdUniquePtr<const Expression>>& arguments, SourceLocation location) {
+    bool Compiler::emitCallExpressionIr(std::size_t distanceHint, bool inlined, bool tailCall, const Expression* resultDestination, const Expression* function, const std::vector<FwdUniquePtr<const Expression>>& arguments, SourceLocation location) {
         if (const auto resolvedIdentifier = function->variant.tryGet<Expression::ResolvedIdentifier>()) {
             const auto definition = resolvedIdentifier->definition;
 
@@ -4835,7 +4835,7 @@ namespace wiz {
 
                     std::vector<InstructionOperandRoot> operandRoots;
                     operandRoots.reserve(2);
-                    operandRoots.push_back(InstructionOperandRoot(nullptr, makeFwdUnique<InstructionOperand>(InstructionOperand::Integer(Int128(0)))));
+                    operandRoots.push_back(InstructionOperandRoot(nullptr, makeFwdUnique<InstructionOperand>(InstructionOperand::Integer(Int128(distanceHint)))));
                     operandRoots.push_back(InstructionOperandRoot(function, std::move(destOperand)));
 
                     bool far = functionType.far;
@@ -5361,7 +5361,7 @@ namespace wiz {
                 return true;
             }
         } else if (const auto call = source->variant.tryGet<Expression::Call>()) {
-            return emitCallExpressionIr(call->inlined, false, dest, call->function.get(), call->arguments, location);
+            return emitCallExpressionIr(0, call->inlined, false, dest, call->function.get(), call->arguments, location);
         }
 
         return false;
@@ -5401,19 +5401,19 @@ namespace wiz {
                 }
             }
         } else if (const auto call = expression->variant.tryGet<Expression::Call>()) {
-            return emitCallExpressionIr(call->inlined, false, nullptr, call->function.get(), call->arguments, location);
+            return emitCallExpressionIr(0, call->inlined, false, nullptr, call->function.get(), call->arguments, location);
         }
 
         report->error("expression provided cannot be used as a statement", location);
         return false;
     }
 
-    bool Compiler::emitReturnAssignmentIr(const TypeExpression* returnType, const Expression* returnValue, SourceLocation location) {
+    bool Compiler::emitReturnAssignmentIr(std::size_t distanceHint, const TypeExpression* returnType, const Expression* returnValue, SourceLocation location) {
         if (const auto designatedStorageType = returnType->variant.tryGet<TypeExpression::DesignatedStorage>()) {
             const auto holderExpression = designatedStorageType->holder.get();
 
             if (const auto call = returnValue->variant.tryGet<Expression::Call>()) {
-                return emitCallExpressionIr(call->inlined, true, holderExpression, call->function.get(), call->arguments, location);
+                return emitCallExpressionIr(distanceHint, call->inlined, true, holderExpression, call->function.get(), call->arguments, location);
             } else {
                 return emitAssignmentExpressionIr(holderExpression, returnValue, returnValue->location);
             }
@@ -5488,13 +5488,13 @@ namespace wiz {
 
                         if (isVoid) {
                             if (const auto call = returnValue->variant.tryGet<Expression::Call>()) {
-                                return emitCallExpressionIr(call->inlined, true, nullptr, call->function.get(), call->arguments, location);
+                                return emitCallExpressionIr(distanceHint, call->inlined, true, nullptr, call->function.get(), call->arguments, location);
                             } else {
                                 report->error("`return` value of `func` returning `()` can only be a function call", location);
                                 return false;
                             }
                         } else if (!needsIntermediateBranch) {
-                            if (!emitReturnAssignmentIr(returnType, returnValue, location)) {
+                            if (!emitReturnAssignmentIr(distanceHint, returnType, returnValue, location)) {
                                 return false;
                             }
                         }
@@ -5516,7 +5516,7 @@ namespace wiz {
                         const auto failureReferenceExpression = expressionPool.add(resolveDefinitionExpression(failureLabelDefinition, {}, location));
 
                         bool result = emitBranchIr(distanceHint, BranchKind::Goto, failureReferenceExpression, nullptr, !negated, condition, condition->location)
-                            && emitReturnAssignmentIr(returnType, returnValue, location)
+                            && emitReturnAssignmentIr(distanceHint, returnType, returnValue, location)
                             && emitBranchIr(distanceHint, returnKind, nullptr, nullptr, false, nullptr, location);
 
                         currentFunction = oldFunction;
