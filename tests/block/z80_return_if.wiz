@@ -1,0 +1,40 @@
+// SYSTEM  z80
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -az80 -m0x0000 z80_return_if.z80.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_z80_memmap.wiz";
+
+// BLOCK 000000
+in prg {
+
+func return_if_test {
+// BLOCK             c8                    ret z
+    return if zero;
+// BLOCK             c0                    ret nz
+    return if !zero;
+// BLOCK             d8                    ret c
+    return if carry;
+// BLOCK             d0                    ret nc
+    return if !carry;
+// BLOCK             f8                    ret m
+    return if negative;
+// BLOCK             f0                    ret p
+    return if !negative;
+// BLOCK             e8                    ret pe
+    return if overflow;    
+// BLOCK             e0                    ret po
+    return if !overflow;
+// BLOCK             00                    nop    
+    nop();
+// BLOCK             c9                    ret
+}
+
+// BLOCK             ff
+
+}
+

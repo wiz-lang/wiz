@@ -5466,8 +5466,6 @@ namespace wiz {
                 }
             }
             case BranchKind::Return: {
-                // TODO: possibly rewrite return into a branch-on-opposite then return.
-
                 if (currentFunction != nullptr) {
                     const auto& funcDefinition = currentFunction->variant.get<Definition::Func>();
                     const auto returnType = funcDefinition.resolvedSignatureType->variant.get<TypeExpression::Function>().returnType.get();
@@ -5524,9 +5522,7 @@ namespace wiz {
                         currentFunction = oldFunction;
                         irNodes.addNew(IrNode::Label(failureLabelDefinition), location);
                         return result;
-                    }
-
-                    if (returnKind != BranchKind::Return) {
+                    } else if (returnKind != BranchKind::Return) {
                         if (returnLabel != nullptr) {
                             // inline functions should jump to a "return label" instead of actually returning.
                             const auto labelReferenceExpresison = expressionPool.add(resolveDefinitionExpression(returnLabel, {}, location));
@@ -5720,6 +5716,23 @@ namespace wiz {
                         irNodes.addNew(IrNode::Code(instruction, std::move(operandRoots)), location);
                         return true;
                     } else {
+                        // If that fails, try to branch-on-opposite around a return.
+                        const auto oldFunction = currentFunction;
+                        currentFunction = nullptr;
+
+                        const auto failureLabelDefinition = createAnonymousLabelDefinition("$skip"_sv);
+                        const auto failureReferenceExpression = expressionPool.add(resolveDefinitionExpression(failureLabelDefinition, {}, location));
+
+                        bool result = emitBranchIr(distanceHint, BranchKind::Goto, failureReferenceExpression, nullptr, !negated, condition, condition->location)
+                            && emitBranchIr(distanceHint, kind, nullptr, nullptr, false, nullptr, location);
+
+                        currentFunction = oldFunction;
+
+                        if (result) {
+                            irNodes.addNew(IrNode::Label(failureLabelDefinition), location);
+                            return true;
+                        }
+
                         return false;
                     }
                 } else {
@@ -5745,10 +5758,10 @@ namespace wiz {
                 operandRoots.push_back(InstructionOperandRoot(destination, std::move(operand)));
 
                 if (destination->info->qualifiers.has<Qualifier::Far>()) {
-                    if (kind == BranchKind::Goto) {
-                        kind = BranchKind::FarGoto;
-                    } else if (kind == BranchKind::Call) {
-                        kind = BranchKind::FarCall;
+                    switch (kind) {
+                        case BranchKind::Goto: kind = BranchKind::FarGoto; break;
+                        case BranchKind::Call: kind = BranchKind::FarCall; break;
+                        default: break;
                     }
                 }
             }

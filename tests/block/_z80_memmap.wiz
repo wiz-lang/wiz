@@ -1,0 +1,23 @@
+
+#[compile_if(__has("__cpu_huc6280"))]  let __ZP = 0x2000;
+#[compile_if(!__has("__cpu_huc6280"))] let __ZP = 0x00;
+
+bank prg      @ 0x0000  : [constdata; 0x8000];
+bank ram      @ 0xC000   : [vardata; 0x1000];
+bank stack    @ 0xD000   : [vardata; 0x1000];
+
+in ram {
+    var ram_u8_C000      : u8;   // address 0xC000
+    var ram_u8_C001      : u8;   // address 0xC001
+    var ram_u16_C002     : u16;  // address 0xC002
+    var ram_u16_C004     : u16;  // address 0xC004
+
+    var ram_block_C006   : [u8 ; 10]; // addresses 0xC006 - 0xC00f
+    var ram_wblock_C010  : [u16 ; 8]; // addresses 0xC010 - 0xC01f
+
+    var ram_func_ptr_C020: func;
+}
+
+extern writeonly wo_register @ 0xf000 : u8;
+extern const     ro_register @ 0xf001 : u8;
+
