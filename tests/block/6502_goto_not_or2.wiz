@@ -1,0 +1,49 @@
+// SYSTEM  6502 65c02 wdc65c02 rockwell65c02 huc6280
+// ::TODO wdc65816::
+//
+// Opcodes tested from site: http://6502.org/tutorials/6502opcodes.html
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -a6502 -m0x8000 6502_goto_and2.6502.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_6502_memmap.wiz";
+
+in prg {
+
+func goto_not_or2_test {
+
+// De Morgan's Laws (applied to negation of ||):
+// !(a || b) = !a && !b
+//    
+// Expands to the following branch sequence:
+// goto skip if a;
+// goto label if !b;
+// skip:
+
+// BLOCK 000000      c9 64                 cmp #0x64
+// BLOCK             f0 04                 beq 0x008008
+// BLOCK             c9 2a                 cmp #0x2a
+// BLOCK             d0 f8                 bne 0x008000
+LogicalAndOfNotTestLabel:
+    goto LogicalAndOfNotTestLabel if
+        a != 100
+        && a != 42;
+
+// BLOCK 000008      c9 64                 cmp #0x64
+// BLOCK             f0 04                 beq 0x008008
+// BLOCK             c9 2a                 cmp #0x2a
+// BLOCK             d0 f8                 bne 0x008008
+LogicalNotOfOrTestLabel:
+    goto LogicalNotOfOrTestLabel if
+        !(a == 100
+        || a == 42);
+
+// BLOCK 000010      60                    rts
+}
+
+// BLOCK ff
+}

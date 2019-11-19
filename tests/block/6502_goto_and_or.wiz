@@ -18,7 +18,6 @@ let FarLabel = 0xfeed as func;
 
 func goto_and_or_test {
 
-// ::BUG Invalid code (correct assembly is below)::
 // BLOCK 000000      c9 64                 cmp #0x64
 // BLOCK             d0 1a                 bne 0x00801e
 // BLOCK             c9 2a                 cmp #0x2a
@@ -84,7 +83,6 @@ LogicalOrAndTestLabel:
 
 
 
-// ::BUG Invalid code (correct assembly is below)::
 // BLOCK 000048      c5 00                 cmp 0x00
 // BLOCK             f0 04                 beq 0x008050
 // BLOCK             c5 01                 cmp 0x01
@@ -127,7 +125,6 @@ LogicalAndOrParenthesisTestLabel:
 
 
 
-// ::BUG Invalid code (correct(ish) assembly is below)::
 // ::BUG not size optimal::
 // BLOCK 000082      c9 64                 cmp #0x64
 // BLOCK             f0 03                 beq 0x008089
@@ -207,7 +204,6 @@ LogicalAndOrParenthesisTestLabel:
 
 
 
-// ::BUG Invalid code (correct(ish) assembly is below)::
 // ::BUG not size optimal::
 // BLOCK 0000fc      c5 00                 cmp 0x00
 // BLOCK             d0 03                 bne 0x008103

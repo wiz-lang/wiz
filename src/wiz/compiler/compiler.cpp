@@ -5650,28 +5650,28 @@ namespace wiz {
                             const auto failureLabelDefinition = createAnonymousLabelDefinition("$skip"_sv);
                             const auto failureLabelReferenceExpression = expressionPool.add(resolveDefinitionExpression(failureLabelDefinition, {}, condition->location));
 
-                            if (!emitBranchIr(distanceHint, kind, failureLabelReferenceExpression, returnValue, !negated, binaryOperator->left.get(), condition->location)
-                            || !emitBranchIr(distanceHint, kind, destination, returnValue, negated, binaryOperator->right.get(), condition->location)) {
+                            if (!emitBranchIr(distanceHint, kind, failureLabelReferenceExpression, returnValue, true, binaryOperator->left.get(), condition->location)
+                            || !emitBranchIr(distanceHint, kind, destination, returnValue, false, binaryOperator->right.get(), condition->location)) {
                                 return false;
                             }
 
                             irNodes.addNew(IrNode::Label(failureLabelDefinition), location);
                             return true;
                         } else {
-                            return emitBranchIr(distanceHint, kind, destination, returnValue, !negated, binaryOperator->left.get(), condition->location)
-                            && emitBranchIr(distanceHint, kind, destination, returnValue, !negated, binaryOperator->right.get(), condition->location);
+                            return emitBranchIr(distanceHint, kind, destination, returnValue, true, binaryOperator->left.get(), condition->location)
+                            && emitBranchIr(distanceHint, kind, destination, returnValue, true, binaryOperator->right.get(), condition->location);
                         }
                     }
                     case BinaryOperatorKind::LogicalOr: {
                         if (!negated) {
-                            return emitBranchIr(distanceHint, kind, destination, returnValue, negated, binaryOperator->left.get(), condition->location)
-                            && emitBranchIr(distanceHint, kind, destination, returnValue, negated, binaryOperator->right.get(), condition->location);
+                            return emitBranchIr(distanceHint, kind, destination, returnValue, false, binaryOperator->left.get(), condition->location)
+                            && emitBranchIr(distanceHint, kind, destination, returnValue, false, binaryOperator->right.get(), condition->location);
                         } else {
                             const auto failureLabelDefinition = createAnonymousLabelDefinition("$skip"_sv);                        
                             const auto failureLabelReferenceExpression = expressionPool.add(resolveDefinitionExpression(failureLabelDefinition, {}, condition->location));
 
-                            if (!emitBranchIr(distanceHint, kind, failureLabelReferenceExpression, returnValue, !negated, binaryOperator->left.get(), condition->location)
-                            || !emitBranchIr(distanceHint, kind, destination, returnValue, negated, binaryOperator->right.get(), condition->location)) {
+                            if (!emitBranchIr(distanceHint, kind, failureLabelReferenceExpression, returnValue, false, binaryOperator->left.get(), condition->location)
+                            || !emitBranchIr(distanceHint, kind, destination, returnValue, true, binaryOperator->right.get(), condition->location)) {
                                 return false;
                             }
 
