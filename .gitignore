@@ -41,6 +41,7 @@ bin/
 vc/[Dd]ebug
 vc/[Oo]ptimized\ [Dd]ebug
 vc/[Rr]elease
+vc/Win32/
 vc/x64/
 vc/tests/[Dd]ebug
 vc/tests/[Rr]elease

@@ -1173,7 +1173,8 @@ namespace wiz {
                                             std::vector<PlatformBranch> { PlatformBranch(zero, op == BinaryOperatorKind::Equal, true) }
                                         );
                                     }
-                                } else if (const auto& rightRegister = innerRight->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                                }
+                                if (const auto& rightRegister = innerRight->variant.tryGet<Expression::ResolvedIdentifier>()) {
                                     if (rightRegister->definition == a || rightRegister->definition == aa) {
                                         return std::make_unique<PlatformTestAndBranch>(
                                             InstructionType::VoidIntrinsic(bit),

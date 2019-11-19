@@ -20,7 +20,6 @@ BitTestLabel:
 
 // BLOCK 000000      24 00                 bit 0x00
 // BLOCK             f0 fc                 beq 0x008000
-// BLOCK             24 00                 bit 0x00
     goto BitTestLabel if a & zp_u8_00 == 0;
 // BLOCK             2c 00 02              bit 0x0200
 // BLOCK             f0 f7                 beq 0x008000

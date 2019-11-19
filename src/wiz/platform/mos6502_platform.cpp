@@ -813,7 +813,8 @@ namespace wiz {
                                             std::vector<PlatformBranch> { PlatformBranch(zero, op == BinaryOperatorKind::Equal, true) }
                                         );
                                     }
-                                } else if (const auto& rightRegister = innerRight->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                                }
+                                if (const auto& rightRegister = innerRight->variant.tryGet<Expression::ResolvedIdentifier>()) {
                                     if (rightRegister->definition == a) {
                                         return std::make_unique<PlatformTestAndBranch>(
                                             InstructionType::VoidIntrinsic(bit),
@@ -821,7 +822,8 @@ namespace wiz {
                                             std::vector<PlatformBranch> { PlatformBranch(zero, op == BinaryOperatorKind::Equal, true) }
                                         );
                                     }
-                                } else if (revision == Revision::Huc6280) {
+                                }
+                                if (revision == Revision::Huc6280) {
                                     // imm & mem == 0 -> { tst(imm, mem); } && zero
                                     // mem & imm == 0 -> { tst(mem, imm); } && zero
                                     if (innerLeft->variant.is<Expression::IntegerLiteral>()) {
@@ -830,7 +832,8 @@ namespace wiz {
                                             std::vector<const Expression*> {innerLeft, innerRight},
                                             std::vector<PlatformBranch> { PlatformBranch(zero, op == BinaryOperatorKind::Equal, true) }
                                         );
-                                    } else if (innerRight->variant.is<Expression::IntegerLiteral>()) {
+                                    }
+                                    if (innerRight->variant.is<Expression::IntegerLiteral>()) {
                                         return std::make_unique<PlatformTestAndBranch>(
                                             InstructionType::VoidIntrinsic(tst),
                                             std::vector<const Expression*> {innerRight, innerLeft},
