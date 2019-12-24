@@ -20,11 +20,12 @@ namespace wiz {
             "max_value",
         };
 
-        const char* const functionAttributeNames[static_cast<std::size_t>(Builtins::FunctionAttribute::Count)] = {
-            "(no function attributes)",
+        const char* const declarationAttributeNames[static_cast<std::size_t>(Builtins::DeclarationAttribute::Count)] = {
+            "(no declaration attribute)",
             "irq",
             "nmi",
             "fallthrough",
+            "align",
         };
     }
 
@@ -293,16 +294,40 @@ namespace wiz {
         return match != props.end() ? match->second : Property::None;
     }
 
-    Builtins::FunctionAttribute Builtins::findFunctionAttributeByName(StringView name) const {
-        static std::unordered_map<StringView, FunctionAttribute> functionAttributes;
-        if (functionAttributes.empty()) {
-            for (std::size_t i = 0; i != sizeof(functionAttributeNames) / sizeof(*functionAttributeNames); ++i) {
-                functionAttributes[StringView(functionAttributeNames[i])] = static_cast<FunctionAttribute>(i);
+    Builtins::DeclarationAttribute Builtins::findDeclarationAttributeByName(StringView name) const {
+        static std::unordered_map<StringView, DeclarationAttribute> declarationAttributes;
+        if (declarationAttributes.empty()) {
+            for (std::size_t i = 0; i != sizeof(declarationAttributeNames) / sizeof(*declarationAttributeNames); ++i) {
+                declarationAttributes[StringView(declarationAttributeNames[i])] = static_cast<DeclarationAttribute>(i);
             }
         }
 
-        const auto match = functionAttributes.find(name);
-        return match != functionAttributes.end() ? match->second : FunctionAttribute::None;
+        const auto match = declarationAttributes.find(name);
+        return match != declarationAttributes.end() ? match->second : DeclarationAttribute::None;
+    }
+
+    bool Builtins::isDeclarationAttributeValid(DeclarationAttribute attribute, const Statement* statement) const {
+        switch (attribute) {
+            case DeclarationAttribute::Irq:
+            case DeclarationAttribute::Nmi:
+            case DeclarationAttribute::Fallthrough:
+                return statement->variant.is<Statement::Func>();
+            case DeclarationAttribute::Align:
+                return statement->variant.is<Statement::Var>();
+            default: return false;
+        }
+    }
+
+    std::size_t Builtins::getDeclarationAttributeArgumentCount(DeclarationAttribute attribute) const {
+        switch (attribute) {
+            case DeclarationAttribute::Irq:
+            case DeclarationAttribute::Nmi:
+            case DeclarationAttribute::Fallthrough:
+                return 0;
+            case DeclarationAttribute::Align:
+                return 1;
+            default: return 0;
+        }
     }
 
     std::size_t Builtins::addModeAttribute(StringView name, std::size_t groupIndex) {

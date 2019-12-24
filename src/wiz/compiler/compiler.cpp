@@ -1933,7 +1933,7 @@ namespace wiz {
                             const auto constType = operand->info->type.get();
                             const auto constName = stringPool->intern("$data" + std::to_string(definitionPool.size()));
                             auto constDeclaration = statementPool.addNew(Statement::InternalDeclaration(), expression->location);
-                            auto definition = definitionPool.addNew(Definition::Var(Qualifiers::of<Qualifier::Const>(), currentFunction, nullptr, nullptr), constName, constDeclaration);
+                            auto definition = definitionPool.addNew(Definition::Var(Qualifiers::of<Qualifier::Const>(), currentFunction, nullptr, nullptr, 0), constName, constDeclaration);
                             auto& constDefinition = definition->variant.get<Definition::Var>();
 
                             constDefinition.resolvedType = constType;
@@ -3577,8 +3577,6 @@ namespace wiz {
                 const auto& attributedStatement = variant.get<Statement::Attribution>();
                 const auto body = attributedStatement.body.get();
 
-                bool isFunc = body->variant.is<Statement::Func>();
-
                 auto attributeList = attributeLists.addNew();
                 statementAttributeLists[statement] = attributeList;
 
@@ -3590,16 +3588,16 @@ namespace wiz {
                     std::size_t attributeRequiredArgumentCount = 0;
 
                     const auto modeAttribute = builtins.findModeAttributeByName(attribute->name);
-                    const auto functionAttribute = builtins.findFunctionAttributeByName(attribute->name);
+                    const auto declarationAttribute = builtins.findDeclarationAttributeByName(attribute->name);
 
                     if (modeAttribute != SIZE_MAX) {
                         foundAttribute = true;
                         validAttributeName = true;
                         attributeRequiredArgumentCount = 0;
-                    } else if (functionAttribute != Builtins::FunctionAttribute::None) {
+                    } else if (declarationAttribute != Builtins::DeclarationAttribute::None) {
                         foundAttribute = true;
-                        validAttributeName = isFunc;
-                        attributeRequiredArgumentCount = 0;
+                        validAttributeName = builtins.isDeclarationAttributeValid(declarationAttribute, body);
+                        attributeRequiredArgumentCount = builtins.getDeclarationAttributeArgumentCount(declarationAttribute);
                     } else {
                         if (attribute->name == "compile_if"_sv) {
                             foundAttribute = true;
@@ -3753,12 +3751,12 @@ namespace wiz {
                 BranchKind returnKind = funcDeclaration.far ? BranchKind::FarReturn : BranchKind::Return;
                 for (const auto& attribute : attributeStack) {
                     if (attribute->statement == statement) {
-                        const auto functionAttribute = builtins.findFunctionAttributeByName(attribute->name);
+                        const auto functionAttribute = builtins.findDeclarationAttributeByName(attribute->name);
                         switch (functionAttribute) {
-                            case Builtins::FunctionAttribute::Irq: returnKind = BranchKind::IrqReturn; break;
-                            case Builtins::FunctionAttribute::Nmi: returnKind = BranchKind::NmiReturn; break;
-                            case Builtins::FunctionAttribute::Fallthrough: fallthrough = true; break;
-                            case Builtins::FunctionAttribute::None: break;
+                            case Builtins::DeclarationAttribute::Irq: returnKind = BranchKind::IrqReturn; break;
+                            case Builtins::DeclarationAttribute::Nmi: returnKind = BranchKind::NmiReturn; break;
+                            case Builtins::DeclarationAttribute::Fallthrough: fallthrough = true; break;
+                            case Builtins::DeclarationAttribute::None: break;
                             default: std::abort(); break;
                         }
                     }
@@ -3784,7 +3782,7 @@ namespace wiz {
 
                 enterScope(getOrCreateStatementScope(StringView(), body, currentScope));
                 for (const auto& parameter : funcDeclaration.parameters) {
-                    funcDefinition.parameters.push_back(currentScope->createDefinition(report, Definition::Var(Qualifiers {}, definition, nullptr, parameter->typeExpression.get()), parameter->name, statement));
+                    funcDefinition.parameters.push_back(currentScope->createDefinition(report, Definition::Var(Qualifiers {}, definition, nullptr, parameter->typeExpression.get(), 0), parameter->name, statement));
                 }
                 exitScope();
 
@@ -3901,8 +3899,32 @@ namespace wiz {
                 const auto& names = varDeclaration.names;
                 const auto& addresses = varDeclaration.addresses;
                 const auto typeExpression = varDeclaration.typeExpression.get();
+
+                std::size_t alignment = 0;
+
+                for (const auto& attribute : attributeStack) {
+                    if (attribute->statement == statement) {
+                        const auto functionAttribute = builtins.findDeclarationAttributeByName(attribute->name);
+                        switch (functionAttribute) {
+                            case Builtins::DeclarationAttribute::Align: {
+                                if (const auto integerLiteral = attribute->arguments[0]->variant.tryGet<Expression::IntegerLiteral>()) {
+                                    const auto& value = integerLiteral->value;
+                                    if (!value.isNegative() && value <= Int128(SIZE_MAX) && value.isPowerOfTwo()) {
+                                        alignment = static_cast<std::size_t>(value);
+                                    } else {
+                                        report->error("invalid value " + value.toString() + " provided to `align` attribute. must be a positive power-of-two, or zero.", statement->location);
+                                    }
+                                }
+                                break;
+                            }
+                            case Builtins::DeclarationAttribute::None: break;
+                            default: std::abort(); break;
+                        }
+                    }
+                }
+
                 for (std::size_t i = 0, size = names.size(); i != size; ++i) {
-                    definitionsToResolve.push_back(currentScope->createDefinition(report, Definition::Var(varDeclaration.qualifiers, currentFunction, addresses[i].get(), typeExpression), names[i], statement));
+                    definitionsToResolve.push_back(currentScope->createDefinition(report, Definition::Var(varDeclaration.qualifiers, currentFunction, addresses[i].get(), typeExpression, alignment), names[i], statement));
                 }
                 break;
             }
@@ -4333,6 +4355,13 @@ namespace wiz {
                     }
 
                     if (!isBankKindStored(currentBank->getKind())) {
+                        // FIXME: natural alignment requirements
+                        const auto alignment = varDefinition.alignment != 0 ? varDefinition.alignment : 1;
+                        if (alignment > 1) {
+                            const auto unalignedAddress = currentBank->getAddress().absolutePosition.get();
+                            currentBank->absoluteSeek(report, (unalignedAddress + alignment - 1) / alignment * alignment, location);
+                        }
+
                         varDefinition.address = currentBank->getAddress();
 
                         if (!currentBank->reserveRam(report, description, definition->declaration, location, storageSize.get())) {
@@ -6468,6 +6497,13 @@ namespace wiz {
                         }
 
                         exitScope();
+                    } else {
+                        // FIXME: natural alignment requirements
+                        const auto alignment = varDefinition.alignment != 0 ? varDefinition.alignment : 1;
+                        if (alignment > 1) {
+                            const auto unalignedAddress = currentBank->getAddress().absolutePosition.get();
+                            currentBank->absoluteSeek(report, (unalignedAddress + alignment - 1) / alignment * alignment, irNode->location);
+                        }
                     }
  
                     varDefinition.address = currentBank->getAddress();
@@ -6604,6 +6640,13 @@ namespace wiz {
                     if (varDefinition.addressExpression != nullptr) {
                         oldPosition = currentBank->getRelativePosition();
                         currentBank->setRelativePosition(varDefinition.address.get().relativePosition.get());
+                    } else {
+                        // FIXME: natural alignment requirements
+                        const auto alignment = varDefinition.alignment != 0 ? varDefinition.alignment : 1;
+                        if (alignment > 1) {
+                            const auto unalignedAddress = currentBank->getAddress().absolutePosition.get();
+                            currentBank->absoluteSeek(report, (unalignedAddress + alignment - 1) / alignment * alignment, irNode->location);
+                        }
                     }
 
                     FwdUniquePtr<const Expression> tempExpression;

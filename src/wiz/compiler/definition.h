@@ -203,16 +203,19 @@ namespace wiz {
                 Qualifiers qualifiers,
                 Definition* enclosingFunction,
                 const Expression* addressExpression,
-                const TypeExpression* typeExpression)
+                const TypeExpression* typeExpression,
+                std::size_t alignment)
             : qualifiers(qualifiers),
             enclosingFunction(enclosingFunction),
             addressExpression(addressExpression),
-            typeExpression(typeExpression) {}
+            typeExpression(typeExpression),
+            alignment(alignment) {}
 
             Qualifiers qualifiers;
             Definition* enclosingFunction;
             const Expression* addressExpression;
             const TypeExpression* typeExpression;
+            std::size_t alignment;
 
             const TypeExpression* resolvedType = nullptr;
             Optional<Address> address;

@@ -65,11 +65,12 @@ namespace wiz {
                 Count
             };
 
-            enum class FunctionAttribute {
+            enum class DeclarationAttribute {
                 None,
                 Irq,
                 Nmi,
                 Fallthrough,
+                Align,
 
                 Count
             };
@@ -119,7 +120,9 @@ namespace wiz {
             StringView getPropertyName(Property prop) const;
             Property findPropertyByName(StringView name) const;
 
-            FunctionAttribute findFunctionAttributeByName(StringView name) const;
+            DeclarationAttribute findDeclarationAttributeByName(StringView name) const;
+            bool isDeclarationAttributeValid(DeclarationAttribute attribute, const Statement* statement) const;
+            std::size_t getDeclarationAttributeArgumentCount(DeclarationAttribute attribute) const;
 
             std::size_t addModeAttribute(StringView name, std::size_t groupIndex);
             std::size_t findModeAttributeByName(StringView name) const;
