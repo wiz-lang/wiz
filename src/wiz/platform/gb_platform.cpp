@@ -317,8 +317,8 @@ namespace wiz {
         builtins.createInstruction(InstructionSignature(InstructionType(BinaryOperatorKind::Assignment), 0, {patternAbsU8, patternA}), encodingU16Operand, InstructionOptions({0xEA}, {0}, {}));
         // a = *(0xFF00 + n)
         // *(0xFF00 + n) = a
-        builtins.createInstruction(InstructionSignature(InstructionType(BinaryOperatorKind::Assignment), 0, {patternA, patternHighPage}), encodingU8Operand, InstructionOptions({0x3A}, {1}, {}));
-        builtins.createInstruction(InstructionSignature(InstructionType(BinaryOperatorKind::Assignment), 0, {patternHighPage, patternA}), encodingU8Operand, InstructionOptions({0x32}, {0}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType(BinaryOperatorKind::Assignment), 0, {patternA, patternHighPage}), encodingU8Operand, InstructionOptions({0xF0}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType(BinaryOperatorKind::Assignment), 0, {patternHighPage, patternA}), encodingU8Operand, InstructionOptions({0xE0}, {0}, {}));
         // a = *(0xFF00 + c)
         // *(0xFF00 + c) = a
         builtins.createInstruction(InstructionSignature(InstructionType(BinaryOperatorKind::Assignment), 0, {patternA, patternHighPageIndexedByC}), encodingImplicit, InstructionOptions({0xF2}, {}, {}));

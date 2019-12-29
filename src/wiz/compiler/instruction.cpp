@@ -413,7 +413,10 @@ namespace wiz {
                 }
                 return false;
             }
-            case VariantType::typeIndexOf<Capture>(): return false;
+            case VariantType::typeIndexOf<Capture>(): {
+                const auto& capturePattern = variant.get<Capture>();
+                return capturePattern.operandPattern->isSubsetOf(other);
+            }
             case VariantType::typeIndexOf<Dereference>(): {
                 const auto& dereferencePattern = variant.get<Dereference>();
                 if (const auto otherDereferencePattern = other.variant.tryGet<Dereference>()) {

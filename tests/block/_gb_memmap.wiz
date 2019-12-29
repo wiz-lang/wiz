@@ -1,6 +1,7 @@
 bank prg      @ 0x0000  : [constdata; 0x8000];
 bank ram      @ 0xC000   : [vardata; 0x1000];
 bank stack    @ 0xD000   : [vardata; 0x1000];
+bank hram     @ 0xFF80   : [vardata; 0x7F];
 
 in ram {
     var ram_u8_C000      : u8;   // address 0xC000
@@ -14,6 +15,10 @@ in ram {
     var ram_func_ptr_C020: func;
 }
 
-extern writeonly wo_register @ 0xf000 : u8;
-extern const     ro_register @ 0xf001 : u8;
+in hram {
+    var hram_u8_ff80 : u8; // address 0xFF80
+}
+
+extern writeonly wo_register @ 0xff00 : u8;
+extern const     ro_register @ 0xff01 : u8;
 

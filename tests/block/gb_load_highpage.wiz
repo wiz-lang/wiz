@@ -1,0 +1,34 @@
+// SYSTEM  gb
+//
+// Disassembly created using radare2
+//
+//      `--> r2 -agb -m0x0000 gb_highpage_load.gb.bin
+//      [0x00008000]> e asm.bytespace=true
+//      [0x00008000]> pd
+//
+
+import "_gb_memmap.wiz";
+
+// BLOCK 000000
+in prg {
+
+func load_highpage_test {
+// BLOCK             f2                    ld a, (ff00+c)
+    a = (0xFF00 as *u8)[c];
+// BLOCK             e2                    ld (ff00+c), a
+    (0xFF00 as *u8)[c] = a;    
+// BLOCK             f0 01                 ld a, (ff00+01)
+    a = ro_register;
+// BLOCK             e0 00                 ld (ff00+01), a
+    wo_register = a;
+// BLOCK             f0 80                 ld a, (ff00+80)
+    a = hram_u8_ff80;
+// BLOCK             e0 80                 ld (ff00+80), a
+    hram_u8_ff80 = a;
+// BLOCK             c9                    ret
+}
+
+// BLOCK             ff
+
+}
+
