@@ -120,6 +120,6 @@ in rom1 {
 }
 
 in rom2 {
-    const bkg_tileset = embed "../common/hello_tiles.chr";
-    const spr_tileset = embed "../common/minirpg_sprites.chr";
+    const bkg_tileset = embed "hello_tiles.chr";
+    const spr_tileset = embed "minirpg_sprites.chr";
 }

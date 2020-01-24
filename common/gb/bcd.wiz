@@ -1,0 +1,139 @@
+
+namespace bcd {
+    // Arguments:
+    //      l = an 8-bit binary number
+    // Result:
+    //      chl = a 6-digit bcd number
+    // Dirty: all registers
+    func from_byte(value : u8 in l) {
+        b = 8;
+        de = 0x0000;
+
+        do {
+            l <<= 1;
+            a = e;
+            a +#= a;
+            decimal_adjust();
+            e = a;
+
+            a = d;
+            a +#= a;
+            decimal_adjust();
+            d = a;
+
+            b--;
+        } while !zero;
+
+        l = e;
+        h = d;
+        c = 0;
+    }
+
+    // Arguments:
+    //      hl = a 16-bit binary number
+    // Result:
+    //      chl = a 6-digit bcd number
+    // Dirty: all registers
+    func from_word(value : u16 in hl) {
+        bc = 0x1000;
+        de = 0x0000;
+
+        do {
+            l <<= 1;
+            h <<<<#= 1;
+            a = e;
+            a +#= a;
+            decimal_adjust();
+            e = a;
+
+            a = d;
+            a +#= a;
+            decimal_adjust();
+            d = a;
+
+            a = c;
+            a +#= a;
+            decimal_adjust();
+            c = a;
+
+            --b;
+        } while !zero;
+
+        l = e;
+        h = d;
+    }
+
+    // Arguments:
+    //      chl = a 6-digit bcd number
+    // Result:
+    //      d = number of digits (1-6)
+    // Dirty: a, d
+    func get_length(high : u8 in c, mid : u8 in h, low : u8 in l) : u8 in d {
+        d = 6;
+
+        a = c & 0xF0;
+        return d if !zero;
+        d--;
+        a = c & 0x0F;
+        return d if !zero;
+        d--;
+        a = h & 0xF0;
+        return d if !zero;
+        d--;
+        a = h & 0x0F;
+        return d if !zero;
+        d--;
+        a = l & 0xF0;
+        return d if !zero;
+        d--;
+        return d;
+    }
+
+    // Arguments:
+    //      de = destination string buffer. must be at least 7 characters: 6 digits + 0 terminator.
+    //      chl = a 6-digit bcd number
+    // Dirty: all registers
+    func to_string(dest : u16 in de, high : u8 in c, mid : u8 in h, low : u8 in l) {
+        push(de);
+        b = d = get_length(c, h, l);
+        de = pop();
+
+        e = a = e + b;
+        d = a = d +# 0;
+        *(de as *u8) = a = 0;
+
+        de--;
+        a = l;
+        *(de as *u8) = a = (a & 0x0F) + '0';
+        b--;
+        return if zero;
+
+        de--;
+        a = l; swap_digits(a);
+        *(de as *u8) = a = (a & 0x0F) + '0';
+        b--;
+        return if zero;
+
+        de--;
+        a = h;
+        *(de as *u8) = a = (a & 0x0F) + '0';
+        b--;
+        return if zero;
+
+        de--;
+        a = h; swap_digits(a);
+        *(de as *u8) = a = (a & 0x0F) + '0';
+        b--;
+        return if zero;
+
+        de--;
+        a = c;
+        *(de as *u8) = a = (a & 0x0F) + '0';
+        b--;
+        return if zero;
+
+        de--;
+        a = c; swap_digits(a);
+        *(de as *u8) = a = (a & 0x0F) + '0';
+    }
+}

@@ -1,3 +1,2 @@
-
-..\..\..\bin\wiz.exe -I../common main.wiz -o hello.pce
+..\..\..\bin\wiz.exe -I../../../common/pce main.wiz -o hello.pce
 pause

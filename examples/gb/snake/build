@@ -1,3 +1,3 @@
 #/bin/sh
 cd `dirname $0`
-../../../bin/wiz -I../common main.wiz -o snake.gb
+../../../bin/wiz -I../../../common/gb main.wiz -o snake.gb

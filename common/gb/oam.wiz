@@ -1,0 +1,55 @@
+import "gb";
+import "banks";
+
+namespace oam {
+    in hram {
+        var transfer_func_code : [u8; 9];
+    }
+
+    // Initializes the oam library and sets up the oam.transfer routine.
+    func init() {
+        de = &transfer_func_code as u16;
+        hl = _transfer as u16;
+        c = (_transfer_end as u16 - _transfer as u16) as u8;
+        do {
+            *(de as *u8) = a = *(hl++ as *u8);
+            de++;
+            c--;
+        } while !zero;
+    }
+
+    // Copies sprite data to the OAM.
+    //
+    // Requires:
+    // - Exclusive access to OAM.
+    // - Interrupts disabled (or during an interrupt, which disables interrupts)
+    //    
+    // Arguments:
+    //   a = high byte of of sprite data address (must be between 0x00 .. 0xF1)
+    let transfer = &transfer_func_code as func(addr_hi : u8 in a);
+
+    func _transfer(addr_hi : u8 in a) {
+        gb.lcd.dma = a;
+
+        // Wait about 200ms
+        a = 40;
+        do {
+            a--;
+        } while !zero;
+    }
+    _transfer_end:
+
+    // Clears out OAM using "safe" instructions that work correctly in the 0xFE00..0xFEFF range.
+    // 
+    // Requires: Exclusive access to OAM.
+    func clear() {
+        hl = 0xFE00;
+        c = 160;
+        a = 0;
+        do {
+            *(hl as *u8) = a;
+            l++;
+            c--;
+        } while !zero;
+    }
+}

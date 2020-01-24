@@ -1,0 +1,55 @@
+// Fills a range in memory with a specified byte value.
+//
+// Notes:
+// - Some memory is unsafe to write while other hardware is using it.
+// - This will not work for 0xFExx addressses. Use the OAM library instead for modifying OAM memory.
+//
+// Arguments:
+//
+// hl = destination address
+// a = value
+// bc = byte count
+//
+// After: hl += bc, bc = 0, a is preserved.
+func memset(dest : *u8 in hl, value : u8 in a, count : u16 in bc) {
+    memset_inline(dest, value, count);
+}
+
+inline func memset_inline(dest : *u8 in hl, value : u8 in a, count : u16 in bc) {
+    c++; b++;
+    goto start;
+repeat:
+    *dest++ = value;
+start:
+    c--; goto repeat if !zero;
+    b--; goto repeat if !zero;
+}
+
+
+// Copies count bytes from source to destination.
+//
+// Notes:
+// - Some memory is unsafe to write to while other hardware is using it.
+// - This will not work for 0xFExx addressses. Use the OAM library instead for modifying OAM memory.
+//
+// Arguments:
+//
+// de = destination address
+// hl = source address
+// bc = byte count
+//
+// After: de += bc, hl += bc, bc = 0
+func memcpy(dest : *u8 in de, source : *u8 in hl, count : u16 in bc) {
+    memcpy_inline(dest, source, count);
+}
+
+inline func memcpy_inline(dest : *u8 in de, source : *u8 in hl, count : u16 in bc) {
+    c++; b++;
+    goto start;
+repeat:
+    *dest = a = *source++;
+    de++;
+start:
+    c--; goto repeat if !zero;
+    b--; goto repeat if !zero;
+}

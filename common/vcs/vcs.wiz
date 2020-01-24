@@ -1,0 +1,223 @@
+namespace vcs {
+    namespace sync {
+        var vsync @ 0x00 : u8;
+        let VSYNC_START = 0x02;
+
+        var vblank @ 0x01 : u8;
+        let VBLANK_START = 0x02; 
+        let VBLANK_RESET_TRIGGER = 0x40;
+        let VBLANK_RESET_POTS = 0x80;
+
+        var wsync @ 0x02 : u8;
+        var rsync @ 0x03 : u8;
+    }
+
+    namespace audio {
+        var volumes @ 0x19 : [u8; 2];
+        var volume1 @ 0x19 : u8;
+        var volume2 @ 0x1A : u8;
+
+        var frequencies @ 0x17 : [u8; 2];
+        var frequency1 @ 0x17 : u8;
+        var frequency2 @ 0x18 : u8;
+
+        var tones @ 0x15 : [u8; 2];
+        var tone1 @ 0x15 : u8;
+        var tone2 @ 0x16 : u8;
+    }
+
+    namespace io {
+        var pots @ 0x3C : [u8; 4];
+        var pot1 @ 0x38 : u8;
+        var pot2 @ 0x39 : u8;
+        var pot3 @ 0x3A : u8;
+        var pot4 @ 0x3B : u8;
+
+        var triggers @ 0x3C : [u8; 2];
+        var trigger1 @ 0x3C : u8;
+        var trigger2 @ 0x3D : u8;
+        let TRIGGER_JOY_FIRE = 0x80;
+
+        var port_a @ 0x280 : u8;
+        var port_b @ 0x282 : u8;
+        var ddr_a @ 0x281 : u8;
+        var ddr_b @ 0x023 : u8;
+
+        let PORT_A_JOY_UP = 0x10;
+        let PORT_A_JOY_DOWN = 0x20;
+        let PORT_A_JOY_LEFT = 0x40;
+        let PORT_A_JOY_RIGHT = 0x80;
+        let PORT_A_JOY2_UP = 0x01;
+        let PORT_A_JOY2_DOWN = 0x02;
+        let PORT_A_JOY2_LEFT = 0x04;
+        let PORT_A_JOY2_RIGHT = 0x08;
+    }
+
+    namespace timer {
+        var value @ 0x284 : u8;
+        var stat @ 0x285 : u8;
+        var set1 @ 0x294 : u8;
+        var set8 @ 0x295 : u8;
+        var set64 @ 0x296 : u8;
+        var set1024 @ 0x297 : u8;
+    }
+
+    namespace control {
+        var players @ 0x04 : [u8; 2];
+        var player1 @ 0x04 : u8;
+        var player2 @ 0x05 : u8;
+
+        let PLAYER_SINGLE = 0x00;
+        let PLAYER_SINGLE_2X = 0x05;
+        let PLAYER_SINGLE_4X = 0x07;
+        let PLAYER_DOUBLE_CLOSE = 0x01;
+        let PLAYER_DOUBLE_MEDIUM = 0x02;
+        let PLAYER_DOUBLE_FAR = 0x04;
+        let PLAYER_TRIPLE_CLOSE = 0x03;
+        let PLAYER_TRIPLE_MEDIUM = 0x06;
+        let MISSILE_1PX = 0x00;
+        let MISSILE_2PX = 0x10;
+        let MISSILE_4PX = 0x20;
+        let MISSILE_8PX = 0x30;
+
+        var playfield @ 0x0A : u8;
+
+        let FIELD_REFLECT = 0x1;
+        let FIELD_SCORE = 0x2;
+        let FIELD_PRIORITY = 0x4;
+        let BALL_1PX = 0x00;
+        let BALL_2PX = 0x10;
+        let BALL_4PX = 0x20;
+        let BALL_8PX = 0x30;
+    }
+
+    namespace color {
+        var players @ 0x06 : [u8; 2];
+        var player1 @ 0x06 : u8;
+        var player2 @ 0x07 : u8;
+        var fg @ 0x08 : u8;
+        var bg @ 0x09 : u8;
+
+        let LUMINOSITY_SHIFT = 1;
+        let LUMINOSITY_MASK = 0x0E;
+
+        let COLOR_SHIFT = 4;
+        let COLOR_MASK = 0xF0;
+
+        let SECAM_BLACK = 0x0;
+        let SECAM_BLUE = 0x2;
+        let SECAM_RED = 0x4;
+        let SECAM_MAGENTA = 0x6;
+        let SECAM_GREEN = 0x8;
+        let SECAM_CYAN = 0xA;
+        let SECAM_YELLOW = 0xC;
+        let SECAM_WHITE = 0xE;
+
+        let PAL_GREY = 0x0;
+        let PAL_YELLOW = 0x2;
+        let PAL_OLIVE = 0x3;
+        let PAL_BROWN = 0x4;
+        let PAL_GREEN = 0x5;
+        let PAL_RED = 0x6;
+        let PAL_CYAN = 0x7;
+        let PAL_MAGENTA = 0x8;
+        let PAL_LIGHT_BLUE = 0x9;
+        let PAL_PURPLE = 0xA;
+        let PAL_SKY_BLUE = 0xB;
+        let PAL_INDIGO = 0xC;
+        let PAL_BLUE = 0xD;
+
+        let NTSC_WHITE = 0x0;
+        let NTSC_YELLOW = 0x1;
+        let NTSC_ORANGE = 0x2;
+        let NTSC_RED_ORANGE = 0x3;
+        let NTSC_RED = 0x4;
+        let NTSC_MAGENTA = 0x5;
+        let NTSC_PURPLE = 0x6;
+        let NTSC_BLUE_PURPLE = 0x7;
+        let NTSC_BLUE = 0x8;
+        let NTSC_SKY_BLUE = 0x9;
+        let NTSC_CYAN = 0xA;
+        let NTSC_MINT = 0xB;
+        let NTSC_GREEN = 0xC;
+        let NTSC_GREEN_YELLOW = 0xD;
+        let NTSC_OLIVE = 0xE;
+        let NTSC_BROWN = 0xF;
+    }
+
+    namespace pattern {
+        var players @ 0x1B : [u8; 2];
+        var player1 @ 0x1B : u8;
+        var player2 @ 0x1C : u8;
+
+        var missiles @ 0x1D : [u8; 2];
+        var missile1 @ 0x1D : u8;
+        var missile2 @ 0x1E : u8;
+        let MISSILE_FILL = 0x2;
+
+        var ball @ 0x1F : u8;
+        let BALL_FILL = 0x2;
+
+        var playfields @ 0x0D : [u8; 3];
+        var playfield1 @ 0x0D : u8;
+        var playfield2 @ 0x0E : u8;
+        var playfield3 @ 0x0F : u8;
+    }
+
+    namespace hmove {
+        var players @ 0x20 : [u8; 2];
+        var player1 @ 0x20 : u8;
+        var player2 @ 0x21 : u8;
+        var missiles @ 0x22 : [u8; 2];
+        var missile1 @ 0x22 : u8;
+        var missile2 @ 0x23 : u8;
+        var ball @ 0x24 : u8;
+
+        var apply @ 0x2A : u8;
+        var clear @ 0x2B : u8;
+    }
+
+    namespace vdelay {
+        var players @ 0x25 : [u8; 2];
+        var player1 @ 0x25 : u8;
+        var player2 @ 0x26 : u8;
+        var ball @ 0x27 : u8;
+    }
+
+    namespace reflect {
+        var players @ 0x0B : [u8; 2];
+        var player1 @ 0x0B : u8;
+        var player2 @ 0x0C : u8;
+        let ENABLE = 0x08;
+    }
+
+    namespace warp {
+        var missiles @ 0x28 : [u8; 2];
+        var missile1 @ 0x28 : u8;
+        var missile2 @ 0x29 : u8;
+        let ENABLE = 0x02;
+    }
+
+    namespace reset {
+        var players @ 0x10 : [u8; 2];
+        var player1 @ 0x10 : u8;
+        var player2 @ 0x11 : u8;
+        var missiles @ 0x12 : [u8; 2];
+        var missile1 @ 0x12 : u8;
+        var missile2 @ 0x13 : u8;
+        var ball @ 0x14 : u8;
+    }
+
+    namespace collision {
+        var clear @ 0x2C : u8;
+
+        var missile1_vs_players @ 0x30 : u8;
+        var missile2_vs_players @ 0x31 : u8;
+        var player1_vs_playfield @ 0x32 : u8;
+        var player2_vs_playfield @ 0x33 : u8;
+        var missile1_vs_playfield @ 0x34 : u8;
+        var missile2_vs_playfield @ 0x35 : u8;
+        var ball_vs_field @ 0x36 : u8;
+        var pvp_mvm @ 0x37 : u8;
+    }
+}

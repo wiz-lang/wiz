@@ -1,3 +1,3 @@
-..\..\..\bin\wiz.exe -I../common/ main.wiz -o hypercat.gb
+..\..\..\bin\wiz.exe -I../../../common/gb main.wiz -o hypercat.gb
 
 pause

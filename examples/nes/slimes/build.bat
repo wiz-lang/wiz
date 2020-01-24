@@ -1,3 +1,2 @@
-..\..\..\bin\wiz.exe -I../common main.wiz --system=6502 -o slimes.nes
-
+..\..\..\bin\wiz.exe -I../../../common/nes main.wiz --system=6502 -o slimes.nes
 pause

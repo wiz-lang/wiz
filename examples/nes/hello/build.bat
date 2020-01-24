@@ -1,3 +1,2 @@
-..\..\..\bin\wiz.exe -I../common hello.wiz --system=6502 -o hello.nes
-
+..\..\..\bin\wiz.exe -I../../../common/nes hello.wiz --system=6502 -o hello.nes
 pause

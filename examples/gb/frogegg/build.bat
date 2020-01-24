@@ -1,3 +1,2 @@
-..\..\..\bin\wiz.exe -I../common/ main.wiz -o frogegg.gb
-
+..\..\..\bin\wiz.exe -I../../../common/gb main.wiz -o frogegg.gb
 pause
