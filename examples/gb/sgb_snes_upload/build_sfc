@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+cd `dirname $0`
+pushd spc
+../../../../bin/wiz -I../../../../common/spc/ -I../ main.wiz --system=spc700 -o ../spc_main.bin
+popd
+pushd snes
+../../../../bin/wiz -I../../../../common/snes/ -Isfc/ -I../ main.wiz -o ../snes_main.sfc
+popd

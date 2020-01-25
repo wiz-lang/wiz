@@ -10,7 +10,7 @@ namespace sgb_util {
     // Send a single 16-byte packet to the Super Game Boy hardware.
     // Packets are 16-bytes and zero-padded as necessary. Exact structure depends on the command
     // Arguments: hl = pointer to 16-byte packet.    
-    func send_packet(packet_ptr : u16 in hl) {
+    func send_packet(packet_ptr : *u8 in hl) {
         gb.joy.ctrl = a = 0;
         gb.joy.ctrl = a = 0x30;
 
@@ -51,11 +51,11 @@ namespace sgb_util {
     // Send multiple 16-byte SGB-formatted packets in a row.
     //
     // Arguments: hl = pointer to a sequence of 16-byte packets, terminated by a single 0xFF byte.
-    #[fallthrough] func send_packet_sequence(sequence_ptr : u16 in hl) {
+    #[fallthrough] func send_packet_sequence(sequence_ptr : *u8 in hl) {
         while true {
             a = *(hl as *u8);
             return if a == 0xFF;
-            send_packet(hl);
+            send_packet(sequence_ptr);
         }
     }
 
@@ -63,8 +63,7 @@ namespace sgb_util {
     // After: sgb_detected = 1 if found, 0 otherwise.
     func detect() {
         // Turn on 2P mode.
-        hl = &packet_2_player_mode as u16;
-        send_packet(hl);
+        send_packet(&packet_2_player_mode[0]);
 
         // If joystick id != 0 in the next two reads, we successfully switched to multiplayer mode (which means we're on a Super Game Boy)
         joy.read_raw();
@@ -81,10 +80,41 @@ namespace sgb_util {
         sgb_detected = a;
 
         // Turn off 1P mode.
-        hl = &packet_1_player_mode as u16;
-        send_packet(hl);
+        send_packet(&packet_1_player_mode[0]);
     }
 
     const packet_1_player_mode : [u8] = [gb.super.MLT_REQ | 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     const packet_2_player_mode : [u8] = [gb.super.MLT_REQ | 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    // Prepares the screen so that a VRAM transfer can be completed.
+    func prepare_vram_transfer_offscreen() {
+        do {
+            a = gb.scanline.current;
+        } while a != 144;
+
+        gb.lcd.ctrl = a = 0;
+        gb.scroll.x = a = 0;
+        gb.scroll.y = a;
+        gb.mono.palette.bg = a = 0b11100100;
+
+        hl = &gb.ram.map as u16;
+        de = 12;
+        a = 0;
+        b = 18;
+        do {
+            c = 20;
+
+            do {
+                *(hl++ as *u8) = a;
+                a++;
+                c--;
+            } while !zero;
+
+            hl += de;
+            b--;
+        } while !zero;
+
+        gb.lcd.ctrl = a = gb.lcd.CTRL_ON | gb.lcd.CTRL_TILESET2 | gb.lcd.CTRL_BG_ON;
+    }
+
 }

@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+cd `dirname $0`
+pushd spc
+../../../../bin/wiz -I../../../../common/spc/ -I../ main.wiz --system=spc700 -o ../spc_main.bin
+popd
+pushd snes
+../../../../bin/wiz -I../../../../common/snes/ -Isgb/ -I../ main.wiz --system=wdc65816 -o ../snes_main.bin
+popd
+pushd gb
+../../../../bin/wiz -I../../../../common/gb/ -I../ main.wiz -o ../sgb_snes_upload.gb
+popd
