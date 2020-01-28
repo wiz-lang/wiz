@@ -3,13 +3,11 @@ import "banks";
 in zeropage {
     var b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15 : u8;
     var w0 @ &b0, w2 @ &b2, w4 @ &b4, w6 @ &b6, w8 @ &b8 : u16;
+    var ptr0 @ &b0, ptr2 @ &b2, ptr4 @ &b4, ptr6 @ &b6, ptr8 @ &b8 : *u8;
+    var fptr0 @ &b0, fptr4 @ &b4, fptr8 @ &b8 : far *u8;
     
     var mosaic : u8;
     var timer : u8;
-    var wow : *u8;
-    var wow2 : far *u8;
-    var wow3 : func();
-    var wow4 : far func();
 }
 
 in far_ram {

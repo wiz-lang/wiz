@@ -29,23 +29,33 @@ in rom @ 0x150 {
         video.init();
         video.disable();
 
-        debug_break();
         joy.init();
 
-        gb.mono.palette.bg = a = 0b11100100;
-        gb.mono.palette.obj1 = a = 0b11100000;
-        gb.mono.palette.obj2 = a = 0b01101011;
-
-        memset(&gb.ram.tile[0], 0, 0x1800);
-        memcpy(&gb.ram.tile[0], &snes_main[0], sizeof(typeof(snes_main)));
-        memset(&gb.ram.map[0], 0, 0x800);
-
-        // Turn the screen back on, with backgrounds enabled using tileset 2.
-        gb.lcd.ctrl = a = gb.lcd.CTRL_ON | gb.lcd.CTRL_TILESET2 | gb.lcd.CTRL_BG_ON;
+        memset(&gb.ram.vram[0], 0, sizeof(typeof(gb.ram.vram)));
 
         if { a = sgb_util.sgb_detected; } && a != 0 {
+            // Running on a Super Game Boy.
+
+            // Enable SGB mask.
+            sgb_util.send_packet(&sgb_mask_enable[0]);
+            // Copy the SNES program into GB tileset memory.
+            memcpy(&gb.ram.tile[0], &snes_main[0], sizeof(typeof(snes_main)));
+            // Layout the tilemap to do a VRAM transfer via SGB packet.
             sgb_util.prepare_vram_transfer_offscreen();
+            // Send the packet sequence to start the upload sequence.
             sgb_util.send_packet_sequence(&sgb_upload_sequence[0]);
+
+            // NOTE: If we were uploading a larger SNES program, it would likely require multiple VRAM sends.
+            // We would need turn off the screen again, load the next 4K of data, then do another transfer, and only do the JUMP at the very end.
+            // We would probably want to manually construct the DATA_SND packets and send single packets rather than using hardcoded packet sequences in ROM.
+            debug_break();
+        } else {
+            // Not running on a Super Game Boy.
+            // Turn the screen back on, with backgrounds enabled using tileset 2.
+            gb.mono.palette.bg = a = 0b11100100;
+            gb.mono.palette.obj1 = a = 0b11100000;
+            gb.mono.palette.obj2 = a = 0b01101011;
+            gb.lcd.ctrl = a = gb.lcd.CTRL_ON | gb.lcd.CTRL_TILESET2 | gb.lcd.CTRL_BG_ON;
         }
 
         // Enable some basic interrupts.
@@ -83,74 +93,31 @@ in rom @ 0x150 {
     let serial = stub;
     let joypad = stub;
 
-    let SGB_SINGLE_PACKET(
+    // Helper function to create a single 16-byte SGB packet.
+    let SGB_PACKET(
         b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15
-    ) = [b0 | 1, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15];
+    ) = [b0 | 1 as u8, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15];
 
-    let SGB_PALETTE(
-        pal, color_0, color_a1, color_a2, color_a3, color_b1, color_b2, color_b3
-    ) = SGB_SINGLE_PACKET(
-        <:pal,
-        <:color_0, >:color_0,
-        <:color_a1, >:color_a1,
-        <:color_a2, >:color_a2,
-        <:color_a3, >:color_a3,
-        <:color_b1, >:color_b1,
-        <:color_b2, >:color_b2,
-        <:color_b3, >:color_b3,
-        0);
-
-    let SGB_ATTR_DIV(
-        attr_a, attr_b, attr_border, horizontal, position
-    ) = SGB_SINGLE_PACKET(
-        gb.super.ATTR_DIV, attr_b | (attr_a << 2) | (attr_border << 4) | (horizontal << 6), position,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-
-    let SGB_ATTR_LINE_DATA(
-        position, attr, horizontal
-    ) = position | (attr << 5) | (horizontal << 7);
-
-    let SGB_ATTR_LINES(
-        count,
-        item0, item1, item2, item3, item4, item5, item6,
-        item7, item8, item9, item10, item11, item12, item13
-    ) = SGB_SINGLE_PACKET(
-        gb.super.ATTR_LIN, count,
-        item0, item1, item2, item3, item4, item5, item6,
-        item7, item8, item9, item10, item11, item12, item13);
-
-    const sgb_packet_sequence : [u8]
-        = SGB_PALETTE(gb.super.PAL01, 0x3D0B, 0x622F, 0x76D2, 0x7FFF, 0x55BB, 0x5EF3, 0x579B)
-        ~ SGB_PALETTE(gb.super.PAL23, 0x3D0B, 0x55BB, 0x7ED0, 0x579B, 0x55BB, 0x5EF3, 0x6755)
-        ~ SGB_ATTR_DIV(0, 2, 3, 1, 6)
-        ~ SGB_ATTR_LINES(7,
-            SGB_ATTR_LINE_DATA(7, 1, 1),
-            SGB_ATTR_LINE_DATA(12, 0, 1),
-            SGB_ATTR_LINE_DATA(13, 0, 1),
-            SGB_ATTR_LINE_DATA(14, 0, 1),
-            SGB_ATTR_LINE_DATA(15, 0, 1),
-            SGB_ATTR_LINE_DATA(16, 0, 1),
-            SGB_ATTR_LINE_DATA(17, 0, 1),
-            0, 0, 0, 0, 0, 0, 0)
-        ~ [0xFF];
-
-    // TODO: enable mask
-    // TODO: disable mask
+    const sgb_mask_enable = SGB_PACKET(gb.super.MASK_EN, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
     const sgb_upload_sequence : [u8]
-        = SGB_SINGLE_PACKET(
-            gb.super.DATA_SND,
-            0x00, 0x17, 0x00,
-            1,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-        ~ SGB_SINGLE_PACKET(
+        // Transfer a 4K SNES program into RAM in bank 0x7F.
+        = SGB_PACKET(
             gb.super.DATA_TRN,
-            0x00, 0x10, 0x7F,
+            0x00, 0x00, 0x7F,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-        ~ SGB_SINGLE_PACKET(
+        // Mute sound output from the SNES APU.
+        // (Also enables IPL ROM on the SPC, allowing to custom SPC700 code to be uploaded.)
+        ~ SGB_PACKET(
+            gb.super.SOUND,
+            0, 0, 0, 0xFE,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        // Jump to the uploaded code, using two fixed-address entry points
+        // at the start of uploaded data to jump to a main routine + NMI routine.
+        ~ SGB_PACKET(
             gb.super.JUMP,
-            0x00, 0x10, 0x7F,
-            0x03, 0x10, 0x7F,
+            0x00, 0x00, 0x7F,
+            0x03, 0x00, 0x7F,
             0, 0, 0, 0, 0, 0, 0, 0, 0)
         ~ [0xFF];
 

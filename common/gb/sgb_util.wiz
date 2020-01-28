@@ -88,9 +88,11 @@ namespace sgb_util {
 
     // Prepares the screen so that a VRAM transfer can be completed.
     func prepare_vram_transfer_offscreen() {
-        do {
-            a = gb.scanline.current;
-        } while a != 144;
+        if { a = gb.lcd.ctrl; } && a $ gb.lcd.CTRL_BIT_ENABLE {
+            do {
+                a = gb.scanline.current;
+            } while a != 144;
+        }
 
         gb.lcd.ctrl = a = 0;
         gb.scroll.x = a = 0;

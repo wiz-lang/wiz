@@ -44,6 +44,8 @@ namespace gb {
         // Background maps.
         extern var map @ 0x9800 : [u8; 0x400];
         extern var map2 @ 0x9C00 : [u8; 0x400];
+        // Video memory. (tileset + tilemaps)
+        extern var vram @ 0x8000 : [u8; 0x2000];
         
         // Object attribute memory.
         extern var obj @ 0xFE00 : [u8; OBJ_SIZE * OBJ_TOTAL];

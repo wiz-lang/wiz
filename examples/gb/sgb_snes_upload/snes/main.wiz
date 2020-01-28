@@ -92,6 +92,28 @@ in prg {
             hardware_init();
             snes.ppu.brightness = a = snes.ppu.BRIGHTNESS_FORCE_BLANK | snes.ppu.BRIGHTNESS_MASK;
 
+            // Sigh. Found a lot of 65816 issues to look into 
+            // TODO: fix mvn/mvp (syntax incorrectly uses 8-bit x, y, a instead of xx, yy, aa. also, invalid codegen)
+            // TODO: fix being able to insert raw binary sequences directly into code (with an attribute before a const)
+            // TODO: make far qualifications on lvalues possible??? so you can go far
+            // TODO: make easy far aliases of variables?
+            // TODO: fix pattern for long indirect-indexed-by-y mode.
+            // TODO: some nicer way to address the specific u16 parts of a u24 or u32 or whatever?
+
+            xx = &spc_main as u16;
+            ptr0 = xx as *u8;
+            #:fptr0 = a = #:far &spc_main;
+
+            xx = 0x200;
+            yy = spc_main.len - 2;
+            snes2spc.transfer(xx, fptr0, yy);
+            mem16();
+            #[mem16] {            
+                xx = aa = *((far &spc_main as u24 + spc_main.len - 2) as far *u16);
+            }
+            mem8();
+            snes2spc.dispatch(xx);
+
             // Clear VRAM.
             snes.ppu.vram_control = a = snes.ppu.VRAM_CONTROL_INCREMENT_1 | snes.ppu.VRAM_CONTROL_SIZE_16;
             snes.ppu.vram_address_hl = xx = 0;
@@ -232,8 +254,6 @@ in prg {
 
     const hello_tiles_chr = embed "hello_tiles_compact.chr";
     const spc_main = embed "spc_main.bin";
-
-    const = "EGG";
 
     #[compile_if(FORMAT_SFC_LOROM)]
     const @ 0xFFEA = nmi;
