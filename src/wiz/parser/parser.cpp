@@ -306,6 +306,7 @@ namespace wiz {
             case TokenType::Asterisk:
             case TokenType::LessColon:
             case TokenType::GreaterColon:
+            case TokenType::HashColon:
             case TokenType::LeftParenthesis: {
                 return parseExpressionStatement();
             }
