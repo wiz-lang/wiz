@@ -26,7 +26,7 @@ in rom1 {
         c = msx.io.vdp.control;
         hl = &vdp_init_data as u16;
         b = vdp_init_data.len;
-        do { io_write_increment(c, hl, b); } while !zero;
+        do { io_write_inc_repeat(c, hl, b); } while !zero;
 
         // Clear VRAM.
         io_write(msx.io.vdp.control, a = <:0x0000);
@@ -121,5 +121,4 @@ in rom1 {
 
 in rom2 {
     const bkg_tileset = embed "hello_tiles.chr";
-    const spr_tileset = embed "minirpg_sprites.chr";
 }

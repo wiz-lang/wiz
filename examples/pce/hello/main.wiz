@@ -66,14 +66,14 @@ in prg {
         pce.vce.control = a = pce.vce.CONTROL_FIELD_EXTRA_LINE;
         pce.vce.address_l = a = 0;
         pce.vce.address_h = a = 0;
-        transfer_increment_to_alternate(&bkg_palette_data as u16, &pce.vce.data_l as u16, sizeof(typeof(bkg_palette_data)));
+        load_alt_inc_repeat(&pce.vce.data_l as u16, &bkg_palette_data as u16, sizeof(typeof(bkg_palette_data)));
 
         let TILESET_DEST_ADDRESS = 0x1000;
         vdc_select = pce.vdc.SELECT_VRAM_WRITE_ADDRESS;
         vdc_data_l = <:TILESET_DEST_ADDRESS;
         vdc_data_h = >:TILESET_DEST_ADDRESS;
         vdc_select = pce.vdc.SELECT_VRAM_DATA;
-        transfer_increment_to_alternate(&hello_tiles_chr as u16, &pce.vdc.data_l as u16, sizeof(typeof(hello_tiles_chr)));
+        load_alt_inc_repeat(&pce.vdc.data_l as u16, &hello_tiles_chr as u16, sizeof(typeof(hello_tiles_chr)));
 
         let START_X = 10;
         let START_Y = 13;

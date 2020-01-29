@@ -94,8 +94,8 @@ namespace wiz {
         const auto test_and_set = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("test_and_set"), decl);
         const auto swap_bytes = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("swap_bytes"), decl);
         const auto swap = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("swap_carry_emulation"), decl);
-        const auto transfer_increment_from_increment = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("transfer_increment_from_increment"), decl);
-        const auto transfer_decrement_from_decrement = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("transfer_decrement_from_increment"), decl);
+        const auto load_inc_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("load_inc_repeat"), decl);
+        const auto load_dec_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("load_dec_repeat"), decl);
         const auto mem8 = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("mem8"), decl);
         const auto mem16 = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("mem16"), decl);
         const auto idx8 = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("idx8"), decl);
@@ -1115,9 +1115,9 @@ namespace wiz {
         // rep
         builtins.createInstruction(InstructionSignature(BinaryOperatorKind::BitwiseAnd, 0, {patternP, patternImmU8}), encodingInvertedU8Operand, InstructionOptions({0xC2}, {1}, {}));
         // mvp
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(transfer_increment_from_increment), 0, {patternImmU8, patternX, patternImmU8, patternY, patternA}), encodingU8OperandU8Operand, InstructionOptions({0x44}, {0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(load_inc_repeat), 0, {patternImmU8, patternYY, patternImmU8, patternXX, patternAA}), encodingU8OperandU8Operand, InstructionOptions({0x44}, {0, 2}, {}));
         // mvn
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(transfer_decrement_from_decrement), 0, {patternImmU8, patternX, patternImmU8, patternY, patternA}), encodingU8OperandU8Operand, InstructionOptions({0x54}, {0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(load_dec_repeat), 0, {patternImmU8, patternYY, patternImmU8, patternXX, patternAA}), encodingU8OperandU8Operand, InstructionOptions({0x54}, {0, 2}, {}));
         // stp
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(stop_until_reset), 0, {}), encodingImplicit, InstructionOptions({0xDB}, {}, {}));
         // wai

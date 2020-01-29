@@ -30,7 +30,7 @@ namespace wiz {
             Definition* negative = nullptr;
             Definition* cmp = nullptr;
             Definition* bit = nullptr;
-            Definition* decrement_branch_not_zero = nullptr;
+            Definition* dec_branch_not_zero = nullptr;
     };
 }
 

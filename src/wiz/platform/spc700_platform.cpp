@@ -79,8 +79,8 @@ namespace wiz {
         const auto decimal_adjust_add = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("decimal_adjust_add"), decl);
         const auto decimal_adjust_sub = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("decimal_adjust_sub"), decl);
         cmp = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("cmp"), decl);
-        compare_branch_not_equal = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("compare_branch_not_equal"), decl);
-        decrement_branch_not_zero = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("decrement_branch_not_zero"), decl);
+        cmp_branch_not_equal = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("cmp_branch_not_equal"), decl);
+        dec_branch_not_zero = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("dec_branch_not_zero"), decl);
 
         // Non-register operands.
         const auto patternFalse = builtins.createInstructionOperandPattern(InstructionOperandPattern::Boolean(false));
@@ -634,11 +634,11 @@ namespace wiz {
         builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternDirectU8BitIndex, patternFalse}), encodingU8OperandBitIndexBranch, InstructionOptions({0x03, 3, 0x5F}, {0, 0, 1}, {}));
         builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16, patternDirectU8BitIndex, patternTrue}), encodingU8OperandBitIndexBranch, InstructionOptions({0x13, 3, 0x5F}, {0, 0, 1}, {}));
         // compare branch not equal
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(compare_branch_not_equal), 0, {patternA, patternDirectU8, patternImmU16}), encodingU8OperandPCRelativeI8Operand, InstructionOptions({0x2E}, {1, 2}, {}));
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(compare_branch_not_equal), 0, {patternA, patternDirectIndexedByXU8, patternImmU16}), encodingU8OperandPCRelativeI8Operand, InstructionOptions({0xDE}, {1, 2}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp_branch_not_equal), 0, {patternA, patternDirectU8, patternImmU16}), encodingU8OperandPCRelativeI8Operand, InstructionOptions({0x2E}, {1, 2}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp_branch_not_equal), 0, {patternA, patternDirectIndexedByXU8, patternImmU16}), encodingU8OperandPCRelativeI8Operand, InstructionOptions({0xDE}, {1, 2}, {}));
         // decrement and branch
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(decrement_branch_not_zero), 0, {patternY, patternImmU16}), encodingPCRelativeI8Operand, InstructionOptions({0xFE}, {1}, {}));
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(decrement_branch_not_zero), 0, {patternDirectU8, patternImmU16}), encodingU8OperandPCRelativeI8Operand, InstructionOptions({0x6E}, {0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(dec_branch_not_zero), 0, {patternY, patternImmU16}), encodingPCRelativeI8Operand, InstructionOptions({0xFE}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(dec_branch_not_zero), 0, {patternDirectU8, patternImmU16}), encodingU8OperandPCRelativeI8Operand, InstructionOptions({0x6E}, {0, 1}, {}));
         // call instructions
         builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternImmHighPageAddress}), encodingU8Operand, InstructionOptions({0x4F}, {1}, {}));
         builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternImmU16}), encodingU16Operand, InstructionOptions({0x3F}, {1}, {}));
@@ -738,7 +738,7 @@ namespace wiz {
                         if (const auto outerRightImmediate = right->variant.tryGet<Expression::IntegerLiteral>()) {
                             if (op == BinaryOperatorKind::NotEqual && outerRightImmediate->value.isZero()) {
                                 return std::make_unique<PlatformTestAndBranch>(
-                                    InstructionType::VoidIntrinsic(decrement_branch_not_zero),
+                                    InstructionType::VoidIntrinsic(dec_branch_not_zero),
                                     std::vector<const Expression*> {innerOperand},
                                     std::vector<PlatformBranch> {}
                                 );
@@ -756,9 +756,9 @@ namespace wiz {
                             operandRoots.push_back(InstructionOperandRoot(right, compiler.createOperandFromExpression(right, true)));
                             operandRoots.push_back(InstructionOperandRoot(nullptr, makeFwdUnique<InstructionOperand>(InstructionOperand::Integer(Int128(0x1234))))); 
 
-                            if (compiler.getBuiltins().selectInstruction(InstructionType::VoidIntrinsic(compare_branch_not_equal), 0, operandRoots)) {
+                            if (compiler.getBuiltins().selectInstruction(InstructionType::VoidIntrinsic(cmp_branch_not_equal), 0, operandRoots)) {
                                 return std::make_unique<PlatformTestAndBranch>(
-                                    InstructionType::VoidIntrinsic(compare_branch_not_equal),
+                                    InstructionType::VoidIntrinsic(cmp_branch_not_equal),
                                     std::vector<const Expression*> {left, right},
                                     std::vector<PlatformBranch> {}
                                 );

@@ -86,29 +86,29 @@ namespace wiz {
         const auto decimal_adjust = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("decimal_adjust"), decl);
         const auto swap = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("swap"), decl);
         const auto swap_shadow = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("swap_shadow"), decl);
-        const auto load_increment = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("load_increment"), decl);
-        const auto load_decrement = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("load_decrement"), decl);
-        const auto load_increment_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("load_increment_repeat"), decl);
-        const auto load_decrement_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("load_decrement_repeat"), decl);
+        const auto load_inc_next = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("load_inc_next"), decl);
+        const auto load_dec_next = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("load_dec_next"), decl);
+        const auto load_inc_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("load_inc_repeat"), decl);
+        const auto load_dec_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("load_dec_repeat"), decl);
         bit = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("bit"), decl);
         cmp = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("cmp"), decl);
-        const auto compare_increment = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("compare_increment"), decl);
-        const auto compare_decrement = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("compare_decrement"), decl);
-        const auto compare_increment_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("compare_increment_repeat"), decl);
-        const auto compare_decrement_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("compare_decrement_repeat"), decl);
+        const auto cmp_inc_next = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("cmp_inc_next"), decl);
+        const auto cmp_dec_next = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("cmp_dec_next"), decl);
+        const auto cmp_inc_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("cmp_inc_repeat"), decl);
+        const auto cmp_dec_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("cmp_dec_repeat"), decl);
         const auto rotate_left_digits = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("rotate_left_digits"), decl);
         const auto rotate_right_digits = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("rotate_right_digits"), decl);
         const auto io_read = scope->createDefinition(nullptr, Definition::BuiltinLoadIntrinsic(u8Type), stringPool->intern("io_read"), decl);
-        const auto io_read_increment = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_read_increment"), decl);
-        const auto io_read_decrement = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_read_decrement"), decl);
-        const auto io_read_increment_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_read_increment_repeat"), decl);
-        const auto io_read_decrement_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_read_decrement_repeat"), decl);
+        const auto io_read_inc_next = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_read_inc_next"), decl);
+        const auto io_read_dec_next = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_read_dec_next"), decl);
+        const auto io_read_inc_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_read_inc_repeat"), decl);
+        const auto io_read_dec_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_read_dec_repeat"), decl);
         const auto io_write = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_write"), decl);
-        const auto io_write_increment = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_write_increment"), decl);
-        const auto io_write_decrement = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_write_decrement"), decl);
-        const auto io_write_increment_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_write_increment_repeat"), decl);
-        const auto io_write_decrement_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_write_decrement_repeat"), decl);
-        decrement_branch_not_zero = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("decrement_branch_not_zero"), decl);
+        const auto io_write_inc_next = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_write_inc_next"), decl);
+        const auto io_write_dec_next = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_write_dec_next"), decl);
+        const auto io_write_inc_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_write_inc_repeat"), decl);
+        const auto io_write_dec_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_write_dec_repeat"), decl);
+        dec_branch_not_zero = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("dec_branch_not_zero"), decl);
 
         // Non-register operands.
         const auto patternFalse = builtins.createInstructionOperandPattern(InstructionOperandPattern::Boolean(false));
@@ -532,21 +532,21 @@ namespace wiz {
         builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(swap_shadow)), 0, {patternAF}), encodingImplicit, InstructionOptions({0x08}, {}, {}));
         builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(swap_shadow)), 0, {patternBC, patternDE, patternHL}), encodingImplicit, InstructionOptions({0xD9}, {}, {}));
         // ldi
-        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(load_increment)), 0, {patternDE, patternHL, patternBC}), encodingImplicit, InstructionOptions({prefixExtended, 0xA0}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(load_inc_next)), 0, {patternDE, patternHL, patternBC}), encodingImplicit, InstructionOptions({prefixExtended, 0xA0}, {}, {}));
         // ldir
-        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(load_increment_repeat)), 0, {patternDE, patternHL, patternBC}), encodingImplicit, InstructionOptions({prefixExtended, 0xB0}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(load_inc_repeat)), 0, {patternDE, patternHL, patternBC}), encodingImplicit, InstructionOptions({prefixExtended, 0xB0}, {}, {}));
         // ldd
-        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(load_decrement)), 0, {patternDE, patternHL, patternBC}), encodingImplicit, InstructionOptions({prefixExtended, 0xA8}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(load_dec_next)), 0, {patternDE, patternHL, patternBC}), encodingImplicit, InstructionOptions({prefixExtended, 0xA8}, {}, {}));
         // lddr
-        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(load_decrement_repeat)), 0, {patternDE, patternHL, patternBC}), encodingImplicit, InstructionOptions({prefixExtended, 0xB8}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(load_dec_repeat)), 0, {patternDE, patternHL, patternBC}), encodingImplicit, InstructionOptions({prefixExtended, 0xB8}, {}, {}));
         // cpi
-        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(compare_increment)), 0, {patternA, patternHL, patternBC}), encodingImplicit, InstructionOptions({prefixExtended, 0xA1}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(cmp_inc_next)), 0, {patternHL, patternA, patternBC}), encodingImplicit, InstructionOptions({prefixExtended, 0xA1}, {}, {}));
         // cpir
-        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(compare_increment_repeat)), 0, {patternA, patternHL, patternBC}), encodingImplicit, InstructionOptions({prefixExtended, 0xB1}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(cmp_inc_repeat)), 0, {patternHL, patternA, patternBC}), encodingImplicit, InstructionOptions({prefixExtended, 0xB1}, {}, {}));
         // cpd
-        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(compare_decrement)), 0, {patternA, patternHL, patternBC}), encodingImplicit, InstructionOptions({prefixExtended, 0xA9}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(cmp_dec_next)), 0, {patternHL, patternA, patternBC}), encodingImplicit, InstructionOptions({prefixExtended, 0xA9}, {}, {}));
         // cpdr
-        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(compare_decrement_repeat)), 0, {patternA, patternHL, patternBC}), encodingImplicit, InstructionOptions({prefixExtended, 0xB9}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(cmp_dec_repeat)), 0, {patternHL, patternA, patternBC}), encodingImplicit, InstructionOptions({prefixExtended, 0xB9}, {}, {}));
         // 8-bit arithmetic
         {
             using ArithmeticOperatorInfo = std::tuple<InstructionType, std::uint8_t>;
@@ -799,7 +799,7 @@ namespace wiz {
         builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternIX}), encodingImplicit, InstructionOptions({prefixIX, 0xE9}, {}, {}));
         builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternIY}), encodingImplicit, InstructionOptions({prefixIY, 0xE9}, {}, {}));
         // djnz
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(decrement_branch_not_zero), 0, {patternB, patternImmU16}), encodingPCRelativeI8Operand, InstructionOptions({0x10}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(dec_branch_not_zero), 0, {patternB, patternImmU16}), encodingPCRelativeI8Operand, InstructionOptions({0x10}, {1}, {}));
         // call abs
         builtins.createInstruction(InstructionSignature(BranchKind::Call, 0, {patternAtLeast0, patternImmU16}), encodingU16Operand, InstructionOptions({0xCD}, {1}, {}));
         // call cond, abs
@@ -845,13 +845,13 @@ namespace wiz {
             }
         }
         // ini
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(io_read_increment), 0, {patternHL, patternC, patternB}), encodingImplicit, InstructionOptions({prefixExtended, 0xA2}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(io_read_inc_next), 0, {patternHL, patternC, patternB}), encodingImplicit, InstructionOptions({prefixExtended, 0xA2}, {}, {}));
         // inir
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(io_read_increment_repeat), 0, {patternHL, patternC, patternB}), encodingImplicit, InstructionOptions({prefixExtended, 0xB2}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(io_read_inc_repeat), 0, {patternHL, patternC, patternB}), encodingImplicit, InstructionOptions({prefixExtended, 0xB2}, {}, {}));
         // ind
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(io_read_decrement), 0, {patternHL, patternC, patternB}), encodingImplicit, InstructionOptions({prefixExtended, 0xAA}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(io_read_dec_next), 0, {patternHL, patternC, patternB}), encodingImplicit, InstructionOptions({prefixExtended, 0xAA}, {}, {}));
         // indr
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(io_read_decrement_repeat), 0, {patternHL, patternC, patternB}), encodingImplicit, InstructionOptions({prefixExtended, 0xBA}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(io_read_dec_repeat), 0, {patternHL, patternC, patternB}), encodingImplicit, InstructionOptions({prefixExtended, 0xBA}, {}, {}));
         // out (n), a
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(io_write), 0, {patternImmU8, patternA}), encodingU8Operand, InstructionOptions({0xD3}, {0}, {}));
         // out (c), r
@@ -861,13 +861,13 @@ namespace wiz {
             }
         }
         // outi
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(io_write_increment), 0, {patternC, patternHL, patternB}), encodingImplicit, InstructionOptions({prefixExtended, 0xA3}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(io_write_inc_next), 0, {patternC, patternHL, patternB}), encodingImplicit, InstructionOptions({prefixExtended, 0xA3}, {}, {}));
         // outir
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(io_write_increment_repeat), 0, {patternC, patternHL, patternB}), encodingImplicit, InstructionOptions({prefixExtended, 0xB3}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(io_write_inc_repeat), 0, {patternC, patternHL, patternB}), encodingImplicit, InstructionOptions({prefixExtended, 0xB3}, {}, {}));
         // outd
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(io_write_decrement), 0, {patternC, patternHL, patternB}), encodingImplicit, InstructionOptions({prefixExtended, 0xAB}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(io_write_dec_next), 0, {patternC, patternHL, patternB}), encodingImplicit, InstructionOptions({prefixExtended, 0xAB}, {}, {}));
         // outdr
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(io_write_decrement_repeat), 0, {patternC, patternHL, patternB}), encodingImplicit, InstructionOptions({prefixExtended, 0xBB}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(io_write_dec_repeat), 0, {patternC, patternHL, patternB}), encodingImplicit, InstructionOptions({prefixExtended, 0xBB}, {}, {}));
     }
 
     Definition* Z80Platform::getPointerSizedType() const {
@@ -896,7 +896,7 @@ namespace wiz {
                                 if (const auto outerRightImmediate = right->variant.tryGet<Expression::IntegerLiteral>()) {
                                     if (op == BinaryOperatorKind::NotEqual && outerRightImmediate->value.isZero()) {
                                         return std::make_unique<PlatformTestAndBranch>(
-                                            InstructionType::VoidIntrinsic(decrement_branch_not_zero),
+                                            InstructionType::VoidIntrinsic(dec_branch_not_zero),
                                             std::vector<const Expression*> {innerOperand},
                                             std::vector<PlatformBranch> {}
                                         );

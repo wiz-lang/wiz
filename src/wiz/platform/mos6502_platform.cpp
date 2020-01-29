@@ -640,11 +640,11 @@ namespace wiz {
             const auto patternMPR7 = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("mpr7"), decl)));
 
             const auto swap = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("swap"), decl);
-            const auto transfer_alternate_to_increment = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("transfer_alternate_to_increment"), decl);
-            const auto transfer_increment_to_alternate = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("transfer_increment_to_alternate"), decl);
-            const auto transfer_decrement_to_decrement = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("transfer_decrement_to_decrement"), decl);
-            const auto transfer_increment_to_increment = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("transfer_increment_to_increment"), decl);
-            const auto transfer_increment_to_fixed = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("transfer_increment_to_fixed"), decl);
+            const auto load_inc_alt_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("load_inc_alt_repeat"), decl);
+            const auto load_alt_inc_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("load_alt_inc_repeat"), decl);
+            const auto load_dec_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("load_dec_repeat"), decl);
+            const auto load_inc_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("load_inc_repeat"), decl);
+            const auto load_fix_inc_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("load_fix_inc_repeat"), decl);
             const auto mpr_set = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("mpr_set"), decl);
 
             tst = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("tst"), decl);
@@ -748,11 +748,11 @@ namespace wiz {
             builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternVdcDataL, patternImmU8}), encodingU8Operand, InstructionOptions({0x13}, {1}, {}));
             builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternVdcDataH, patternImmU8}), encodingU8Operand, InstructionOptions({0x23}, {1}, {}));
             // block transfers: tai/tia/tdd/tii/tin
-            builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(transfer_alternate_to_increment), 0, {patternImmU16, patternImmU16, patternImmU16}), encodingBlockTransfer, InstructionOptions({0xF3}, {0, 1, 2}, {}));
-            builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(transfer_increment_to_alternate), 0, {patternImmU16, patternImmU16, patternImmU16}), encodingBlockTransfer, InstructionOptions({0xE3}, {0, 1, 2}, {}));
-            builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(transfer_decrement_to_decrement), 0, {patternImmU16, patternImmU16, patternImmU16}), encodingBlockTransfer, InstructionOptions({0xC3}, {0, 1, 2}, {}));
-            builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(transfer_increment_to_increment), 0, {patternImmU16, patternImmU16, patternImmU16}), encodingBlockTransfer, InstructionOptions({0x73}, {0, 1, 2}, {}));
-            builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(transfer_increment_to_fixed), 0, {patternImmU16, patternImmU16, patternImmU16}), encodingBlockTransfer, InstructionOptions({0xD3}, {0, 1, 2}, {}));
+            builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(load_inc_alt_repeat), 0, {patternImmU16, patternImmU16, patternImmU16}), encodingBlockTransfer, InstructionOptions({0xF3}, {1, 0, 2}, {}));
+            builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(load_alt_inc_repeat), 0, {patternImmU16, patternImmU16, patternImmU16}), encodingBlockTransfer, InstructionOptions({0xE3}, {1, 0, 2}, {}));
+            builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(load_dec_repeat), 0, {patternImmU16, patternImmU16, patternImmU16}), encodingBlockTransfer, InstructionOptions({0xC3}, {1, 0, 2}, {}));
+            builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(load_inc_repeat), 0, {patternImmU16, patternImmU16, patternImmU16}), encodingBlockTransfer, InstructionOptions({0x73}, {1, 0, 2}, {}));
+            builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(load_fix_inc_repeat), 0, {patternImmU16, patternImmU16, patternImmU16}), encodingBlockTransfer, InstructionOptions({0xD3}, {1, 0, 2}, {}));
             // tam - modify MPR0-7 based on accumulator
             builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(mpr_set), 0, {patternImmU8, patternA}), encodingU8Operand, InstructionOptions({0x53}, {0}, {}));
             builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternMPR0, patternA}), encodingImplicit, InstructionOptions({0x53, 0x01}, {}, {}));

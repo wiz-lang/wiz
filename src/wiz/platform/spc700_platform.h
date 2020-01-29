@@ -36,8 +36,8 @@ namespace wiz {
 			Definition* zero = nullptr;
 			Definition* carry = nullptr;
 			Definition* cmp = nullptr;
-			Definition* compare_branch_not_equal = nullptr;
-			Definition* decrement_branch_not_zero = nullptr;
+			Definition* cmp_branch_not_equal = nullptr;
+			Definition* dec_branch_not_zero = nullptr;
     };
 }
 

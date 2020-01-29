@@ -60,7 +60,7 @@ in prg @ 0x0066 {
         sms.mapper.rom_8000 = a;
 
         // Init VDP.
-        io_write_increment_repeat(c = sms.io.vdp.control, hl = &vdp_data as u16, b = vdp_data.len);
+        io_write_inc_repeat(c = sms.io.vdp.control, hl = &vdp_data as u16, b = vdp_data.len);
 
         // Clear VRAM.
         io_write(sms.io.vdp.control, a = 0);
@@ -75,12 +75,12 @@ in prg @ 0x0066 {
         // Load background palette.
         io_write(sms.io.vdp.control, a = 0x00);
         io_write(sms.io.vdp.control, a = sms.io.vdp.CONTROL_ACCESS_CRAM);
-        io_write_increment_repeat(c = sms.io.vdp.data, hl = &bkg_palette_data as u16, b = sizeof(typeof(bkg_palette_data)));
+        io_write_inc_repeat(c = sms.io.vdp.data, hl = &bkg_palette_data as u16, b = sizeof(typeof(bkg_palette_data)));
 
         // Load sprite palette.
         io_write(sms.io.vdp.control, a = 0x20);
         io_write(sms.io.vdp.control, a = sms.io.vdp.CONTROL_ACCESS_CRAM);
-        io_write_increment_repeat(c = sms.io.vdp.data, hl = &spr_palette_data as u16, b = sizeof(typeof(spr_palette_data)));
+        io_write_inc_repeat(c = sms.io.vdp.data, hl = &spr_palette_data as u16, b = sizeof(typeof(spr_palette_data)));
 
         // Load background tileset.
         io_write(sms.io.vdp.control, a = 0x00);
