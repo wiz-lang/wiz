@@ -38,6 +38,27 @@ namespace gb {
         extern writeonly dma @ 0xFF46 : u8;
     }
 
+    namespace oam {
+        namespace attr {
+            namespace bit {
+                let PRIORITY = 7;
+                let VFLIP = 6;
+                let HFLIP = 5;
+                let MONO_PALETTE = 4;
+                let COLOR_TILE_BANK = 3;
+            }
+
+            namespace mask {
+                let PRIORITY = 0x80;
+                let VFLIP = 0x40;
+                let HFLIP = 0x20;
+                let MONO_PALETTE = 0x10;
+                let COLOR_TILE_BANK = 0x08;
+                let COLOR_PALETTE = 0x07;
+            }
+        }
+    }    
+
     namespace ram {
         // Tile data.
         extern var tile @ 0x8000 : [u8; 0x1800];
