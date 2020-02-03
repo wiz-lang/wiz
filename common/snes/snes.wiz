@@ -68,8 +68,8 @@ namespace snes {
         let VRAM_CONTROL_REMAP_MODE_1 = 0x04;
         let VRAM_CONTROL_REMAP_MODE_2 = 0x08;
         let VRAM_CONTROL_REMAP_MODE_3 = 0x0C;
-        let VRAM_CONTROL_SIZE_8 = 0x00;
-        let VRAM_CONTROL_SIZE_16 = 0x80;        
+        let VRAM_CONTROL_SIZE_1 = 0x00;
+        let VRAM_CONTROL_SIZE_2 = 0x80;        
 
         extern writeonly vram_address_l @ 0x2116 : u8;
         extern writeonly vram_address_h @ 0x2117 : u8;
@@ -267,6 +267,42 @@ namespace snes {
     }
 
     namespace joy {
+        namespace bit_l {
+            let R = 4;
+            let L = 5;
+            let X = 6;
+            let A = 7;
+        }
+
+        namespace bit_h {
+            let RIGHT = 0;
+            let LEFT = 1;
+            let DOWN = 2;
+            let UP = 3;
+            let START = 4;
+            let SELECT = 5;
+            let Y = 6;
+            let B = 7;
+        }
+
+        namespace mask_l {
+            let R = 0x10;
+            let L = 0x20;
+            let X = 0x40;
+            let A = 0x80;
+        }
+
+        namespace mask_h {
+            let RIGHT = 0x01;
+            let LEFT = 0x02;
+            let DOWN = 0x04;
+            let UP = 0x08;
+            let START = 0x10;
+            let SELECT = 0x20;
+            let Y = 0x40;
+            let B = 0x80;
+        }
+
         extern writeonly output @ 0x4016 : u8;
         extern const input1 @ 0x4016 : u8;
         extern const input2 @ 0x4017 : u8;

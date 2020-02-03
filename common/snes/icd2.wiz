@@ -1,0 +1,76 @@
+namespace icd2 {
+    namespace vram {
+        let BUFFER_COUNT = 4;
+        let BUFFER_BYTE_SIZE = 320;
+        let BUFFER_INDEX_MASK = 3;
+
+        // The tile row is the current GB scanline divided by 8.
+        // Every time the tile row increases, the buffer index is advanced.
+        // The buffer index is between 0 .. 3 and will wrap around.
+        // The GB screen is 144 pixels, or 18 rows tall. 
+        // During vblank, the PPU will be on tile row 18.
+        // While the tile row will reset to 0 when starting a new frame, the buffer index to be written carries across frames.
+        // Since 18 / 4 has a remaninder of 2, this means the buffer index can be either buffer 0 or buffer 2 at the start of a new frame.
+        //
+        // It should be possible to read the buffer for the first row tiles when the PPU position reaches tile row 1, meaning tile row 0 was just fully drawn?
+        //
+        // The safest position to read appears the index immediately before the write position, since it gives the most time read the row without being written over.
+        // If the SNES side can keep up fast, maybe could do 2 rows behind and read both without re-checking PPU position, but seems potentially more risky. Hmm.
+        const ppu_position @ 0x6000 : u8;
+        let PPU_POSITION_TILE_ROW_MASK = 0xF8;
+        let PPU_POSITION_TILE_ROW_SHIFT = 3;
+        let PPU_POSITION_BUFFER_INDEX_MASK = 0x3;
+
+        // Selects which of the buffers 0 .. 3 to read from, and resets the position in the buffer.
+        writeonly read_buffer_index @ 0x6001 : u8;
+        // Port to read the next value from the VRAM. The GB screen is 160 pixels, or 20 columns wide.
+        // The data port will have 2 bytes/row * 8 rows/tile * 20 tiles = 320 bytes of data for a given buffer.
+        const read_data @ 0x7800 : u8;
+    }
+
+    namespace command {
+        const ready @ 0x6002 : u8;
+        const data @ 0x7000 : [u8; 16];
+    }
+
+    namespace joy {
+        namespace bit {
+            let RIGHT = 0;
+            let LEFT = 1;
+            let UP = 2;
+            let DOWN = 3;
+            let A = 4;
+            let B = 5;
+            let SELECT = 6;
+            let START = 7;
+        }
+
+        namespace mask {
+            let RIGHT = 0x01;
+            let LEFT = 0x02;
+            let UP = 0x04;
+            let DOWN = 0x08;
+            let A = 0x10;
+            let B = 0x20;
+            let SELECT = 0x40;
+            let START = 0x80;
+        }
+
+        writeonly data1 @ 0x6004 : u8;
+        writeonly data2 @ 0x6005 : u8;
+        writeonly data3 @ 0x6006 : u8;
+        writeonly data4 @ 0x6007 : u8;
+    }
+
+    writeonly ctrl @ 0x7800 : u8;
+    let CTRL_RESET = 0x80;
+    let CTRL_JOY_MODE_4P = 0x20;
+    let CTRL_JOY_MODE_2P = 0x10;
+    let CTRL_JOY_MODE_1P = 0x00;
+    let CTRL_SPEED_VERY_SLOW = 0x03;
+    let CTRL_SPEED_SLOW = 0x02;
+    let CTRL_SPEED_NORMAL = 0x01;
+    let CTRL_SPEED_FAST = 0x00;
+
+    const version @ 0x600F : u8;
+}

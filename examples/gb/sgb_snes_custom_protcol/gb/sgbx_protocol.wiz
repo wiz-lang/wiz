@@ -1,0 +1,91 @@
+import "gb";
+import "banks";
+import "memory";
+
+// A custom transfer protocol to enable quick transfers to the SNES,
+// Basically hands over a small buffer to the SNES every frame, so the SNES can immediately handle it, and interpret the data in a custom way.
+// For now the GB side does nothing special, other than write its buffer into the tile data each vblank with an unrolled loop, but may contain more logic later.
+namespace sgbx_protocol {
+    // The data length was chosen to fit mostly in vblank, plus a couple hblank scanlines extra.
+    // This way, the data can be immediately read by the SNES by the time the first 8px row of the GB screen has completed rendering.
+    //
+    // It may make sense to use all the hblank time to transfer extra data, but:
+    //
+    // 1) hblank has much less throughput than vblank (~4 bytes/hblank)
+    // 2) the ICD2 only has enough buffer for 4 rows (20 tiles per row) of screen data.
+    // 3) if hblanks spill into the screen, it wouldn't be safe to read this data without tearing. (unless you do the hblanks BEFORE vblank instead of after, but harder to implement)
+    // 4) if the data isn't available right away, the screen layout would have to be different to ensure that the data will be in the ICD2's VRAM buffer.
+    // 5) waiting for the data would introduce anywhere from latency, potentially 1/2 frame or even a full frame depending on the amount of data sent.
+    // 6) with all of those drawbacks in mind, it also eats a fair chunk of ROM space to unroll loops like this.
+    //
+    // So, if the data is much larger than that, then it makes more sense to turn off the screen, write the data and then enable the screen.
+    let DATA_LENGTH = 256;
+
+    let TRANSFER_BYTES_PER_VBLANK = 240;
+    let TRANSFER_HBLANK_COUNT = 4;
+    let TRANSFER_BYTES_PER_HBLANK = 4;
+
+    let TRANSFER_MODE_NONE = 0;
+    let TRANSFER_MODE_BASIC = 1;
+    let TRANSFER_MODE_FULL = 2;
+
+    in ram {
+        var temp_sp : u16;
+
+        var transfer_request : u8;
+        var data : [u8; DATA_LENGTH];
+    }
+
+    let init = clear;
+
+    func clear() {
+        transfer_request = a = 0;
+        memset(&data[0], 0, sizeof(typeof(data)));
+    }
+
+    inline func request_transfer() {
+        transfer_request = a = 1;
+    }
+
+    inline func _wait_hblank() {
+        do {
+            a = gb.lcd.stat & gb.lcd.STAT_MODE_MASK;
+        } while a != gb.lcd.STAT_MODE_HBLANK;
+    }
+
+    inline func _transfer_step() {
+        de = pop();
+        *(hl++ as *u8) = a = e;
+        *(hl++ as *u8) = a = d;
+    }
+
+    func complete_transfer() {
+        a = transfer_request; 
+        if a == 0 {
+            return;
+        }
+
+        temp_sp = sp;
+
+        sp = &data[0] as u16;
+        hl = &gb.ram.tile[0] as u16;
+
+        inline for in 1 .. TRANSFER_BYTES_PER_VBLANK / 2 {
+            _transfer_step();
+        }
+        inline for in 1 .. TRANSFER_HBLANK_COUNT {
+            _wait_hblank();
+            inline for in 1 .. TRANSFER_BYTES_PER_HBLANK / 2 {
+                _transfer_step();
+            }
+        }
+
+        transfer_request = a = 0;
+
+        hl = &temp_sp as u16;
+        a = *(hl++ as *u8);
+        h = *(hl as *u8);
+        l = a;
+        sp = hl;
+    }
+}

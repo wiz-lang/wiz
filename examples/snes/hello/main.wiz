@@ -70,7 +70,7 @@ in prg {
         snes.rom.speed = 0;
 
         // Clear VRAM.
-        snes.ppu.vram_control = a = snes.ppu.VRAM_CONTROL_INCREMENT_1 | snes.ppu.VRAM_CONTROL_SIZE_16;
+        snes.ppu.vram_control = a = snes.ppu.VRAM_CONTROL_INCREMENT_1 | snes.ppu.VRAM_CONTROL_SIZE_2;
         snes.ppu.vram_address_hl = xx = 0;
 
         w0 = xx = 0;
@@ -125,7 +125,7 @@ in prg {
         xx = *(&spc_main[spc_main.len - 2] as *u16);
         snes2spc.dispatch(xx);
 
-        snes.ppu.vram_control = a = snes.ppu.VRAM_CONTROL_INCREMENT_1 | snes.ppu.VRAM_CONTROL_SIZE_16;
+        snes.ppu.vram_control = a = snes.ppu.VRAM_CONTROL_INCREMENT_1 | snes.ppu.VRAM_CONTROL_SIZE_2;
         snes.ppu.vram_address_hl = xx = 0;
 
         snes.dma0.control = a = snes.dma.CONTROL_MODE_AB;
@@ -151,7 +151,7 @@ in prg {
         let TEXT_Y = 13;
         let TEXT_TILEMAP_DEST = BG1_TILEMAP_BASE_ADDRESS + TEXT_Y * 32 + TEXT_X;
 
-        snes.ppu.vram_control = a = snes.ppu.VRAM_CONTROL_INCREMENT_1 | snes.ppu.VRAM_CONTROL_SIZE_8;
+        snes.ppu.vram_control = a = snes.ppu.VRAM_CONTROL_INCREMENT_1 | snes.ppu.VRAM_CONTROL_SIZE_1;
         snes.ppu.vram_address_hl = xx = TEXT_TILEMAP_DEST;
 
         snes.dma0.control = a = snes.dma.CONTROL_MODE_A;

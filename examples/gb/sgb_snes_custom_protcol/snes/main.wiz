@@ -1,6 +1,25 @@
 import "snes";
 import "banks";
+import "icd2";
 import "ram";
+
+in zeropage {
+    var vblank_request : u8;
+    var ppu_transfer_request : u8;
+    var wait_frames : u8;
+    var joy_pressed : u16;
+    var scroll_x : u16;
+    var scroll_y : u16;
+}
+
+in far_ram {
+    // This buffer is used to hold the data read from the ICD2.
+    // NOTE:
+    //   The real hardware/bsnes/higan can locate the buffer anywhere, and can
+    //   even read the ICD2 data port directly, or DMA to somewhere besides WRAM.
+    // See: https://github.com/devinacker/bsnes-plus/issues/247
+    var framebuffer @ 0x7E5000 : [u8; 320 * 18];
+}
 
 in prg {
     #[compile_if(FORMAT_SGB_BINARY)] {
@@ -74,6 +93,9 @@ in prg {
         snes.dma.hdma_enable = 0;
     }
 
+    let BG12_TILESET_BASE_ADDRESS = 0x0000;
+    let BG1_TILEMAP_BASE_ADDRESS = 0x1000;    
+
     #[fallthrough]
     func main() {
         #[compile_if(FORMAT_SFC_LOROM)] {
@@ -81,7 +103,7 @@ in prg {
             decimal = false;
             carry = false;
             swap_carry_emulation();
-        }    
+        }
 
         mem8_idx16();
         #[mem8, idx16] {
@@ -90,29 +112,7 @@ in prg {
             }
 
             hardware_init();
-            snes.ppu.brightness = a = snes.ppu.BRIGHTNESS_FORCE_BLANK | snes.ppu.BRIGHTNESS_MASK;
-
-            // Sigh. Found a lot of 65816 issues to look into 
-            // TODO: fix mvn/mvp (syntax incorrectly uses 8-bit x, y, a instead of xx, yy, aa. also, invalid codegen)
-            // TODO: fix being able to insert raw binary sequences directly into code (with an attribute before a const)
-            // TODO: make far qualifications on lvalues possible??? so you can go far
-            // TODO: make easy far aliases of variables?
-            // TODO: fix pattern for long indirect-indexed-by-y mode.
-            // TODO: some nicer way to address the specific u16 parts of a u24 or u32 or whatever?
-
-            xx = &spc_main as u16;
-            ptr0 = xx as *u8;
-            #:fptr0 = a = #:far &spc_main;
-
-            xx = 0x200;
-            yy = spc_main.len - 2;
-            snes2spc.transfer(xx, fptr0, yy);
-            mem16();
-            #[mem16] {            
-                xx = aa = *((far &spc_main as u24 + spc_main.len - 2) as far *u16);
-            }
-            mem8();
-            snes2spc.dispatch(xx);
+            snes.ppu.brightness = a = snes.ppu.BRIGHTNESS_FORCE_BLANK | snes.ppu.BRIGHTNESS_MASK;        
 
             // Clear VRAM.
             snes.ppu.vram_control = a = snes.ppu.VRAM_CONTROL_INCREMENT_1 | snes.ppu.VRAM_CONTROL_SIZE_2;
@@ -161,25 +161,6 @@ in prg {
 
             snes.dma.mdma_enable = a = snes.dma.ENABLE_0 | snes.dma.ENABLE_1;
 
-            // Coopy tilemap.
-            let BG12_TILESET_BASE_ADDRESS = 0x0000;
-            let BG1_TILEMAP_BASE_ADDRESS = 0x1000;
-
-            let TEXT_X = 10;
-            let TEXT_Y = 13;
-            let TEXT_TILEMAP_DEST = BG1_TILEMAP_BASE_ADDRESS + TEXT_Y * 32 + TEXT_X;
-
-            snes.ppu.vram_control = a = snes.ppu.VRAM_CONTROL_INCREMENT_1 | snes.ppu.VRAM_CONTROL_SIZE_1;
-            snes.ppu.vram_address_hl = xx = TEXT_TILEMAP_DEST;
-
-            snes.dma0.control = a = snes.dma.CONTROL_MODE_A;
-            snes.dma0.mdma_dest = a = <:&snes.ppu.vram_write_data_l;
-            snes.dma0.src_address_hl = xx = &message as u16;
-            snes.dma0.src_address_bank = a = #:far &message;
-            snes.dma0.mdma_size_hl = xx = sizeof(typeof(message));
-
-            snes.dma.mdma_enable = a = snes.dma.ENABLE_0;
-
             snes.ppu.win_bg12_control = 0;
             snes.ppu.win_bg34_control = 0;
             snes.ppu.win_obj_control = 0;
@@ -202,41 +183,186 @@ in prg {
             snes.ppu.screen_enable_mask = a = snes.ppu.SCREEN_ENABLE_BG1;
             snes.ppu.brightness = a = 0xF;
 
+            vblank_request = 0;
+            ppu_transfer_request = 0;
+            xx = 0;
+            joy_pressed = xx;
+            scroll_x = xx;
+            scroll_y = xx;
+
             mosaic = 0;
             timer = 0;
-            snes.ppu.irq_enable = a = snes.ppu.IRQ_ENABLE_NMI; 
 
-            while true {}
+            push8(data_bank);
+            push8(a = #:far &framebuffer);
+            data_bank = pop8();
+            a = 0;
+            xx = 0;
+            yy = 320;
+            do {
+                framebuffer[xx] = a;
+                xx++;
+                yy--;
+            } while !zero;
+            data_bank = pop8();
+
+            snes.ppu.irq_enable = a = snes.ppu.IRQ_ENABLE_NMI | snes.ppu.IRQ_ENABLE_AUTOJOY;
+
+            // Need to wait a few frames so the framebuffer will have the correct data.
+            wait_frames = a = 4;
+
+            ^while true {
+                /*
+                // Read scanline twice and repeat until the row make sure the row didn't just change.
+                do {
+                    b0 = a = icd2.vram.ppu_position;
+                    a = icd2.vram.ppu_position;
+                } while a != b0;*/
+
+                do {
+                    b0 = a = icd2.vram.ppu_position;
+                    a = a & icd2.vram.PPU_POSITION_TILE_ROW_MASK;
+                } while a != 8;
+
+                icd2.vram.read_buffer_index = a = (b0 - 1) & icd2.vram.BUFFER_INDEX_MASK;
+
+                // NOTE:
+                //   bsnes-plus only emulates reading from the ICD2 VRAM if you use DMA, and
+                //   only works when copying to a specific harcoded WRAM memory locations.
+                //   The real hardware/bsnes/higan can locate the buffer anywhere, and can
+                //   even read the ICD2 data port directly, or DMA to somewhere besides WRAM.
+                // See: https://github.com/devinacker/bsnes-plus/issues/247
+                snes.wram.address_hl = xx = &framebuffer as u16;
+                snes.wram.address_bank = a = #:far &framebuffer;
+                snes.dma4.control = a = snes.dma.CONTROL_MODE_A | snes.dma.CONTROL_MDMA_NO_INCREMENT;
+                snes.dma4.mdma_dest = a = <:&snes.wram.data;
+                snes.dma4.src_address_hl = xx = &icd2.vram.read_data as u16;
+                snes.dma4.src_address_bank = a = #:far &icd2.vram.read_data;
+                snes.dma4.mdma_size_hl = xx = sizeof(typeof(framebuffer));
+
+                snes.dma.mdma_enable = a = snes.dma.ENABLE_4;
+
+                push8(data_bank);
+                push8(a = #:far &framebuffer);
+                data_bank = pop8();
+                timer = a = framebuffer[0];
+                mosaic = a = framebuffer[1];
+                <:scroll_x = a = framebuffer[2];
+                <:scroll_y = a = framebuffer[3];
+                data_bank = pop8();
+
+                a = wait_frames;
+                if zero {
+                    ppu_transfer_request++;
+                } else {
+                    wait_frames--;
+                }
+                vblank_request++;
+                do { a = vblank_request; } while !zero;
+
+
+                do {
+                    a = snes.ppu.hvbjoy_status & 1;
+                } while !zero;
+
+                joy_pressed = xx = snes.joy.pad1_hl;
+                w0 = xx = joy_pressed;
+                b2 = 0;
+                a = (b0 & snes.joy.mask_l.A) >>> (snes.joy.bit_l.A - icd2.joy.bit.A);
+                test_and_set(b2, a);
+                a = (b1 & snes.joy.mask_h.B) >>> (snes.joy.bit_h.B - icd2.joy.bit.B);
+                test_and_set(b2, a);      
+                a = (b1 & snes.joy.mask_h.SELECT) << (icd2.joy.bit.SELECT - snes.joy.bit_h.SELECT);
+                test_and_set(b2, a);
+                a = (b1 & snes.joy.mask_h.START) << (icd2.joy.bit.START - snes.joy.bit_h.START);
+                test_and_set(b2, a);
+                a = (b1 & snes.joy.mask_h.UP) >>> (snes.joy.bit_h.UP - icd2.joy.bit.UP);
+                test_and_set(b2, a);
+                a = (b1 & snes.joy.mask_h.DOWN) << (icd2.joy.bit.DOWN - snes.joy.bit_h.DOWN);
+                test_and_set(b2, a);
+                a = (b1 & (snes.joy.mask_h.LEFT | snes.joy.mask_h.RIGHT)) | b2;
+                icd2.joy.data1 = a = a ^ 0xFF;
+            }
         }
     }
 
     #[irq, mem8, idx16]
     func nmi() {
-        mem8_idx16();
-        ++timer;
-
-        if { a = timer & 3; } && zero {
-            snes.ppu.mosaic = a = ((mosaic >>> 4) << 4) | 0x1;
-            mosaic = a = mosaic + 0x08;
-        }
-
-        a = timer;
-
-        mem16();
-        #[mem16] {
-            aa &= 0xFF;
-            xx = aa <<= 1;
-
-            aa = *((far &sine_table as u24 + xx as u24) as far *u16);
-
-            inline for in 1 .. 10 { cmp(aa, 0x8000); aa >>>>#= 1; }
-
-            w0 = aa;
+        mem16_idx16();
+        #[mem16, idx16] {
+            push8(data_bank);
+            push16(direct_page);
+            push16(aa);
+            push16(xx);
+            push16(yy);
         }
         mem8();
 
-        snes.ppu.bg1_scroll_y = a = <:w0;
-        snes.ppu.bg1_scroll_y = a = >:w0;
+        if { a = vblank_request; } && !zero {
+            vblank_request--;
+        }
+
+        ^if { a = ppu_transfer_request; } && !zero {
+            push8(data_bank);
+            push8(a = #:far &framebuffer);
+            data_bank = pop8();
+            xx = *(&framebuffer[16] as *u16);
+            data_bank = pop8();
+
+            if xx != 0 {
+                // Copy tilemap.
+                let TEXT_X = 10;
+                let TEXT_Y = 13;
+                let TEXT_TILEMAP_DEST = BG1_TILEMAP_BASE_ADDRESS + TEXT_Y * 32 + TEXT_X;
+
+                snes.ppu.vram_control = a = snes.ppu.VRAM_CONTROL_INCREMENT_1 | snes.ppu.VRAM_CONTROL_SIZE_1;
+                snes.ppu.vram_address_hl = yy = TEXT_TILEMAP_DEST;
+
+                snes.dma0.control = a = snes.dma.CONTROL_MODE_A;
+                snes.dma0.mdma_dest = a = <:&snes.ppu.vram_write_data_l;
+                snes.dma0.src_address_hl = yy = &framebuffer[18] as u16;
+                snes.dma0.src_address_bank = a = #:far &framebuffer;
+                snes.dma0.mdma_size_hl = xx;
+
+                snes.dma.mdma_enable = a = snes.dma.ENABLE_0;
+            }
+
+            snes.ppu.mosaic = a = ((mosaic >>> 4) << 4) | 1;
+
+            a = timer;
+
+            mem16();
+            #[mem16] {
+                aa &= 0xFF;
+                xx = aa <<= 1;
+
+                // NOTE: Need to improve syntaax far addressing, need to improve syntax for unaligned accesses.
+                aa = *((far &sine_table as u24 + xx as u24) as far *u16);
+
+                inline for in 1 .. 10 { cmp(aa, 0x8000); aa >>>>#= 1; }
+
+                aa += scroll_y;
+
+                w0 = aa;
+            }
+            mem8();
+
+            snes.ppu.bg1_scroll_y = a = <:w0;
+            snes.ppu.bg1_scroll_y = a = >:w0;
+            snes.ppu.bg1_scroll_x = a = <:scroll_x;
+            snes.ppu.bg1_scroll_x = a = >:scroll_x;            
+        }
+
+        vblank_request = a = 0;       
+
+        mem16();
+        #[mem16, idx16] {
+            yy = pop16();
+            xx = pop16();
+            aa = pop16();
+            direct_page = pop16();
+            data_bank = pop8();
+        }
     }
 
     let rgb_pack(r, g, b) = (r & 0x1F) | ((g & 0x1F) << 5) | ((b & 0x1F) << 10);
@@ -249,8 +375,6 @@ in prg {
     ];
 
     const sine_table : [i16] = [0, 807, 1614, 2419, 3224, 4026, 4826, 5623, 6417, 7206, 7992, 8772, 9547, 10317, 11080, 11836, 12585, 13327, 14060, 14785, 15501, 16208, 16905, 17591, 18267, 18931, 19585, 20226, 20855, 21471, 22074, 22664, 23241, 23803, 24350, 24883, 25401, 25903, 26389, 26860, 27314, 27752, 28173, 28576, 28963, 29331, 29682, 30015, 30330, 30626, 30904, 31163, 31403, 31624, 31825, 32008, 32171, 32314, 32438, 32542, 32627, 32691, 32736, 32761, 32766, 32751, 32716, 32661, 32587, 32493, 32379, 32245, 32092, 31919, 31727, 31516, 31285, 31036, 30767, 30480, 30175, 29851, 29509, 29149, 28772, 28377, 27964, 27535, 27089, 26627, 26148, 25654, 25144, 24618, 24078, 23523, 22954, 22371, 21774, 21165, 20542, 19907, 19259, 18600, 17930, 17249, 16557, 15856, 15145, 14424, 13695, 12957, 12212, 11459, 10699, 9933, 9161, 8383, 7600, 6812, 6020, 5225, 4426, 3625, 2822, 2017, 1210, 403, -403, -1210, -2017, -2822, -3625, -4426, -5225, -6020, -6812, -7600, -8383, -9161, -9933, -10699, -11459, -12212, -12957, -13695, -14424, -15145, -15856, -16557, -17249, -17930, -18600, -19259, -19907, -20542, -21165, -21774, -22371, -22954, -23523, -24078, -24618, -25144, -25654, -26148, -26627, -27089, -27535, -27964, -28377, -28772, -29149, -29509, -29851, -30175, -30480, -30767, -31036, -31285, -31516, -31727, -31919, -32092, -32245, -32379, -32493, -32587, -32661, -32716, -32751, -32766, -32761, -32736, -32691, -32627, -32542, -32438, -32314, -32171, -32008, -31825, -31624, -31403, -31163, -30904, -30626, -30330, -30015, -29682, -29331, -28963, -28576, -28173, -27752, -27314, -26860, -26389, -25903, -25401, -24883, -24350, -23803, -23241, -22664, -22074, -21471, -20855, -20226, -19585, -18931, -18267, -17591, -16905, -16208, -15501, -14785, -14060, -13327, -12585, -11836, -11080, -10317, -9547, -8772, -7992, -7206, -6417, -5623, -4826, -4026, -3224, -2419, -1614, -807, 0];
-
-    const message = "HELLO  WORLD";
 
     const hello_tiles_chr = embed "hello_tiles_compact.chr";
     const spc_main = embed "spc_main.bin";

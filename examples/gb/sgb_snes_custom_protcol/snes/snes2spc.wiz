@@ -1,0 +1,53 @@
+import "snes";
+import "ram";
+
+namespace snes2spc {
+    let IPL_TRANSFER_ROUTINE_ADDRESS = 0xFFC9;
+
+    // Copies length bytes from the source address in SNES memory to the destination address in SPC memory.
+    // Care must be taken to not overwrite RAM used by the IPL handler routine of the SPC.
+    // Expects the default IPL transfer routine is available to handle this request.
+    // NMI and IRQ must be off during transfer.
+    #[mem8, idx16]
+    func transfer(dest : u16 in xx, source : far *u8 in fptr0, length : u16 in yy) {
+        a = 0xAA;
+        do {} while a != snes.apu.input0;
+
+        snes.apu.output1 = a = 1;
+        snes.apu.output32 = xx;
+        snes.apu.output0 = a = 0xCC;
+        do {} while a != snes.apu.input0;
+
+        xx = yy;
+        yy = 0;
+        do {
+            a = source[yy];
+            snes.apu.output1 = a;
+            snes.apu.output0 = a = y;
+            do {} while a != snes.apu.input0;
+
+            yy++;
+            xx--;
+        } while !zero;
+        
+        snes.apu.output1 = a = 0;
+        snes.apu.output32 = xx = IPL_TRANSFER_ROUTINE_ADDRESS;
+        snes.apu.output0 = a = snes.apu.input0 + 3;
+        do {} while a != snes.apu.input0;
+    }    
+
+    // Requests the SPC to begin execution at a specific address in SPC RAM.
+    // Unless the SPC restores it, the default IPL transfer method will no longer be available after this.
+    // Expects the default IPL transfer routine is available to handle this request.
+    // NMI and IRQ must be off during transfer.
+    #[mem8, idx16]
+    func dispatch(routine : u16 in xx) {
+        a = 0xAA;
+        do {} while a != snes.apu.input0;
+
+        snes.apu.output1 = a = 0;
+        snes.apu.output32 = xx;
+        snes.apu.output0 = a = 0xCC;
+        do {} while a != snes.apu.input0;
+    }
+}

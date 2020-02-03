@@ -1,0 +1,129 @@
+import "gb";
+import "banks";
+
+namespace vram_buffer {
+    let COMMAND_MASK_INCREMENT_32 = 0x80 as u8;
+    let COMMAND_MASK_FILL = 0x40 as u8;
+    let COMMAND_MASK_CONTROL = 0xC0 as u8;
+    let COMMAND_MASK_LENGTH = 0x3F as u8;
+
+    let COMMAND_BIT_INCREMENT_32 = 7;
+    let COMMAND_BIT_FILL = 6;
+
+    in ram {
+        var transfer_requested : u8;
+        var ptr : *u8;
+
+        // Format:
+        //
+        // command
+        //   bit 7: 1 = increment by 32 / 0 = increment by 1
+        //   bit 6: 1 = fill mode / 0 = copy mode,
+        //   bit 0 .. 5: length        
+        // address hi
+        // address lo
+        // data
+        // ...
+        // until command == 0
+        var data : [u8; 128];
+    }
+
+    let init = clear;
+
+    func clear() {
+        hl = &transfer_requested as u16;
+        // transfer_requested
+        *(hl++ as *u8) = a = 0;
+        // ptr
+        *(hl++ as *u8) = a = <:&data;
+        *(hl++ as *u8) = a = >:&data;
+        // data[0]
+        *(hl++ as *u8) = a = 0;
+    }
+
+    inline func load_ptr() : *u8 in hl {
+        hl = &ptr as u16;
+        a = *(hl++ as *u8);
+        h = *(hl as *u8);
+        l = a;
+        return hl;
+    }
+
+    inline func save_ptr(new_ptr : *u8 in hl) {
+        <:ptr = a = l;
+        >:ptr = a = h;
+    }    
+
+    func request_transfer() {
+        hl = &ptr as u16;
+        a = *(hl++ as *u8);
+        h = *(hl as *u8);
+        l = a;
+
+        *(hl as *u8) = a = 0;
+        a++;
+        transfer_requested = a;
+    }
+
+    func complete_transfer() {
+        if { a = transfer_requested; } && a == 0 {
+            return;
+        }
+
+        transfer_requested = a = 0;
+        de = &data as u16;
+
+        while { a = *(de as *u8); } && a != 0 {
+            b = a;
+            c = a = a & ~COMMAND_MASK_CONTROL;
+            de++;
+            l = a = *(de as *u8);
+            de++;
+            h = a = *(de as *u8);
+            de++;
+
+            if b $ COMMAND_BIT_INCREMENT_32 {
+                if b $ COMMAND_BIT_FILL {
+                    b = 0;
+
+                    do {
+                        *(hl++ as *u8) = a = *(de as *u8);
+                        a = c;
+                        c = 32;
+                        hl += bc;
+                        c = a;
+                        c--;
+                    } while !zero;
+                } else {
+                    b = 0;
+
+                    do {
+                        *(hl++ as *u8) = a = *(de as *u8);
+                        de++;
+                        a = c;
+                        c = 32;
+                        hl += bc;
+                        c = a;
+                        c--;
+                    } while !zero;
+                }
+            } else {
+                if b $ COMMAND_BIT_FILL {
+                    a = *(de as *u8);
+                    de++;
+
+                    do {
+                        *(hl++ as *u8) = a;
+                        c--;
+                    } while !zero;
+                } else {
+                    do {
+                        *(hl++ as *u8) = a = *(de as *u8);
+                        de++;
+                        c--;
+                    } while !zero;
+                }
+            }
+        }
+    }
+}

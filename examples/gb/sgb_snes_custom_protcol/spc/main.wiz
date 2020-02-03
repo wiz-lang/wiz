@@ -1,0 +1,81 @@
+import "spc";
+
+config { trim = true }
+
+bank zeropage @ 0x000 : [vardata; 240];
+bank stackpage @ 0x100 : [vardata; 256];
+bank prg @ 0x200 : [varinitdata; 0xFE00];
+
+in zeropage {
+    var t0, t1 : u8;
+    var w0 @ &t0 : u16;
+}
+
+in prg {
+    struct DirectoryItem {
+        start : *const u8,
+        loop : *const u8,
+    }
+
+    // sample directory must be page-aligned so we put it at the start
+    const directory = [
+        DirectoryItem { start = &sample[0], loop = &sample[0] },
+    ];
+
+    const sample : [u8] = [
+        0xB0, 0x78, 0x78, 0x78, 0x78, 0x78, 0x78, 0x78, 0x78,
+        0xB3, 0x78, 0x78, 0x78, 0x78, 0x78, 0x78, 0x78, 0x78,
+    ];
+
+    const : [u8] = [0, 0];
+
+    var hoops : u8;    
+
+    #[fallthrough] func main() {
+        y = 0x20; a = spc.dsp.ADDRESS_FLAGS; spc.dsp.data_and_address = ya;
+        y = 0x00; a = spc.dsp.ADDRESS_KEY_ON; spc.dsp.data_and_address = ya;
+        y = 0xFF; a = spc.dsp.ADDRESS_KEY_OFF; spc.dsp.data_and_address = ya;
+        y = >:&directory; a = spc.dsp.ADDRESS_SOURCE_DIRECTORY_PAGE; spc.dsp.data_and_address = ya;
+        y = 0x7F; a = spc.dsp.ADDRESS_VOLUME_L_0; spc.dsp.data_and_address = ya;
+        y = 0x7F; a = spc.dsp.ADDRESS_VOLUME_R_0; spc.dsp.data_and_address = ya;
+        y = 0x40; a = spc.dsp.ADDRESS_PITCH_L_0; spc.dsp.data_and_address = ya;
+        y = 0x00; a = spc.dsp.ADDRESS_PITCH_H_0; spc.dsp.data_and_address = ya;
+        y = 0x00; a = spc.dsp.ADDRESS_SOURCE_0; spc.dsp.data_and_address = ya;
+        y = 0xC3; a = spc.dsp.ADDRESS_ADSR_L_0; spc.dsp.data_and_address = ya;
+        y = 0x2F; a = spc.dsp.ADDRESS_ADSR_H_0; spc.dsp.data_and_address = ya;
+        y = 0xCF; a = spc.dsp.ADDRESS_GAIN_0; spc.dsp.data_and_address = ya;
+        y = 0x00; a = spc.dsp.ADDRESS_KEY_OFF; spc.dsp.data_and_address = ya;
+        y = 0x00; a = spc.dsp.ADDRESS_NOISE_ENABLE; spc.dsp.data_and_address = ya;
+        y = 0x00; a = spc.dsp.ADDRESS_ECHO_ENABLE; spc.dsp.data_and_address = ya;
+        y = 0x7F; a = spc.dsp.ADDRESS_MAIN_VOLUME_L; spc.dsp.data_and_address = ya;
+        y = 0x7F; a = spc.dsp.ADDRESS_MAIN_VOLUME_R; spc.dsp.data_and_address = ya;
+        y = 0x00; a = spc.dsp.ADDRESS_ECHO_VOLUME_L; spc.dsp.data_and_address = ya;
+        y = 0x00; a = spc.dsp.ADDRESS_ECHO_VOLUME_R; spc.dsp.data_and_address = ya;
+        y = spc.dsp.CHANNEL_MASK_0; a = spc.dsp.ADDRESS_KEY_ON; spc.dsp.data_and_address = ya;
+
+        t0 = y = 0;
+        t1 = a = 0;
+        if a == t0 { nop(); } nop();
+        if a != t0 { nop(); } nop();
+        if x != 0 { nop(); } nop();
+        if x != t0 { nop(); } nop();
+        if y != 0 { nop(); } nop();
+        if y != t0 { nop(); } nop();
+        if ya != w0 { nop(); } nop();
+        do {} while --y != 0;
+
+        carry = hoops$1;
+        hoops$1 = carry;
+        carry |= hoops$1;
+        carry |= !hoops$1;
+        carry ^= hoops$1;
+        carry &= hoops$1;
+        carry &= !hoops$1;
+        hoops$1 = !hoops$1;
+        // TODO: fix placeholder stuff to assume 0xCC...CC again, move validation of 13-bit addresses from 16-bit ones into instruction writer.
+
+        while true {}
+    }
+
+    const = main;
+}
