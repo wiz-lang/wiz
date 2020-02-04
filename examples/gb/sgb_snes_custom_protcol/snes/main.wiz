@@ -13,12 +13,18 @@ in zeropage {
 }
 
 in far_ram {
+    let FRAMEBUFFER_ROW_COUNT = 18;
+    let FRAMEBUFFER_COLUMN_COUNT = 20;
+    let FRAMEBUFFER_BYTES_PER_TILE = 16;
+
+    let FRAMEBUFFER_READ_OFFSET = FRAMEBUFFER_COLUMN_COUNT * FRAMEBUFFER_BYTES_PER_TILE;
+
     // This buffer is used to hold the data read from the ICD2.
     // NOTE:
     //   The real hardware/bsnes/higan can locate the buffer anywhere, and can
     //   even read the ICD2 data port directly, or DMA to somewhere besides WRAM.
     // See: https://github.com/devinacker/bsnes-plus/issues/247
-    var framebuffer @ 0x7E5000 : [u8; 320 * 18];
+    var framebuffer @ 0x7E5000 : [u8; FRAMEBUFFER_ROW_COUNT * FRAMEBUFFER_COLUMN_COUNT * FRAMEBUFFER_BYTES_PER_TILE];
 }
 
 in prg {
@@ -198,7 +204,7 @@ in prg {
             data_bank = pop8();
             a = 0;
             xx = 0;
-            yy = 320;
+            yy = sizeof(typeof(framebuffer));
             do {
                 framebuffer[xx] = a;
                 xx++;
@@ -222,7 +228,7 @@ in prg {
                 do {
                     b0 = a = icd2.vram.ppu_position;
                     a = a & icd2.vram.PPU_POSITION_TILE_ROW_MASK;
-                } while a != 8;
+                } while a != 16;
 
                 icd2.vram.read_buffer_index = a = (b0 - 1) & icd2.vram.BUFFER_INDEX_MASK;
 
@@ -232,23 +238,23 @@ in prg {
                 //   The real hardware/bsnes/higan can locate the buffer anywhere, and can
                 //   even read the ICD2 data port directly, or DMA to somewhere besides WRAM.
                 // See: https://github.com/devinacker/bsnes-plus/issues/247
-                snes.wram.address_hl = xx = &framebuffer as u16;
+                snes.wram.address_hl = xx = &framebuffer[FRAMEBUFFER_READ_OFFSET] as u16;
                 snes.wram.address_bank = a = #:far &framebuffer;
                 snes.dma4.control = a = snes.dma.CONTROL_MODE_A | snes.dma.CONTROL_MDMA_NO_INCREMENT;
                 snes.dma4.mdma_dest = a = <:&snes.wram.data;
                 snes.dma4.src_address_hl = xx = &icd2.vram.read_data as u16;
                 snes.dma4.src_address_bank = a = #:far &icd2.vram.read_data;
-                snes.dma4.mdma_size_hl = xx = sizeof(typeof(framebuffer));
+                snes.dma4.mdma_size_hl = xx = FRAMEBUFFER_BYTES_PER_TILE * FRAMEBUFFER_COLUMN_COUNT;
 
                 snes.dma.mdma_enable = a = snes.dma.ENABLE_4;
 
                 push8(data_bank);
                 push8(a = #:far &framebuffer);
                 data_bank = pop8();
-                timer = a = framebuffer[0];
-                mosaic = a = framebuffer[1];
-                <:scroll_x = a = framebuffer[2];
-                <:scroll_y = a = framebuffer[3];
+                timer = a = framebuffer[FRAMEBUFFER_READ_OFFSET];
+                mosaic = a = framebuffer[FRAMEBUFFER_READ_OFFSET + 1];
+                <:scroll_x = a = framebuffer[FRAMEBUFFER_READ_OFFSET + 2];
+                <:scroll_y = a = framebuffer[FRAMEBUFFER_READ_OFFSET + 3];
                 data_bank = pop8();
 
                 a = wait_frames;
@@ -259,7 +265,6 @@ in prg {
                 }
                 vblank_request++;
                 do { a = vblank_request; } while !zero;
-
 
                 do {
                     a = snes.ppu.hvbjoy_status & 1;
@@ -306,7 +311,7 @@ in prg {
             push8(data_bank);
             push8(a = #:far &framebuffer);
             data_bank = pop8();
-            xx = *(&framebuffer[16] as *u16);
+            xx = *(&framebuffer[FRAMEBUFFER_READ_OFFSET + 300] as *u16);
             data_bank = pop8();
 
             if xx != 0 {
@@ -320,7 +325,7 @@ in prg {
 
                 snes.dma0.control = a = snes.dma.CONTROL_MODE_A;
                 snes.dma0.mdma_dest = a = <:&snes.ppu.vram_write_data_l;
-                snes.dma0.src_address_hl = yy = &framebuffer[18] as u16;
+                snes.dma0.src_address_hl = yy = &framebuffer[FRAMEBUFFER_READ_OFFSET + 302] as u16;
                 snes.dma0.src_address_bank = a = #:far &framebuffer;
                 snes.dma0.mdma_size_hl = xx;
 

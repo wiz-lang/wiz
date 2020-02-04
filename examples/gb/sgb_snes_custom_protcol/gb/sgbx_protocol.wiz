@@ -7,7 +7,7 @@ import "memory";
 // For now the GB side does nothing special, other than write its buffer into the tile data each vblank with an unrolled loop, but may contain more logic later.
 namespace sgbx_protocol {
     // The data length was chosen to fit mostly in vblank, plus a couple hblank scanlines extra.
-    // This way, the data can be immediately read by the SNES by the time the first 8px row of the GB screen has completed rendering.
+    // This way, the data can be immediately read by the SNES by the time the first few rows of the GB screen has completed rendering.
     //
     // It may make sense to use all the hblank time to transfer extra data, but:
     //
@@ -19,15 +19,18 @@ namespace sgbx_protocol {
     // 6) with all of those drawbacks in mind, it also eats a fair chunk of ROM space to unroll loops like this.
     //
     // So, if the data is much larger than that, then it makes more sense to turn off the screen, write the data and then enable the screen.
-    let DATA_LENGTH = 256;
+    let DATA_LENGTH = 320;
 
     let TRANSFER_BYTES_PER_VBLANK = 240;
-    let TRANSFER_HBLANK_COUNT = 4;
-    let TRANSFER_BYTES_PER_HBLANK = 4;
+    let TRANSFER_HBLANK_COUNT = 10;
+    let TRANSFER_BYTES_PER_HBLANK = 8;
 
-    let TRANSFER_MODE_NONE = 0;
-    let TRANSFER_MODE_BASIC = 1;
-    let TRANSFER_MODE_FULL = 2;
+    // VRAM offset is the second row so that we can spend a few more cycles to fill an entire 320-byte row without tearing.
+    // This adds a bit more latency between SNES and GB, and requires a few extra CPU cycles on the GB side, but it
+    // should be acceptable.
+    let VRAM_COLUMN_COUNT = 20;
+    let VRAM_BYTES_PER_TILE = 16;
+    let VRAM_WRITE_OFFSET = VRAM_COLUMN_COUNT * VRAM_BYTES_PER_TILE;
 
     in ram {
         var temp_sp : u16;
@@ -47,16 +50,22 @@ namespace sgbx_protocol {
         transfer_request = a = 1;
     }
 
-    inline func _wait_hblank() {
-        do {
-            a = gb.lcd.stat & gb.lcd.STAT_MODE_MASK;
-        } while a != gb.lcd.STAT_MODE_HBLANK;
-    }
-
     inline func _transfer_step() {
         de = pop();
         *(hl++ as *u8) = a = e;
         *(hl++ as *u8) = a = d;
+    }
+
+    inline func _halt_and_transfer_step() {
+        gb.interrupt.flag = a = 0;
+        de = pop();
+        bc = pop();
+        a = e;
+        halt();
+        *(hl++ as *u8) = a;
+        *(hl++ as *u8) = a = d;
+        *(hl++ as *u8) = a = c;
+        *(hl++ as *u8) = a = b;
     }
 
     func complete_transfer() {
@@ -68,16 +77,20 @@ namespace sgbx_protocol {
         temp_sp = sp;
 
         sp = &data[0] as u16;
-        hl = &gb.ram.tile[0] as u16;
+        hl = &gb.ram.tile[VRAM_WRITE_OFFSET] as u16;
 
         inline for in 1 .. TRANSFER_BYTES_PER_VBLANK / 2 {
             _transfer_step();
         }
+
+        interrupt = false;
+        gb.interrupt.enable = a = gb.interrupt.STAT;
+        gb.lcd.stat = a = gb.lcd.STAT_HBLANK_ENABLE;
+
         inline for in 1 .. TRANSFER_HBLANK_COUNT {
-            _wait_hblank();
-            inline for in 1 .. TRANSFER_BYTES_PER_HBLANK / 2 {
-                _transfer_step();
-            }
+            _halt_and_transfer_step();
+            _transfer_step();
+            _transfer_step();
         }
 
         transfer_request = a = 0;
@@ -87,5 +100,9 @@ namespace sgbx_protocol {
         h = *(hl as *u8);
         l = a;
         sp = hl;
+
+        gb.lcd.stat = a = 0;        
+        gb.interrupt.enable = a = gb.interrupt.VBLANK;
+
     }
 }

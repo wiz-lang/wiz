@@ -70,8 +70,8 @@ in rom @ 0x150 {
 
         // Enable some basic interrupts.
         gb.interrupt.flag = a = 0;
-        gb.interrupt.enable = a = gb.interrupt.VBLANK | gb.interrupt.STAT;
-        gb.lcd.stat = a = gb.lcd.STAT_SCANLINE_ENABLE;
+        gb.interrupt.enable = a = gb.interrupt.VBLANK;
+        gb.lcd.stat = a = 0;
         interrupt = true;
 
         started = a = 0;
@@ -123,7 +123,7 @@ in rom @ 0x150 {
                 hl = &message2 as u16;
             }
 
-            de = &sgbx_protocol.data[16] as u16;
+            de = &sgbx_protocol.data[300] as u16;
             *(de as *u8) = a = c;
             de++;
             *(de as *u8) = a = b;
