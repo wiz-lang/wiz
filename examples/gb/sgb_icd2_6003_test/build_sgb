@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+cd `dirname $0`
+pushd snes
+../../../../bin/wiz -I../../../../common/snes/ -I../ main.wiz --system=wdc65816 -o ../snes_main.bin
+popd
+pushd gb
+../../../../bin/wiz -I../../../../common/gb/ -I../ main.wiz -o ../sgb_icd2_6003_test.gb
+popd

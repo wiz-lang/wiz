@@ -62,7 +62,7 @@ namespace icd2 {
         writeonly data4 @ 0x6007 : u8;
     }
 
-    writeonly ctrl @ 0x7800 : u8;
+    writeonly ctrl @ 0x6003 : u8;
     let CTRL_RESET = 0x80;
     let CTRL_JOY_MODE_4P = 0x20;
     let CTRL_JOY_MODE_2P = 0x10;

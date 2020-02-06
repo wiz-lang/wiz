@@ -1,0 +1,11 @@
+config { trim = true }
+
+let FORMAT_SFC_LOROM = false;
+let FORMAT_SGB_BINARY = true;
+
+bank zeropage @ 0x00 : [vardata; 256];
+bank stackpage @ 0x100 : [vardata; 256];
+bank lowram @ 0x200 : [vardata; 0x1E00];
+bank prg @ 0x7F0000 : [varinitdata; 0x4000];
+bank far_ram @ 0x7E2000 : [vardata; 0xE000];
+bank far_ram2 @ 0x7F8000 : [vardata; 0x8000];
