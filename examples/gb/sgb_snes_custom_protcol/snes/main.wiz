@@ -24,7 +24,8 @@ in far_ram {
     //   The real hardware/bsnes/higan can locate the buffer anywhere, and can
     //   even read the ICD2 data port directly, or DMA to somewhere besides WRAM.
     // See: https://github.com/devinacker/bsnes-plus/issues/247
-    var framebuffer @ 0x7E5000 : [u8; FRAMEBUFFER_ROW_COUNT * FRAMEBUFFER_COLUMN_COUNT * FRAMEBUFFER_BYTES_PER_TILE];
+    //var framebuffer @ 0x7E2000 : [u8; FRAMEBUFFER_ROW_COUNT * FRAMEBUFFER_COLUMN_COUNT * FRAMEBUFFER_BYTES_PER_TILE]; // does not work on bsnes-plus, works on real hw + bsnes + higan
+    var framebuffer @ 0x7E5000 : [u8; FRAMEBUFFER_ROW_COUNT * FRAMEBUFFER_COLUMN_COUNT * FRAMEBUFFER_BYTES_PER_TILE]; // works on bsnes-plus because the address matches exact place SGB BIOS does a DMA.
 }
 
 in prg {
