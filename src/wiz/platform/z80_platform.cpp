@@ -713,7 +713,11 @@ namespace wiz {
                     const auto sourceRegisterOperand = std::get<0>(sourceRegister);
                     const auto prefixedSourceRegisterIndex = std::get<2>(sourceRegister);
 
-                    builtins.createInstruction(InstructionSignature(InstructionType(std::get<0>(op)), 0, {sourceRegisterOperand, patternImmU8}), encodingRepeatedImplicit, InstructionOptions(opcode, {1}, {}));
+                    if (sourceRegisterOperand->variant.get<InstructionOperandPattern::Register>().definition == a) {
+                        builtins.createInstruction(InstructionSignature(InstructionType(std::get<0>(op)), 0, {sourceRegisterOperand, patternImmU8}), encodingRepeatedImplicit, InstructionOptions({0x87}, {1}, {}));
+                    } else {
+                        builtins.createInstruction(InstructionSignature(InstructionType(std::get<0>(op)), 0, {sourceRegisterOperand, patternImmU8}), encodingRepeatedImplicit, InstructionOptions(opcode, {1}, {}));
+                    }
 
                     if (prefixedSourceRegisterIndex != SIZE_MAX) {
                         for (const auto& prefixSet : prefixSets) {
@@ -738,6 +742,9 @@ namespace wiz {
                 }
             }
         }
+        // hl <<= n
+        builtins.createInstruction(InstructionSignature(InstructionType(BinaryOperatorKind::LeftShift), 0, {patternHL, patternImmU8}), encodingRepeatedImplicit, InstructionOptions({0x29}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType(BinaryOperatorKind::LogicalLeftShift), 0, {patternHL, patternImmU8}), encodingRepeatedImplicit, InstructionOptions({0x29}, {1}, {}));
         // rld, rrd
         builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(rotate_left_digits)), 0, {patternA, patternHL}), encodingImplicit, InstructionOptions({prefixExtended, 0x6F}, {}, {}));
         builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(rotate_right_digits)), 0, {patternA, patternHL}), encodingImplicit, InstructionOptions({prefixExtended, 0x67}, {}, {}));
