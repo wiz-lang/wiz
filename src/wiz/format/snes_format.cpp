@@ -118,9 +118,10 @@ namespace wiz {
             data.resize(minRomSize, 0xFF);
         }
 
-        memset(&data[headerAddress + 0xB0], 0, SnesHeaderSize);
+        memset(&data[headerAddress + 0xB0], ' ', 6);
+        memset(&data[headerAddress + 0xB6], 0, SnesHeaderSize - 6);
         memset(&data[headerAddress + 0xC0], ' ', SnesTitleMaxLength);
-        data[headerAddress + 0xD6] = mapModeSetting;
+        data[headerAddress + 0xD5] = mapModeSetting;
         data[headerAddress + 0xDA] = 0x33;
         data[headerAddress + 0xDC] = 0xFF;
         data[headerAddress + 0xDD] = 0xFF;
@@ -205,7 +206,7 @@ namespace wiz {
                 }
             }
 
-            data[headerAddress + 0xD4] = cartTypeUpper | cartTypeLower;
+            data[headerAddress + 0xD6] = cartTypeUpper | cartTypeLower;
         }
 
         {
