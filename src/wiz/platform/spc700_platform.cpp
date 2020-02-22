@@ -42,6 +42,9 @@ namespace wiz {
         x = scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("x"), decl);
         y = scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("y"), decl);
         ya = scope->createDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("ya"), decl);
+
+        builtins.addRegisterDecomposition(ya, {a, y});
+
         const auto patternA = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(a));
         const auto patternX = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(x));
         const auto patternY = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(y));

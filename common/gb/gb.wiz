@@ -94,7 +94,10 @@ namespace gb {
         // High-ram memory area.
         extern var hram @ 0xFF80 : [u8; HRAM_SIZE];
         // Size of high-ram.
-        let HRAM_SIZE = 128;
+        let HRAM_SIZE = 127;
+
+        // I/O port memory area.
+        extern var io @ 0xFF00 : [u8; 256];
     }
 
     namespace scroll {

@@ -46,18 +46,34 @@ namespace wiz {
 
         // Registers.
         a = scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("a"), decl);
+        const auto b = scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("b"), decl);
+        const auto c = scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("c"), decl);
+        const auto d = scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("d"), decl);
+        const auto e = scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("e"), decl);
+        const auto h = scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("h"), decl);
+        const auto l = scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("l"), decl);
+        const auto af = scope->createDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("af"), decl);
+        const auto bc = scope->createDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("bc"), decl);
+        const auto de = scope->createDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("de"), decl);
+        const auto hl = scope->createDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("hl"), decl);
+        const auto sp = scope->createDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("sp"), decl);
+
+        builtins.addRegisterDecomposition(bc, {c, b});
+        builtins.addRegisterDecomposition(de, {e, d});
+        builtins.addRegisterDecomposition(hl, {l, h});
+
         const auto patternA = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(a));
-        const auto patternB = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("b"), decl)));
-        const auto patternC = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("c"), decl)));
-        const auto patternD = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("d"), decl)));
-        const auto patternE = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("e"), decl)));
-        const auto patternH = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("h"), decl)));
-        const auto patternL = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u8Type), stringPool->intern("l"), decl)));
-        const auto patternAF = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("af"), decl)));
-        const auto patternBC = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("bc"), decl)));
-        const auto patternDE = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("de"), decl)));
-        const auto patternHL = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("hl"), decl)));
-        const auto patternSP = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(scope->createDefinition(nullptr, Definition::BuiltinRegister(u16Type), stringPool->intern("sp"), decl)));
+        const auto patternB = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(b));
+        const auto patternC = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(c));
+        const auto patternD = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(d));
+        const auto patternE = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(e));
+        const auto patternH = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(h));
+        const auto patternL = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(l));
+        const auto patternAF = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(af));
+        const auto patternBC = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(bc));
+        const auto patternDE = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(de));
+        const auto patternHL = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(hl));
+        const auto patternSP = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(sp));
         carry = scope->createDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("carry"), decl);
         zero = scope->createDefinition(nullptr, Definition::BuiltinRegister(boolType), stringPool->intern("zero"), decl);
         const auto patternZero = builtins.createInstructionOperandPattern(InstructionOperandPattern::Register(zero));

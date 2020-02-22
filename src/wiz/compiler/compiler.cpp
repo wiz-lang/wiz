@@ -5458,7 +5458,7 @@ namespace wiz {
         auto innerRight = right;
         while (isSimpleCast(innerLeft)) {
             innerLeft = left->variant.get<Expression::Cast>().operand.get();
-        }        
+        }
         while (isSimpleCast(innerRight)) {
             innerRight = right->variant.get<Expression::Cast>().operand.get();
         } 
