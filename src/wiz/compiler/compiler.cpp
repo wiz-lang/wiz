@@ -5078,6 +5078,17 @@ namespace wiz {
         return false;
     }
 
+    std::string Compiler::getModeFlagString(std::uint32_t modeFlags) {
+        std::string result = "";
+        for (std::size_t modeIndex = 0, modeCount = builtins.getModeAttributeCount(); modeIndex != modeCount; ++modeIndex) {
+            if ((modeFlags & (1U << modeIndex)) != 0) {
+                const auto modeAttribute = builtins.getModeAttribute(modeIndex);
+                result += (result.size() > 0 ? ", " : "") + modeAttribute->name.toString();
+            }
+        }
+        return result;
+    }
+
     void Compiler::raiseEmitLoadError(const Expression* dest, const Expression* source, SourceLocation location) {
         const auto candidates = builtins.findAllInstructionsByType(InstructionType(BinaryOperatorKind::Assignment));
         report->error("could not generate code for " + getBinaryOperatorName(BinaryOperatorKind::Assignment).toString(), source->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
@@ -5094,10 +5105,17 @@ namespace wiz {
             return;
         }
 
-        report->error("got: `"
-            + destOperand->toString()
-            + " = " + sourceOperand->toString()
-            + "`", source->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
+        {
+            auto message = "got: `"
+                + destOperand->toString()
+                + " = " + sourceOperand->toString()
+                + "`";
+            if (modeFlags != 0) {
+                message += " (" + getModeFlagString(modeFlags) + ")";
+            }
+
+            report->error(message, source->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
+        }
 
         if (candidates.size() > 0) {
             std::size_t optionCount = 0;
@@ -5109,7 +5127,16 @@ namespace wiz {
                                 report->error("possible options:", source->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
                             }
                             ++optionCount;
-                            report->log("  `" + candidate->signature.operandPatterns[0]->toString() + " = " + candidate->signature.operandPatterns[1]->toString() + "`");
+
+                            auto message = "  `"
+                                + candidate->signature.operandPatterns[0]->toString()
+                                + " = " + candidate->signature.operandPatterns[1]->toString()
+                                + "`";
+                            if (candidate->signature.requiredModeFlags != 0) {
+                                message += " (" + getModeFlagString(candidate->signature.requiredModeFlags) + ")";
+                            }
+
+                            report->log(message);
                         }
                         break;
                     }
@@ -5158,19 +5185,29 @@ namespace wiz {
         }
 
         if (hideSourceIfSame && *destOperand == *sourceOperand) {
-            report->error("got: `"
+            auto message = "got: `"
                 + (suffixOperator ? "" : getUnaryOperatorSymbol(op).toString())
                 + destOperand->toString()
                 + (suffixOperator ? getUnaryOperatorSymbol(op).toString() : "")
-                + "`", source->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
+                + "`";
+            if (modeFlags != 0) {
+                message += " (" + getModeFlagString(modeFlags) + ")";
+            }
+
+            report->error(message, source->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
         } else {
-            report->error("got: `"
+            auto message = "got: `"
                 + destOperand->toString()
                 + " = "
                 + (suffixOperator ? "" : getUnaryOperatorSymbol(op).toString())
                 + sourceOperand->toString()
                 + (suffixOperator ? getUnaryOperatorSymbol(op).toString() : "")
-                + "`", source->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
+                + "`";
+            if (modeFlags != 0) {
+                message += " (" + getModeFlagString(modeFlags) + ")";
+            }
+
+            report->error(message, source->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
         }
 
         if (candidates.size() > 0) {
@@ -5178,31 +5215,43 @@ namespace wiz {
             for (const auto candidate : candidates) {
                 switch (candidate->signature.operandPatterns.size()) {
                     case 1: {
+                        std::string message;
                         if (hideSourceIfSame) {
-                            report->log("  `"
+                            message += "  `"
                                 + (suffixOperator ? "" : getUnaryOperatorSymbol(op).toString())
                                 + candidate->signature.operandPatterns[0]->toString()
                                 + (suffixOperator ? getUnaryOperatorSymbol(op).toString() : "")
-                                + "`");
+                                + "`";
                         } else {
-                            report->log("  `"
+                            message += "  `"
                                 + candidate->signature.operandPatterns[0]->toString()
                                 + " = "
                                 + (suffixOperator ? "" : getUnaryOperatorSymbol(op).toString())
                                 + candidate->signature.operandPatterns[0]->toString()
                                 + (suffixOperator ? getUnaryOperatorSymbol(op).toString() : "")
-                                + "`");
+                                + "`";
                         }
+                        if (candidate->signature.requiredModeFlags != 0) {
+                            message += " (" + getModeFlagString(candidate->signature.requiredModeFlags) + ")";
+                        }
+
+                        report->log(message);
+
                         break;
                     }
                     case 2: {
-                        report->log("  `"
+                        auto message = "  `"
                             + candidate->signature.operandPatterns[0]->toString()
                             + " = "
                             + (suffixOperator ? "" : getUnaryOperatorSymbol(op).toString())
                             + candidate->signature.operandPatterns[1]->toString()
                             + (suffixOperator ? getUnaryOperatorSymbol(op).toString() : "")
-                            + "`");
+                            + "`";
+                        if (candidate->signature.requiredModeFlags != 0) {
+                            message += " (" + getModeFlagString(candidate->signature.requiredModeFlags) + ")";
+                        }
+
+                        report->log(message);
                         break;
                     }
                     default: {
@@ -5238,18 +5287,28 @@ namespace wiz {
         }
 
         if (*destOperand == *leftOperand) {
-            report->error("got: `"
+            auto message = "got: `"
                 + destOperand->toString()
                 + " " + getBinaryOperatorSymbol(op).toString() + "= "
                 + rightOperand->toString()
-                + "`", right->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
+                + "`";
+            if (modeFlags != 0) {
+                message += " (" + getModeFlagString(modeFlags) + ")";
+            }
+
+            report->error(message, right->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
         } else {
-            report->error("got: `"
+            auto message = "got: `"
                 + destOperand->toString()
                 + " " + leftOperand->toString()
                 + " " + getBinaryOperatorSymbol(op).toString()
                 + " " + rightOperand->toString()
-                + "`", right->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
+                + "`";
+            if (modeFlags != 0) {
+                message += " (" + getModeFlagString(modeFlags) + ")";
+            }
+
+            report->error(message, right->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
         }
 
         if (candidates.size() > 0) {
@@ -5257,11 +5316,30 @@ namespace wiz {
             for (const auto candidate : candidates) {
                 switch (candidate->signature.operandPatterns.size()) {
                     case 2: {
-                        report->log("  `" + candidate->signature.operandPatterns[0]->toString() + " " + getBinaryOperatorSymbol(op).toString() + "= " + candidate->signature.operandPatterns[1]->toString() + "`");
+                        auto message = "  `"
+                            + candidate->signature.operandPatterns[0]->toString()
+                            + " " + getBinaryOperatorSymbol(op).toString()
+                            + "= " + candidate->signature.operandPatterns[1]->toString()
+                            + "`";
+                        if (candidate->signature.requiredModeFlags != 0) {
+                            message += " (" + getModeFlagString(candidate->signature.requiredModeFlags) + ")";
+                        }
+
+                        report->log(message);
                         break;
                     }
                     case 3: {
-                        report->log("  `" + candidate->signature.operandPatterns[0]->toString() + " = " + candidate->signature.operandPatterns[1]->toString() + " " + getBinaryOperatorSymbol(op).toString() + " " + candidate->signature.operandPatterns[2]->toString() + "`");
+                        auto message = "  `"
+                            + candidate->signature.operandPatterns[0]->toString()
+                            + " = " + candidate->signature.operandPatterns[1]->toString()
+                            + " " + getBinaryOperatorSymbol(op).toString()
+                            + " " + candidate->signature.operandPatterns[2]->toString()
+                            + "`";
+                        if (candidate->signature.requiredModeFlags != 0) {
+                            message += " (" + getModeFlagString(candidate->signature.requiredModeFlags) + ")";
+                        }
+
+                        report->log(message);
                         break;
                     }
                     default: {
@@ -5315,6 +5393,10 @@ namespace wiz {
                 }
             }
             message += ")`";
+            if (modeFlags != 0) {
+                message += " (" + getModeFlagString(modeFlags) + ")";
+            }
+
             report->error(message, location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
         }
 
@@ -5332,6 +5414,10 @@ namespace wiz {
                     }
                 }
                 message += ")`";
+                if (candidate->signature.requiredModeFlags != 0) {
+                    message += " (" + getModeFlagString(candidate->signature.requiredModeFlags) + ")";
+                }
+
                 report->log(message);
             }
         }

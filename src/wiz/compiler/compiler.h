@@ -149,6 +149,7 @@ namespace wiz {
             bool emitArgumentPassIr(const TypeExpression* functionTypeExpression, const std::vector<Definition*>& parameters, const std::vector<FwdUniquePtr<const Expression>>& arguments, SourceLocation location);
             bool emitCallExpressionIr(std::size_t distanceHint, bool inlined, bool tailCall, const Expression* resultDestination, const Expression* function, const std::vector<FwdUniquePtr<const Expression>>& arguments, SourceLocation location);
 
+            std::string getModeFlagString(std::uint32_t modeFlags);
             void raiseEmitLoadError(const Expression* dest, const Expression* source, SourceLocation location);
             void raiseEmitUnaryExpressionError(const Expression* dest, UnaryOperatorKind op, const Expression* source, SourceLocation location);
             void raiseEmitBinaryExpressionError(const Expression* dest, BinaryOperatorKind op, const Expression* left, const Expression* right, SourceLocation location);
