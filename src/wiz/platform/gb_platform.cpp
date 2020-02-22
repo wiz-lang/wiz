@@ -465,15 +465,22 @@ namespace wiz {
             };
             for (const auto& op : shiftOperators) {
                 for (const auto& sourceRegister : generalRegisters) {
+                    auto binKind = std::get<0>(op);
                     auto opcode = std::get<1>(op);
                     opcode[opcode.size() - 1] |= std::get<1>(sourceRegister);
 
                     const auto sourceRegisterOperand = std::get<0>(sourceRegister);
 
-                    if (sourceRegisterOperand->variant.get<InstructionOperandPattern::Register>().definition == a) {
-                        builtins.createInstruction(InstructionSignature(InstructionType(std::get<0>(op)), 0, {sourceRegisterOperand, patternImmU8}), encodingRepeatedImplicit, InstructionOptions({0x87}, {1}, {}));
-                    } else {
-                        builtins.createInstruction(InstructionSignature(InstructionType(std::get<0>(op)), 0, {sourceRegisterOperand, patternImmU8}), encodingRepeatedImplicit, InstructionOptions(opcode, {1}, {}));
+                    bool match = false;
+                    if (const auto reg = sourceRegisterOperand->variant.tryGet<InstructionOperandPattern::Register>()) {
+                        if (reg->definition == a && (binKind == BinaryOperatorKind::LeftShift || binKind == BinaryOperatorKind::LogicalLeftShift)) {
+                            builtins.createInstruction(InstructionSignature(binKind, 0, {sourceRegisterOperand, patternImmU8}), encodingRepeatedImplicit, InstructionOptions({0x87}, {1}, {}));
+                            match = true;
+                        }
+                    }
+
+                    if (!match) {
+                        builtins.createInstruction(InstructionSignature(binKind, 0, {sourceRegisterOperand, patternImmU8}), encodingRepeatedImplicit, InstructionOptions(opcode, {1}, {}));
                     }
                 }
             }
