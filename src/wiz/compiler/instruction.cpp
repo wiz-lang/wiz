@@ -217,11 +217,11 @@ namespace wiz {
             case VariantType::typeIndexOf<Unary>(): {
                 const auto& un = variant.get<Unary>();               
                 switch (un.kind) {
-                    case UnaryOperatorKind::PreIncrement: return "++" + un.operand->toString();
-                    case UnaryOperatorKind::PreDecrement: return "--" + un.operand->toString();
-                    case UnaryOperatorKind::PostIncrement: return un.operand->toString() + "++";
-                    case UnaryOperatorKind::PostDecrement: return un.operand->toString() + "--";
-                    default: std::abort(); return "";
+                    case UnaryOperatorKind::PostIncrement:
+                    case UnaryOperatorKind::PostDecrement:
+                        return un.operand->toString() + getUnaryOperatorSymbol(un.kind).toString();
+                    default:
+                        return getUnaryOperatorSymbol(un.kind).toString() + un.operand->toString();
                 }
             }
             default: std::abort(); return "";
@@ -677,11 +677,11 @@ namespace wiz {
             case VariantType::typeIndexOf<Unary>(): {
                 const auto& unPattern = variant.get<Unary>();
                 switch (unPattern.kind) {
-                    case UnaryOperatorKind::PreIncrement: return "++" + unPattern.operandPattern->toString();
-                    case UnaryOperatorKind::PreDecrement: return "--" + unPattern.operandPattern->toString();
-                    case UnaryOperatorKind::PostIncrement: return unPattern.operandPattern->toString() + "++";
-                    case UnaryOperatorKind::PostDecrement: return unPattern.operandPattern->toString() + "--";
-                    default: std::abort(); return "";
+                    case UnaryOperatorKind::PostIncrement:
+                    case UnaryOperatorKind::PostDecrement:
+                        return unPattern.operandPattern->toString() + getUnaryOperatorSymbol(unPattern.kind).toString();
+                    default:
+                        return getUnaryOperatorSymbol(unPattern.kind).toString() + unPattern.operandPattern->toString();
                 }
             }
             default: std::abort(); return "";

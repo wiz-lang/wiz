@@ -89,10 +89,10 @@ namespace wiz {
         "--",
         "++",
         "-",
-        "`<:`",
-        "`>:`",
-        "`#:`",
-        "`@`",
+        "<:",
+        ">:",
+        "#:",
+        "@",
     };
 
     static_assert(sizeof(unaryOperatorSymbols) / sizeof(*unaryOperatorSymbols) == static_cast<std::size_t>(UnaryOperatorKind::Count), "`unaryOperatorSymbols` table must have an entry for every `UnaryOperatorKind`");
