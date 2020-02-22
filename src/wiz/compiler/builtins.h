@@ -117,8 +117,8 @@ namespace wiz {
             std::vector<const Instruction*> findAllSpecializationsByInstruction(const Instruction* instruction) const;
             const Instruction* selectInstruction(const InstructionType& instructionType, std::uint32_t modeFlags, const std::vector<InstructionOperandRoot>& operandRoots) const;
 
-            void addRegisterDecomposition(const Definition* reg, std::vector<const Definition*> subRegisters);
-            ArrayView<const Definition*> findRegisterDecomposition(const Definition* reg) const;
+            void addRegisterDecomposition(const Definition* reg, std::vector<Definition*> subRegisters);
+            ArrayView<Definition*> findRegisterDecomposition(const Definition* reg) const;
 
             StringView getPropertyName(Property prop) const;
             Property findPropertyByName(StringView name) const;
@@ -167,7 +167,7 @@ namespace wiz {
             std::vector<FwdUniquePtr<const Instruction>> instructions;
             std::unordered_map<InstructionType, std::vector<const Instruction*>> primaryInstructionsByInstructionTypes;
             std::unordered_map<const Instruction*, std::vector<const Instruction*>> specializationsByInstructions;
-            std::unordered_map<const Definition*, std::vector<const Definition*>> registerDecompositions;
+            std::unordered_map<const Definition*, std::vector<Definition*>> registerDecompositions;
 
             std::vector<std::unique_ptr<BuiltinModeAttribute>> modeAttributes;
             std::unordered_map<StringView, std::size_t> modeAttributesByName;

@@ -1875,15 +1875,33 @@ namespace wiz {
                                 Expression::IntegerLiteral(integerLiteral->value.logicalRightShift(8 * offset) & Int128(0xFF)), expression->location,
                                 ExpressionInfo(EvaluationContext::CompileTime, std::move(resultType), Qualifiers {}));                                
                         } else if (const auto resolvedIdentifier = operand->variant.tryGet<Expression::ResolvedIdentifier>()) {
-                            if (const auto varDefinition = resolvedIdentifier->definition->variant.tryGet<Definition::Var>()) {
+                            const auto definition = resolvedIdentifier->definition;
+                            if (const auto registerDefinition = definition->variant.tryGet<Definition::BuiltinRegister>()) {
+                                const auto subRegisters = builtins.findRegisterDecomposition(definition);
+                                if (subRegisters.getLength() == 0) {
+                                    report->error("`" + definition->name.toString() + "` cannot be split into smaller registers, so it cannot be used with " + getUnaryOperatorName(unaryOperator.op).toString(), expression->location);
+                                    return nullptr;
+                                } else if (offset >= subRegisters.getLength()) {
+                                    report->error("`" + definition->name.toString() + "` is only made of " + std::to_string(subRegisters.getLength()) + " registers, so it cannot be used with " + getUnaryOperatorName(unaryOperator.op).toString(), expression->location);
+                                    return nullptr;
+                                } else {
+                                    const auto subRegister = subRegisters[offset];
+                                    const auto& subRegisterDefinition = subRegisters[offset]->variant.get<Definition::BuiltinRegister>();
+
+                                    return makeFwdUnique<const Expression>(Expression::ResolvedIdentifier(subRegister, {}), expression->location,
+                                        ExpressionInfo(EvaluationContext::RunTime,
+                                            makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(subRegisterDefinition.type), expression->location),
+                                            Qualifiers::of<Qualifier::LValue>()));
+                                }
+                            } else if (const auto varDefinition = definition->variant.tryGet<Definition::Var>()) {
                                 simplify = true;
 
                                 if (varDefinition->address.hasValue() && varDefinition->address->absolutePosition.hasValue()) {
                                     absolutePosition = varDefinition->address->absolutePosition.get();
                                 }
-                            } else if (const auto funcDefinition = resolvedIdentifier->definition->variant.tryGet<Definition::Func>()) {
+                            } else if (const auto funcDefinition = definition->variant.tryGet<Definition::Func>()) {
                                 if (funcDefinition->inlined) {
-                                    report->error("`" + resolvedIdentifier->definition->name.toString() + "` is an `inline func` so it cannot be used with " + getUnaryOperatorName(unaryOperator.op).toString(), expression->location);
+                                    report->error("`" + definition->name.toString() + "` is an `inline func` so it cannot be used with " + getUnaryOperatorName(unaryOperator.op).toString(), expression->location);
                                     return nullptr;
                                 }
 
@@ -1915,7 +1933,7 @@ namespace wiz {
 
                         return makeFwdUnique<const Expression>(
                             Expression::UnaryOperator(unaryOperator.op, std::move(operand)), expression->location,
-                            ExpressionInfo(context, std::move(resultType), Qualifiers {}));
+                            ExpressionInfo(context, std::move(resultType), operand->info->qualifiers));
                     }
 
                     // Address reserve operator `@`

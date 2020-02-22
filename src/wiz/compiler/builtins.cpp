@@ -278,16 +278,16 @@ namespace wiz {
         return nullptr;
     }
 
-    void Builtins::addRegisterDecomposition(const Definition* reg, std::vector<const Definition*> subRegisters) {
+    void Builtins::addRegisterDecomposition(const Definition* reg, std::vector<Definition*> subRegisters) {
         registerDecompositions[reg] = subRegisters;
     }
 
-    ArrayView<const Definition*> Builtins::findRegisterDecomposition(const Definition* reg) const {
+    ArrayView<Definition*> Builtins::findRegisterDecomposition(const Definition* reg) const {
         const auto& match = registerDecompositions.find(reg);
         if (match != registerDecompositions.end()) {
-            return ArrayView<const Definition*>(match->second.data(), match->second.size());
+            return ArrayView<Definition*>(match->second.data(), match->second.size());
         } else {
-            return ArrayView<const Definition*>();
+            return ArrayView<Definition*>();
         }
     }
 

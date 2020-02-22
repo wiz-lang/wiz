@@ -16,13 +16,13 @@ func memset(dest : *u8 in hl, value : u8 in a, count : u16 in bc) {
 }
 
 inline func memset_inline(dest : *u8 in hl, value : u8 in a, count : u16 in bc) {
-    c++; b++;
+    ++<:count; ++>:count;
     goto start;
 repeat:
     *dest++ = value;
 start:
-    c--; goto repeat if !zero;
-    b--; goto repeat if !zero;
+    --<:count; goto repeat if !zero;
+    -->:count; goto repeat if !zero;
 }
 
 
@@ -44,12 +44,12 @@ func memcpy(dest : *u8 in de, source : *u8 in hl, count : u16 in bc) {
 }
 
 inline func memcpy_inline(dest : *u8 in de, source : *u8 in hl, count : u16 in bc) {
-    c++; b++;
+    ++<:count; ++>:count;
     goto start;
 repeat:
     *dest = a = *source++;
-    de++;
+    ++dest;
 start:
-    c--; goto repeat if !zero;
-    b--; goto repeat if !zero;
+    --<:count; goto repeat if !zero;
+    -->:count; goto repeat if !zero;
 }
