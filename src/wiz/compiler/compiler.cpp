@@ -4711,6 +4711,19 @@ namespace wiz {
         }
     }
 
+    bool Compiler::isMutatingExpression(const Expression* expression) const {
+        if (expression->info->context == EvaluationContext::RunTime) {
+            const auto& variant = expression->variant;
+            switch (variant.index()){
+                case Expression::VariantType::typeIndexOf<Expression::BinaryOperator>(): return variant.get<Expression::BinaryOperator>().op == BinaryOperatorKind::Assignment;
+                case Expression::VariantType::typeIndexOf<Expression::UnaryOperator>(): return isUnaryIncrementOperator(variant.get<Expression::UnaryOperator>().op);
+                default: return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
     bool Compiler::emitLoadExpressionIr(const Expression* dest, const Expression* source, SourceLocation location) {
         auto destOperand = createOperandFromExpression(dest, true);
         auto sourceOperand = createOperandFromExpression(source, true);
@@ -5453,7 +5466,7 @@ namespace wiz {
                         const auto rightOp = rightUnaryOperator->op;
                         if (isUnaryPostIncrementOperator(rightOp)) {
                             if (!emitBinaryExpressionIr(dest, op, dest, rightOperand, right->location)) {
-                                raiseEmitBinaryExpressionError(dest, op, dest, right, right->location);
+                                raiseEmitBinaryExpressionError(dest, op, dest, rightOperand, right->location);
                                 return false;
                             }
                             if (!emitUnaryExpressionIr(rightOperand, getUnaryPreIncrementEquivalent(rightOp), rightOperand, rightOperand->location)) {
@@ -5468,7 +5481,22 @@ namespace wiz {
                                 return false;
                             }
                             if (!emitBinaryExpressionIr(dest, op, dest, rightOperand, right->location)) {
-                                raiseEmitBinaryExpressionError(dest, op, dest, right, right->location);
+                                raiseEmitBinaryExpressionError(dest, op, dest, rightOperand, right->location);
+                                return false;
+                            }
+
+                            valid = true;
+                        }
+                    } else if (const auto rightBinaryOperator = right->variant.tryGet<Expression::BinaryOperator>()) { 
+                        const auto rightLeft = rightBinaryOperator->left.get();
+                        const auto rightRight = rightBinaryOperator->right.get();
+                        const auto rightOp = rightBinaryOperator->op;
+                        if (rightOp == BinaryOperatorKind::Assignment) {
+                            if(!emitAssignmentExpressionIr(rightLeft, rightRight, left->location)) {
+                                return false;
+                            }
+                            if (!emitBinaryExpressionIr(dest, op, dest, rightLeft, right->location)) {
+                                raiseEmitBinaryExpressionError(dest, op, dest, rightLeft, right->location);
                                 return false;
                             }
 
