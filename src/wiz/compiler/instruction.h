@@ -352,7 +352,7 @@ namespace wiz {
         : expression(expression),
         operand(std::move(operand)) {}
 
-        InstructionOperandRoot(InstructionOperandRoot&&) = default;
+        InstructionOperandRoot(InstructionOperandRoot&&) noexcept = default;
         InstructionOperandRoot(const InstructionOperandRoot&) = delete;
 
         const Expression* expression = nullptr;

@@ -39,7 +39,7 @@ namespace wiz {
                 }
             }
 
-            Optional(Optional&& other)
+            Optional(Optional&& other) noexcept
             : hasValue_(other.hasValue_) {
                 other.hasValue_ = false;
                 if (hasValue_) {

@@ -5552,7 +5552,7 @@ namespace wiz {
         } else if (const auto unaryOperator = expression->variant.tryGet<Expression::UnaryOperator>()) {
             const auto operand = unaryOperator->operand.get();
             const auto op = unaryOperator->op;
-            switch (unaryOperator->op) {
+            switch (op) {
                 case UnaryOperatorKind::PreIncrement:
                 case UnaryOperatorKind::PostIncrement: {
                     if (!emitUnaryExpressionIr(operand, UnaryOperatorKind::PreIncrement, operand, operand->location)) {

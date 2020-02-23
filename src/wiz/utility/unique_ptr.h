@@ -107,7 +107,7 @@ namespace wiz {
 
             UniquePtr(const UniquePtr&) = delete;
 
-            UniquePtr(UniquePtr&& other) 
+            UniquePtr(UniquePtr&& other) noexcept
             : UniquePtrBase<T, Deleter>(other.release(), std::forward<Deleter>(other.deleter())) {}
 
             template<typename CompatiblePointerType, typename CompatibleDeleterType>
@@ -125,7 +125,7 @@ namespace wiz {
                 return *this;
             }
 
-            UniquePtr& operator =(UniquePtr&& other) {
+            UniquePtr& operator =(UniquePtr&& other) noexcept {
                 if (this != &other) {
                     this->pointer() = other.release();
                     this->deleter() = std::forward<Deleter>(other.deleter());

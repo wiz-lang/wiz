@@ -104,11 +104,11 @@ namespace wiz {
             constexpr std::size_t rfind(StringView sub, std::size_t offset = SIZE_MAX) const {
                 const auto subLength = sub.getLength();
 
-                if (offset > length) {
+                if (offset >= length) {
                     offset = length - 1;
                 }
 
-                for (std::size_t i = offset; i < length; --i) {
+                for (std::size_t i = offset; i-- > 0;) {
                     bool match = true;
 
                     for (std::size_t j = 0; j != subLength; ++j) {
@@ -139,11 +139,11 @@ namespace wiz {
             }
 
             constexpr std::size_t findLastOf(StringView set, std::size_t offset = SIZE_MAX) const {
-                if (offset > length) {
+                if (offset >= length) {
                     offset = length - 1;
                 }
 
-                for (std::size_t i = offset; i < length; --i) {
+                for (std::size_t i = offset; i-- > 0;) {
                     for (std::size_t j = 0; j != set.getLength(); ++j) {
                         if (data[i] == set[j]) {
                             return i;

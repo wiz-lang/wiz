@@ -197,7 +197,7 @@ namespace wiz {
                 detail::copyVariant<Ts...>(tag, &data, &other.data);
             }
 
-            Variant(Variant&& other)
+            Variant(Variant&& other) noexcept
             : tag(other.tag) {
                 assert(0 <= other.tag && other.tag < static_cast<int>(sizeof...(Ts)));
                 detail::moveVariant<Ts...>(tag, &data, &other.data);
@@ -217,7 +217,7 @@ namespace wiz {
                 return *this;
             }
 
-            Variant& operator =(Variant&& other) {
+            Variant& operator =(Variant&& other) noexcept {
                 if (this != &other) {
                     assert(0 <= other.tag && other.tag < static_cast<int>(sizeof...(Ts)));
                     detail::destroyVariant<Ts...>(tag, &data);

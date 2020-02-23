@@ -257,7 +257,7 @@ namespace wiz {
             } else {
                 auto quotient = zero();
                 auto remainder = zero();
-                for (std::size_t i = findMostSignificantBit(); i <= 128; --i) {
+                for (std::size_t i = findMostSignificantBit() + 1; i-- > 0;) {
                     remainder = remainder.logicalLeftShiftOnce();
                     remainder.setBit(0, getBit(i));
                     if (remainder >= other) {
@@ -292,9 +292,10 @@ namespace wiz {
         std::size_t findLeastSignificantBit() const {
             std::size_t index = 0;
             auto value = *this;
-            while (!value.getBit(0)) {
-                ++index;
-                value = value.logicalRightShiftOnce();
+            if (!value.isZero()) {
+                while (!value.getBit(index)) {
+                    ++index;
+                }
             }
             return index;
         }
@@ -302,9 +303,13 @@ namespace wiz {
         std::size_t findMostSignificantBit() const {
             std::size_t index = 0;
             auto value = *this;
-            while (!value.isZero()) {
-                ++index;
-                value = value.logicalRightShiftOnce();
+            if (!value.isZero()) {
+                do {
+                    ++index;
+                    value = value.logicalRightShiftOnce();
+                } while (!value.isZero());
+
+                --index;
             }
             return index;
         }
@@ -487,7 +492,7 @@ namespace wiz {
             return *this;
         }
 
-        Int128& operator =(Int128&& other) {
+        Int128& operator =(Int128&& other) noexcept {
             low = other.low;
             high = other.high;
             return *this;

@@ -38,7 +38,7 @@ namespace wiz {
             WIZ_FORCE_INLINE BitFlags(const BitFlags& other)
             : flags(other.flags) {}
 
-            WIZ_FORCE_INLINE BitFlags(BitFlags&& other)
+            WIZ_FORCE_INLINE BitFlags(BitFlags&& other) noexcept
             : flags(other.flags) {}
 
             template <T... Flags>
