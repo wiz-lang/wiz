@@ -92,6 +92,10 @@ namespace wiz {
     BinaryOperatorKind getBinaryOperatorLogicalNegation(BinaryOperatorKind op);
     StringView getUnaryOperatorSymbol(UnaryOperatorKind op);
     StringView getUnaryOperatorName(UnaryOperatorKind op);
+    bool isUnaryIncrementOperator(UnaryOperatorKind op);
+    bool isUnaryPreIncrementOperator(UnaryOperatorKind op);
+    bool isUnaryPostIncrementOperator(UnaryOperatorKind op);
+    UnaryOperatorKind getUnaryPreIncrementEquivalent(UnaryOperatorKind op);
 
     enum class EvaluationContext {
         CompileTime,

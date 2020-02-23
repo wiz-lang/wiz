@@ -143,6 +143,7 @@ namespace wiz {
             FwdUniquePtr<InstructionOperand> createOperandFromLinkTimeExpression(const Expression* expression, bool quiet) const;
             FwdUniquePtr<InstructionOperand> createOperandFromRunTimeExpression(const Expression* expression, bool quiet) const;
             bool isLeafExpression(const Expression* expression) const;
+            bool isIncrementExpression(const Expression* expression) const;
             bool emitLoadExpressionIr(const Expression* dest, const Expression* source, SourceLocation location);
             bool emitUnaryExpressionIr(const Expression* dest, UnaryOperatorKind op, const Expression* source, SourceLocation location);
             bool emitBinaryExpressionIr(const Expression* dest, BinaryOperatorKind op, const Expression* left, const Expression* right, SourceLocation location);

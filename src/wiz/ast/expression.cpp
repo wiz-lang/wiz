@@ -146,6 +146,31 @@ namespace wiz {
         return StringView(unaryOperatorNames[static_cast<std::size_t>(op)]);    
     }
 
+    bool isUnaryIncrementOperator(UnaryOperatorKind op) {
+        return isUnaryPreIncrementOperator(op) || isUnaryPostIncrementOperator(op);
+    }
+
+    bool isUnaryPreIncrementOperator(UnaryOperatorKind op) {
+        return op == UnaryOperatorKind::PreIncrement || op == UnaryOperatorKind::PreDecrement;
+    }
+
+    bool isUnaryPostIncrementOperator(UnaryOperatorKind op) {
+        return op == UnaryOperatorKind::PostIncrement || op == UnaryOperatorKind::PostDecrement;
+    }
+
+    UnaryOperatorKind getUnaryPreIncrementEquivalent(UnaryOperatorKind op) {
+        switch (op) {
+            case UnaryOperatorKind::PreIncrement:
+            case UnaryOperatorKind::PostIncrement:
+                return UnaryOperatorKind::PreIncrement;
+            case UnaryOperatorKind::PreDecrement:
+            case UnaryOperatorKind::PostDecrement:
+                return UnaryOperatorKind::PreDecrement;
+            default:
+                return UnaryOperatorKind::None;
+        }
+    }
+
     ExpressionInfo ExpressionInfo::clone() const {
         return ExpressionInfo(context, type->clone(), qualifiers);
     }

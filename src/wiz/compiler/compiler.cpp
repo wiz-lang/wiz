@@ -4711,6 +4711,13 @@ namespace wiz {
         }
     }
 
+    bool Compiler::isIncrementExpression(const Expression* expression) const {
+        if (const auto unaryOperator = expression->variant.tryGet<Expression::UnaryOperator>()) {
+            return isUnaryIncrementOperator(unaryOperator->op);
+        }
+        return false;
+    }
+
     bool Compiler::emitLoadExpressionIr(const Expression* dest, const Expression* source, SourceLocation location) {
         auto destOperand = createOperandFromExpression(dest, true);
         auto sourceOperand = createOperandFromExpression(source, true);
@@ -5167,28 +5174,13 @@ namespace wiz {
             return;
         }
 
-        bool hideSourceIfSame = false;
-        bool suffixOperator = false;
-        switch (op) {
-            case UnaryOperatorKind::PreDecrement:
-            case UnaryOperatorKind::PreIncrement: {
-                hideSourceIfSame = true;
-                break;
-            }
-            case UnaryOperatorKind::PostDecrement:
-            case UnaryOperatorKind::PostIncrement: {
-                hideSourceIfSame = true;
-                suffixOperator = true;
-                break;
-            }
-            default: break;
-        }
+        bool isIncrement = isUnaryIncrementOperator(op);
+        op = getUnaryPreIncrementEquivalent(op);
 
-        if (hideSourceIfSame && *destOperand == *sourceOperand) {
+        if (isIncrement && *destOperand == *sourceOperand) {
             auto message = "got: `"
-                + (suffixOperator ? "" : getUnaryOperatorSymbol(op).toString())
+                + getUnaryOperatorSymbol(op).toString()
                 + destOperand->toString()
-                + (suffixOperator ? getUnaryOperatorSymbol(op).toString() : "")
                 + "`";
             if (modeFlags != 0) {
                 message += " (" + getModeFlagString(modeFlags) + ")";
@@ -5199,9 +5191,8 @@ namespace wiz {
             auto message = "got: `"
                 + destOperand->toString()
                 + " = "
-                + (suffixOperator ? "" : getUnaryOperatorSymbol(op).toString())
+                + getUnaryOperatorSymbol(op).toString()
                 + sourceOperand->toString()
-                + (suffixOperator ? getUnaryOperatorSymbol(op).toString() : "")
                 + "`";
             if (modeFlags != 0) {
                 message += " (" + getModeFlagString(modeFlags) + ")";
@@ -5216,19 +5207,17 @@ namespace wiz {
                 switch (candidate->signature.operandPatterns.size()) {
                     case 1: {
                         std::string message;
-                        if (hideSourceIfSame) {
+                        if (isIncrement) {
                             message += "  `"
-                                + (suffixOperator ? "" : getUnaryOperatorSymbol(op).toString())
+                                + getUnaryOperatorSymbol(op).toString()
                                 + candidate->signature.operandPatterns[0]->toString()
-                                + (suffixOperator ? getUnaryOperatorSymbol(op).toString() : "")
                                 + "`";
                         } else {
                             message += "  `"
                                 + candidate->signature.operandPatterns[0]->toString()
                                 + " = "
-                                + (suffixOperator ? "" : getUnaryOperatorSymbol(op).toString())
+                                + getUnaryOperatorSymbol(op).toString()
                                 + candidate->signature.operandPatterns[0]->toString()
-                                + (suffixOperator ? getUnaryOperatorSymbol(op).toString() : "")
                                 + "`";
                         }
                         if (candidate->signature.requiredModeFlags != 0) {
@@ -5243,9 +5232,8 @@ namespace wiz {
                         auto message = "  `"
                             + candidate->signature.operandPatterns[0]->toString()
                             + " = "
-                            + (suffixOperator ? "" : getUnaryOperatorSymbol(op).toString())
+                            + getUnaryOperatorSymbol(op).toString()
                             + candidate->signature.operandPatterns[1]->toString()
-                            + (suffixOperator ? getUnaryOperatorSymbol(op).toString() : "")
                             + "`";
                         if (candidate->signature.requiredModeFlags != 0) {
                             message += " (" + getModeFlagString(candidate->signature.requiredModeFlags) + ")";
@@ -5451,40 +5439,70 @@ namespace wiz {
             } else {
                 if (emitBinaryExpressionIr(dest, op, left, right, dest->location)) {
                     return true;
-                } else if (isLeafExpression(right)) {
+                } else {
                     if (!emitAssignmentExpressionIr(dest, left, left->location)) {
                         return false;
                     }
-                    if (!emitBinaryExpressionIr(dest, op, dest, right, right->location)) {
-                        raiseEmitBinaryExpressionError(dest, op, dest, right, right->location);
-                        return false;
-                    }
+
+                    bool valid = false;
+
+                    if (isLeafExpression(right)) {
+                        if (!emitBinaryExpressionIr(dest, op, dest, right, right->location)) {
+                            raiseEmitBinaryExpressionError(dest, op, dest, right, right->location);
+                            return false;
+                        }
+
+                        valid = true;
+                    } /*else if (isIncrementExpression(right)) {
+                        //valid = true;
+                    }*/
+
                     if (dest->info->qualifiers.has<Qualifier::WriteOnly>()) {
                         report->error(getBinaryOperatorName(op).toString() + " expression cannot be done in-place because destination is `writeonly`, so it would require a temporary", right->location);
                         return false;
                     }
 
-                    return true;
+                    if (valid) {
+                        return true;
+                    } else {
+                        report->error(getBinaryOperatorName(op).toString() + " expression would require a temporary", right->location);
+                        return false;
+                    }
                 }
-
-                report->error(getBinaryOperatorName(op).toString() + " expression would require a temporary", right->location);
-                return false;
             }
         } else if (const auto unaryOperator = source->variant.tryGet<Expression::UnaryOperator>()) {
-            // TODO: uhhhh what do i do if the expression is a post-increment/post-decrement
-            // a = b++; should either not compile, or, should actually sequence the increment-b part after the assignment.
             const auto operand = unaryOperator->operand.get();
             const auto op = unaryOperator->op;
             if (emitUnaryExpressionIr(dest, op, operand, dest->location)) {
                 return true;
             } else {
-                if (op == UnaryOperatorKind::PostIncrement || op == UnaryOperatorKind::PostDecrement) {
-                    if (!emitAssignmentExpressionIr(dest, operand, operand->location)) {
-                        return false;
+                bool valid = false;
+
+                // Incrementation of the source must happen on the source operand directly.
+                if (isUnaryIncrementOperator(op)) {
+                    if (isUnaryPostIncrementOperator(op)) {
+                        if (!emitAssignmentExpressionIr(dest, operand, operand->location)) {
+                            return false;
+                        }
+                        if (!emitUnaryExpressionIr(operand, getUnaryPreIncrementEquivalent(op), operand, operand->location)) {
+                            raiseEmitUnaryExpressionError(operand, op, operand, operand->location);
+                            return false;
+                        }
+
+                        valid = true;
+                    } else if (isUnaryPreIncrementOperator(op)) {
+                        if (!emitUnaryExpressionIr(operand, getUnaryPreIncrementEquivalent(op), operand, operand->location)) {
+                            raiseEmitUnaryExpressionError(operand, op, operand, operand->location);
+                            return false;
+                        }
+                        if (!emitAssignmentExpressionIr(dest, operand, operand->location)) {
+                            raiseEmitUnaryExpressionError(operand, op, operand, operand->location);
+                            return false;
+                        }
+
+                        valid = true;
                     }
-                    if (!emitExpressionStatementIr(source, operand->location)) {
-                        return false;
-                    }
+                // Other unary operations can have their operand loaded into the destination first and then be computed on the destination.
                 } else {
                     if (!emitAssignmentExpressionIr(dest, operand, operand->location)) {
                         return false;
@@ -5493,6 +5511,8 @@ namespace wiz {
                         raiseEmitUnaryExpressionError(dest, op, dest, operand->location);
                         return false;
                     }
+
+                    valid = true;
                 }
 
                 if (dest->info->qualifiers.has<Qualifier::WriteOnly>()) {
@@ -5500,7 +5520,7 @@ namespace wiz {
                     return false;
                 }
 
-                return true;
+                return valid;
             }
         } else if (const auto call = source->variant.tryGet<Expression::Call>()) {
             return emitCallExpressionIr(0, call->inlined, false, dest, call->function.get(), call->arguments, location);
@@ -5537,10 +5557,7 @@ namespace wiz {
                     }
                     return true;
                 }
-                default: {
-                    raiseEmitUnaryExpressionError(operand, op, operand, operand->location);
-                    return false;
-                }
+                default: break;
             }
         } else if (const auto call = expression->variant.tryGet<Expression::Call>()) {
             return emitCallExpressionIr(0, call->inlined, false, nullptr, call->function.get(), call->arguments, location);

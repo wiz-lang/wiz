@@ -215,14 +215,10 @@ namespace wiz {
                 return reg.definition->name.toString();
             }
             case VariantType::typeIndexOf<Unary>(): {
-                const auto& un = variant.get<Unary>();               
-                switch (un.kind) {
-                    case UnaryOperatorKind::PostIncrement:
-                    case UnaryOperatorKind::PostDecrement:
-                        return un.operand->toString() + getUnaryOperatorSymbol(un.kind).toString();
-                    default:
-                        return getUnaryOperatorSymbol(un.kind).toString() + un.operand->toString();
-                }
+                const auto& un = variant.get<Unary>();
+                return isUnaryPostIncrementOperator(un.kind)
+                    ? un.operand->toString() + getUnaryOperatorSymbol(un.kind).toString()
+                    : getUnaryOperatorSymbol(un.kind).toString() + un.operand->toString();
             }
             default: std::abort(); return "";
         }
@@ -676,13 +672,9 @@ namespace wiz {
             }
             case VariantType::typeIndexOf<Unary>(): {
                 const auto& unPattern = variant.get<Unary>();
-                switch (unPattern.kind) {
-                    case UnaryOperatorKind::PostIncrement:
-                    case UnaryOperatorKind::PostDecrement:
-                        return unPattern.operandPattern->toString() + getUnaryOperatorSymbol(unPattern.kind).toString();
-                    default:
-                        return getUnaryOperatorSymbol(unPattern.kind).toString() + unPattern.operandPattern->toString();
-                }
+                return isUnaryPostIncrementOperator(unPattern.kind)
+                    ? unPattern.operandPattern->toString() + getUnaryOperatorSymbol(unPattern.kind).toString()
+                    : getUnaryOperatorSymbol(unPattern.kind).toString() + unPattern.operandPattern->toString();
             }
             default: std::abort(); return "";
         }
