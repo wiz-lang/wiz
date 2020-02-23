@@ -5478,12 +5478,21 @@ namespace wiz {
             if (emitUnaryExpressionIr(dest, op, operand, dest->location)) {
                 return true;
             } else {
-                if (!emitAssignmentExpressionIr(dest, operand, operand->location)) {
-                    return false;
-                }
-                if (!emitUnaryExpressionIr(dest, op, dest, operand->location)) {
-                    raiseEmitUnaryExpressionError(dest, op, dest, operand->location);
-                    return false;
+                if (op == UnaryOperatorKind::PostIncrement || op == UnaryOperatorKind::PostDecrement) {
+                    if (!emitAssignmentExpressionIr(dest, operand, operand->location)) {
+                        return false;
+                    }
+                    if (!emitExpressionStatementIr(source, operand->location)) {
+                        return false;
+                    }
+                } else {
+                    if (!emitAssignmentExpressionIr(dest, operand, operand->location)) {
+                        return false;
+                    }
+                    if (!emitUnaryExpressionIr(dest, op, dest, operand->location)) {
+                        raiseEmitUnaryExpressionError(dest, op, dest, operand->location);
+                        return false;
+                    }
                 }
 
                 if (dest->info->qualifiers.has<Qualifier::WriteOnly>()) {
