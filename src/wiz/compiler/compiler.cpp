@@ -4711,13 +4711,6 @@ namespace wiz {
         }
     }
 
-    bool Compiler::isIncrementExpression(const Expression* expression) const {
-        if (const auto unaryOperator = expression->variant.tryGet<Expression::UnaryOperator>()) {
-            return isUnaryIncrementOperator(unaryOperator->op);
-        }
-        return false;
-    }
-
     bool Compiler::emitLoadExpressionIr(const Expression* dest, const Expression* source, SourceLocation location) {
         auto destOperand = createOperandFromExpression(dest, true);
         auto sourceOperand = createOperandFromExpression(source, true);
@@ -5414,6 +5407,8 @@ namespace wiz {
     }
 
     bool Compiler::emitAssignmentExpressionIr(const Expression* dest, const Expression* source, SourceLocation location) {
+        // TODO: figure out a more general way to handle nested assigments and increments.
+
         if (isLeafExpression(source)) {
             if (isSimpleCast(source)) {
                 return emitAssignmentExpressionIr(dest, source->variant.get<Expression::Cast>().operand.get(), location);
@@ -5453,9 +5448,33 @@ namespace wiz {
                         }
 
                         valid = true;
-                    } /*else if (isIncrementExpression(right)) {
-                        //valid = true;
-                    }*/
+                    } else if (const auto rightUnaryOperator = right->variant.tryGet<Expression::UnaryOperator>()) {
+                        const auto rightOperand = rightUnaryOperator->operand.get();
+                        const auto rightOp = rightUnaryOperator->op;
+                        if (isUnaryPostIncrementOperator(rightOp)) {
+                            if (!emitBinaryExpressionIr(dest, op, dest, rightOperand, right->location)) {
+                                raiseEmitBinaryExpressionError(dest, op, dest, right, right->location);
+                                return false;
+                            }
+                            if (!emitUnaryExpressionIr(rightOperand, getUnaryPreIncrementEquivalent(rightOp), rightOperand, rightOperand->location)) {
+                                raiseEmitUnaryExpressionError(rightOperand, rightOp, rightOperand, rightOperand->location);
+                                return false;
+                            }
+
+                            valid = true;
+                        } else if (isUnaryPreIncrementOperator(rightOp)) {
+                            if (!emitUnaryExpressionIr(rightOperand, rightOp, rightOperand, rightOperand->location)) {
+                                raiseEmitUnaryExpressionError(rightOperand, rightOp, rightOperand, rightOperand->location);
+                                return false;
+                            }
+                            if (!emitBinaryExpressionIr(dest, op, dest, rightOperand, right->location)) {
+                                raiseEmitBinaryExpressionError(dest, op, dest, right, right->location);
+                                return false;
+                            }
+
+                            valid = true;
+                        }
+                    }
 
                     if (dest->info->qualifiers.has<Qualifier::WriteOnly>()) {
                         report->error(getBinaryOperatorName(op).toString() + " expression cannot be done in-place because destination is `writeonly`, so it would require a temporary", right->location);
@@ -5476,8 +5495,6 @@ namespace wiz {
             if (emitUnaryExpressionIr(dest, op, operand, dest->location)) {
                 return true;
             } else {
-                bool valid = false;
-
                 // Incrementation of the source must happen on the source operand directly.
                 if (isUnaryIncrementOperator(op)) {
                     if (isUnaryPostIncrementOperator(op)) {
@@ -5488,10 +5505,8 @@ namespace wiz {
                             raiseEmitUnaryExpressionError(operand, op, operand, operand->location);
                             return false;
                         }
-
-                        valid = true;
                     } else if (isUnaryPreIncrementOperator(op)) {
-                        if (!emitUnaryExpressionIr(operand, getUnaryPreIncrementEquivalent(op), operand, operand->location)) {
+                        if (!emitUnaryExpressionIr(operand, op, operand, operand->location)) {
                             raiseEmitUnaryExpressionError(operand, op, operand, operand->location);
                             return false;
                         }
@@ -5499,8 +5514,6 @@ namespace wiz {
                             raiseEmitUnaryExpressionError(operand, op, operand, operand->location);
                             return false;
                         }
-
-                        valid = true;
                     }
                 // Other unary operations can have their operand loaded into the destination first and then be computed on the destination.
                 } else {
@@ -5511,8 +5524,6 @@ namespace wiz {
                         raiseEmitUnaryExpressionError(dest, op, dest, operand->location);
                         return false;
                     }
-
-                    valid = true;
                 }
 
                 if (dest->info->qualifiers.has<Qualifier::WriteOnly>()) {
@@ -5520,7 +5531,7 @@ namespace wiz {
                     return false;
                 }
 
-                return valid;
+                return true;
             }
         } else if (const auto call = source->variant.tryGet<Expression::Call>()) {
             return emitCallExpressionIr(0, call->inlined, false, dest, call->function.get(), call->arguments, location);
