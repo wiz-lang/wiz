@@ -530,8 +530,8 @@ namespace wiz {
         } else {
             // ++a -> carry = false; a +#= 1;
             // --a -> carry = true; a -#= 1;
-            builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternA}), encodingImplicit, InstructionOptions({0x18, 0x60, 0x01}, {}, {zero, carry}));
-            builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternA}), encodingImplicit, InstructionOptions({0x38, 0xE0, 0x01}, {}, {zero, carry}));
+            builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternA}), encodingImplicit, InstructionOptions({0x18, 0x69, 0x01}, {}, {zero, carry}));
+            builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternA}), encodingImplicit, InstructionOptions({0x38, 0xE9, 0x01}, {}, {zero, carry}));
         }
 
         // Extra bit-related instructions (WDC, Rockwell, HuC)
