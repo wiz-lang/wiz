@@ -4711,16 +4711,219 @@ namespace wiz {
         }
     }
 
-    bool Compiler::isMutatingExpression(const Expression* expression) const {
+    bool Compiler::hasNestedAssignment(const Expression* expression) const {
         if (expression->info->context == EvaluationContext::RunTime) {
             const auto& variant = expression->variant;
             switch (variant.index()){
-                case Expression::VariantType::typeIndexOf<Expression::BinaryOperator>(): return variant.get<Expression::BinaryOperator>().op == BinaryOperatorKind::Assignment;
-                case Expression::VariantType::typeIndexOf<Expression::UnaryOperator>(): return isUnaryIncrementOperator(variant.get<Expression::UnaryOperator>().op);
-                default: return false;
+                case Expression::VariantType::typeIndexOf<Expression::ArrayComprehension>(): return false;
+                case Expression::VariantType::typeIndexOf<Expression::ArrayPadLiteral>(): return false;
+                case Expression::VariantType::typeIndexOf<Expression::ArrayLiteral>(): return false;
+                case Expression::VariantType::typeIndexOf<Expression::BinaryOperator>(): {
+                    const auto& binaryOperator = variant.get<Expression::BinaryOperator>();
+                    return binaryOperator.op == BinaryOperatorKind::Assignment
+                        || hasNestedAssignment(binaryOperator.left.get())
+                        || hasNestedAssignment(binaryOperator.right.get());
+                }
+                case Expression::VariantType::typeIndexOf<Expression::BooleanLiteral>(): return false;
+                case Expression::VariantType::typeIndexOf<Expression::Call>(): {
+                    const auto& call = variant.get<Expression::Call>();
+                    return !call.inlined && hasNestedAssignment(call.function.get());
+                }
+                case Expression::VariantType::typeIndexOf<Expression::Cast>(): {
+                    const auto& cast = variant.get<Expression::Cast>();
+                    return hasNestedAssignment(cast.operand.get());
+                }
+                case Expression::VariantType::typeIndexOf<Expression::Embed>(): return false;
+                case Expression::VariantType::typeIndexOf<Expression::FieldAccess>(): return false;
+                case Expression::VariantType::typeIndexOf<Expression::Identifier>(): return false;
+                case Expression::VariantType::typeIndexOf<Expression::IntegerLiteral>(): return false;
+                case Expression::VariantType::typeIndexOf<Expression::OffsetOf>(): return false;
+                case Expression::VariantType::typeIndexOf<Expression::RangeLiteral>(): return false;
+                case Expression::VariantType::typeIndexOf<Expression::ResolvedIdentifier>(): return false;
+                case Expression::VariantType::typeIndexOf<Expression::SideEffect>(): return false;
+                case Expression::VariantType::typeIndexOf<Expression::StringLiteral>(): return false;
+                case Expression::VariantType::typeIndexOf<Expression::StructLiteral>(): return false;
+                case Expression::VariantType::typeIndexOf<Expression::TupleLiteral>(): return false;
+                case Expression::VariantType::typeIndexOf<Expression::TypeOf>(): return false;
+                case Expression::VariantType::typeIndexOf<Expression::TypeQuery>(): return false;
+                case Expression::VariantType::typeIndexOf<Expression::UnaryOperator>(): {
+                    const auto& unaryOperator = variant.get<Expression::UnaryOperator>();
+                    return isUnaryIncrementOperator(unaryOperator.op)
+                        || hasNestedAssignment(unaryOperator.operand.get());
+                }
+                default: std::abort(); return false;
             }
         } else {
             return false;
+        }
+    }
+
+    bool Compiler::emitNestedAssignmentIr(const Expression* expression, bool pre, bool post) {
+        if (expression->info->context == EvaluationContext::RunTime) {
+            const auto& variant = expression->variant;
+            switch (variant.index()){
+                case Expression::VariantType::typeIndexOf<Expression::ArrayComprehension>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::ArrayPadLiteral>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::ArrayLiteral>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::BinaryOperator>(): {
+                    const auto& binaryOperator = variant.get<Expression::BinaryOperator>();
+                    const auto left = binaryOperator.left.get();
+                    const auto right = binaryOperator.right.get();
+
+                    if (binaryOperator.op == BinaryOperatorKind::Assignment) {
+                        return pre
+                            ? emitAssignmentExpressionIr(left, right, left->location)
+                            : true;
+                    } else {
+                        return emitNestedAssignmentIr(left, pre, post)
+                            && emitNestedAssignmentIr(right, pre, post);
+                    }
+                }
+                case Expression::VariantType::typeIndexOf<Expression::BooleanLiteral>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::Call>(): {
+                    const auto& call = variant.get<Expression::Call>();
+                    if (!call.inlined) {
+                        return emitNestedAssignmentIr(call.function.get(), pre, post);
+                    } else {
+                        return true;
+                    }
+                }
+                case Expression::VariantType::typeIndexOf<Expression::Cast>(): {
+                    const auto& cast = variant.get<Expression::Cast>();
+                    return emitNestedAssignmentIr(cast.operand.get(), pre, post);
+                }
+                case Expression::VariantType::typeIndexOf<Expression::Embed>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::FieldAccess>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::Identifier>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::IntegerLiteral>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::OffsetOf>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::RangeLiteral>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::ResolvedIdentifier>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::SideEffect>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::StringLiteral>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::StructLiteral>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::TupleLiteral>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::TypeOf>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::TypeQuery>(): return true;
+                case Expression::VariantType::typeIndexOf<Expression::UnaryOperator>(): {
+                    const auto& unaryOperator = variant.get<Expression::UnaryOperator>();
+                    const auto& op = unaryOperator.op;
+                    const auto operand = unaryOperator.operand.get();
+
+                    if (isUnaryPreIncrementOperator(op)) {
+                        if (pre && !emitUnaryExpressionIr(operand, op, operand, operand->location)) {
+                            raiseEmitUnaryExpressionError(operand, UnaryOperatorKind::PreIncrement, operand, operand->location);
+                            return false;
+                        }
+                        return true;
+                    } else if (isUnaryPostIncrementOperator(op)) {
+                        if (post && !emitUnaryExpressionIr(operand, getUnaryPreIncrementEquivalent(op), operand, operand->location)) {
+                            raiseEmitUnaryExpressionError(operand, op, operand, operand->location);
+                            return false;
+                        }
+                        return true;
+                    } else {
+                        return emitNestedAssignmentIr(operand, pre, post);
+                    }
+                }
+                default: std::abort(); return false;
+            }
+        } else {
+            return true;
+        }
+    }
+
+    FwdUniquePtr<const Expression> Compiler::stripNestedAssignment(const Expression* expression) const {
+        if (expression->info->context == EvaluationContext::RunTime) {
+            const auto& variant = expression->variant;
+            switch (variant.index()){
+                case Expression::VariantType::typeIndexOf<Expression::ArrayComprehension>(): return expression->clone();
+                case Expression::VariantType::typeIndexOf<Expression::ArrayPadLiteral>(): return expression->clone();
+                case Expression::VariantType::typeIndexOf<Expression::ArrayLiteral>(): return expression->clone();
+                case Expression::VariantType::typeIndexOf<Expression::BinaryOperator>(): {
+                    const auto& binaryOperator = variant.get<Expression::BinaryOperator>();
+                    const auto op = binaryOperator.op;
+                    const auto left = binaryOperator.left.get();
+                    const auto right = binaryOperator.right.get();
+
+                    auto strippedLeft = stripNestedAssignment(left);
+
+                    if (op == BinaryOperatorKind::Assignment) {
+                        return std::move(strippedLeft);
+                    } else {
+                        auto strippedRight = stripNestedAssignment(right);
+
+                        return makeFwdUnique<const Expression>(
+                            Expression::BinaryOperator(op, std::move(strippedLeft), std::move(strippedRight)),
+                            expression->location,
+                            expression->info->clone());
+                    }
+                }
+                case Expression::VariantType::typeIndexOf<Expression::BooleanLiteral>(): return expression->clone();
+                case Expression::VariantType::typeIndexOf<Expression::Call>(): {
+                    const auto& call = variant.get<Expression::Call>();
+
+                    if (!call.inlined) {
+                        const auto function = call.function.get();
+                        const auto& arguments = call.arguments;
+
+                        auto strippedFunction = stripNestedAssignment(function);
+                        std::vector<FwdUniquePtr<const Expression>> clonedArguments;
+                        for (auto& argument : arguments) {
+                            clonedArguments.push_back(argument->clone());
+                        }
+
+                        return makeFwdUnique<const Expression>(
+                            Expression::Call(false, std::move(strippedFunction), std::move(clonedArguments)),
+                            expression->location,
+                            expression->info->clone());
+                    } else {
+                        return expression->clone();
+                    }
+                }
+                case Expression::VariantType::typeIndexOf<Expression::Cast>(): {
+                    const auto& cast = variant.get<Expression::Cast>();
+                    const auto& operand = cast.operand.get();
+                    auto strippedOperand = stripNestedAssignment(operand);
+
+                    return makeFwdUnique<const Expression>(
+                        Expression::Cast(std::move(strippedOperand), cast.type->clone()),
+                        expression->location,
+                        expression->info->clone());
+                }
+                case Expression::VariantType::typeIndexOf<Expression::Embed>(): return expression->clone();
+                case Expression::VariantType::typeIndexOf<Expression::FieldAccess>(): return expression->clone();
+                case Expression::VariantType::typeIndexOf<Expression::Identifier>(): return expression->clone();
+                case Expression::VariantType::typeIndexOf<Expression::IntegerLiteral>(): return expression->clone();
+                case Expression::VariantType::typeIndexOf<Expression::OffsetOf>(): return expression->clone();
+                case Expression::VariantType::typeIndexOf<Expression::RangeLiteral>(): return expression->clone();
+                case Expression::VariantType::typeIndexOf<Expression::ResolvedIdentifier>(): return expression->clone();
+                case Expression::VariantType::typeIndexOf<Expression::SideEffect>(): return expression->clone();
+                case Expression::VariantType::typeIndexOf<Expression::StringLiteral>(): return expression->clone();
+                case Expression::VariantType::typeIndexOf<Expression::StructLiteral>(): return expression->clone();
+                case Expression::VariantType::typeIndexOf<Expression::TupleLiteral>(): return expression->clone();
+                case Expression::VariantType::typeIndexOf<Expression::TypeOf>(): return expression->clone();
+                case Expression::VariantType::typeIndexOf<Expression::TypeQuery>(): return expression->clone();
+                case Expression::VariantType::typeIndexOf<Expression::UnaryOperator>(): {
+                    const auto& unaryOperator = variant.get<Expression::UnaryOperator>();
+                    const auto op = unaryOperator.op;
+                    const auto operand = unaryOperator.operand.get();
+
+                    auto strippedOperand = stripNestedAssignment(operand);
+
+                    if (isUnaryIncrementOperator(op)) {
+                        return std::move(strippedOperand);
+                    } else {
+                        return makeFwdUnique<const Expression>(
+                            Expression::UnaryOperator(op, std::move(strippedOperand)),
+                            expression->location,
+                            expression->info->clone());
+                    }
+                }
+                default: std::abort(); return nullptr;
+            }
+        } else {
+            return expression->clone();
         }
     }
 
@@ -5425,11 +5628,23 @@ namespace wiz {
         if (isLeafExpression(source)) {
             if (isSimpleCast(source)) {
                 return emitAssignmentExpressionIr(dest, source->variant.get<Expression::Cast>().operand.get(), location);
-            }
+            } 
 
             if (!emitLoadExpressionIr(dest, source, dest->location)) {
-                raiseEmitLoadError(dest, source, dest->location);
-                return false;
+                if (hasNestedAssignment(source)) {
+                    auto strippedSource = expressionPool.add(stripNestedAssignment(source));
+                    return emitNestedAssignmentIr(source, true, false)
+                        && emitAssignmentExpressionIr(dest, strippedSource, location)
+                        && emitNestedAssignmentIr(source, false, true);
+                } else if (hasNestedAssignment(dest)) {
+                    auto strippedDest = expressionPool.add(stripNestedAssignment(dest));
+                    return emitNestedAssignmentIr(dest, true, false)
+                        && emitAssignmentExpressionIr(strippedDest, source, location)
+                        && emitNestedAssignmentIr(dest, false, true);
+                } else {
+                    raiseEmitLoadError(dest, source, dest->location);
+                    return false;
+                }
             }
             return true;
         } else if (const auto binaryOperator = source->variant.tryGet<Expression::BinaryOperator>()) {
@@ -5452,56 +5667,43 @@ namespace wiz {
                         return false;
                     }
 
-                    bool valid = false;
+                    bool tempRequired = true;
 
                     if (isLeafExpression(right)) {
                         if (!emitBinaryExpressionIr(dest, op, dest, right, right->location)) {
-                            raiseEmitBinaryExpressionError(dest, op, dest, right, right->location);
+                            if (hasNestedAssignment(right)) {
+                                auto strippedRight = expressionPool.add(stripNestedAssignment(right));
+                                if (!emitNestedAssignmentIr(right, true, false)) {
+                                    return false;
+                                }
+                                if (!emitBinaryExpressionIr(dest, op, dest, strippedRight, right->location)) {
+                                    raiseEmitBinaryExpressionError(dest, op, dest, strippedRight, right->location);
+                                    return false;
+                                }
+                                if (!emitNestedAssignmentIr(right, false, true)) {
+                                    return false;
+                                }
+                            } else {
+                                raiseEmitBinaryExpressionError(dest, op, dest, right, right->location);
+                                return false;
+                            }
+                        }
+
+                        tempRequired = false;
+                    } else if (hasNestedAssignment(right)) {
+                        auto strippedRight = expressionPool.add(stripNestedAssignment(right));
+                        if (!emitNestedAssignmentIr(right, true, false)) {
+                            return false;
+                        }
+                        if (!emitBinaryExpressionIr(dest, op, dest, strippedRight, right->location)) {
+                            raiseEmitBinaryExpressionError(dest, op, dest, strippedRight, right->location);
+                            return false;
+                        }
+                        if (!emitNestedAssignmentIr(right, false, true)) {
                             return false;
                         }
 
-                        valid = true;
-                    } else if (const auto rightUnaryOperator = right->variant.tryGet<Expression::UnaryOperator>()) {
-                        const auto rightOperand = rightUnaryOperator->operand.get();
-                        const auto rightOp = rightUnaryOperator->op;
-                        if (isUnaryPostIncrementOperator(rightOp)) {
-                            if (!emitBinaryExpressionIr(dest, op, dest, rightOperand, right->location)) {
-                                raiseEmitBinaryExpressionError(dest, op, dest, rightOperand, right->location);
-                                return false;
-                            }
-                            if (!emitUnaryExpressionIr(rightOperand, getUnaryPreIncrementEquivalent(rightOp), rightOperand, rightOperand->location)) {
-                                raiseEmitUnaryExpressionError(rightOperand, rightOp, rightOperand, rightOperand->location);
-                                return false;
-                            }
-
-                            valid = true;
-                        } else if (isUnaryPreIncrementOperator(rightOp)) {
-                            if (!emitUnaryExpressionIr(rightOperand, rightOp, rightOperand, rightOperand->location)) {
-                                raiseEmitUnaryExpressionError(rightOperand, rightOp, rightOperand, rightOperand->location);
-                                return false;
-                            }
-                            if (!emitBinaryExpressionIr(dest, op, dest, rightOperand, right->location)) {
-                                raiseEmitBinaryExpressionError(dest, op, dest, rightOperand, right->location);
-                                return false;
-                            }
-
-                            valid = true;
-                        }
-                    } else if (const auto rightBinaryOperator = right->variant.tryGet<Expression::BinaryOperator>()) { 
-                        const auto rightLeft = rightBinaryOperator->left.get();
-                        const auto rightRight = rightBinaryOperator->right.get();
-                        const auto rightOp = rightBinaryOperator->op;
-                        if (rightOp == BinaryOperatorKind::Assignment) {
-                            if(!emitAssignmentExpressionIr(rightLeft, rightRight, left->location)) {
-                                return false;
-                            }
-                            if (!emitBinaryExpressionIr(dest, op, dest, rightLeft, right->location)) {
-                                raiseEmitBinaryExpressionError(dest, op, dest, rightLeft, right->location);
-                                return false;
-                            }
-
-                            valid = true;
-                        }
+                        tempRequired = false;
                     }
 
                     if (dest->info->qualifiers.has<Qualifier::WriteOnly>()) {
@@ -5509,11 +5711,11 @@ namespace wiz {
                         return false;
                     }
 
-                    if (valid) {
-                        return true;
-                    } else {
+                    if (tempRequired) {
                         report->error(getBinaryOperatorName(op).toString() + " expression would require a temporary", right->location);
                         return false;
+                    } else {
+                        return true;
                     }
                 }
             }

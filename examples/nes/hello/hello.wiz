@@ -61,8 +61,7 @@ in prg {
         // Clear the palette.
         x = 0;            
         do {
-            nes.ppu.data = a = palette[x];
-            x++;
+            nes.ppu.data = a = palette[x++];
         } while x != palette.len;
 
         {

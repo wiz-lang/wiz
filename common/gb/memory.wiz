@@ -47,8 +47,7 @@ inline func memcpy_inline(dest : *u8 in de, source : *u8 in hl, count : u16 in b
     ++<:count; ++>:count;
     goto start;
 repeat:
-    *dest = a = *source++;
-    ++dest;
+    *dest++ = a = *source++;
 start:
     --<:count; goto repeat if !zero;
     -->:count; goto repeat if !zero;
