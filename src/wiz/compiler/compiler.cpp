@@ -4849,7 +4849,7 @@ namespace wiz {
                     auto strippedLeft = stripNestedAssignment(left);
 
                     if (op == BinaryOperatorKind::Assignment) {
-                        return std::move(strippedLeft);
+                        return strippedLeft;
                     } else {
                         auto strippedRight = stripNestedAssignment(right);
 
@@ -4912,7 +4912,7 @@ namespace wiz {
                     auto strippedOperand = stripNestedAssignment(operand);
 
                     if (isUnaryIncrementOperator(op)) {
-                        return std::move(strippedOperand);
+                        return strippedOperand;
                     } else {
                         return makeFwdUnique<const Expression>(
                             Expression::UnaryOperator(op, std::move(strippedOperand)),

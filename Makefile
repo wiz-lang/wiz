@@ -85,7 +85,7 @@ else ifeq ($(PLATFORM),emcc)
 	CC := emcc
 	CXX := em++
 	CXX_FLAGS := -Oz -std=c++1z -MMD -Wall -Wextra $(WERR_) -Wold-style-cast -Wnon-virtual-dtor -fno-exceptions
-	LXXFLAGS := -lm --bind --memory-init-file 0 -s NO_FILESYSTEM=1 -s INLINING_LIMIT=1 -s DISABLE_EXCEPTION_CATCHING=1 --pre-js $(WIZ_PRE_JS)
+	LXXFLAGS := -lm --bind --memory-init-file 0 -s NO_FILESYSTEM=1 -s INLINING_LIMIT=1 -s DISABLE_EXCEPTION_CATCHING=1 -s WASM=0 --pre-js $(WIZ_PRE_JS)
 	INCLUDES := -I$(WIZ_SRC)
 else
 $(error Unknown PLATFORM value "$(PLATFORM)")
