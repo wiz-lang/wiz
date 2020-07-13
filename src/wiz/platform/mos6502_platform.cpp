@@ -87,6 +87,7 @@ namespace wiz {
         const auto pop = scope->createDefinition(nullptr, Definition::BuiltinLoadIntrinsic(u8Type), stringPool->intern("pop"), decl);
         const auto irqcall = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("irqcall"), decl);
         const auto nop = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("nop"), decl);
+        const auto debug_break = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("debug_break"), decl);
 
         // Non-register operands.
         const auto patternFalse = builtins.createInstructionOperandPattern(InstructionOperandPattern::Boolean(false));
@@ -460,6 +461,8 @@ namespace wiz {
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(irqcall), 0, {patternImmU8}), encodingU8Operand, InstructionOptions({0x00}, {0}, {}));
         // nop
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(nop), 0, {}), encodingImplicit, InstructionOptions({0xEA}, {}, {}));
+        // debug_break - a nop, but illegal opcode, so emulators can break on this.
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(debug_break), 0, {}), encodingImplicit, InstructionOptions({0xDA}, {}, {}));
         // carry - clc / sec
         builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternCarry, patternFalse}), encodingImplicit, InstructionOptions({0x18}, {}, {}));
         builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternCarry, patternTrue}), encodingImplicit, InstructionOptions({0x38}, {}, {}));
@@ -782,6 +785,7 @@ namespace wiz {
             builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(tst), 0, {patternImmU8, patternZeroPageIndexedByX}), encodingZeroPageBitwiseTest, InstructionOptions({0xA3}, {0, 1}, {}));
             builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(tst), 0, {patternImmU8, patternAbsolute}), encodingAbsoluteBitwiseTest, InstructionOptions({0x93}, {0, 1}, {}));
             builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(tst), 0, {patternImmU8, patternAbsoluteIndexedByX}), encodingAbsoluteBitwiseTest, InstructionOptions({0xB3}, {0, 1}, {}));
+
         }
     }
 
