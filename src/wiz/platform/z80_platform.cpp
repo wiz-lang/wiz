@@ -108,6 +108,7 @@ namespace wiz {
         const auto nop = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("nop"), decl);
         const auto halt = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("halt"), decl);
         const auto decimal_adjust = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("decimal_adjust"), decl);
+        const auto exchange_16_bit_registers = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("exchange_16_bit_registers"), decl);
         const auto swap = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("swap"), decl);
         const auto swap_shadow = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("swap_shadow"), decl);
         const auto load_inc_next = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("load_inc_next"), decl);
@@ -132,7 +133,7 @@ namespace wiz {
         const auto io_write_dec_next = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_write_dec_next"), decl);
         const auto io_write_inc_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_write_inc_repeat"), decl);
         const auto io_write_dec_repeat = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("io_write_dec_repeat"), decl);
-        dec_branch_not_zero = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("dec_branch_not_zero"), decl);
+		dec_branch_not_zero = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("dec_branch_not_zero"), decl);
 
         // Non-register operands.
         const auto patternFalse = builtins.createInstructionOperandPattern(InstructionOperandPattern::Boolean(false));
@@ -652,7 +653,9 @@ namespace wiz {
         }
         // daa
         builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(decimal_adjust)), 0, {}), encodingImplicit, InstructionOptions({0x27}, {}, {}));
-        // a = ~a
+        // exx
+        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(exchange_16_bit_registers)), 0, {}), encodingImplicit, InstructionOptions({0xD9}, {}, {}));
+		// a = ~a
         builtins.createInstruction(InstructionSignature(InstructionType(UnaryOperatorKind::BitwiseNegation), 0, {patternA}), encodingImplicit, InstructionOptions({0x2F}, {}, {}));
         // a = -a
         builtins.createInstruction(InstructionSignature(InstructionType(UnaryOperatorKind::SignedNegation), 0, {patternA}), encodingImplicit, InstructionOptions({prefixExtended, 0x44}, {}, {}));

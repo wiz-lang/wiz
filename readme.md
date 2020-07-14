@@ -1562,6 +1562,7 @@ Intrinsics
 - `nop()`
 - `halt()`
 - `decimal_adjust()`
+- `exchange_16_bit_registers()` - exchanges the bc, de, and hl registers with their shadow conterparts. This generates exx instruction.
 - `swap(left, right)`
 - `swap_shadow()`
 - `load_increment()`
@@ -1626,6 +1627,7 @@ Intrinsics
 - `halt()` - halts execution until the next interrupt occurs. saves CPU and battery.
 - `stop()` - goes into a low-power sleep until a joy-pad interrupt occurs. also used after changing the Game Boy Color's speed to apply the change, by setting the joy-pad register to force an immediate wake.
 - `decimal_adjust()` - corrects the result in the accumulator after performing arithmetic on packed binary-coded decimal (BCD) values. put a call to this after an addition or subtraction involving packed BCD values.
+- `exchange_16_bit_registers()` - exchanges the bc, de, and hl registers with their shadow conterparts. This generates exx instruction.
 - `swap_digits(r)` - swaps the low and high nybbles of the register `r`.
 - `debug_break()` - emits an `ld b, b` nop opcode can be used to triggers a breakpoint in the Game Boy emulator BGB.
 - `bit(r, n)` - test bit `n` of the register `r`, and updates the `zero` flag.

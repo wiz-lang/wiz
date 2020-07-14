@@ -87,6 +87,7 @@ namespace wiz {
         const auto halt = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("halt"), decl);
         const auto stop = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("stop"), decl);
         const auto decimal_adjust = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("decimal_adjust"), decl);
+        const auto exchange_16_bit_registers = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("exchange_16_bit_registers"), decl);
         const auto swap_digits = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("swap_digits"), decl);
         const auto debug_break = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("debug_break"), decl);
         bit = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("bit"), decl);
@@ -411,6 +412,8 @@ namespace wiz {
         }
         // daa
         builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(decimal_adjust)), 0, {}), encodingImplicit, InstructionOptions({0x27}, {}, {}));
+        // exx
+        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(exchange_16_bit_registers)), 0, {}), encodingImplicit, InstructionOptions({0xD9}, {}, {}));
         // a = ~a
         builtins.createInstruction(InstructionSignature(InstructionType(UnaryOperatorKind::BitwiseNegation), 0, {patternA}), encodingImplicit, InstructionOptions({0x2F}, {}, {}));
         // a = -a
