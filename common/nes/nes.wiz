@@ -13,16 +13,20 @@ namespace nes {
             let ATTRIBUTE_PALETTE_2 = 0x2;
             let ATTRIBUTE_PALETTE_3 = 0x3;
             let ATTRIBUTE_PALETTE_MASK = 0x3;
+
+            let SPRITE_SIZE = 4;
+            let SPRITE_COUNT = 64;
+            let SPRITE_SCANLINE_LIMIT = 8;
         }
 
         extern writeonly control @ 0x2000 : u8;
         let CONTROL_NMI = 0x80;
         let CONTROL_OBJ_8x16 = 0x20;
-        let CONTROL_OBJ_8x8 = 0x00;        
+        let CONTROL_OBJ_8x8 = 0x00;
         let CONTROL_BG_PATTERN_1 = 0x10;
         let CONTROL_BG_PATTERN_0 = 0x00;
         let CONTROL_OBJ_PATTERN_1 = 0x08;
-        let CONTROL_OBJ_PATTERN_0 = 0x00;        
+        let CONTROL_OBJ_PATTERN_0 = 0x00;
         let CONTROL_VRAM_INCREMENT_32 = 0x04;
         let CONTROL_VRAM_INCREMENT_1 = 0x00;
         let CONTROL_NAMETABLE_0 = 0x00;
@@ -68,6 +72,10 @@ namespace nes {
         let NAMETABLE_SIZE_ATTRIBUTE_MAP = 0x40;
         let NAMETABLE_OFFSET_TILE_MAP = 0;
         let NAMETABLE_OFFSET_ATTRIBUTE_MAP = 0x3C0;
+        let NAMETABLE_WIDTH_TILE_MAP = 32;
+        let NAMETABLE_HEIGHT_TILE_MAP = 30;
+        let NAMETABLE_WIDTH_ATTRIBUTE_MAP = 8;
+        let NAMETABLE_HEIGHT_ATTRIBUTE_MAP = 8; // NOTE: row 7 only contains attributes in the top half.
 
         let ADDRESS_PALETTE_DATA = 0x3F00;
         let ADDRESS_PALETTE_BG_0 = 0x3F00;
@@ -82,6 +90,9 @@ namespace nes {
         let PALETTE_COUNT = 8;
         let PALETTE_BG_COUNT = 4;
         let PALETTE_OBJ_COUNT = 4;
+
+        let SCREEN_WIDTH = 256;
+        let SCREEN_HEIGHT = 240;
 
         extern var data @ 0x2007 : u8;    
     }
