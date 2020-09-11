@@ -229,6 +229,13 @@ namespace nes {
             let DOWN = 5;
             let LEFT = 6;
             let RIGHT = 7;
+
+            let BUTTON_START = 0;
+            let BUTTON_COUNT = 4;
+            let DIRECTION_START = 4;
+            let DIRECTION_COUNT = 4;
+
+            let COUNT = 8;
         }
 
         namespace mask {
@@ -240,6 +247,10 @@ namespace nes {
             let DOWN = 0x20;
             let LEFT = 0x40;
             let RIGHT = 0x80;
+
+            let BUTTONS = 0x0F;
+            let DIRECTIONS = 0xF0;
+            let ALL = 0xFF;
         }
     }
 
