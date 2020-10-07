@@ -149,7 +149,7 @@ namespace nes {
 
             extern writeonly pattern @ 0x400E : u8;
             let PATTERN_PERIOD_MASK = 0x0F;
-            let PATTERN_LOOP = 0x80;
+            let PATTERN_DUTY = 0x80;
 
             extern writeonly length @ 0x400F : u8;
             let LENGTH_MASK = 0xF8;
