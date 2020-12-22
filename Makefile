@@ -10,7 +10,7 @@ endif
 
 ifeq ($(OS),Windows_NT)
 	EXE := .exe
-	LOCATE_COMMAND := where /q
+	LOCATE_COMMAND := where
 else
 	EXE :=
 	LOCATE_COMMAND := command -v
