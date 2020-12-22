@@ -85,6 +85,7 @@ namespace wiz {
         const auto pop8 = scope->createDefinition(nullptr, Definition::BuiltinLoadIntrinsic(u8Type), stringPool->intern("pop8"), decl);
         const auto push16 = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("push16"), decl);
         const auto pop16 = scope->createDefinition(nullptr, Definition::BuiltinLoadIntrinsic(u16Type), stringPool->intern("pop16"), decl);
+        const auto push_rel16 = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("push_rel16"), decl);
         const auto irqcall = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("irqcall"), decl);
         const auto copcall = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("copcall"), decl);
         const auto nop = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("nop"), decl);
@@ -919,21 +920,31 @@ namespace wiz {
 
             builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, std::get<2>(op), {left, right}), encodingImplicit, InstructionOptions({std::get<3>(op)}, {}, {}));
         }
-        // push
+        // push instructions.
+        // pea
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push16), 0, {patternImmU16}), encodingU16Operand, InstructionOptions({0xF4}, {0}, {}));
+        // pei
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push16), 0, {patternDirectU16}), encodingU8Operand, InstructionOptions({0xD4}, {0}, {}));
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push16), 0, {patternImmU16}), encodingPCRelativeI16Operand, InstructionOptions({0x62}, {0}, {}));
+        // per
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push_rel16), 0, {patternImmU16}), encodingPCRelativeI16Operand, InstructionOptions({0x62}, {0}, {}));
+        // pha
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push8), modeMem8, {patternA}), encodingImplicit, InstructionOptions({0x48}, {}, {}));
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push16), modeMem16, {patternAA}), encodingImplicit, InstructionOptions({0x48}, {}, {}));
+        // php
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push8), 0, {patternP}), encodingImplicit, InstructionOptions({0x08}, {}, {}));
+        // phx
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push8), modeIdx8, {patternX}), encodingImplicit, InstructionOptions({0xDA}, {}, {}));
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push16), modeIdx16, {patternXX}), encodingImplicit, InstructionOptions({0xDA}, {}, {}));
+        // phy
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push8), modeIdx8, {patternY}), encodingImplicit, InstructionOptions({0x5A}, {}, {}));
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push16), modeIdx16, {patternYY}), encodingImplicit, InstructionOptions({0x5A}, {}, {}));
+        // phd
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push16), 0, {patternDirectPageRegister}), encodingImplicit, InstructionOptions({0x0B}, {}, {}));
+        // phb
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push8), 0, {patternDataBank}), encodingImplicit, InstructionOptions({0x8B}, {}, {}));
+        // phk
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push8), 0, {patternProgramBank}), encodingImplicit, InstructionOptions({0x4B}, {}, {}));
-        // pop
+        // pop instructions.
         builtins.createInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop8), modeMem8, {patternA}), encodingImplicit, InstructionOptions({0x68}, {}, {}));
         builtins.createInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop16), modeMem16, {patternAA}), encodingImplicit, InstructionOptions({0x68}, {}, {}));
         builtins.createInstruction(InstructionSignature(InstructionType::LoadIntrinsic(pop8), 0, {patternP}), encodingImplicit, InstructionOptions({0x28}, {}, {}));
