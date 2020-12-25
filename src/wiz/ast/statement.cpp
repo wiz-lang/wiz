@@ -347,9 +347,9 @@ namespace wiz {
             case VariantType::typeIndexOf<TypeAlias>(): return "`typealias` declaration"_sv;
             case VariantType::typeIndexOf<Var>(): {
                 const auto& varDeclaration = variant.get<Var>();
-                if (varDeclaration.qualifiers.has<Qualifier::Const>()) {
+                if ((varDeclaration.qualifiers & Qualifiers::Const) != Qualifiers::None) {
                     return "`const` declaration"_sv;
-                } else if (varDeclaration.qualifiers.has<Qualifier::WriteOnly>()) {
+                } else if ((varDeclaration.qualifiers & Qualifiers::WriteOnly) != Qualifiers::None) {
                     return "`writeonly` declaration"_sv;
                 } else {
                     return "`var` declaration"_sv;

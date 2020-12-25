@@ -880,7 +880,7 @@ namespace wiz {
                         report->error("expected string escape sequence, but got end-of-file", location);
                         break;
                     case State::SlashStarComment:
-                        report->error("expected `*/` to close comment `/*`, but got end-of-file", location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
+                        report->error("expected `*/` to close comment `/*`, but got end-of-file", location, ReportErrorFlags::Continued);
                         report->error("comment `/*` started here", commentStartLocation);
                         break;
                     default:

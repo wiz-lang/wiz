@@ -210,9 +210,6 @@
     <ClInclude Include="..\src\wiz\compiler\operations.h">
       <Filter>Header Files\compiler</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\wiz\ast\modifiers.h">
-      <Filter>Header Files\ast</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\wiz\compiler\version.h">
       <Filter>Header Files\compiler</Filter>
     </ClInclude>
@@ -229,6 +226,12 @@
       <Filter>Header Files\utility</Filter>
     </ClInclude>
     <ClInclude Include="..\src\wiz\utility\ptr_pool.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\wiz\ast\qualifiers.h">
+      <Filter>Header Files\ast</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\wiz\utility\bitwise_overloads.h">
       <Filter>Header Files\utility</Filter>
     </ClInclude>
   </ItemGroup>

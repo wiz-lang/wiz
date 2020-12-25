@@ -1,19 +1,18 @@
 #ifndef WIZ_UTILITY_REPORT_ERROR_FLAGS_H
 #define WIZ_UTILITY_REPORT_ERROR_FLAGS_H
 
-#include <wiz/utility/bit_flags.h>
 #include <wiz/utility/string_view.h>
+#include <wiz/utility/bitwise_overloads.h>
 
 namespace wiz {
-    enum class ReportErrorFlagType {
-        Fatal,
-        Continued,
-        InternalError,
+    enum class ReportErrorFlags {
+        None,
 
-        Count
+        Fatal = 0x01,
+        Continued = 0x02,
+        InternalError = 0x04,
     };
-
-    using ReportErrorFlags = BitFlags<ReportErrorFlagType, ReportErrorFlagType::Count>;
+    WIZ_BITWISE_OVERLOADS(ReportErrorFlags)
 
     enum class ReportErrorSeverity {
         Fatal,

@@ -174,7 +174,7 @@ namespace wiz {
         StringView canonicalPath;
         std::unique_ptr<Reader> reader;
 
-        if (importModule(path, ImportOptions::of<ImportOptionType::AllowShellResources>(), displayPath, canonicalPath, reader) != ImportResult::Failed) {
+        if (importModule(path, ImportOptions::AllowShellResources, displayPath, canonicalPath, reader) != ImportResult::Failed) {
             pushScanner(displayPath, canonicalPath, std::move(reader));
             importManager->setCurrentPath(scanner->getLocation().canonicalPath);
             importManager->setStartPath(importManager->getCurrentPath());
@@ -238,15 +238,15 @@ namespace wiz {
                     case Keyword::Struct: return parseStructDeclaration(StructKind::Struct);
                     case Keyword::Union: return parseStructDeclaration(StructKind::Union);
                     case Keyword::Var: return parseVarDeclaration(Qualifiers {});
-                    case Keyword::Const: return parseVarDeclaration(Qualifiers::of<Qualifier::Const>());
-                    case Keyword::WriteOnly: return parseVarDeclaration(Qualifiers::of<Qualifier::WriteOnly>());
+                    case Keyword::Const: return parseVarDeclaration(Qualifiers::Const);
+                    case Keyword::WriteOnly: return parseVarDeclaration(Qualifiers::WriteOnly);
                     case Keyword::Extern: {
                         nextToken(); // IDENTIFIER (keyword `extern`)
 
                         switch (token.keyword) {
-                            case Keyword::Var: return parseVarDeclaration(Qualifiers::of<Qualifier::Extern>());
-                            case Keyword::Const: return parseVarDeclaration(Qualifiers::of<Qualifier::Extern, Qualifier::Const>());
-                            case Keyword::WriteOnly: return parseVarDeclaration(Qualifiers::of<Qualifier::Extern, Qualifier::WriteOnly>());
+                            case Keyword::Var: return parseVarDeclaration(Qualifiers::Extern);
+                            case Keyword::Const: return parseVarDeclaration(Qualifiers::Extern | Qualifiers::Const);
+                            case Keyword::WriteOnly: return parseVarDeclaration(Qualifiers::Extern | Qualifiers::WriteOnly);
                             default: {
                                 reject(token, "declaration after `extern`"_sv, false);
                                 skipToNextStatement();
@@ -338,7 +338,7 @@ namespace wiz {
             std::unique_ptr<Reader> reader;
 
             FwdUniquePtr<const Statement> statement;
-            const auto result = importModule(originalPath, ImportOptions::of<ImportOptionType::AppendExtension>(), displayPath, canonicalPath, reader);
+            const auto result = importModule(originalPath, ImportOptions::AppendExtension, displayPath, canonicalPath, reader);
             switch (result) {           
                 case ImportResult::JustImported: {
                     pushScanner(displayPath, canonicalPath, std::move(reader));
@@ -510,7 +510,7 @@ namespace wiz {
 
         while (report->alive()) {
             if (token.type == TokenType::EndOfFile) {
-                reject(token, "`}` to close block `{`"_sv, true, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
+                reject(token, "`}` to close block `{`"_sv, true, ReportErrorFlags::Continued);
                 report->error("block `{` started here", location);
                 popScanner();
                 return nullptr;
@@ -861,9 +861,9 @@ namespace wiz {
         const auto location = scanner->getLocation();        
 
         const char* description = "`var` declaration";
-        if (qualifiers.has<Qualifier::Const>()) {
+        if ((qualifiers & Qualifiers::Const) != Qualifiers::None) {
             description = "`const` declaration";
-        } else if (qualifiers.has<Qualifier::WriteOnly>()) {
+        } else if ((qualifiers & Qualifiers::WriteOnly) != Qualifiers::None) {
             description = "`writeonly` declaration";
         }
 
@@ -871,7 +871,7 @@ namespace wiz {
         std::vector<FwdUniquePtr<const Expression>> addresses;
         nextToken(); // IDENTIFIER (keyword `var`)
         
-        if (!qualifiers.has<Qualifier::Const>() || token.type == TokenType::Identifier) {
+        if ((qualifiers & Qualifiers::Const) == Qualifiers::None || token.type == TokenType::Identifier) {
             if (checkIdentifier()) {
                 names.push_back(token.text);
             }
@@ -888,7 +888,7 @@ namespace wiz {
         }        
 
         // Check if we should match (`,` id)*
-        while (!qualifiers.has<Qualifier::Const>() && token.type == TokenType::Comma) {
+        while ((qualifiers & Qualifiers::Const) == Qualifiers::None && token.type == TokenType::Comma) {
             nextToken(); // `,`
             if (token.type == TokenType::Identifier) {
                 if (checkIdentifier()) {
@@ -2015,7 +2015,7 @@ namespace wiz {
 
                                 const auto match = items.find(name);
                                 if (match != items.end()) {
-                                    report->error("duplicate `" + name.toString() + "` field in struct literal", itemLocation, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
+                                    report->error("duplicate `" + name.toString() + "` field in struct literal", itemLocation, ReportErrorFlags::Continued);
                                     report->error("field `" + name.toString() + "` was previously specified here", match->second->location);
                                 } else {
                                     items[name] = std::make_unique<Expression::StructLiteral::Item>(std::move(value), itemLocation);
@@ -2234,7 +2234,7 @@ namespace wiz {
             if (token.keyword == Keyword::Func) {
                 return parseFunctionType(true);
             } else if (token.type == TokenType::Asterisk) {    
-                return parsePointerType(Qualifiers::of<Qualifier::Far>());
+                return parsePointerType(Qualifiers::Far);
             } else {
                 reject(token, "pointer `*` type or function `func` type after `far`"_sv, true);
                 return nullptr;
@@ -2369,8 +2369,8 @@ namespace wiz {
         nextToken(); // `*`
 
         switch (token.keyword) {
-            case Keyword::Const: nextToken(); qualifiers |= Qualifiers::of<Qualifier::Const>(); break;
-            case Keyword::WriteOnly: nextToken(); qualifiers |= Qualifiers::of<Qualifier::WriteOnly>(); break;
+            case Keyword::Const: nextToken(); qualifiers |= Qualifiers::Const; break;
+            case Keyword::WriteOnly: nextToken(); qualifiers |= Qualifiers::WriteOnly; break;
             default: break;
         }
 

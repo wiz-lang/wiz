@@ -27,8 +27,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\wiz\ast\modifiers.h" />
     <ClInclude Include="..\src\wiz\ast\expression.h" />
+    <ClInclude Include="..\src\wiz\ast\qualifiers.h" />
     <ClInclude Include="..\src\wiz\ast\statement.h" />
     <ClInclude Include="..\src\wiz\ast\type_expression.h" />
     <ClInclude Include="..\src\wiz\compiler\address.h" />
@@ -59,6 +59,7 @@
     <ClInclude Include="..\src\wiz\platform\wdc65816_platform.h" />
     <ClInclude Include="..\src\wiz\platform\z80_platform.h" />
     <ClInclude Include="..\src\wiz\utility\array_view.h" />
+    <ClInclude Include="..\src\wiz\utility\bitwise_overloads.h" />
     <ClInclude Include="..\src\wiz\utility\enable_bitwise.h" />
     <ClInclude Include="..\src\wiz\utility\bit_flags.h" />
     <ClInclude Include="..\src\wiz\utility\fwd_unique_ptr.h" />

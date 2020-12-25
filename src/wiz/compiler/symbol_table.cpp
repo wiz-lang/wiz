@@ -66,7 +66,7 @@ namespace wiz {
         const auto match = findLocalMemberDefinition(def->name);
         if (match != nullptr) {
             if (report) {
-                report->error("redefinition of symbol `" + def->name.toString() + "`", def->declaration->location, ReportErrorFlags::of<ReportErrorFlagType::Continued>());
+                report->error("redefinition of symbol `" + def->name.toString() + "`", def->declaration->location, ReportErrorFlags::Continued);
                 report->error("`" + def->name.toString() + "` was previously defined here, by " + match->declaration->getDescription().toString(), match->declaration->location);
             }
             return nullptr;

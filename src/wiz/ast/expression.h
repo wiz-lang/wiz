@@ -79,7 +79,7 @@ namespace wiz {
         Count,
     };
 
-    enum TypeQueryKind {
+    enum class TypeQueryKind {
         None,
         SizeOf,
         AlignOf,

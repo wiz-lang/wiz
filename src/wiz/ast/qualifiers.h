@@ -1,19 +1,21 @@
-#ifndef WIZ_AST_MODIFIERS_H
-#define WIZ_AST_MODIFIERS_H
+#ifndef WIZ_AST_QUALIFIERS_H
+#define WIZ_AST_QUALIFIERS_H
 
-#include <wiz/utility/bit_flags.h>
+#include <cstdint>
+
+#include <wiz/utility/bitwise_overloads.h>
 
 namespace wiz {
-    enum class Qualifier {
-        Const,
-        WriteOnly,
-        Extern,
-        Far,
-        LValue,
+    enum class Qualifiers {
+        None,
 
-        Count
+        Const = 0x01,
+        WriteOnly = 0x02,
+        Extern = 0x04,
+        Far = 0x08,
+        LValue = 0x10,
     };
 
-    using Qualifiers = BitFlags<Qualifier, Qualifier::Count>;
+    WIZ_BITWISE_OVERLOADS(Qualifiers)
 }
 #endif

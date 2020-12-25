@@ -4,11 +4,11 @@
 namespace wiz {
     namespace {
         ReportErrorSeverity getSeverity(ReportErrorFlags flags, ReportErrorFlags previousFlags) {
-            if (flags.has<ReportErrorFlagType::InternalError>()) {
+            if ((flags & ReportErrorFlags::InternalError) != ReportErrorFlags::None) {
                 return ReportErrorSeverity::InternalError;
-            } else if (flags.has<ReportErrorFlagType::Fatal>()) {
+            } else if ((flags & ReportErrorFlags::Fatal) != ReportErrorFlags::None) {
                 return ReportErrorSeverity::Fatal;
-            } else if (previousFlags.has<ReportErrorFlagType::Continued>()) {
+            } else if ((previousFlags & ReportErrorFlags::Continued) != ReportErrorFlags::None) {
                 return ReportErrorSeverity::Note;
             } else {
                 return ReportErrorSeverity::Error;
@@ -26,10 +26,10 @@ namespace wiz {
             auto severity = getSeverity(flags, previousFlags);
             logger->error(location, severity, message);
 
-            bool aborting = flags.has<ReportErrorFlagType::Fatal>() || previousFlags.has<ReportErrorFlagType::Fatal>();
-            previousFlags = flags | (previousFlags.intersect<ReportErrorFlagType::Fatal>());
+            bool aborting = (flags & ReportErrorFlags::Fatal) != ReportErrorFlags::None || (previousFlags & ReportErrorFlags::Fatal) != ReportErrorFlags::None;
+            previousFlags = flags | (previousFlags & ReportErrorFlags::Fatal);
 
-            if (flags.has<ReportErrorFlagType::Continued>()) {
+            if ((flags & ReportErrorFlags::Continued) != ReportErrorFlags::None) {
                 aborting = false;
             } else {
                 errors++;
