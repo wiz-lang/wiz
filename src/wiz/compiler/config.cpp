@@ -42,7 +42,7 @@ namespace wiz {
 
     Optional<std::pair<const Expression*, bool>> Config::checkBoolean(Report* report, StringView key, bool required) const {
         if (const auto value = checkValue(report, key, required)) {
-            if (const auto lit = value->variant.tryGet<Expression::BooleanLiteral>()) {
+            if (const auto lit = value->tryGet<Expression::BooleanLiteral>()) {
                 return std::make_pair(value, lit->value);
             } else {
                 report->error("config entry `" + key.toString() + "` must be a compile-time boolean literal", value->location);
@@ -53,7 +53,7 @@ namespace wiz {
 
     Optional<std::pair<const Expression*, Int128>> Config::checkInteger(Report* report, StringView key, bool required) const {
         if (const auto value = checkValue(report, key, required)) {
-            if (const auto lit = value->variant.tryGet<Expression::IntegerLiteral>()) {
+            if (const auto lit = value->tryGet<Expression::IntegerLiteral>()) {
                 return std::make_pair(value, lit->value);
             } else {
                 report->error("config entry `" + key.toString() + "` must be a compile-time integer literal", value->location);
@@ -64,7 +64,7 @@ namespace wiz {
 
     Optional<std::pair<const Expression*, StringView>> Config::checkString(Report* report, StringView key, bool required) const {
         if (const auto value = checkValue(report, key, required)) {
-            if (const auto lit = value->variant.tryGet<Expression::StringLiteral>()) {
+            if (const auto lit = value->tryGet<Expression::StringLiteral>()) {
                 return std::make_pair(value, lit->value);
             } else {
                 report->error("config entry `" + key.toString() + "` must be a compile-time string literal", value->location);

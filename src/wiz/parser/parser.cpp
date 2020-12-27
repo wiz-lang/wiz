@@ -1290,7 +1290,7 @@ namespace wiz {
             StringView statementDescription = "statement"_sv;
             StringView expressionDescription = "expression"_sv;
 
-            if (const auto unary = expression->variant.tryGet<Expression::UnaryOperator>()) {
+            if (const auto unary = expression->tryGet<Expression::UnaryOperator>()) {
                 expressionDescription = getUnaryOperatorName(unary->op);
 
                 switch (unary->op) {
@@ -1303,7 +1303,7 @@ namespace wiz {
                         badExpressionStatement = true;
                         break;
                 }
-            } else if (const auto binary = expression->variant.tryGet<Expression::BinaryOperator>()) {
+            } else if (const auto binary = expression->tryGet<Expression::BinaryOperator>()) {
                 expressionDescription = getBinaryOperatorName(binary->op);
 
                 switch (binary->op) {
@@ -1313,12 +1313,12 @@ namespace wiz {
                         badExpressionStatement = true;
                         break;
                 }
-            } else if (!expression->variant.is<Expression::Call>()) {
+            } else if (expression->kind != ExpressionKind::Call) {
                 badExpressionStatement = true;
             }
 
             if (badExpressionStatement) {
-                if (const auto identifier = expression->variant.tryGet<Expression::Identifier>()) {
+                if (const auto identifier = expression->tryGet<Expression::Identifier>()) {
                     report->error("expected " + statementDescription.toString() + ", but got identifier `" + text::join(identifier->pieces.begin(), identifier->pieces.end(), ".") + "`", expression->location);
                 } else {
                     report->error("expected " + statementDescription.toString() + ", but got " + expressionDescription.toString(), expression->location);                
@@ -1902,7 +1902,7 @@ namespace wiz {
                 } else {
                     auto expr = parseExpressionWithOptions(options.include<ExpressionParseOption::Parenthesized, ExpressionParseOption::AllowStructLiterals>()); // expression 
                     expectTokenType(TokenType::RightParenthesis); // `)`
-                    if (expr && expr->variant.is<Expression::TupleLiteral>()) {
+                    if (expr && expr->kind == ExpressionKind::TupleLiteral) {
                         return expr;
                     } else {
                         return makeFwdUnique<const Expression>(Expression::UnaryOperator(

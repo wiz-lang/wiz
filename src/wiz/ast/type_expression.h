@@ -171,30 +171,6 @@ namespace wiz {
         ~TypeExpression();
 
         template <typename T> const T* tryGet() const;
-        template <> WIZ_FORCE_INLINE const Array* tryGet<Array>() const {
-            return kind == TypeExpressionKind::Array ? &array : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const DesignatedStorage* tryGet<DesignatedStorage>() const {
-            return kind == TypeExpressionKind::DesignatedStorage ? &designatedStorage : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const Function* tryGet<Function>() const {
-            return kind == TypeExpressionKind::Function ? &function : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const Identifier* tryGet<Identifier>() const {
-            return kind == TypeExpressionKind::Identifier ? &identifier : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const Pointer* tryGet<Pointer>() const {
-            return kind == TypeExpressionKind::Pointer ? &pointer : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const ResolvedIdentifier* tryGet<ResolvedIdentifier>() const {
-            return kind == TypeExpressionKind::ResolvedIdentifier ? &resolvedIdentifier : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const Tuple* tryGet<Tuple>() const {
-            return kind == TypeExpressionKind::Tuple ? &tuple : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const TypeOf* tryGet<TypeOf>() const {
-            return kind == TypeExpressionKind::TypeOf ? &typeOf : nullptr;
-        }
 
         FwdUniquePtr<const TypeExpression> clone() const;
 
@@ -213,5 +189,30 @@ namespace wiz {
 
         SourceLocation location;
     };
+
+    template <> WIZ_FORCE_INLINE const TypeExpression::Array* TypeExpression::tryGet<TypeExpression::Array>() const {
+        return kind == TypeExpressionKind::Array ? &array : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const TypeExpression::DesignatedStorage* TypeExpression::tryGet<TypeExpression::DesignatedStorage>() const {
+        return kind == TypeExpressionKind::DesignatedStorage ? &designatedStorage : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const TypeExpression::Function* TypeExpression::tryGet<TypeExpression::Function>() const {
+        return kind == TypeExpressionKind::Function ? &function : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const TypeExpression::Identifier* TypeExpression::tryGet<TypeExpression::Identifier>() const {
+        return kind == TypeExpressionKind::Identifier ? &identifier : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const TypeExpression::Pointer* TypeExpression::tryGet<TypeExpression::Pointer>() const {
+        return kind == TypeExpressionKind::Pointer ? &pointer : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const TypeExpression::ResolvedIdentifier* TypeExpression::tryGet<TypeExpression::ResolvedIdentifier>() const {
+        return kind == TypeExpressionKind::ResolvedIdentifier ? &resolvedIdentifier : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const TypeExpression::Tuple* TypeExpression::tryGet<TypeExpression::Tuple>() const {
+        return kind == TypeExpressionKind::Tuple ? &tuple : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const TypeExpression::TypeOf* TypeExpression::tryGet<TypeExpression::TypeOf>() const {
+        return kind == TypeExpressionKind::TypeOf ? &typeOf : nullptr;
+    }
 }
 #endif

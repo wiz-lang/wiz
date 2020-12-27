@@ -923,15 +923,15 @@ namespace wiz {
         switch (op) {
             case BinaryOperatorKind::Equal:
             case BinaryOperatorKind::NotEqual: {
-                if (const auto leftUnary = left->variant.tryGet<Expression::UnaryOperator>()) {
+                if (const auto leftUnary = left->tryGet<Expression::UnaryOperator>()) {
                     const auto innerOp = leftUnary->op;
                     const auto innerOperand = leftUnary->operand.get();
 
                     // --b != 0 -> decrement_branch_not_zero(b, dest)
                     if (innerOp == UnaryOperatorKind::PreDecrement) {
-                        if (const auto decrementedRegister = innerOperand->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                        if (const auto decrementedRegister = innerOperand->tryGet<Expression::ResolvedIdentifier>()) {
                             if (decrementedRegister->definition == b) {
-                                if (const auto outerRightImmediate = right->variant.tryGet<Expression::IntegerLiteral>()) {
+                                if (const auto outerRightImmediate = right->tryGet<Expression::IntegerLiteral>()) {
                                     if (op == BinaryOperatorKind::NotEqual && outerRightImmediate->value.isZero()) {
                                         return std::make_unique<PlatformTestAndBranch>(
                                             InstructionType::VoidIntrinsic(dec_branch_not_zero),
@@ -945,10 +945,10 @@ namespace wiz {
                     }
                 }
 
-                if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
                     if (leftRegister->definition == a) {
                         // a == 0 -> { a |= a; } && zero
-                        if (const auto rightImmediate = right->variant.tryGet<Expression::IntegerLiteral>()) {
+                        if (const auto rightImmediate = right->tryGet<Expression::IntegerLiteral>()) {
                             if (rightImmediate->value.isZero()) {
                                 return std::make_unique<PlatformTestAndBranch>(
                                     BinaryOperatorKind::BitwiseOr,
@@ -973,9 +973,9 @@ namespace wiz {
             case BinaryOperatorKind::GreaterThanOrEqual: {
                 if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
                     if (integerType->min.isNegative()) {
-                        if (const auto rightImmediate = right->variant.tryGet<Expression::IntegerLiteral>()) {
+                        if (const auto rightImmediate = right->tryGet<Expression::IntegerLiteral>()) {
                             if (rightImmediate->value.isZero()) {
-                                if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                                if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
                                     if (leftRegister->definition == a) {
                                         // a < 0 -> { cmp(a, 0); } && negative
                                         // a >= 0 -> { cmp(a, 0); } && !negative
@@ -1005,7 +1005,7 @@ namespace wiz {
                     } else {
                         // a < right -> { cmp(a, right); } && carry
                         // a >= right -> { cmp(a, right); } && carry
-                        if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                        if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
                             if (leftRegister->definition == a) {
                                 return std::make_unique<PlatformTestAndBranch>(
                                     InstructionType::VoidIntrinsic(cmp),
@@ -1023,9 +1023,9 @@ namespace wiz {
                 if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
                     if (integerType->min.isNegative()) {
                         // a <= right -> { cmp(a, right); } && (zero || negative)
-                        if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                        if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
                             if (leftRegister->definition == a) {
-                                if (const auto rightImmediate = right->variant.tryGet<Expression::IntegerLiteral>()) {
+                                if (const auto rightImmediate = right->tryGet<Expression::IntegerLiteral>()) {
                                     if (rightImmediate->value.isZero()) {
                                         return std::make_unique<PlatformTestAndBranch>(
                                             InstructionType::VoidIntrinsic(cmp),
@@ -1041,7 +1041,7 @@ namespace wiz {
                         }
                     } else {
                         // a <= right -> { cmp(a, right); } && (zero || carry)
-                        if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                        if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
                             if (leftRegister->definition == a) {
                                 return std::make_unique<PlatformTestAndBranch>(
                                     InstructionType::VoidIntrinsic(cmp),
@@ -1062,9 +1062,9 @@ namespace wiz {
                 if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
                     if (integerType->min.isNegative()) {
                         // a > right -> { cmp(a, right); } && !zero && !negative
-                        if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                        if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
                             if (leftRegister->definition == a) {
-                                if (const auto rightImmediate = right->variant.tryGet<Expression::IntegerLiteral>()) {
+                                if (const auto rightImmediate = right->tryGet<Expression::IntegerLiteral>()) {
                                     if (rightImmediate->value.isZero()) {
                                         return std::make_unique<PlatformTestAndBranch>(
                                             InstructionType::VoidIntrinsic(cmp),
@@ -1080,7 +1080,7 @@ namespace wiz {
                         }
                     } else {
                         // a > right -> { cmp(a, right); } && !zero && !carry
-                        if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                        if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
                             if (leftRegister->definition == a) {
                                 return std::make_unique<PlatformTestAndBranch>(
                                     InstructionType::VoidIntrinsic(cmp),
@@ -1099,9 +1099,9 @@ namespace wiz {
             }
             case BinaryOperatorKind::BitIndexing: {
                 // left $ right -> { bit(left, right); } && !zero
-                if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
                     if (leftRegister->definition->variant.is<Definition::BuiltinRegister>()) {
-                        if (const auto rightInteger = right->variant.tryGet<Expression::IntegerLiteral>()) {
+                        if (const auto rightInteger = right->tryGet<Expression::IntegerLiteral>()) {
                             const auto bitIndex = rightInteger->value;
 
                             if (Int128(0) <= bitIndex && bitIndex <= Int128(7)) {

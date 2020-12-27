@@ -732,13 +732,13 @@ namespace wiz {
         switch (op) {
             case BinaryOperatorKind::Equal:
             case BinaryOperatorKind::NotEqual: {
-                if (const auto leftUnary = left->variant.tryGet<Expression::UnaryOperator>()) {
+                if (const auto leftUnary = left->tryGet<Expression::UnaryOperator>()) {
                     const auto innerOp = leftUnary->op;
                     const auto innerOperand = leftUnary->operand.get();
 
                     // --operand != 0 -> decrement_branch_not_zero(operand, dest)
                     if (innerOp == UnaryOperatorKind::PreDecrement) {
-                        if (const auto outerRightImmediate = right->variant.tryGet<Expression::IntegerLiteral>()) {
+                        if (const auto outerRightImmediate = right->tryGet<Expression::IntegerLiteral>()) {
                             if (op == BinaryOperatorKind::NotEqual && outerRightImmediate->value.isZero()) {
                                 return std::make_unique<PlatformTestAndBranch>(
                                     InstructionType::VoidIntrinsic(dec_branch_not_zero),
@@ -752,7 +752,7 @@ namespace wiz {
 
                 // a != right -> compare_branch(a, right, dest)
                 if (distanceHint == 0 && op == BinaryOperatorKind::NotEqual) {
-                    if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                    if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
                         if (leftRegister->definition == a) {
                             std::vector<InstructionOperandRoot> operandRoots;
                             operandRoots.push_back(InstructionOperandRoot(left, makeFwdUnique<InstructionOperand>(InstructionOperand::Register(a))));
@@ -783,7 +783,7 @@ namespace wiz {
                     if (integerType->min.isNegative()) {
                         // left < 0 -> { cmp(left, right); } && negative
                         // left >= 0 -> { cmp(left, right); } && !negative
-                        if (const auto rightImmediate = right->variant.tryGet<Expression::IntegerLiteral>()) {
+                        if (const auto rightImmediate = right->tryGet<Expression::IntegerLiteral>()) {
                             if (rightImmediate->value.isZero()) {
                                 return std::make_unique<PlatformTestAndBranch>(
                                     InstructionType::VoidIntrinsic(cmp),
@@ -809,7 +809,7 @@ namespace wiz {
                 if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
                     if (integerType->min.isNegative()) {
                         // left <= 0 -> { cmp(left, right); } && (zero || negative)
-                        if (const auto rightImmediate = right->variant.tryGet<Expression::IntegerLiteral>()) {
+                        if (const auto rightImmediate = right->tryGet<Expression::IntegerLiteral>()) {
                             if (rightImmediate->value.isZero()) {
                                 return std::make_unique<PlatformTestAndBranch>(
                                     InstructionType::VoidIntrinsic(cmp),
@@ -840,7 +840,7 @@ namespace wiz {
                 if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
                     if (integerType->min.isNegative()) {
                         // left > 0 -> { cmp(left, right); } && !zero && !negative
-                        if (const auto rightImmediate = right->variant.tryGet<Expression::IntegerLiteral>()) {
+                        if (const auto rightImmediate = right->tryGet<Expression::IntegerLiteral>()) {
                             if (rightImmediate->value.isZero()) {
                                 return std::make_unique<PlatformTestAndBranch>(
                                     InstructionType::VoidIntrinsic(cmp),

@@ -1,7 +1,6 @@
 #include <wiz/ast/expression.h>
 #include <wiz/ast/statement.h>
 #include <wiz/ast/type_expression.h>
-#include <wiz/utility/overload.h>
 
 namespace wiz {
     const char* const binaryOperatorSymbols[] = {
@@ -180,14 +179,40 @@ namespace wiz {
         delete ptr;
     }
 
+    Expression::~Expression() {
+        switch (kind) {
+            case ExpressionKind::ArrayComprehension: arrayComprehension.~ArrayComprehension(); break;
+            case ExpressionKind::ArrayPadLiteral: arrayPadLiteral.~ArrayPadLiteral(); break;
+            case ExpressionKind::ArrayLiteral: arrayLiteral.~ArrayLiteral(); break;
+            case ExpressionKind::BinaryOperator: binaryOperator.~BinaryOperator(); break;
+            case ExpressionKind::BooleanLiteral: booleanLiteral.~BooleanLiteral(); break;
+            case ExpressionKind::Call: call.~Call(); break;
+            case ExpressionKind::Cast: cast.~Cast(); break;
+            case ExpressionKind::Embed: embed.~Embed(); break;
+            case ExpressionKind::FieldAccess: fieldAccess.~FieldAccess(); break;
+            case ExpressionKind::Identifier: identifier.~Identifier(); break;
+            case ExpressionKind::IntegerLiteral: integerLiteral.~IntegerLiteral(); break;
+            case ExpressionKind::OffsetOf: offsetOf.~OffsetOf(); break;
+            case ExpressionKind::RangeLiteral: rangeLiteral.~RangeLiteral(); break;
+            case ExpressionKind::ResolvedIdentifier: resolvedIdentifier.~ResolvedIdentifier(); break;
+            case ExpressionKind::SideEffect: sideEffect.~SideEffect(); break;
+            case ExpressionKind::StringLiteral: stringLiteral.~StringLiteral(); break;
+            case ExpressionKind::StructLiteral: structLiteral.~StructLiteral(); break;
+            case ExpressionKind::TupleLiteral: tupleLiteral.~TupleLiteral(); break;
+            case ExpressionKind::TypeOf: typeOf.~TypeOf(); break;
+            case ExpressionKind::TypeQuery: typeQuery.~TypeQuery(); break;
+            case ExpressionKind::UnaryOperator: unaryOperator.~UnaryOperator(); break;
+            default: std::abort(); break;
+        }
+    }
+
     FwdUniquePtr<const Expression> Expression::clone() const {
         return clone(location, info ? info->clone() : Optional<ExpressionInfo>());
     }
 
     FwdUniquePtr<const Expression> Expression::clone(SourceLocation location, Optional<ExpressionInfo> info) const {
-        switch (variant.index()) {
-            case VariantType::typeIndexOf<ArrayComprehension>(): {
-                const auto& arrayComprehension = variant.get<ArrayComprehension>();
+        switch (kind) {
+            case ExpressionKind::ArrayComprehension: {
                 return makeFwdUnique<const Expression>(
                     ArrayComprehension(
                         arrayComprehension.expression ? arrayComprehension.expression->clone() : nullptr,
@@ -195,16 +220,14 @@ namespace wiz {
                         arrayComprehension.sequence ? arrayComprehension.sequence->clone() : nullptr),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<ArrayPadLiteral>(): {
-                const auto& arrayPadLiteral = variant.get<ArrayPadLiteral>();
+            case ExpressionKind::ArrayPadLiteral: {
                 return makeFwdUnique<const Expression>(
                     ArrayPadLiteral(
                         arrayPadLiteral.valueExpression ? arrayPadLiteral.valueExpression->clone() : nullptr,
                         arrayPadLiteral.sizeExpression ? arrayPadLiteral.sizeExpression->clone() : nullptr),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<ArrayLiteral>(): {
-                const auto& arrayLiteral = variant.get<ArrayLiteral>();
+            case ExpressionKind::ArrayLiteral: {
                 std::vector<FwdUniquePtr<const Expression>> clonedItems;
                 for (const auto& item : arrayLiteral.items) {
                     clonedItems.push_back(item ? item->clone() : nullptr);
@@ -213,22 +236,19 @@ namespace wiz {
                     ArrayLiteral(std::move(clonedItems)),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<BinaryOperator>(): {
-                const auto& binaryOperator = variant.get<BinaryOperator>();
+            case ExpressionKind::BinaryOperator: {
                 return makeFwdUnique<const Expression>(
                     BinaryOperator(binaryOperator.op,
                         binaryOperator.left ? binaryOperator.left->clone() : nullptr,
                         binaryOperator.right ? binaryOperator.right->clone() : nullptr),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<BooleanLiteral>(): {
-                const auto& booleanLiteral = variant.get<BooleanLiteral>();
+            case ExpressionKind::BooleanLiteral: {
                 return makeFwdUnique<const Expression>(
                     BooleanLiteral(booleanLiteral.value),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<Call>(): {
-                const auto& call = variant.get<Call>();
+            case ExpressionKind::Call: {
                 std::vector<FwdUniquePtr<const Expression>> clonedArguments;
                 for (const auto& argument : call.arguments) {
                     clonedArguments.push_back(argument ? argument->clone() : nullptr);
@@ -240,51 +260,44 @@ namespace wiz {
                         std::move(clonedArguments)),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<Cast>(): {
-                const auto& cast = variant.get<Cast>();
+            case ExpressionKind::Cast: {
                 return makeFwdUnique<const Expression>(
                     Cast(
                         cast.operand ? cast.operand->clone() : nullptr,
                         cast.type ? cast.type->clone() : nullptr),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<Embed>(): {
-                const auto& embed = variant.get<Embed>();
+            case ExpressionKind::Embed: {
                 return makeFwdUnique<const Expression>(
                     Embed(
                         embed.originalPath),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<FieldAccess>(): {
-                const auto& fieldAccess = variant.get<FieldAccess>();
+            case ExpressionKind::FieldAccess: {
                 return makeFwdUnique<const Expression>(
                     FieldAccess(
                         fieldAccess.operand ? fieldAccess.operand->clone() : nullptr,
                         fieldAccess.field),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<Identifier>(): {
-                const auto& identifier = variant.get<Identifier>();
+            case ExpressionKind::Identifier: {
                 return makeFwdUnique<const Expression>(
                     Identifier(identifier.pieces),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<IntegerLiteral>(): {
-                const auto& integerLiteral = variant.get<IntegerLiteral>();
+            case ExpressionKind::IntegerLiteral: {
                 return makeFwdUnique<const Expression>(
                     IntegerLiteral(integerLiteral.value, integerLiteral.suffix),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<OffsetOf>(): {
-                const auto& offsetOf = variant.get<OffsetOf>();
+            case ExpressionKind::OffsetOf: {
                 return makeFwdUnique<const Expression>(
                     OffsetOf(
                         offsetOf.type ? offsetOf.type->clone() : nullptr,
                         offsetOf.field),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<RangeLiteral>(): {
-                const auto& rangeLiteral = variant.get<RangeLiteral>();
+            case ExpressionKind::RangeLiteral: {
                 return makeFwdUnique<const Expression>(
                     RangeLiteral(
                         rangeLiteral.start ? rangeLiteral.start->clone() : nullptr,
@@ -292,28 +305,24 @@ namespace wiz {
                         rangeLiteral.step ? rangeLiteral.step->clone() : nullptr),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<ResolvedIdentifier>(): {
-                const auto& resolvedIdentifier = variant.get<ResolvedIdentifier>();
+            case ExpressionKind::ResolvedIdentifier: {
                 return makeFwdUnique<const Expression>(
                     ResolvedIdentifier(resolvedIdentifier.definition, resolvedIdentifier.pieces),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<SideEffect>(): {
-                const auto& sideEffect = variant.get<SideEffect>();
+            case ExpressionKind::SideEffect: {
                 return makeFwdUnique<const Expression>(
                     SideEffect(
                         sideEffect.statement ? sideEffect.statement->clone() : nullptr,
                         sideEffect.result ? sideEffect.result->clone() : nullptr),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<StringLiteral>(): {
-                const auto& stringLiteral = variant.get<StringLiteral>();
+            case ExpressionKind::StringLiteral: {
                 return makeFwdUnique<const Expression>(
                     StringLiteral(stringLiteral.value),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<StructLiteral>(): {
-                const auto& structLiteral = variant.get<StructLiteral>();
+            case ExpressionKind::StructLiteral: {
                 std::unordered_map<StringView, std::unique_ptr<const StructLiteral::Item>> clonedItems;
                 for (const auto& it : structLiteral.items) {
                     const auto& name = it.first; 
@@ -327,8 +336,7 @@ namespace wiz {
                     StructLiteral(structLiteral.type->clone(), std::move(clonedItems)),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<TupleLiteral>(): {
-                const auto& tupleLiteral = variant.get<TupleLiteral>();
+            case ExpressionKind::TupleLiteral: {
                 std::vector<FwdUniquePtr<const Expression>> clonedItems;
                 for (const auto& item : tupleLiteral.items) {
                     clonedItems.push_back(item ? item->clone() : nullptr);
@@ -337,20 +345,17 @@ namespace wiz {
                     TupleLiteral(std::move(clonedItems)),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<TypeOf>(): {
-                const auto& typeOf = variant.get<TypeOf>();
+            case ExpressionKind::TypeOf: {
                 return makeFwdUnique<const Expression>(
                     TypeOf(typeOf.expression->clone()),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<TypeQuery>(): {
-                const auto& typeQuery = variant.get<TypeQuery>();
+            case ExpressionKind::TypeQuery: {
                 return makeFwdUnique<const Expression>(
                     TypeQuery(typeQuery.kind, typeQuery.type->clone()),
                     location, std::move(info));
             }
-            case VariantType::typeIndexOf<UnaryOperator>(): {
-                const auto& unaryOperator = variant.get<UnaryOperator>();
+            case ExpressionKind::UnaryOperator: {
                 return makeFwdUnique<const Expression>(
                     UnaryOperator(unaryOperator.op,
                         unaryOperator.operand ? unaryOperator.operand->clone() : nullptr),

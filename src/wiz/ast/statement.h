@@ -8,9 +8,9 @@
 #include <cstddef>
 
 #include <wiz/ast/qualifiers.h>
+#include <wiz/utility/macros.h>
 #include <wiz/utility/fwd_unique_ptr.h>
 #include <wiz/utility/source_location.h>
-#include <wiz/utility/macros.h>
 
 namespace wiz {
     enum class StatementKind {
@@ -624,76 +624,6 @@ namespace wiz {
 
         template <typename T> const T* tryGet() const;
 
-        template <> WIZ_FORCE_INLINE const Attribution* tryGet<Attribution>() const {
-            kind == StatementKind::Attribution ? &attribution : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const Bank* tryGet<Bank>() const {
-            kind == StatementKind::Bank ? &bank : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const Block* tryGet<Block>() const {
-            kind == StatementKind::Block ? &block : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const Branch* tryGet<Branch>() const {
-            kind == StatementKind::Branch ? &branch : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const Config* tryGet<Config>() const {
-            kind == StatementKind::Config ? &config : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const DoWhile* tryGet<DoWhile>() const {
-            kind == StatementKind::DoWhile ? &doWhile : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const Enum* tryGet<Enum>() const {
-            kind == StatementKind::Enum ? &enum_ : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const ExpressionStatement* tryGet<ExpressionStatement>() const {
-            kind == StatementKind::ExpressionStatement ? &expressionStatement : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const File* tryGet<File>() const {
-            kind == StatementKind::File ? &file : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const For* tryGet<For>() const {
-            kind == StatementKind::For ? &for_ : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const Func* tryGet<Func>() const {
-            kind == StatementKind::Func ? &func : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const If* tryGet<If>() const {
-            kind == StatementKind::If ? &if_ : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const In* tryGet<In>() const {
-            kind == StatementKind::In ? &in : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const InlineFor* tryGet<InlineFor>() const {
-            kind == StatementKind::InlineFor ? &inlineFor : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const ImportReference* tryGet<ImportReference>() const {
-            kind == StatementKind::ImportReference ? &importReference : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const InternalDeclaration* tryGet<InternalDeclaration>() const {
-            kind == StatementKind::InternalDeclaration ? &internalDeclaration : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const Label* tryGet<Label>() const {
-            kind == StatementKind::Label ? &label : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const Let* tryGet<Let>() const {
-            kind == StatementKind::Let ? &let : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const Namespace* tryGet<Namespace>() const {
-            kind == StatementKind::Namespace ? &namespace_ : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const Struct* tryGet<Struct>() const {
-            kind == StatementKind::Struct ? &struct_ : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const TypeAlias* tryGet<TypeAlias>() const {
-            kind == StatementKind::TypeAlias ? &typeAlias : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const Var* tryGet<Var>() const {
-            kind == StatementKind::Var ? &var : nullptr;
-        }
-        template <> WIZ_FORCE_INLINE const While* tryGet<While>() const {
-            kind == StatementKind::While ? &while_ : nullptr;
-        }
-
         FwdUniquePtr<const Statement> clone() const;
         StringView getDescription() const;
 
@@ -727,6 +657,73 @@ namespace wiz {
 
         SourceLocation location;
     };
+
+    template <> WIZ_FORCE_INLINE const Statement::Bank* Statement::tryGet<Statement::Bank>() const {
+        return kind == StatementKind::Bank ? &bank : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::Block* Statement::tryGet<Statement::Block>() const {
+        return kind == StatementKind::Block ? &block : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::Branch* Statement::tryGet<Statement::Branch>() const {
+        return kind == StatementKind::Branch ? &branch : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::Config* Statement::tryGet<Statement::Config>() const {
+        return kind == StatementKind::Config ? &config : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::DoWhile* Statement::tryGet<Statement::DoWhile>() const {
+        return kind == StatementKind::DoWhile ? &doWhile : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::Enum* Statement::tryGet<Statement::Enum>() const {
+        return kind == StatementKind::Enum ? &enum_ : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::ExpressionStatement* Statement::tryGet<Statement::ExpressionStatement>() const {
+        return kind == StatementKind::ExpressionStatement ? &expressionStatement : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::File* Statement::tryGet<Statement::File>() const {
+        return kind == StatementKind::File ? &file : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::For* Statement::tryGet<Statement::For>() const {
+        return kind == StatementKind::For ? &for_ : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::Func* Statement::tryGet<Statement::Func>() const {
+        return kind == StatementKind::Func ? &func : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::If* Statement::tryGet<Statement::If>() const {
+        return kind == StatementKind::If ? &if_ : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::In* Statement::tryGet<Statement::In>() const {
+        return kind == StatementKind::In ? &in : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::InlineFor* Statement::tryGet<Statement::InlineFor>() const {
+        return kind == StatementKind::InlineFor ? &inlineFor : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::ImportReference* Statement::tryGet<Statement::ImportReference>() const {
+        return kind == StatementKind::ImportReference ? &importReference : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::InternalDeclaration* Statement::tryGet<Statement::InternalDeclaration>() const {
+        return kind == StatementKind::InternalDeclaration ? &internalDeclaration : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::Label* Statement::tryGet<Statement::Label>() const {
+        return kind == StatementKind::Label ? &label : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::Let* Statement::tryGet<Statement::Let>() const {
+        return kind == StatementKind::Let ? &let : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::Namespace* Statement::tryGet<Statement::Namespace>() const {
+        return kind == StatementKind::Namespace ? &namespace_ : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::Struct* Statement::tryGet<Statement::Struct>() const {
+        return kind == StatementKind::Struct ? &struct_ : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::TypeAlias* Statement::tryGet<Statement::TypeAlias>() const {
+        return kind == StatementKind::TypeAlias ? &typeAlias : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::Var* Statement::tryGet<Statement::Var>() const {
+        return kind == StatementKind::Var ? &var : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const Statement::While* Statement::tryGet<Statement::While>() const {
+        return kind == StatementKind::While ? &while_ : nullptr;
+    }
 }
 
 #endif

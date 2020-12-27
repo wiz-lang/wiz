@@ -562,10 +562,10 @@ namespace wiz {
         switch (op) {
             case BinaryOperatorKind::Equal:
             case BinaryOperatorKind::NotEqual: {
-                if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
                     if (leftRegister->definition == a) {
                         // a == 0 -> { a |= a; } && zero
-                        if (const auto rightImmediate = right->variant.tryGet<Expression::IntegerLiteral>()) {
+                        if (const auto rightImmediate = right->tryGet<Expression::IntegerLiteral>()) {
                             if (rightImmediate->value.isZero()) {
                                 return std::make_unique<PlatformTestAndBranch>(
                                     BinaryOperatorKind::BitwiseOr,
@@ -591,7 +591,7 @@ namespace wiz {
                 // a == right -> { cmp(a, right); } && carry
                 if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
                     if (integerType->min.isNegative()) {
-                        if (const auto rightImmediate = right->variant.tryGet<Expression::IntegerLiteral>()) {
+                        if (const auto rightImmediate = right->tryGet<Expression::IntegerLiteral>()) {
                             if (rightImmediate->value.isZero()) {
                                 // left < 0 -> { bit(left, 7); } && !zero
                                 // left >= 0 -> { bit(left, 7); } && zero
@@ -609,7 +609,7 @@ namespace wiz {
                             }
                         }
                     } else {
-                        if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                        if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
                             if (leftRegister->definition == a) {
                                 return std::make_unique<PlatformTestAndBranch>(
                                     InstructionType::VoidIntrinsic(cmp),
@@ -627,7 +627,7 @@ namespace wiz {
                 // a == right -> { cmp(a, right); } && (zero || carry)
                 if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
                     if (integerType->min.isPositive()) {
-                        if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                        if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
                             if (leftRegister->definition == a) {
                                 return std::make_unique<PlatformTestAndBranch>(
                                     InstructionType::VoidIntrinsic(cmp),
@@ -648,7 +648,7 @@ namespace wiz {
                 // a == right -> { cmp(a, right); } && !zero && !carry
                 if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
                     if (integerType->min.isPositive()) {
-                        if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                        if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
                             if (leftRegister->definition == a) {
                                 return std::make_unique<PlatformTestAndBranch>(
                                     InstructionType::VoidIntrinsic(cmp),
@@ -667,9 +667,9 @@ namespace wiz {
             }
             case BinaryOperatorKind::BitIndexing: {
                 // left $ right -> { bit(left, right); } && !zero
-                if (const auto leftRegister = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
+                if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
                     if (leftRegister->definition->variant.is<Definition::BuiltinRegister>()) {
-                        if (const auto rightInteger = right->variant.tryGet<Expression::IntegerLiteral>()) {
+                        if (const auto rightInteger = right->tryGet<Expression::IntegerLiteral>()) {
                             const auto bitIndex = rightInteger->value;
 
                             if (Int128(0) <= bitIndex && bitIndex <= Int128(7)) {
