@@ -324,9 +324,9 @@ namespace wiz {
             case DeclarationAttribute::Irq:
             case DeclarationAttribute::Nmi:
             case DeclarationAttribute::Fallthrough:
-                return statement->variant.is<Statement::Func>();
+                return statement->kind == StatementKind::Func;
             case DeclarationAttribute::Align:
-                return statement->variant.is<Statement::Var>();
+                return statement->kind == StatementKind::Var;
             default: return false;
         }
     }

@@ -5,9 +5,7 @@
 #include <vector>
 #include <cstddef>
 
-#include <wiz/ast/qualifiers.h>
-#include <wiz/utility/variant.h>
-#include <wiz/utility/bit_flags.h>
+#include <wiz/utility/macros.h>
 #include <wiz/utility/fwd_unique_ptr.h>
 #include <wiz/utility/source_location.h>
 

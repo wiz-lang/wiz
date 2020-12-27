@@ -11,10 +11,39 @@ namespace wiz {
         delete ptr;
     }
 
+    Statement::~Statement() {
+        switch (kind) {
+            case StatementKind::Attribution: attribution.~Attribution(); break;
+            case StatementKind::Bank: bank.~Bank(); break;
+            case StatementKind::Block: block.~Block(); break;
+            case StatementKind::Branch: branch.~Branch(); break;
+            case StatementKind::Config: config.~Config(); break;
+            case StatementKind::DoWhile: doWhile.~DoWhile(); break;
+            case StatementKind::Enum: enum_.~Enum(); break;
+            case StatementKind::ExpressionStatement: expressionStatement.~ExpressionStatement(); break;
+            case StatementKind::File: file.~File(); break;
+            case StatementKind::For: for_.~For(); break;
+            case StatementKind::Func: func.~Func(); break;
+            case StatementKind::If: if_.~If(); break;
+            case StatementKind::In: in.~In(); break;
+            case StatementKind::InlineFor: inlineFor.~InlineFor(); break;
+            case StatementKind::ImportReference: importReference.~ImportReference(); break;
+            case StatementKind::InternalDeclaration: internalDeclaration.~InternalDeclaration(); break;
+            case StatementKind::Label: label.~Label(); break;
+            case StatementKind::Let: let.~Let(); break;
+            case StatementKind::Namespace: namespace_.~Namespace(); break;
+            case StatementKind::Struct: struct_.~Struct(); break;
+            case StatementKind::TypeAlias: typeAlias.~TypeAlias(); break;
+            case StatementKind::Var: var.~Var(); break;
+            case StatementKind::While: while_.~While(); break;
+            default: std::abort();
+        }
+    }
+
+
     FwdUniquePtr<const Statement> Statement::clone() const {
-        switch (variant.index()) {
-            case VariantType::typeIndexOf<Attribution>(): {
-                const auto& attribution = variant.get<Attribution>();
+        switch (kind) {
+            case StatementKind::Attribution: {
                 std::vector<std::unique_ptr<const Attribution::Attribute>> clonedAttributes;
                 clonedAttributes.reserve(attribution.attributes.size());
                 for (const auto& attribute : attribution.attributes) {
@@ -37,8 +66,7 @@ namespace wiz {
                         attribution.body ? attribution.body->clone() : nullptr),
                     location);
             }
-            case VariantType::typeIndexOf<Bank>(): {
-                const auto& bank = variant.get<Bank>();
+            case StatementKind::Bank: {
                 std::vector<FwdUniquePtr<const Expression>> clonedAddresses;
                 clonedAddresses.reserve(bank.addresses.size());
                 for (const auto& address : bank.addresses) {
@@ -51,8 +79,7 @@ namespace wiz {
                         bank.typeExpression ? bank.typeExpression->clone() : nullptr),
                     location);
             }
-            case VariantType::typeIndexOf<Block>(): {
-                const auto& block = variant.get<Block>();
+            case StatementKind::Block: {
                 std::vector<FwdUniquePtr<const Statement>> clonedItems;
                 clonedItems.reserve(block.items.size());
                 for (const auto& item : block.items) {
@@ -62,8 +89,7 @@ namespace wiz {
                     Block(std::move(clonedItems)),
                     location);
             }
-            case VariantType::typeIndexOf<Branch>(): {
-                const auto& branch = variant.get<Branch>();
+            case StatementKind::Branch: {
                 return makeFwdUnique<const Statement>(
                     Branch(
                         branch.distanceHint,
@@ -73,11 +99,10 @@ namespace wiz {
                         branch.condition ? branch.condition->clone() : nullptr),
                     location);
             }
-            case VariantType::typeIndexOf<Config>(): {
-                const auto& configStatement = variant.get<Config>();
+            case StatementKind::Config: {
                 std::vector<std::unique_ptr<const Config::Item>> clonedItems;
-                clonedItems.reserve(configStatement.items.size());
-                for (const auto& item : configStatement.items) {
+                clonedItems.reserve(config.items.size());
+                for (const auto& item : config.items) {
                     if (item != nullptr) {
                         clonedItems.push_back(
                             std::make_unique<const Config::Item>(
@@ -89,8 +114,7 @@ namespace wiz {
                     Config(std::move(clonedItems)),
                     location);
             }
-            case VariantType::typeIndexOf<DoWhile>(): {
-                const auto& doWhile = variant.get<DoWhile>();
+            case StatementKind::DoWhile: {
                 return makeFwdUnique<const Statement>(
                     DoWhile(
                         doWhile.distanceHint,
@@ -98,11 +122,10 @@ namespace wiz {
                         doWhile.condition ? doWhile.condition->clone() : nullptr),
                     location);
             }
-            case VariantType::typeIndexOf<Enum>(): {
-                const auto& enumDeclaration = variant.get<Enum>();
+            case StatementKind::Enum: {
                 std::vector<std::unique_ptr<const Enum::Item>> clonedItems;
-                clonedItems.reserve(enumDeclaration.items.size());
-                for (const auto& item : enumDeclaration.items) {
+                clonedItems.reserve(enum_.items.size());
+                for (const auto& item : enum_.items) {
                     if (item != nullptr) {
                         clonedItems.push_back(
                             std::make_unique<const Enum::Item>(
@@ -113,20 +136,18 @@ namespace wiz {
                 }
                 return makeFwdUnique<const Statement>(
                     Enum(
-                        enumDeclaration.name,
-                        enumDeclaration.underlyingTypeExpression->clone(),
+                        enum_.name,
+                        enum_.underlyingTypeExpression->clone(),
                         std::move(clonedItems)),
                     location);
             }
-            case VariantType::typeIndexOf<ExpressionStatement>(): {
-                const auto& expressionStatement = variant.get<ExpressionStatement>();
+            case StatementKind::ExpressionStatement: {
                 return makeFwdUnique<const Statement>(
                     ExpressionStatement(
                         expressionStatement.expression ? expressionStatement.expression->clone() : nullptr),
                     location);  
             }
-            case VariantType::typeIndexOf<File>(): {
-                const auto& file = variant.get<File>();
+            case StatementKind::File: {
                 std::vector<FwdUniquePtr<const Statement>> clonedItems;
                 clonedItems.reserve(file.items.size());
                 for (const auto& item : file.items) {
@@ -140,18 +161,16 @@ namespace wiz {
                         file.description),
                     location);
             }
-            case VariantType::typeIndexOf<For>(): {
-                const auto& forStatement = variant.get<For>();
+            case StatementKind::For: {
                 return makeFwdUnique<const Statement>(
                     For(
-                        forStatement.distanceHint,
-                        forStatement.counter ? forStatement.counter->clone() : nullptr,                        
-                        forStatement.sequence ? forStatement.sequence->clone() : nullptr,
-                        forStatement.body ? forStatement.body->clone() : nullptr),
+                        for_.distanceHint,
+                        for_.counter ? for_.counter->clone() : nullptr,                        
+                        for_.sequence ? for_.sequence->clone() : nullptr,
+                        for_.body ? for_.body->clone() : nullptr),
                     location);
             }
-            case VariantType::typeIndexOf<Func>(): {
-                const auto& func = variant.get<Func>();
+            case StatementKind::Func: {
                 std::vector<std::unique_ptr<const Func::Parameter>> clonedParameters;
                 clonedParameters.reserve(func.parameters.size());
                 for (const auto& parameter : func.parameters) {
@@ -173,18 +192,16 @@ namespace wiz {
                         func.body ? func.body->clone() : nullptr),
                     location);            
             }
-            case VariantType::typeIndexOf<If>(): {
-                const auto& ifStatement = variant.get<If>();
+            case StatementKind::If: {
                 return makeFwdUnique<const Statement>(
                     If(
-                        ifStatement.distanceHint,
-                        ifStatement.condition ? ifStatement.condition->clone() : nullptr,
-                        ifStatement.body ? ifStatement.body->clone() : nullptr,
-                        ifStatement.alternative ? ifStatement.alternative->clone() : nullptr),
+                        if_.distanceHint,
+                        if_.condition ? if_.condition->clone() : nullptr,
+                        if_.body ? if_.body->clone() : nullptr,
+                        if_.alternative ? if_.alternative->clone() : nullptr),
                     location);            
             }
-            case VariantType::typeIndexOf<In>(): {
-                const auto& in = variant.get<In>();
+            case StatementKind::In: {
                 return makeFwdUnique<const Statement>(
                     In(
                         in.pieces,
@@ -192,8 +209,7 @@ namespace wiz {
                         in.body ? in.body->clone() : nullptr),
                     location);            
             }
-            case VariantType::typeIndexOf<InlineFor>(): {
-                const auto& inlineFor = variant.get<InlineFor>();
+            case StatementKind::InlineFor: {
                 return makeFwdUnique<const Statement>(
                     InlineFor(
                         inlineFor.name,
@@ -201,8 +217,7 @@ namespace wiz {
                         inlineFor.body ? inlineFor.body->clone() : nullptr),
                     location);                      
             }
-            case VariantType::typeIndexOf<ImportReference>(): {
-                const auto& importReference = variant.get<ImportReference>();
+            case StatementKind::ImportReference: {
                 return makeFwdUnique<const Statement>(
                     ImportReference(
                         importReference.originalPath,
@@ -210,19 +225,17 @@ namespace wiz {
                         importReference.description),
                     location);                  
             }
-            case VariantType::typeIndexOf<InternalDeclaration>(): {
+            case StatementKind::InternalDeclaration: {
                 return makeFwdUnique<const Statement>(
                     InternalDeclaration(),
                     location);  
             }
-            case VariantType::typeIndexOf<Label>(): {
-                const auto& label = variant.get<Label>();
+            case StatementKind::Label: {
                 return makeFwdUnique<const Statement>(
                     Label(label.far, label.name),
                     location);       
             }
-            case VariantType::typeIndexOf<Let>(): {
-                const auto& let = variant.get<Let>();
+            case StatementKind::Let: {
                 return makeFwdUnique<const Statement>(
                     Let(
                         let.name,
@@ -231,19 +244,17 @@ namespace wiz {
                         let.value ? let.value->clone() : nullptr),
                     location);            
             }
-            case VariantType::typeIndexOf<Namespace>(): {
-                const auto& ns = variant.get<Namespace>();
+            case StatementKind::Namespace: {
                 return makeFwdUnique<const Statement>(
                     Namespace(
-                        ns.name,
-                        ns.body ? ns.body->clone() : nullptr),
+                        namespace_.name,
+                        namespace_.body ? namespace_.body->clone() : nullptr),
                     location);
             }
-            case VariantType::typeIndexOf<Struct>(): {
-                const auto& structDeclaration = variant.get<Struct>();
+            case StatementKind::Struct: {
                 std::vector<std::unique_ptr<const Struct::Item>> clonedItems;
-                clonedItems.reserve(structDeclaration.items.size());
-                for (const auto& item : structDeclaration.items) {
+                clonedItems.reserve(struct_.items.size());
+                for (const auto& item : struct_.items) {
                     if (item != nullptr) {
                         clonedItems.push_back(
                             std::make_unique<const Struct::Item>(
@@ -254,21 +265,19 @@ namespace wiz {
                 }
                 return makeFwdUnique<const Statement>(
                     Struct(
-                        structDeclaration.kind,
-                        structDeclaration.name,
+                        struct_.kind,
+                        struct_.name,
                         std::move(clonedItems)),
                     location);
             }
-            case VariantType::typeIndexOf<TypeAlias>(): {
-                const auto& alias = variant.get<TypeAlias>();
+            case StatementKind::TypeAlias: {
                 return makeFwdUnique<const Statement>(
                     TypeAlias(
-                        alias.name,
-                        alias.typeExpression ? alias.typeExpression->clone() : nullptr),
+                        typeAlias.name,
+                        typeAlias.typeExpression ? typeAlias.typeExpression->clone() : nullptr),
                     location);
             }
-            case VariantType::typeIndexOf<Var>(): {
-                const auto& var = variant.get<Var>();
+            case StatementKind::Var: {
                 std::vector<FwdUniquePtr<const Expression>> clonedAddresses;
                 clonedAddresses.reserve(var.addresses.size());
                 for (const auto& address : var.addresses) {
@@ -283,13 +292,12 @@ namespace wiz {
                         var.value ? var.value->clone() : nullptr),
                     location);
             }
-            case VariantType::typeIndexOf<While>(): {
-                const auto& whileStatement = variant.get<While>();
+            case StatementKind::While: {
                 return makeFwdUnique<const Statement>(
                     While(
-                        whileStatement.distanceHint,
-                        whileStatement.condition ? whileStatement.condition->clone() : nullptr,
-                        whileStatement.body ? whileStatement.body->clone() : nullptr),
+                        while_.distanceHint,
+                        while_.condition ? while_.condition->clone() : nullptr,
+                        while_.body ? while_.body->clone() : nullptr),
                     location);               
             }
             default: std::abort(); return nullptr;
@@ -297,12 +305,11 @@ namespace wiz {
     }
 
     StringView Statement::getDescription() const {
-        switch (variant.index()) {
-            case VariantType::typeIndexOf<Attribution>(): return "attributed statement"_sv;
-            case VariantType::typeIndexOf<Bank>(): return "`bank` declaration"_sv;
-            case VariantType::typeIndexOf<Block>(): return "block statement"_sv;
-            case VariantType::typeIndexOf<Branch>(): {
-                const auto& branch = variant.get<Branch>();
+        switch (kind) {
+            case StatementKind::Attribution: return "attributed statement"_sv;
+            case StatementKind::Bank: return "`bank` declaration"_sv;
+            case StatementKind::Block: return "block statement"_sv;
+            case StatementKind::Branch: {
                 switch (branch.kind) {
                     case BranchKind::Break: return "`break` statement"_sv;
                     case BranchKind::Continue: return "`continue` statement"_sv;
@@ -318,24 +325,23 @@ namespace wiz {
                     }
                 }
             }
-            case VariantType::typeIndexOf<Config>(): return "`config` directive"_sv;
-            case VariantType::typeIndexOf<DoWhile>(): return "`do` ... `while` statement"_sv;
-            case VariantType::typeIndexOf<Enum>(): return "`enum` declaration"_sv;
-            case VariantType::typeIndexOf<ExpressionStatement>(): return "expression statement"_sv;
-            case VariantType::typeIndexOf<File>(): return variant.get<File>().description;
-            case VariantType::typeIndexOf<For>(): return "`for` statement"_sv;
-            case VariantType::typeIndexOf<Func>(): return "`func` statement"_sv;
-            case VariantType::typeIndexOf<If>(): return "`if` statement"_sv;
-            case VariantType::typeIndexOf<In>(): return "`in` statement"_sv;
-            case VariantType::typeIndexOf<InlineFor>(): return "`inline for` statement"_sv;
-            case VariantType::typeIndexOf<ImportReference>(): return variant.get<ImportReference>().description;
-            case VariantType::typeIndexOf<InternalDeclaration>(): return "compiler-internal declaration"_sv;
-            case VariantType::typeIndexOf<Label>(): return "label declaration"_sv;
-            case VariantType::typeIndexOf<Let>(): return "`let` declaration"_sv;
-            case VariantType::typeIndexOf<Namespace>(): return "`namespace` declaration"_sv;
-            case VariantType::typeIndexOf<Struct>(): {
-                const auto& structDeclaration = variant.get<Struct>();
-                switch (structDeclaration.kind) {
+            case StatementKind::Config: return "`config` directive"_sv;
+            case StatementKind::DoWhile: return "`do` ... `while` statement"_sv;
+            case StatementKind::Enum: return "`enum` declaration"_sv;
+            case StatementKind::ExpressionStatement: return "expression statement"_sv;
+            case StatementKind::File: return file.description;
+            case StatementKind::For: return "`for` statement"_sv;
+            case StatementKind::Func: return "`func` statement"_sv;
+            case StatementKind::If: return "`if` statement"_sv;
+            case StatementKind::In: return "`in` statement"_sv;
+            case StatementKind::InlineFor: return "`inline for` statement"_sv;
+            case StatementKind::ImportReference: return importReference.description;
+            case StatementKind::InternalDeclaration: return "compiler-internal declaration"_sv;
+            case StatementKind::Label: return "label declaration"_sv;
+            case StatementKind::Let: return "`let` declaration"_sv;
+            case StatementKind::Namespace: return "`namespace` declaration"_sv;
+            case StatementKind::Struct: {
+                switch (struct_.kind) {
                     case StructKind::Struct: return "`struct` declaration"_sv;
                     case StructKind::Union: return "`union` declaration"_sv;
                     default: {
@@ -344,18 +350,17 @@ namespace wiz {
                     }
                 }
             }
-            case VariantType::typeIndexOf<TypeAlias>(): return "`typealias` declaration"_sv;
-            case VariantType::typeIndexOf<Var>(): {
-                const auto& varDeclaration = variant.get<Var>();
-                if ((varDeclaration.qualifiers & Qualifiers::Const) != Qualifiers::None) {
+            case StatementKind::TypeAlias: return "`typealias` declaration"_sv;
+            case StatementKind::Var: {
+                if ((var.qualifiers & Qualifiers::Const) != Qualifiers::None) {
                     return "`const` declaration"_sv;
-                } else if ((varDeclaration.qualifiers & Qualifiers::WriteOnly) != Qualifiers::None) {
+                } else if ((var.qualifiers & Qualifiers::WriteOnly) != Qualifiers::None) {
                     return "`writeonly` declaration"_sv;
                 } else {
                     return "`var` declaration"_sv;
                 }
             }
-            case VariantType::typeIndexOf<While>(): return "`while` statement"_sv;
+            case StatementKind::While: return "`while` statement"_sv;
             default: std::abort(); return ""_sv;
         }
     }

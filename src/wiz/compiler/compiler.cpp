@@ -3595,10 +3595,9 @@ namespace wiz {
     }
 
     bool Compiler::reserveDefinitions(const Statement* statement) {
-        const auto& variant = statement->variant;
-        switch (variant.index()) {
-            case Statement::VariantType::typeIndexOf<Statement::Attribution>(): {
-                const auto& attributedStatement = variant.get<Statement::Attribution>();
+        switch (statement->kind) {
+            case StatementKind::Attribution: {
+                const auto& attributedStatement = statement->attribution;
                 const auto body = attributedStatement.body.get();
 
                 auto attributeList = attributeLists.addNew();
@@ -3681,8 +3680,8 @@ namespace wiz {
                 popAttributeList();
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Bank>(): {
-                const auto& bankDeclaration = variant.get<Statement::Bank>();
+            case StatementKind::Bank: {
+                const auto& bankDeclaration = statement->bank;
                 const auto& names = bankDeclaration.names;
                 const auto& addresses = bankDeclaration.addresses;
                 const auto typeExpression = bankDeclaration.typeExpression.get();
@@ -3691,8 +3690,8 @@ namespace wiz {
                 }
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Block>(): {
-                const auto& blockStatement = variant.get<Statement::Block>();
+            case StatementKind::Block: {
+                const auto& blockStatement = statement->block;
                 enterScope(getOrCreateStatementScope(StringView(), statement, currentScope));
                 for (const auto& item : blockStatement.items) {
                     reserveDefinitions(item.get());
@@ -3700,14 +3699,14 @@ namespace wiz {
                 exitScope();
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Config>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::DoWhile>(): {
-                const auto& doWhileStatement = variant.get<Statement::DoWhile>();
+            case StatementKind::Config: break;
+            case StatementKind::DoWhile: {
+                const auto& doWhileStatement = statement->doWhile;
                 reserveDefinitions(doWhileStatement.body.get());
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Enum>(): {
-                const auto& enumDeclaration = variant.get<Statement::Enum>();
+            case StatementKind::Enum: {
+                const auto& enumDeclaration = statement->enum_;
                 const auto scope = getOrCreateStatementScope(StringView(), statement, currentScope);
 
                 auto definition = currentScope->createDefinition(report, Definition::Enum(enumDeclaration.underlyingTypeExpression.get(), scope), enumDeclaration.name, statement);
@@ -3744,9 +3743,9 @@ namespace wiz {
                 exitScope();
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::ExpressionStatement>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::File>(): {
-                const auto& file = variant.get<Statement::File>();
+            case StatementKind::ExpressionStatement: break;
+            case StatementKind::File: {
+                const auto& file = statement->file;
                 const auto outerScope = currentScope;
                 enterScope(getOrCreateStatementScope(StringView(), statement, builtins.getBuiltinScope()));
                 bindModuleScope(file.expandedPath, currentScope);
@@ -3759,13 +3758,13 @@ namespace wiz {
                 exitScope();
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::For>(): {
-                const auto& forStatement = variant.get<Statement::For>();
+            case StatementKind::For: {
+                const auto& forStatement = statement->for_;
                 reserveDefinitions(forStatement.body.get());
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Func>(): {
-                const auto& funcDeclaration = variant.get<Statement::Func>();
+            case StatementKind::Func: {
+                const auto& funcDeclaration = statement->func;
                 const auto oldFunction = currentFunction;
                 const auto onExit = makeScopeGuard([&]() {
                     currentFunction = oldFunction;
@@ -3814,23 +3813,23 @@ namespace wiz {
                 reserveDefinitions(body);
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::If>(): {
-                const auto& ifStatement = variant.get<Statement::If>();
+            case StatementKind::If: {
+                const auto& ifStatement = statement->if_;
                 reserveDefinitions(ifStatement.body.get());
                 if (ifStatement.alternative) {
                     reserveDefinitions(ifStatement.alternative.get());
                 }
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::In>(): {
-                const auto& inStatement = variant.get<Statement::In>();
+            case StatementKind::In: {
+                const auto& inStatement = statement->in;
                 bindStatementScope(inStatement.body.get(), currentScope);
                 reserveDefinitions(inStatement.body.get());
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::InlineFor>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::ImportReference>(): {
-                const auto& importReference = variant.get<Statement::ImportReference>();
+            case StatementKind::InlineFor: break;
+            case StatementKind::ImportReference: {
+                const auto& importReference = statement->importReference;
                 if (currentScope != nullptr) {                    
                     if (const auto moduleScope = findModuleScope(importReference.expandedPath)) {
                         currentScope->addRecursiveImport(moduleScope);
@@ -3840,10 +3839,10 @@ namespace wiz {
                 }
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::InternalDeclaration>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::Branch>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::Label>(): {
-                const auto& labelDeclaration = variant.get<Statement::Label>();
+            case StatementKind::InternalDeclaration: break;
+            case StatementKind::Branch: break;
+            case StatementKind::Label: {
+                const auto& labelDeclaration = statement->label;
                 auto definition = currentScope->createDefinition(report, Definition::Func(true, false, labelDeclaration.far, BranchKind::None, builtins.getUnitTuple(), currentScope, nullptr), labelDeclaration.name, statement);
 
                 if (definition == nullptr) {
@@ -3854,13 +3853,13 @@ namespace wiz {
                 func.resolvedSignatureType = makeFwdUnique<const TypeExpression>(TypeExpression::Function(labelDeclaration.far, {}, func.returnTypeExpression->clone()), func.returnTypeExpression->location);
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Let>(): {
-                const auto& letDeclaration = variant.get<Statement::Let>();
+            case StatementKind::Let: {
+                const auto& letDeclaration = statement->let;
                 currentScope->createDefinition(report, Definition::Let(letDeclaration.parameters, letDeclaration.value.get()), letDeclaration.name, statement);
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Namespace>(): {
-                const auto& namespaceDeclaration = variant.get<Statement::Namespace>();
+            case StatementKind::Namespace: {
+                const auto& namespaceDeclaration = statement->namespace_;
                 SymbolTable* scope = nullptr;
                 if (const auto definition = currentScope->findLocalMemberDefinition(namespaceDeclaration.name)) {
                     if (const auto ns = definition->variant.tryGet<Definition::Namespace>()) {
@@ -3890,8 +3889,8 @@ namespace wiz {
                 exitScope();
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Struct>(): {
-                const auto& structDeclaration = variant.get<Statement::Struct>();
+            case StatementKind::Struct: {
+                const auto& structDeclaration = statement->struct_;
                 const auto scope = getOrCreateStatementScope(StringView(), statement, currentScope);
 
                 auto definition = currentScope->createDefinition(report, Definition::Struct(structDeclaration.kind, scope), structDeclaration.name, statement);
@@ -3913,13 +3912,13 @@ namespace wiz {
                 exitScope();
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::TypeAlias>(): {
-                const auto& typeAliasDeclaration = variant.get<Statement::TypeAlias>();
+            case StatementKind::TypeAlias: {
+                const auto& typeAliasDeclaration = statement->typeAlias;
                 definitionsToResolve.push_back(currentScope->createDefinition(report, Definition::TypeAlias(typeAliasDeclaration.typeExpression.get()), typeAliasDeclaration.name, statement));
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Var>(): {
-                const auto& varDeclaration = variant.get<Statement::Var>();
+            case StatementKind::Var: {
+                const auto& varDeclaration = statement->var;
                 const auto& names = varDeclaration.names;
                 const auto& addresses = varDeclaration.addresses;
                 const auto typeExpression = varDeclaration.typeExpression.get();
@@ -3952,8 +3951,8 @@ namespace wiz {
                 }
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::While>(): {
-                const auto& whileStatement = variant.get<Statement::While>();
+            case StatementKind::While: {
+                const auto& whileStatement = statement->while_;
                 reserveDefinitions(whileStatement.body.get());
                 break;
             }
@@ -4150,10 +4149,9 @@ namespace wiz {
     }
 
     bool Compiler::reserveStorage(const Statement* statement) {
-        const auto& variant = statement->variant;
-        switch (variant.index()) {
-            case Statement::VariantType::typeIndexOf<Statement::Attribution>(): {
-                const auto& attributedStatement = variant.get<Statement::Attribution>();
+        switch (statement->kind) {
+            case StatementKind::Attribution: {
+                const auto& attributedStatement = statement->attribution;
                 pushAttributeList(statementAttributeLists[statement]);
                 if (checkConditionalCompilationAttributes()) {
                     reserveStorage(attributedStatement.body.get());
@@ -4161,9 +4159,9 @@ namespace wiz {
                 popAttributeList();
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Bank>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::Block>(): {
-                const auto& blockStatement = variant.get<Statement::Block>();
+            case StatementKind::Bank: break;
+            case StatementKind::Block: {
+                const auto& blockStatement = statement->block;
                 enterScope(getOrCreateStatementScope(StringView(), statement, currentScope));
                 for (const auto& item : blockStatement.items) {
                     reserveStorage(item.get());
@@ -4171,16 +4169,16 @@ namespace wiz {
                 exitScope();
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Config>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::DoWhile>(): {
-                const auto& doWhileStatement = variant.get<Statement::DoWhile>();
+            case StatementKind::Config: break;
+            case StatementKind::DoWhile: {
+                const auto& doWhileStatement = statement->doWhile;
                 reserveStorage(doWhileStatement.body.get());
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Enum>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::ExpressionStatement>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::File>(): {
-                const auto& file = variant.get<Statement::File>();
+            case StatementKind::Enum: break;
+            case StatementKind::ExpressionStatement: break;
+            case StatementKind::File: {
+                const auto& file = statement->file;
                 enterScope(findStatementScope(statement));
                 for (const auto& item : file.items) {
                     reserveStorage(item.get());
@@ -4188,13 +4186,13 @@ namespace wiz {
                 exitScope();
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::For>(): {
-                const auto& forStatement = variant.get<Statement::For>();
+            case StatementKind::For: {
+                const auto& forStatement = statement->for_;
                 reserveStorage(forStatement.body.get());
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Func>(): {
-                const auto& funcDeclaration = variant.get<Statement::Func>();
+            case StatementKind::Func: {
+                const auto& funcDeclaration = statement->func;
 
                 auto definition = currentScope->findLocalMemberDefinition(funcDeclaration.name);
                 auto& funcDefinition = definition->variant.get<Definition::Func>();    
@@ -4219,16 +4217,16 @@ namespace wiz {
                 reserveStorage(funcDeclaration.body.get());
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::If>(): {
-                const auto& ifStatement = variant.get<Statement::If>();
+            case StatementKind::If: {
+                const auto& ifStatement = statement->if_;
                 reserveStorage(ifStatement.body.get());
                 if (ifStatement.alternative) {
                     reserveStorage(ifStatement.alternative.get());
                 }
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::In>(): {
-                const auto& inStatement = variant.get<Statement::In>();
+            case StatementKind::In: {
+                const auto& inStatement = statement->in;
                 bankStack.push_back(currentBank);
 
                 const auto result = handleInStatement(inStatement.pieces, inStatement.dest.get(), statement->location);
@@ -4240,23 +4238,23 @@ namespace wiz {
                 bankStack.pop_back();
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::InlineFor>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::ImportReference>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::InternalDeclaration>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::Branch>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::Label>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::Let>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::Namespace>(): {
-                const auto& namespaceDeclaration = variant.get<Statement::Namespace>();
+            case StatementKind::InlineFor: break;
+            case StatementKind::ImportReference: break;
+            case StatementKind::InternalDeclaration: break;
+            case StatementKind::Branch: break;
+            case StatementKind::Label: break;
+            case StatementKind::Let: break;
+            case StatementKind::Namespace: {
+                const auto& namespaceDeclaration = statement->namespace_;
                 enterScope(findStatementScope(namespaceDeclaration.body.get()));
                 reserveStorage(namespaceDeclaration.body.get());
                 exitScope();
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Struct>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::TypeAlias>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::Var>(): {
-                const auto& varDeclaration = variant.get<Statement::Var>();
+            case StatementKind::Struct: break;
+            case StatementKind::TypeAlias: break;
+            case StatementKind::Var: {
+                const auto& varDeclaration = statement->var;
                 const auto& names = varDeclaration.names;
                 const auto description = statement->getDescription();
                 const auto location = statement->location;
@@ -4280,8 +4278,8 @@ namespace wiz {
 
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::While>(): {
-                const auto& whileStatement = variant.get<Statement::While>();
+            case StatementKind::While: {
+                const auto& whileStatement = statement->while_;
                 reserveStorage(whileStatement.body.get());
                 break;
             }
@@ -6184,29 +6182,34 @@ namespace wiz {
     }
 
     bool Compiler::hasUnconditionalReturn(const Statement* statement) const {
-        if (const auto block = statement->variant.tryGet<Statement::Block>()) {
-            const auto& items = block->items;
-            return items.size() != 0 && hasUnconditionalReturn(items.back().get());
-        } else if (const auto branch = statement->variant.tryGet<Statement::Branch>()) {
-            switch (branch->kind) {
-                case BranchKind::Goto:
-                case BranchKind::FarGoto:
-                case BranchKind::Return:
-                case BranchKind::IrqReturn:
-                case BranchKind::NmiReturn:
-                case BranchKind::FarReturn:
-                    return branch->condition == nullptr;
-                default: return false;
+        switch (statement->kind) {
+            case StatementKind::Block: {
+                const auto& block = statement->block;
+                const auto& items = block.items;
+                return items.size() != 0 && hasUnconditionalReturn(items.back().get());
             }
-        } else if (const auto ifStatement = statement->variant.tryGet<Statement::If>()) {
-            if (ifStatement->body != nullptr
-            && ifStatement->alternative != nullptr) {
-                return hasUnconditionalReturn(ifStatement->body.get())
-                    && hasUnconditionalReturn(ifStatement->alternative.get());
+            case StatementKind::Branch: {
+                const auto& branch = statement->branch;
+                switch (branch.kind) {
+                    case BranchKind::Goto:
+                    case BranchKind::FarGoto:
+                    case BranchKind::Return:
+                    case BranchKind::IrqReturn:
+                    case BranchKind::NmiReturn:
+                    case BranchKind::FarReturn:
+                        return branch.condition == nullptr;
+                    default: return false;
+                }
             }
+            case StatementKind::If: {
+                const auto& if_ = statement->if_;
+                return if_.body != nullptr
+                && if_.alternative != nullptr
+                && hasUnconditionalReturn(if_.body.get())
+                && hasUnconditionalReturn(if_.alternative.get());
+            }
+            default: return false;
         }
-
-        return false;
     }
 
     bool Compiler::emitFunctionIr(Definition* definition, SourceLocation location) {
@@ -6260,10 +6263,9 @@ namespace wiz {
     }
 
     bool Compiler::emitStatementIr(const Statement* statement) {
-        const auto& variant = statement->variant;
-        switch (variant.index()) {
-            case Statement::VariantType::typeIndexOf<Statement::Attribution>(): {
-                const auto& attributedStatement = variant.get<Statement::Attribution>();
+        switch (statement->kind) {
+            case StatementKind::Attribution: {
+                const auto& attributedStatement = statement->attribution;
                 pushAttributeList(statementAttributeLists[statement]);
                 if (checkConditionalCompilationAttributes()) {
                     emitStatementIr(attributedStatement.body.get());
@@ -6271,9 +6273,9 @@ namespace wiz {
                 popAttributeList();
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Bank>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::Block>(): {
-                const auto& blockStatement = variant.get<Statement::Block>();
+            case StatementKind::Bank: break;
+            case StatementKind::Block: {
+                const auto& blockStatement = statement->block;
                 enterScope(getOrCreateStatementScope(StringView(), statement, currentScope));
                 for (const auto& item : blockStatement.items) {
                     emitStatementIr(item.get());
@@ -6281,8 +6283,8 @@ namespace wiz {
                 exitScope();
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Config>(): {
-                const auto& configStatement = variant.get<Statement::Config>();
+            case StatementKind::Config: {
+                const auto& configStatement = statement->config;
                 for (const auto& item : configStatement.items) {
                     if (auto reducedValue = reduceExpression(item->value.get())) {
                         config->add(report, item->name, std::move(reducedValue));
@@ -6290,8 +6292,8 @@ namespace wiz {
                 }
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::DoWhile>(): {
-                const auto& doWhileStatement = variant.get<Statement::DoWhile>();
+            case StatementKind::DoWhile: {
+                const auto& doWhileStatement = statement->doWhile;
                 if (currentBank == nullptr) {
                     report->error(statement->getDescription().toString() + " must be inside an `in` statement", statement->location);
                     break;
@@ -6327,9 +6329,9 @@ namespace wiz {
                 irNodes.addNew(IrNode::Label(endLabelDefinition), reducedCondition->location);
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Enum>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::ExpressionStatement>(): {
-                const auto& expressionStatement = variant.get<Statement::ExpressionStatement>();
+            case StatementKind::Enum: break;
+            case StatementKind::ExpressionStatement: {
+                const auto& expressionStatement = statement->expressionStatement;
                 if (currentBank == nullptr) {
                     report->error(statement->getDescription().toString() + " must be inside an `in` statement", statement->location);
                     break;
@@ -6345,8 +6347,8 @@ namespace wiz {
                 }
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::File>(): {
-                const auto& file = variant.get<Statement::File>();
+            case StatementKind::File: {
+                const auto& file = statement->file;
                 enterScope(findStatementScope(statement));
                 for (const auto& item : file.items) {
                     emitStatementIr(item.get());
@@ -6354,8 +6356,8 @@ namespace wiz {
                 exitScope();
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::For>(): {
-                const auto& forStatement = variant.get<Statement::For>();
+            case StatementKind::For: {
+                const auto& forStatement = statement->for_;
                 if (currentBank == nullptr) {
                     report->error(statement->getDescription().toString() + " must be inside an `in` statement", statement->location);
                     break;
@@ -6505,8 +6507,8 @@ namespace wiz {
                 irNodes.addNew(IrNode::Label(endLabelDefinition), reducedCondition->location);
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Func>(): {
-                const auto& funcDeclaration = variant.get<Statement::Func>();
+            case StatementKind::Func: {
+                const auto& funcDeclaration = statement->func;
                 auto definition = currentScope->findLocalMemberDefinition(funcDeclaration.name);
                 auto& funcDefinition = definition->variant.get<Definition::Func>();
 
@@ -6518,8 +6520,8 @@ namespace wiz {
                 }
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::If>(): {
-                const auto& ifStatement = variant.get<Statement::If>();
+            case StatementKind::If: {
+                const auto& ifStatement = statement->if_;
                 if (currentBank == nullptr) {
                     report->error(statement->getDescription().toString() + " must be inside an `in` statement", statement->location);
                     break;
@@ -6566,8 +6568,8 @@ namespace wiz {
                 irNodes.addNew(IrNode::Label(endLabelDefinition), statement->location);
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::In>(): {
-                const auto& inStatement = variant.get<Statement::In>();
+            case StatementKind::In: {
+                const auto& inStatement = statement->in;
                 bankStack.push_back(currentBank);
 
                 const auto result = handleInStatement(inStatement.pieces, inStatement.dest.get(), statement->location);
@@ -6581,8 +6583,8 @@ namespace wiz {
                 bankStack.pop_back();
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::InlineFor>(): {
-                const auto& inlineForStatement = variant.get<Statement::InlineFor>();
+            case StatementKind::InlineFor: {
+                const auto& inlineForStatement = statement->inlineFor;
                 if (currentBank == nullptr) {
                     report->error(statement->getDescription().toString() + " must be inside an `in` statement", statement->location);
                     break;
@@ -6652,10 +6654,10 @@ namespace wiz {
                 exitScope();
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::ImportReference>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::InternalDeclaration>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::Branch>(): {
-                const auto& branch = variant.get<Statement::Branch>();
+            case StatementKind::ImportReference: break;
+            case StatementKind::InternalDeclaration: break;
+            case StatementKind::Branch: {
+                const auto& branch = statement->branch;
                 if (currentBank == nullptr) {
                     report->error(statement->getDescription().toString() + " must be inside an `in` statement", statement->location);
                     break;
@@ -6690,8 +6692,8 @@ namespace wiz {
                 }
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Label>(): {
-                const auto& labelDeclaration = variant.get<Statement::Label>();
+            case StatementKind::Label: {
+                const auto& labelDeclaration = statement->label;
                 if (currentBank == nullptr) {
                     report->error(statement->getDescription().toString() + " must be inside an `in` statement", statement->location);
                     break;
@@ -6700,18 +6702,18 @@ namespace wiz {
                 irNodes.addNew(IrNode::Label(currentScope->findLocalMemberDefinition(labelDeclaration.name)), statement->location);
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Let>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::Namespace>(): {
-                const auto& namespaceDeclaration = variant.get<Statement::Namespace>();
+            case StatementKind::Let: break;
+            case StatementKind::Namespace: {
+                const auto& namespaceDeclaration = statement->namespace_;
                 enterScope(findStatementScope(namespaceDeclaration.body.get()));
                 emitStatementIr(namespaceDeclaration.body.get());
                 exitScope();
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::Struct>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::TypeAlias>(): break;
-            case Statement::VariantType::typeIndexOf<Statement::Var>(): {
-                const auto& varDeclaration = variant.get<Statement::Var>();
+            case StatementKind::Struct: break;
+            case StatementKind::TypeAlias: break;
+            case StatementKind::Var: {
+                const auto& varDeclaration = statement->var;
                 for (const auto& name : varDeclaration.names) {
                     auto definition = currentScope->findLocalMemberDefinition(name);
                     auto& varDefinition = definition->variant.get<Definition::Var>();
@@ -6733,8 +6735,8 @@ namespace wiz {
                 }
                 break;
             }
-            case Statement::VariantType::typeIndexOf<Statement::While>(): {
-                const auto& whileStatement = variant.get<Statement::While>();
+            case StatementKind::While: {
+                const auto& whileStatement = statement->while_;
                 if (currentBank == nullptr) {
                     report->error(statement->getDescription().toString() + " must be inside an `in` statement", statement->location);
                     break;
