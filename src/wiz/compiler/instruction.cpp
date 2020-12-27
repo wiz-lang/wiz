@@ -5,7 +5,6 @@
 #include <wiz/compiler/bank.h>
 #include <wiz/compiler/definition.h>
 #include <wiz/compiler/instruction.h>
-#include <wiz/utility/overload.h>
 
 namespace wiz {
     template <>
@@ -13,35 +12,44 @@ namespace wiz {
         delete ptr;
     }
 
+    InstructionOperand::~InstructionOperand() {
+        switch (kind) {
+            case InstructionOperandKind::BitIndex: bitIndex.~BitIndex(); break;
+            case InstructionOperandKind::Binary: binary.~Binary(); break;
+            case InstructionOperandKind::Boolean: boolean.~Boolean(); break;
+            case InstructionOperandKind::Dereference: dereference.~Dereference(); break;
+            case InstructionOperandKind::Index: index.~Index(); break;
+            case InstructionOperandKind::Integer: integer.~Integer(); break;
+            case InstructionOperandKind::Register: register_.~Register(); break;
+            case InstructionOperandKind::Unary: unary.~Unary(); break;
+        }
+    }
+
     FwdUniquePtr<InstructionOperand> InstructionOperand::clone() const {
-        switch (variant.index()) {
-            case VariantType::typeIndexOf<BitIndex>(): {
-                const auto& bitIndex = variant.get<BitIndex>();
+        switch (kind) {
+            case InstructionOperandKind::BitIndex: {
                 return makeFwdUnique<InstructionOperand>(InstructionOperand::BitIndex(
                     bitIndex.operand->clone(),
                     bitIndex.subscript->clone()));
             }
-            case VariantType::typeIndexOf<Binary>(): {
-                const auto& bin = variant.get<Binary>();
+            case InstructionOperandKind::Binary: {
                 return makeFwdUnique<InstructionOperand>(InstructionOperand::Binary(
-                    bin.kind,
-                    bin.left->clone(),
-                    bin.right->clone()));
+                    binary.kind,
+                    binary.left->clone(),
+                    binary.right->clone()));
             }
-            case VariantType::typeIndexOf<Boolean>(): {
-                const auto& boolean = variant.get<Boolean>();
+            case InstructionOperandKind::Boolean: {
                 return makeFwdUnique<InstructionOperand>(InstructionOperand::Boolean(
-                    boolean.value));
+                    boolean.value,
+                    boolean.placeholder));
             }
-            case VariantType::typeIndexOf<Dereference>(): {
-                const auto& dereference = variant.get<Dereference>();
+            case InstructionOperandKind::Dereference: {
                 return makeFwdUnique<InstructionOperand>(InstructionOperand::Dereference(
                     dereference.far,
                     dereference.operand->clone(),
                     dereference.size));
             }
-            case VariantType::typeIndexOf<Index>(): {
-                const auto& index = variant.get<Index>();
+            case InstructionOperandKind::Index: {
                 return makeFwdUnique<InstructionOperand>(InstructionOperand::Index(
                     index.far,
                     index.operand->clone(),
@@ -49,21 +57,19 @@ namespace wiz {
                     index.subscriptScale,
                     index.size));
             }
-            case VariantType::typeIndexOf<Integer>(): {
-                const auto& integer = variant.get<Integer>();
+            case InstructionOperandKind::Integer: {
                 return makeFwdUnique<InstructionOperand>(InstructionOperand::Integer(
-                    integer.value, integer.placeholder));
+                    integer.value,
+                    integer.placeholder));
             }
-            case VariantType::typeIndexOf<Register>(): {
-                const auto& reg = variant.get<Register>();
+            case InstructionOperandKind::Register: {
                 return makeFwdUnique<InstructionOperand>(InstructionOperand::Register(
-                    reg.definition));
+                    register_.definition));
             }
-            case VariantType::typeIndexOf<Unary>(): {
-                const auto& un = variant.get<Unary>();
+            case InstructionOperandKind::Unary: {
                 return makeFwdUnique<InstructionOperand>(InstructionOperand::Unary(
-                    un.kind,
-                    un.operand->clone()));
+                    unary.kind,
+                    unary.operand->clone()));
             }
             default: std::abort(); return nullptr;
         }
@@ -74,40 +80,36 @@ namespace wiz {
             return 0;
         }
 
-        if (variant.index() != other.variant.index()) {
-            return variant.index() < other.variant.index() ? -1 : 1;
+        if (kind != other.kind) {
+            return kind < other.kind ? -1 : 1;
         }
 
-        switch (variant.index()) {
-            case VariantType::typeIndexOf<BitIndex>(): {
-                const auto& bitIndex = variant.get<BitIndex>();
-                const auto& otherBitIndex = other.variant.get<BitIndex>();
+        switch (kind) {
+            case InstructionOperandKind::BitIndex: {
+                const auto& otherBitIndex = other.bitIndex;
                 int result = bitIndex.operand->compare(*otherBitIndex.operand);
                 if (result != 0) {
                     return result;
                 }
                 return bitIndex.subscript->compare(*otherBitIndex.subscript);
             }
-            case VariantType::typeIndexOf<Binary>(): {
-                const auto& bin = variant.get<Binary>();
-                const auto& otherBin = other.variant.get<Binary>();
-                if (bin.kind != otherBin.kind) {
-                    return bin.kind < otherBin.kind ? -1 : 1;
+            case InstructionOperandKind::Binary: {
+                const auto& otherBinary = other.binary;
+                if (binary.kind != otherBinary.kind) {
+                    return binary.kind < otherBinary.kind ? -1 : 1;
                 }
-                int result = bin.left->compare(*otherBin.left);
+                int result = binary.left->compare(*otherBinary.left);
                 if (result != 0) {
                     return result;
                 }
-                return bin.right->compare(*otherBin.right);
+                return binary.right->compare(*otherBinary.right);
             }
-            case VariantType::typeIndexOf<Boolean>(): {
-                const auto& boolean = variant.get<Boolean>();
-                const auto& otherBoolean = other.variant.get<Boolean>();
+            case InstructionOperandKind::Boolean: {
+                const auto& otherBoolean = other.boolean;
                 return (boolean.value ? 1 : 0) - (otherBoolean.value ? 1 : 0);
             }
-            case VariantType::typeIndexOf<Dereference>(): {
-                const auto& dereference = variant.get<Dereference>();
-                const auto& otherDereference = other.variant.get<Dereference>();
+            case InstructionOperandKind::Dereference: {
+                const auto& otherDereference = other.dereference;
                 if (dereference.far != otherDereference.far) {
                     return (dereference.far ? 1 : 0) - (otherDereference.far ? 1 : 0);
                 }
@@ -120,9 +122,8 @@ namespace wiz {
                 }        
                 return 0;
             }
-            case VariantType::typeIndexOf<Index>(): {
-                const auto& index = variant.get<Index>();
-                const auto& otherIndex = other.variant.get<Index>();
+            case InstructionOperandKind::Index: {
+                const auto& otherIndex = other.index;
                 if (index.far != otherIndex.far) {
                     return (index.far ? 1 : 0) - (otherIndex.far ? 1 : 0);
                 }
@@ -142,52 +143,45 @@ namespace wiz {
                 }
                 return 0;
             }
-            case VariantType::typeIndexOf<Integer>(): {
-                const auto& integer = variant.get<Integer>();
-                const auto& otherInteger = other.variant.get<Integer>();
+            case InstructionOperandKind::Integer: {
+                const auto& otherInteger = other.integer;
                 if (integer.value != otherInteger.value) {
                     return integer.value < otherInteger.value ? -1 : 1;
                 }
                 return 0;
             }
-            case VariantType::typeIndexOf<Register>(): {
-                const auto& reg = variant.get<Register>();
-                const auto& otherReg = other.variant.get<Register>();
-                if (reg.definition != otherReg.definition) {
-                    return reg.definition < otherReg.definition ? -1 : 1;
+            case InstructionOperandKind::Register: {
+                const auto& otherRegister = other.register_;
+                if (register_.definition != otherRegister.definition) {
+                    return register_.definition < otherRegister.definition ? -1 : 1;
                 }
                 return 0;
             }
-            case VariantType::typeIndexOf<Unary>(): {
-                const auto& un = variant.get<Unary>();
-                const auto& otherUn = other.variant.get<Unary>();
-                if (un.kind != otherUn.kind) {
-                    return un.kind < otherUn.kind ? -1 : 1;
+            case InstructionOperandKind::Unary: {
+                const auto& otherUnary = other.unary;
+                if (unary.kind != otherUnary.kind) {
+                    return unary.kind < otherUnary.kind ? -1 : 1;
                 }
-                return un.operand->compare(*otherUn.operand);
+                return unary.operand->compare(*otherUnary.operand);
             }
             default: std::abort(); return -1;
         }
     }
 
     std::string InstructionOperand::toString() const {
-        switch (variant.index()) {
-            case VariantType::typeIndexOf<BitIndex>(): {
-                const auto& bitIndex = variant.get<BitIndex>();
+        switch (kind) {
+            case InstructionOperandKind::BitIndex: {
                 return bitIndex.operand->toString() + " $ " + bitIndex.subscript->toString();
             }
-            case VariantType::typeIndexOf<Binary>(): {
-                const auto& bin = variant.get<Binary>();
-                return "(" + bin.left->toString()
-                + " " + getBinaryOperatorSymbol(bin.kind).toString() + " "
-                + bin.right->toString() + ")";
+            case InstructionOperandKind::Binary: {
+                return "(" + binary.left->toString()
+                + " " + getBinaryOperatorSymbol(binary.kind).toString() + " "
+                + binary.right->toString() + ")";
             }
-            case VariantType::typeIndexOf<Boolean>(): {
-                const auto& boolean = variant.get<Boolean>();
+            case InstructionOperandKind::Boolean: {
                 return boolean.placeholder ? "{bool}" : std::string(boolean.value ? "true" : "false");
             }
-            case VariantType::typeIndexOf<Dereference>(): {
-                const auto& dereference = variant.get<Dereference>();
+            case InstructionOperandKind::Dereference: {
                 return "*("
 				+ dereference.operand->toString()
 				+ " as "
@@ -195,8 +189,7 @@ namespace wiz {
 				+ "*u" + std::to_string(dereference.size * 8)
 				+ ")";
             }
-            case VariantType::typeIndexOf<Index>(): {
-                const auto& index = variant.get<Index>();
+            case InstructionOperandKind::Index: {
                 return "*(("
                 + index.operand->toString()
                 + " + " + index.subscript->toString()
@@ -206,19 +199,16 @@ namespace wiz {
 				+ "*u" + std::to_string(index.size * 8)
 				+ ")";
             }
-            case VariantType::typeIndexOf<Integer>(): {
-                const auto& integer = variant.get<Integer>();
+            case InstructionOperandKind::Integer: {
                 return integer.placeholder ? "{integer}" : integer.value.toString();
             }
-            case VariantType::typeIndexOf<Register>(): {
-                const auto& reg = variant.get<Register>();
-                return reg.definition->name.toString();
+            case InstructionOperandKind::Register: {
+                return register_.definition->name.toString();
             }
-            case VariantType::typeIndexOf<Unary>(): {
-                const auto& un = variant.get<Unary>();
-                return isUnaryPostIncrementOperator(un.kind)
-                    ? un.operand->toString() + getUnaryOperatorSymbol(un.kind).toString()
-                    : getUnaryOperatorSymbol(un.kind).toString() + un.operand->toString();
+            case InstructionOperandKind::Unary: {
+                return isUnaryPostIncrementOperator(unary.kind)
+                    ? unary.operand->toString() + getUnaryOperatorSymbol(unary.kind).toString()
+                    : getUnaryOperatorSymbol(unary.kind).toString() + unary.operand->toString();
             }
             default: std::abort(); return "";
         }
@@ -232,55 +222,60 @@ namespace wiz {
         delete ptr;
     }
 
+    InstructionOperandPattern::~InstructionOperandPattern() {
+        switch (kind) {
+            case InstructionOperandPatternKind::BitIndex: bitIndex.~BitIndex(); break;
+            case InstructionOperandPatternKind::Boolean: boolean.~Boolean(); break;
+            case InstructionOperandPatternKind::Capture: capture.~Capture(); break;
+            case InstructionOperandPatternKind::Dereference: dereference.~Dereference(); break;
+            case InstructionOperandPatternKind::Index: index.~Index(); break;
+            case InstructionOperandPatternKind::IntegerAtLeast: integerAtLeast.~IntegerAtLeast(); break;
+            case InstructionOperandPatternKind::IntegerRange: integerRange.~IntegerRange(); break;
+            case InstructionOperandPatternKind::Register: register_.~Register(); break;
+            case InstructionOperandPatternKind::Unary: unary.~Unary(); break;
+        }
+    }
+
     FwdUniquePtr<InstructionOperandPattern> InstructionOperandPattern::clone() const {
-        switch (variant.index()) {
-            case VariantType::typeIndexOf<BitIndex>(): {
-                const auto& bitIndexPattern = variant.get<BitIndex>();
+        switch (kind) {
+            case InstructionOperandPatternKind::BitIndex: {
                 return makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::BitIndex(
-                    bitIndexPattern.operandPattern->clone(),
-                    bitIndexPattern.subscriptPattern->clone()));
+                    bitIndex.operandPattern->clone(),
+                    bitIndex.subscriptPattern->clone()));
             }
-            case VariantType::typeIndexOf<Boolean>(): {
-                const auto& booleanPattern = variant.get<Boolean>();
-                return makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Boolean(booleanPattern.value));
+            case InstructionOperandPatternKind::Boolean: {
+                return makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Boolean(boolean.value));
             }
-            case VariantType::typeIndexOf<Capture>(): {
-                const auto& capturePattern = variant.get<Capture>();
-                return makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(capturePattern.operandPattern->clone()));
+            case InstructionOperandPatternKind::Capture: {
+                return makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(capture.operandPattern->clone()));
             }
-            case VariantType::typeIndexOf<Dereference>(): {
-                const auto& dereferencePattern = variant.get<Dereference>();
+            case InstructionOperandPatternKind::Dereference: {
                 return makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Dereference(
-                    dereferencePattern.far,
-                    dereferencePattern.operandPattern->clone(),
-                    dereferencePattern.size));
+                    dereference.far,
+                    dereference.operandPattern->clone(),
+                    dereference.size));
             }
-            case VariantType::typeIndexOf<Index>(): {
-                const auto& indexPattern = variant.get<Index>();
+            case InstructionOperandPatternKind::Index: {
                 return makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Index(
-                    indexPattern.far,
-                    indexPattern.operandPattern->clone(),
-                    indexPattern.subscriptPattern->clone(),
-                    indexPattern.subscriptScale,
-                    indexPattern.size));
+                    index.far,
+                    index.operandPattern->clone(),
+                    index.subscriptPattern->clone(),
+                    index.subscriptScale,
+                    index.size));
             }
-            case VariantType::typeIndexOf<IntegerAtLeast>(): {
-                const auto& atLeastPattern = variant.get<IntegerAtLeast>();
-                return makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerAtLeast(atLeastPattern.min));
+            case InstructionOperandPatternKind::IntegerAtLeast: {
+                return makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerAtLeast(integerAtLeast.min));
             }
-            case VariantType::typeIndexOf<IntegerRange>(): {
-                const auto& rangePattern = variant.get<IntegerRange>();
-                return makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(rangePattern.min, rangePattern.max));
+            case InstructionOperandPatternKind::IntegerRange: {
+                return makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::IntegerRange(integerRange.min, integerRange.max));
             }
-            case VariantType::typeIndexOf<Register>(): {
-                const auto& registerPattern = variant.get<Register>();
-                return makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Register(registerPattern.definition));
+            case InstructionOperandPatternKind::Register: {
+                return makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Register(register_.definition));
             }
-            case VariantType::typeIndexOf<Unary>(): {
-                const auto& unPattern = variant.get<Unary>();
+            case InstructionOperandPatternKind::Unary: {
                 return makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Unary(
-                    unPattern.kind,
-                    unPattern.operandPattern->clone()));
+                    unary.kind,
+                    unary.operandPattern->clone()));
             }
             default: std::abort(); return nullptr;
         }
@@ -291,94 +286,85 @@ namespace wiz {
             return 0;
         }
 
-        if (variant.index() != other.variant.index()) {
-            return variant.index() < other.variant.index() ? -1 : 1;
+        if (kind != other.kind) {
+            return kind < other.kind ? -1 : 1;
         }
 
-        switch (variant.index()) {
-            case VariantType::typeIndexOf<BitIndex>(): {
-                const auto& bitIndexPattern = variant.get<BitIndex>();
-                const auto& otherBitIndexPattern = other.variant.get<BitIndex>();
-                int result = bitIndexPattern.operandPattern->compare(*otherBitIndexPattern.operandPattern);
+        switch (kind) {
+            case InstructionOperandPatternKind::BitIndex: {
+                const auto& otherBitIndex = other.bitIndex;
+                int result = bitIndex.operandPattern->compare(*otherBitIndex.operandPattern);
                 if (result != 0) {
                     return result;
                 }
-                return bitIndexPattern.subscriptPattern->compare(*otherBitIndexPattern.subscriptPattern);
+                return bitIndex.subscriptPattern->compare(*otherBitIndex.subscriptPattern);
             }
-            case VariantType::typeIndexOf<Boolean>(): {
-                const auto& booleanPattern = variant.get<Boolean>();
-                const auto& otherBooleanPattern = other.variant.get<Boolean>();
-                return (booleanPattern.value ? 1 : 0) - (otherBooleanPattern.value ? 1 : 0);
+            case InstructionOperandPatternKind::Boolean: {
+                const auto& otherBoolean = other.boolean;
+                return (otherBoolean.value ? 1 : 0) - (otherBoolean.value ? 1 : 0);
             }
-            case VariantType::typeIndexOf<Capture>(): {
-                const auto& capturePattern = variant.get<Capture>();
-                const auto& otherCapturePattern = other.variant.get<Capture>();
-                return capturePattern.operandPattern->compare(*otherCapturePattern.operandPattern);
+            case InstructionOperandPatternKind::Capture: {
+                const auto& otherCapture = other.capture;
+                return capture.operandPattern->compare(*otherCapture.operandPattern);
             }
-            case VariantType::typeIndexOf<Dereference>(): {
-                const auto& dereferencePattern = variant.get<Dereference>();
-                const auto& otherDereferencePattern = other.variant.get<Dereference>();
-                if (dereferencePattern.far != otherDereferencePattern.far) {
-                    return (dereferencePattern.far ? 1 : 0) - (otherDereferencePattern.far ? 1 : 0);
+            case InstructionOperandPatternKind::Dereference: {
+                const auto& otherDereference = other.dereference;
+                if (dereference.far != otherDereference.far) {
+                    return (dereference.far ? 1 : 0) - (otherDereference.far ? 1 : 0);
                 }
-                return dereferencePattern.operandPattern->compare(*otherDereferencePattern.operandPattern);
+                return dereference.operandPattern->compare(*otherDereference.operandPattern);
             }
-            case VariantType::typeIndexOf<Index>(): {
-                const auto& indexPattern = variant.get<Index>();
-                const auto& otherIndexPattern = other.variant.get<Index>();
-                if (indexPattern.far != otherIndexPattern.far) {
-                    return (indexPattern.far ? 1 : 0) - (otherIndexPattern.far ? 1 : 0);
+            case InstructionOperandPatternKind::Index: {
+                const auto& otherIndex = other.index;
+                if (index.far != otherIndex.far) {
+                    return (index.far ? 1 : 0) - (otherIndex.far ? 1 : 0);
                 }
-                int result = indexPattern.operandPattern->compare(*otherIndexPattern.operandPattern);
+                int result = index.operandPattern->compare(*otherIndex.operandPattern);
                 if (result != 0) {
                     return result;
                 }
-                result = indexPattern.subscriptPattern->compare(*otherIndexPattern.subscriptPattern);
+                result = index.subscriptPattern->compare(*otherIndex.subscriptPattern);
                 if (result != 0) {
                     return result;
                 }
-                if (indexPattern.subscriptScale != otherIndexPattern.subscriptScale) {
-                    return indexPattern.subscriptScale < otherIndexPattern.subscriptScale ? -1 : 1;
+                if (index.subscriptScale != otherIndex.subscriptScale) {
+                    return index.subscriptScale < otherIndex.subscriptScale ? -1 : 1;
                 }
-                if (indexPattern.size != otherIndexPattern.size) {
-                    return indexPattern.size < otherIndexPattern.size ? -1 : 1;
-                }
-                return 0;
-            }
-            case VariantType::typeIndexOf<IntegerAtLeast>(): {
-                const auto& atLeastPattern = variant.get<IntegerAtLeast>();
-                const auto& otherAtLeastPattern = other.variant.get<IntegerAtLeast>();
-                if (atLeastPattern.min != otherAtLeastPattern.min) {
-                    return atLeastPattern.min < otherAtLeastPattern.min ? -1 : 1;
+                if (index.size != otherIndex.size) {
+                    return index.size < otherIndex.size ? -1 : 1;
                 }
                 return 0;
             }
-            case VariantType::typeIndexOf<IntegerRange>(): {
-                const auto& rangePattern = variant.get<IntegerRange>();
-                const auto& otherRangePattern = other.variant.get<IntegerRange>();
-                if (rangePattern.min != otherRangePattern.min) {
-                    return rangePattern.min < otherRangePattern.min ? -1 : 1;
-                }
-                if (rangePattern.max != otherRangePattern.max) {
-                    return rangePattern.max < otherRangePattern.max ? -1 : 1;
+            case InstructionOperandPatternKind::IntegerAtLeast: {
+                const auto& otherIntegerAtLeast = other.integerAtLeast;
+                if (integerAtLeast.min != otherIntegerAtLeast.min) {
+                    return integerAtLeast.min < otherIntegerAtLeast.min ? -1 : 1;
                 }
                 return 0;
             }
-            case VariantType::typeIndexOf<Register>(): {
-                const auto& registerPattern = variant.get<Register>();
-                const auto& otherRegisterPattern = other.variant.get<Register>();
-                if (registerPattern.definition != otherRegisterPattern.definition) {
-                    return registerPattern.definition < otherRegisterPattern.definition ? -1 : 1;
+            case InstructionOperandPatternKind::IntegerRange: {
+                const auto& otherIntegerRange = other.integerRange;
+                if (integerRange.min != otherIntegerRange.min) {
+                    return integerRange.min < otherIntegerRange.min ? -1 : 1;
+                }
+                if (integerRange.max != otherIntegerRange.max) {
+                    return integerRange.max < otherIntegerRange.max ? -1 : 1;
                 }
                 return 0;
             }
-            case VariantType::typeIndexOf<Unary>(): {
-                const auto& unPattern = variant.get<Unary>();
-                const auto& otherUnPattern = other.variant.get<Unary>();
-                if (unPattern.kind != otherUnPattern.kind) {
-                    return unPattern.kind < otherUnPattern.kind ? -1 : 1;
+            case InstructionOperandPatternKind::Register: {
+                const auto& otherRegister = other.register_;
+                if (register_.definition != otherRegister.definition) {
+                    return register_.definition < otherRegister.definition ? -1 : 1;
                 }
-                return unPattern.operandPattern->compare(*otherUnPattern.operandPattern);
+                return 0;
+            }
+            case InstructionOperandPatternKind::Unary: {
+                const auto& otherUnary = other.unary;
+                if (unary.kind != otherUnary.kind) {
+                    return unary.kind < otherUnary.kind ? -1 : 1;
+                }
+                return unary.operandPattern->compare(*otherUnary.operandPattern);
             }
             default: std::abort(); return -1;
         }
@@ -389,76 +375,67 @@ namespace wiz {
             return true;
         }
 
-        if (const auto otherCapturePattern = other.variant.tryGet<Capture>()) {
-            return isSubsetOf(*otherCapturePattern->operandPattern);
+        if (const auto otherCapture = other.tryGet<Capture>()) {
+            return isSubsetOf(*otherCapture->operandPattern);
         }
 
-        switch (variant.index()) {
-            case VariantType::typeIndexOf<BitIndex>(): {
-                const auto& bitIndexPattern = variant.get<BitIndex>();
-                if (const auto otherIndexPattern = other.variant.tryGet<BitIndex>()) {
-                    return bitIndexPattern.operandPattern->isSubsetOf(*otherIndexPattern->operandPattern)
-                    && bitIndexPattern.subscriptPattern->isSubsetOf(*otherIndexPattern->subscriptPattern);
+        switch (kind) {
+            case InstructionOperandPatternKind::BitIndex: {
+                if (const auto otherIndex = other.tryGet<BitIndex>()) {
+                    return bitIndex.operandPattern->isSubsetOf(*otherIndex->operandPattern)
+                    && bitIndex.subscriptPattern->isSubsetOf(*otherIndex->subscriptPattern);
                 }
                 return false;
             }
-            case VariantType::typeIndexOf<Boolean>(): {
-                const auto& booleanPattern = variant.get<Boolean>();
-                if (const auto otherBooleanPattern = other.variant.tryGet<Boolean>()) {
-                    return booleanPattern.value == otherBooleanPattern->value;
+            case InstructionOperandPatternKind::Boolean: {
+                if (const auto otherBoolean = other.tryGet<Boolean>()) {
+                    return boolean.value == otherBoolean->value;
                 }
                 return false;
             }
-            case VariantType::typeIndexOf<Capture>(): {
-                const auto& capturePattern = variant.get<Capture>();
-                return capturePattern.operandPattern->isSubsetOf(other);
+            case InstructionOperandPatternKind::Capture: {
+                return capture.operandPattern->isSubsetOf(other);
             }
-            case VariantType::typeIndexOf<Dereference>(): {
-                const auto& dereferencePattern = variant.get<Dereference>();
-                if (const auto otherDereferencePattern = other.variant.tryGet<Dereference>()) {
-                    return dereferencePattern.far == otherDereferencePattern->far
-                    && dereferencePattern.size == otherDereferencePattern->size
-                    && dereferencePattern.operandPattern->isSubsetOf(*otherDereferencePattern->operandPattern);
+            case InstructionOperandPatternKind::Dereference: {
+                if (const auto otherDereference = other.tryGet<Dereference>()) {
+                    return dereference.far == otherDereference->far
+                    && dereference.size == otherDereference->size
+                    && dereference.operandPattern->isSubsetOf(*otherDereference->operandPattern);
                 }
                 return false;
             }
-            case VariantType::typeIndexOf<Index>(): {
-                const auto& indexPattern = variant.get<Index>();
-                if (const auto otherIndexPattern = other.variant.tryGet<Index>()) {
-                    return indexPattern.far == otherIndexPattern->far
-                    && indexPattern.size == otherIndexPattern->size
-                    && indexPattern.subscriptScale == otherIndexPattern->subscriptScale
-                    && indexPattern.operandPattern->isSubsetOf(*otherIndexPattern->operandPattern)
-                    && indexPattern.subscriptPattern->isSubsetOf(*otherIndexPattern->subscriptPattern);
+            case InstructionOperandPatternKind::Index: {
+                if (const auto otherIndex = other.tryGet<Index>()) {
+                    return index.far == otherIndex->far
+                    && index.size == otherIndex->size
+                    && index.subscriptScale == otherIndex->subscriptScale
+                    && index.operandPattern->isSubsetOf(*otherIndex->operandPattern)
+                    && index.subscriptPattern->isSubsetOf(*otherIndex->subscriptPattern);
                 }
                 return false;
             }
-            case VariantType::typeIndexOf<IntegerAtLeast>(): {
-                const auto& atLeastPattern = variant.get<IntegerAtLeast>();
-                if (const auto otherAtLeastPattern = other.variant.tryGet<IntegerAtLeast>()) {
-                    return atLeastPattern.min >= otherAtLeastPattern->min;
+            case InstructionOperandPatternKind::IntegerAtLeast: {
+                if (const auto otherAtLeastPattern = other.tryGet<IntegerAtLeast>()) {
+                    return integerAtLeast.min >= otherAtLeastPattern->min;
                 }
                 return false;
             }
-            case VariantType::typeIndexOf<IntegerRange>(): {
-                const auto& rangePattern = variant.get<IntegerRange>();
-                if (const auto otherRangePattern = other.variant.tryGet<IntegerRange>()) {
-                    return otherRangePattern->min <= rangePattern.min && rangePattern.max <= otherRangePattern->max;
+            case InstructionOperandPatternKind::IntegerRange: {
+                if (const auto otherRange = other.tryGet<IntegerRange>()) {
+                    return otherRange->min <= integerRange.min && integerRange.max <= otherRange->max;
                 }
                 return false;
             }
-            case VariantType::typeIndexOf<Register>(): {
-                const auto& registerPattern = variant.get<Register>();
-                if (const auto otherRegisterPattern = other.variant.tryGet<Register>()) {
-                    return registerPattern.definition == otherRegisterPattern->definition;
+            case InstructionOperandPatternKind::Register: {
+                if (const auto otherRegister = other.tryGet<Register>()) {
+                    return register_.definition == otherRegister->definition;
                 }
                 return false;
             }
-            case VariantType::typeIndexOf<Unary>(): {
-                const auto& unPattern = variant.get<Unary>();
-                if (const auto otherUnPattern = other.variant.tryGet<Unary>()) {
-                    return unPattern.kind == otherUnPattern->kind
-                    && unPattern.operandPattern->isSubsetOf(*otherUnPattern->operandPattern);
+            case InstructionOperandPatternKind::Unary: {
+                if (const auto otherUnary = other.tryGet<Unary>()) {
+                    return unary.kind == otherUnary->kind
+                    && unary.operandPattern->isSubsetOf(*otherUnary->operandPattern);
                 }
                 return false;
             }
@@ -467,81 +444,72 @@ namespace wiz {
     }
 
     bool InstructionOperandPattern::matches(const InstructionOperand& operand) const {
-        switch (variant.index()) {
-            case VariantType::typeIndexOf<BitIndex>(): {
-                const auto& bitIndexPattern = variant.get<BitIndex>();
-                if (const auto bitIndexOperand = operand.variant.tryGet<InstructionOperand::BitIndex>()) {
-                    return bitIndexPattern.operandPattern->matches(*bitIndexOperand->operand)
-                    && bitIndexPattern.subscriptPattern->matches(*bitIndexOperand->subscript);
+        switch (kind) {
+            case InstructionOperandPatternKind::BitIndex: {
+                if (const auto bitIndexOperand = operand.tryGet<InstructionOperand::BitIndex>()) {
+                    return bitIndex.operandPattern->matches(*bitIndexOperand->operand)
+                    && bitIndex.subscriptPattern->matches(*bitIndexOperand->subscript);
                 }
                 return false;
             }
-            case VariantType::typeIndexOf<Boolean>(): {
-                const auto& booleanPattern = variant.get<Boolean>();
-                if (const auto booleanOperand = operand.variant.tryGet<InstructionOperand::Boolean>()) {
-                    return booleanPattern.value == booleanOperand->value;
+            case InstructionOperandPatternKind::Boolean: {
+                if (const auto booleanOperand = operand.tryGet<InstructionOperand::Boolean>()) {
+                    return boolean.value == booleanOperand->value;
                 }
                 return false;
             }
-            case VariantType::typeIndexOf<Capture>(): {
-                const auto& capturePattern = variant.get<Capture>();
-                return capturePattern.operandPattern->matches(operand);
+            case InstructionOperandPatternKind::Capture: {
+                return capture.operandPattern->matches(operand);
             }
-            case VariantType::typeIndexOf<Dereference>(): {
-                const auto& dereferencePattern = variant.get<Dereference>();
-                if (const auto dereferenceOperand = operand.variant.tryGet<InstructionOperand::Dereference>()) {
-                    return dereferencePattern.far == dereferenceOperand->far
-                    && dereferencePattern.size == dereferenceOperand->size
-                    && dereferencePattern.operandPattern->matches(*dereferenceOperand->operand);
+            case InstructionOperandPatternKind::Dereference: {
+                if (const auto dereferenceOperand = operand.tryGet<InstructionOperand::Dereference>()) {
+                    return dereference.far == dereferenceOperand->far
+                    && dereference.size == dereferenceOperand->size
+                    && dereference.operandPattern->matches(*dereferenceOperand->operand);
                 }
                 return false;            
             }
-            case VariantType::typeIndexOf<Index>(): {
-                const auto& indexPattern = variant.get<Index>();
-                if (const auto indexOperand = operand.variant.tryGet<InstructionOperand::Index>()) {
-                    if (indexPattern.far == indexOperand->far
-                    && indexPattern.size == indexOperand->size
-                    && indexPattern.subscriptScale == indexOperand->subscriptScale) {
-                        if (indexPattern.operandPattern->matches(*indexOperand->operand)
-                        && indexPattern.subscriptPattern->matches(*indexOperand->subscript)) {
+            case InstructionOperandPatternKind::Index: {
+                if (const auto indexOperand = operand.tryGet<InstructionOperand::Index>()) {
+                    if (index.far == indexOperand->far
+                    && index.size == indexOperand->size
+                    && index.subscriptScale == indexOperand->subscriptScale) {
+                        if (index.operandPattern->matches(*indexOperand->operand)
+                        && index.subscriptPattern->matches(*indexOperand->subscript)) {
                             return true;
                         }
-                        if (indexPattern.subscriptScale == 1
-                        && indexPattern.subscriptPattern->matches(*indexOperand->operand)
-                        && indexPattern.operandPattern->matches(*indexOperand->subscript)) {
+                        if (index.subscriptScale == 1
+                        && index.subscriptPattern->matches(*indexOperand->operand)
+                        && index.operandPattern->matches(*indexOperand->subscript)) {
                             return true;
                         }
                     }
                 }
                 return false;
             }
-            case VariantType::typeIndexOf<IntegerAtLeast>(): {
-                const auto& atLeastPattern = variant.get<IntegerAtLeast>();
-                if (const auto integerOperand = operand.variant.tryGet<InstructionOperand::Integer>()) {
-                    bool match = atLeastPattern.min <= integerOperand->value;
+            case InstructionOperandPatternKind::IntegerAtLeast: {
+                if (const auto integerOperand = operand.tryGet<InstructionOperand::Integer>()) {
+                    bool match = integerAtLeast.min <= integerOperand->value;
                     return match; 
                 }
                 return false;
             }
-            case VariantType::typeIndexOf<IntegerRange>(): {
-                const auto& rangePattern = variant.get<IntegerRange>();
-                if (const auto integerOperand = operand.variant.tryGet<InstructionOperand::Integer>()) {
-                    return rangePattern.min <= integerOperand->value && integerOperand->value <= rangePattern.max;
+            case InstructionOperandPatternKind::IntegerRange: {
+                if (const auto integerOperand = operand.tryGet<InstructionOperand::Integer>()) {
+                    return integerRange.min <= integerOperand->value && integerOperand->value <= integerRange.max;
                 }
                 return false;
             }
-            case VariantType::typeIndexOf<Register>(): {
-                const auto& registerPattern = variant.get<Register>();
-                if (const auto registerOperand = operand.variant.tryGet<InstructionOperand::Register>()) {
-                    return registerPattern.definition == registerOperand->definition;
+            case InstructionOperandPatternKind::Register: {
+                if (const auto registerOperand = operand.tryGet<InstructionOperand::Register>()) {
+                    return register_.definition == registerOperand->definition;
                 }
                 return false;
             }
-            case VariantType::typeIndexOf<Unary>(): {
-                const auto& unPattern = variant.get<Unary>();
-                if (const auto unOperand = operand.variant.tryGet<InstructionOperand::Unary>()) {
-                    return unPattern.kind == unOperand->kind
-                    && unPattern.operandPattern->matches(*unOperand->operand);
+            case InstructionOperandPatternKind::Unary: {
+                if (const auto unOperand = operand.tryGet<InstructionOperand::Unary>()) {
+                    return unary.kind == unOperand->kind
+                    && unary.operandPattern->matches(*unOperand->operand);
                 }
                 return false;
             }
@@ -550,70 +518,65 @@ namespace wiz {
     }
 
     bool InstructionOperandPattern::extract(const InstructionOperand& operand, std::vector<const InstructionOperand*>& captureList) const {
-        switch (variant.index()) {
-            case VariantType::typeIndexOf<BitIndex>(): {
-                const auto& bitIndexPattern = variant.get<BitIndex>();
-                if (const auto bitIndexOperand = operand.variant.tryGet<InstructionOperand::BitIndex>()) {
-                    return bitIndexPattern.operandPattern->extract(*bitIndexOperand->operand, captureList)
-                    && bitIndexPattern.subscriptPattern->extract(*bitIndexOperand->subscript, captureList);
+        switch (kind) {
+            case InstructionOperandPatternKind::BitIndex: {
+                if (const auto bitIndexOperand = operand.tryGet<InstructionOperand::BitIndex>()) {
+                    return bitIndex.operandPattern->extract(*bitIndexOperand->operand, captureList)
+                    && bitIndex.subscriptPattern->extract(*bitIndexOperand->subscript, captureList);
                 }
                 return false;
             }
-            case VariantType::typeIndexOf<Boolean>(): return matches(operand);
-            case VariantType::typeIndexOf<Capture>(): {
-                const auto& capturePattern = variant.get<Capture>();
-                if (capturePattern.operandPattern->matches(operand)) {
+            case InstructionOperandPatternKind::Boolean: return matches(operand);
+            case InstructionOperandPatternKind::Capture: {
+                if (capture.operandPattern->matches(operand)) {
                     captureList.push_back(&operand);
                     return true;
                 }
                 return false;
             }
-            case VariantType::typeIndexOf<Dereference>(): {
-                const auto& dereferencePattern = variant.get<Dereference>();
-                if (const auto dereferenceOperand = operand.variant.tryGet<InstructionOperand::Dereference>()) {
-                    return dereferencePattern.far == dereferenceOperand->far
-                    && dereferencePattern.size == dereferenceOperand->size
-                    && dereferencePattern.operandPattern->extract(*dereferenceOperand->operand, captureList);
+            case InstructionOperandPatternKind::Dereference: {
+                if (const auto dereferenceOperand = operand.tryGet<InstructionOperand::Dereference>()) {
+                    return dereference.far == dereferenceOperand->far
+                    && dereference.size == dereferenceOperand->size
+                    && dereference.operandPattern->extract(*dereferenceOperand->operand, captureList);
                 }
                 return false;
             }
-            case VariantType::typeIndexOf<Index>(): {
-                const auto& indexPattern = variant.get<Index>();
-                if (const auto indexOperand = operand.variant.tryGet<InstructionOperand::Index>()) {
-                    if (indexPattern.far == indexOperand->far
-                    && indexPattern.size == indexOperand->size
-                    && indexPattern.subscriptScale == indexOperand->subscriptScale) {
-                        if (indexPattern.operandPattern->matches(*indexOperand->operand)
-                        && indexPattern.subscriptPattern->matches(*indexOperand->subscript)) {
-                            return indexPattern.operandPattern->extract(*indexOperand->operand, captureList)
-                            && indexPattern.subscriptPattern->extract(*indexOperand->subscript, captureList);
+            case InstructionOperandPatternKind::Index: {
+                if (const auto indexOperand = operand.tryGet<InstructionOperand::Index>()) {
+                    if (index.far == indexOperand->far
+                    && index.size == indexOperand->size
+                    && index.subscriptScale == indexOperand->subscriptScale) {
+                        if (index.operandPattern->matches(*indexOperand->operand)
+                        && index.subscriptPattern->matches(*indexOperand->subscript)) {
+                            return index.operandPattern->extract(*indexOperand->operand, captureList)
+                            && index.subscriptPattern->extract(*indexOperand->subscript, captureList);
                         }
                         // operand[subscript] is the same as *(operand + subscriptScale * subscript), so we can attempt to exploit commutativity rules in some cases.
                         // Commute the operand and subscript, but also extract them in opposite order, so that the captures are correct.
-                        else if (indexPattern.subscriptScale == 1
-                        && indexPattern.subscriptPattern->matches(*indexOperand->operand)
-                        && indexPattern.operandPattern->matches(*indexOperand->subscript)) {
-                            return indexPattern.subscriptPattern->extract(*indexOperand->operand, captureList)
-                            && indexPattern.operandPattern->extract(*indexOperand->subscript, captureList);
+                        else if (index.subscriptScale == 1
+                        && index.subscriptPattern->matches(*indexOperand->operand)
+                        && index.operandPattern->matches(*indexOperand->subscript)) {
+                            return index.subscriptPattern->extract(*indexOperand->operand, captureList)
+                            && index.operandPattern->extract(*indexOperand->subscript, captureList);
                         }
                     }
                 }
                 return false;
             }
-            case VariantType::typeIndexOf<IntegerAtLeast>(): return matches(operand);
-            case VariantType::typeIndexOf<IntegerRange>(): {
+            case InstructionOperandPatternKind::IntegerAtLeast: return matches(operand);
+            case InstructionOperandPatternKind::IntegerRange: {
                 auto matched = matches(operand);
                 if (matched) {
                     return true;
                 }
                 return false;
             }
-            case VariantType::typeIndexOf<Register>(): return matches(operand);
-            case VariantType::typeIndexOf<Unary>(): {
-                const auto& unPattern = variant.get<Unary>();
-                if (const auto unOperand = operand.variant.tryGet<InstructionOperand::Unary>()) {
-                    return unPattern.kind == unOperand->kind
-                    && unPattern.operandPattern->extract(*unOperand->operand, captureList);
+            case InstructionOperandPatternKind::Register: return matches(operand);
+            case InstructionOperandPatternKind::Unary: {
+                if (const auto unOperand = operand.tryGet<InstructionOperand::Unary>()) {
+                    return unary.kind == unOperand->kind
+                    && unary.operandPattern->extract(*unOperand->operand, captureList);
                 }
                 return false;
             }
@@ -622,59 +585,50 @@ namespace wiz {
     }
 
     std::string InstructionOperandPattern::toString() const {
-        switch (variant.index()) {
-            case VariantType::typeIndexOf<BitIndex>(): {
-                const auto& bitIndexPattern = variant.get<BitIndex>();
-                return bitIndexPattern.operandPattern->toString() + " $ " + bitIndexPattern.subscriptPattern->toString();
+        switch (kind) {
+            case InstructionOperandPatternKind::BitIndex: {
+                return bitIndex.operandPattern->toString() + " $ " + bitIndex.subscriptPattern->toString();
             }
-            case VariantType::typeIndexOf<Boolean>(): {
-                const auto& booleanPattern = variant.get<Boolean>();
-                return std::string(booleanPattern.value ? "true" : "false");
+            case InstructionOperandPatternKind::Boolean: {
+                return std::string(boolean.value ? "true" : "false");
             }
-            case VariantType::typeIndexOf<Capture>(): {
-                const auto& capturePattern = variant.get<Capture>();
-                return capturePattern.operandPattern->toString();
+            case InstructionOperandPatternKind::Capture: {
+                return capture.operandPattern->toString();
             }
-            case VariantType::typeIndexOf<Dereference>(): {
-                const auto& dereferencePattern = variant.get<Dereference>();
+            case InstructionOperandPatternKind::Dereference: {
                 return "*("
-                + dereferencePattern.operandPattern->toString()
+                + dereference.operandPattern->toString()
                 + " as "
-				+ std::string(dereferencePattern.far ? "far " : "")
-				+ "*u" + std::to_string(dereferencePattern.size * 8)
-				+ ")";
+                + std::string(dereference.far ? "far " : "")
+                + "*u" + std::to_string(dereference.size * 8)
+                + ")";
             }
-            case VariantType::typeIndexOf<Index>(): {
-                const auto& indexPattern = variant.get<Index>();
+            case InstructionOperandPatternKind::Index: {
                 return "*(("
-                + indexPattern.operandPattern->toString()
-                + " + " + indexPattern.subscriptPattern->toString()
-                + (indexPattern.subscriptScale > 1 ? " * " + std::to_string(indexPattern.subscriptScale) : "")
+                + index.operandPattern->toString()
+                + " + " + index.subscriptPattern->toString()
+                + (index.subscriptScale > 1 ? " * " + std::to_string(index.subscriptScale) : "")
                 + ") as "
-				+ std::string(indexPattern.far ? "far " : "")
-				+ "*u" + std::to_string(indexPattern.size * 8)
-				+ ")";
+                + std::string(index.far ? "far " : "")
+                + "*u" + std::to_string(index.size * 8)
+                + ")";
             }
-            case VariantType::typeIndexOf<IntegerAtLeast>(): {
-                const auto& atLeastPattern = variant.get<IntegerAtLeast>();
-                return "{integer >= " + atLeastPattern.min.toString() + "}";
+            case InstructionOperandPatternKind::IntegerAtLeast: {
+                return "{integer >= " + integerAtLeast.min.toString() + "}";
             }
-            case VariantType::typeIndexOf<IntegerRange>(): {
-                const auto& rangePattern = variant.get<IntegerRange>();
-                if (rangePattern.min == rangePattern.max) {
-                    return rangePattern.min.toString();
+            case InstructionOperandPatternKind::IntegerRange: {
+                if (integerRange.min == integerRange.max) {
+                    return integerRange.min.toString();
                 }
-                return "{" + rangePattern.min.toString() + ".." + rangePattern.max.toString() + "}";
+                return "{" + integerRange.min.toString() + ".." + integerRange.max.toString() + "}";
             }
-            case VariantType::typeIndexOf<Register>(): {
-                const auto& registerPattern = variant.get<Register>();
-                return registerPattern.definition->name.toString();
+            case InstructionOperandPatternKind::Register: {
+                return register_.definition->name.toString();
             }
-            case VariantType::typeIndexOf<Unary>(): {
-                const auto& unPattern = variant.get<Unary>();
-                return isUnaryPostIncrementOperator(unPattern.kind)
-                    ? unPattern.operandPattern->toString() + getUnaryOperatorSymbol(unPattern.kind).toString()
-                    : getUnaryOperatorSymbol(unPattern.kind).toString() + unPattern.operandPattern->toString();
+            case InstructionOperandPatternKind::Unary: {
+                return isUnaryPostIncrementOperator(unary.kind)
+                    ? unary.operandPattern->toString() + getUnaryOperatorSymbol(unary.kind).toString()
+                    : getUnaryOperatorSymbol(unary.kind).toString() + unary.operandPattern->toString();
             }
             default: std::abort(); return "";
         }
@@ -691,26 +645,24 @@ namespace wiz {
 
 
     int InstructionType::compare(const InstructionType& other) const {
-        if (variant.index() != other.variant.index()) {
-            return variant.index() - other.variant.index();
+        if (kind != other.kind) {
+            return kind < other.kind ? -1 : 1;
         }
-        switch (variant.index()) {
-            case VariantType::typeIndexOf<BranchKind>(): return static_cast<int>(variant.get<BranchKind>()) - static_cast<int>(other.variant.get<BranchKind>());
-            case VariantType::typeIndexOf<UnaryOperatorKind>(): return static_cast<int>(variant.get<UnaryOperatorKind>()) - static_cast<int>(other.variant.get<UnaryOperatorKind>());
-            case VariantType::typeIndexOf<BinaryOperatorKind>(): return static_cast<int>(variant.get<BinaryOperatorKind>()) - static_cast<int>(other.variant.get<BinaryOperatorKind>());
-            case VariantType::typeIndexOf<VoidIntrinsic>(): {
-                const auto& value = variant.get<VoidIntrinsic>();
-                const auto& otherValue = other.variant.get<VoidIntrinsic>();
-                if (value.definition != otherValue.definition) {
-                    return value.definition < otherValue.definition ? -1 : 1;
+        switch (kind) {
+            case InstructionTypeKind::BranchKind: return static_cast<int>(branchKind) - static_cast<int>(other.branchKind);
+            case InstructionTypeKind::UnaryOperatorKind: return static_cast<int>(unaryOperatorKind) - static_cast<int>(other.unaryOperatorKind);
+            case InstructionTypeKind::BinaryOperatorKind: return static_cast<int>(binaryOperatorKind) - static_cast<int>(other.binaryOperatorKind);
+            case InstructionTypeKind::VoidIntrinsic: {
+                const auto& otherVoidIntrinsic = other.voidIntrinsic;
+                if (voidIntrinsic.definition != otherVoidIntrinsic.definition) {
+                    return voidIntrinsic.definition < otherVoidIntrinsic.definition ? -1 : 1;
                 }
                 return 0;
             }
-            case VariantType::typeIndexOf<LoadIntrinsic>(): {
-                const auto& value = variant.get<LoadIntrinsic>();
-                const auto& otherValue = other.variant.get<LoadIntrinsic>();
-                if (value.definition != otherValue.definition) {
-                    return value.definition < otherValue.definition ? -1 : 1;
+            case InstructionTypeKind::LoadIntrinsic: {
+                const auto& otherLoadIntrinsic = other.loadIntrinsic;
+                if (loadIntrinsic.definition != otherLoadIntrinsic.definition) {
+                    return loadIntrinsic.definition < otherLoadIntrinsic.definition ? -1 : 1;
                 }
                 return 0;
             }
@@ -719,12 +671,12 @@ namespace wiz {
     }
 
     std::size_t InstructionType::hash() const {
-        switch (variant.index()) {
-            case VariantType::typeIndexOf<BranchKind>(): return std::hash<int>()(static_cast<int>(variant.get<BranchKind>()));
-            case VariantType::typeIndexOf<UnaryOperatorKind>(): return std::hash<int>()(static_cast<int>(variant.get<UnaryOperatorKind>()));
-            case VariantType::typeIndexOf<BinaryOperatorKind>(): return std::hash<int>()(static_cast<int>(variant.get<BinaryOperatorKind>()));
-            case VariantType::typeIndexOf<VoidIntrinsic>(): return std::hash<std::uintptr_t>()(reinterpret_cast<std::uintptr_t>(variant.get<VoidIntrinsic>().definition));
-            case VariantType::typeIndexOf<LoadIntrinsic>(): return std::hash<std::uintptr_t>()(reinterpret_cast<std::uintptr_t>(variant.get<LoadIntrinsic>().definition));
+        switch (kind) {
+            case InstructionTypeKind::BranchKind: return std::hash<int>()(static_cast<int>(branchKind));
+            case InstructionTypeKind::UnaryOperatorKind: return std::hash<int>()(static_cast<int>(unaryOperatorKind));
+            case InstructionTypeKind::BinaryOperatorKind: return std::hash<int>()(static_cast<int>(binaryOperatorKind));
+            case InstructionTypeKind::VoidIntrinsic: return std::hash<std::uintptr_t>()(reinterpret_cast<std::uintptr_t>(voidIntrinsic.definition));
+            case InstructionTypeKind::LoadIntrinsic: return std::hash<std::uintptr_t>()(reinterpret_cast<std::uintptr_t>(loadIntrinsic.definition));
             default: std::abort(); return 0;
         }
     }

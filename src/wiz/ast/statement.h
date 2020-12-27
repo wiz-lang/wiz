@@ -628,7 +628,6 @@ namespace wiz {
         StringView getDescription() const;
 
         StatementKind kind;
-
         union {
             Attribution attribution;
             Bank bank;

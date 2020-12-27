@@ -8,12 +8,9 @@
 
 #include <wiz/utility/fwd_unique_ptr.h>
 #include <wiz/utility/array_view.h>
-#include <wiz/utility/variant.h>
-#include <wiz/utility/overload.h>
 #include <wiz/utility/string_view.h>
 #include <wiz/utility/int128.h>
 #include <wiz/utility/report.h>
-#include <wiz/utility/bit_flags.h>
 
 namespace wiz {
     struct Definition;
@@ -27,6 +24,17 @@ namespace wiz {
 
     class Bank;
     class Report;
+
+    enum class InstructionOperandKind {
+        BitIndex,
+        Binary,
+        Boolean,
+        Dereference,
+        Index,
+        Integer,
+        Register,
+        Unary,
+    };
 
     struct InstructionOperand {
         struct BitIndex {
@@ -139,10 +147,49 @@ namespace wiz {
             FwdUniquePtr<const InstructionOperand> operand;
         };
 
-        template <typename T>
         InstructionOperand(
-            T&& variant)
-        : variant(std::forward<T>(variant)) {}
+            BitIndex bitIndex)
+        : kind(InstructionOperandKind::BitIndex),
+        bitIndex(std::move(bitIndex)) {}
+
+        InstructionOperand(
+            Binary binary)
+        : kind(InstructionOperandKind::Binary),
+        binary(std::move(binary)) {}
+
+        InstructionOperand(
+            Boolean boolean)
+        : kind(InstructionOperandKind::Boolean),
+        boolean(std::move(boolean)) {}
+
+        InstructionOperand(
+            Dereference dereference)
+        : kind(InstructionOperandKind::Dereference),
+        dereference(std::move(dereference)) {}
+
+        InstructionOperand(
+            Index index)
+        : kind(InstructionOperandKind::Index),
+        index(std::move(index)) {}
+
+        InstructionOperand(
+            Integer integer)
+        : kind(InstructionOperandKind::Integer),
+        integer(std::move(integer)) {}
+
+        InstructionOperand(
+            Register register_)
+        : kind(InstructionOperandKind::Register),
+        register_(std::move(register_)) {}
+
+        InstructionOperand(
+            Unary unary)
+        : kind(InstructionOperandKind::Unary),
+        unary(std::move(unary)) {}
+
+        ~InstructionOperand();
+
+        template <typename T> const T* tryGet() const;
 
         FwdUniquePtr<InstructionOperand> clone() const;
         int compare(const InstructionOperand& other) const;
@@ -172,18 +219,54 @@ namespace wiz {
             return compare(other) >= 0;
         }
 
-        using VariantType = Variant<
-            BitIndex,
-            Binary,
-            Boolean,
-            Dereference,
-            Index,
-            Integer,
-            Register,
-            Unary
-        >;
+        InstructionOperandKind kind;
+        union {
+            BitIndex bitIndex;
+            Binary binary;
+            Boolean boolean;
+            Dereference dereference;
+            Index index;
+            Integer integer;
+            Register register_;
+            Unary unary;
+        };
+    };
 
-        VariantType variant;
+    template <> WIZ_FORCE_INLINE const InstructionOperand::BitIndex* InstructionOperand::tryGet<InstructionOperand::BitIndex>() const {
+        return kind == InstructionOperandKind::BitIndex ? &bitIndex : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const InstructionOperand::Binary* InstructionOperand::tryGet<InstructionOperand::Binary>() const {
+        return kind == InstructionOperandKind::Binary ? &binary : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const InstructionOperand::Boolean* InstructionOperand::tryGet<InstructionOperand::Boolean>() const {
+        return kind == InstructionOperandKind::Boolean ? &boolean : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const InstructionOperand::Dereference* InstructionOperand::tryGet<InstructionOperand::Dereference>() const {
+        return kind == InstructionOperandKind::Dereference ? &dereference : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const InstructionOperand::Index* InstructionOperand::tryGet<InstructionOperand::Index>() const {
+        return kind == InstructionOperandKind::Index ? &index : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const InstructionOperand::Integer* InstructionOperand::tryGet<InstructionOperand::Integer>() const {
+        return kind == InstructionOperandKind::Integer ? &integer : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const InstructionOperand::Register* InstructionOperand::tryGet<InstructionOperand::Register>() const {
+        return kind == InstructionOperandKind::Register ? &register_ : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const InstructionOperand::Unary* InstructionOperand::tryGet<InstructionOperand::Unary>() const {
+        return kind == InstructionOperandKind::Unary ? &unary : nullptr;
+    }
+
+    enum class InstructionOperandPatternKind {
+        BitIndex,
+        Boolean,
+        Capture,
+        Dereference,
+        Index,
+        IntegerAtLeast,
+        IntegerRange,
+        Register,
+        Unary,
     };
 
     struct InstructionOperandPattern {
@@ -291,10 +374,54 @@ namespace wiz {
             FwdUniquePtr<const InstructionOperandPattern> operandPattern;
         };
         
-        template <typename T>
         InstructionOperandPattern(
-            T&& variant)
-        : variant(std::forward<T>(variant)) {}
+            BitIndex bitIndex)
+        : kind(InstructionOperandPatternKind::BitIndex),
+        bitIndex(std::move(bitIndex)) {}
+
+        InstructionOperandPattern(
+            Boolean boolean)
+        : kind(InstructionOperandPatternKind::Boolean),
+        boolean(std::move(boolean)) {}
+
+        InstructionOperandPattern(
+            Capture capture)
+        : kind(InstructionOperandPatternKind::Capture),
+        capture(std::move(capture)) {}
+
+        InstructionOperandPattern(
+            Dereference dereference)
+        : kind(InstructionOperandPatternKind::Dereference),
+        dereference(std::move(dereference)) {}
+
+        InstructionOperandPattern(
+            Index index)
+        : kind(InstructionOperandPatternKind::Index),
+        index(std::move(index)) {}
+
+        InstructionOperandPattern(
+            IntegerAtLeast integerAtLeast)
+        : kind(InstructionOperandPatternKind::IntegerAtLeast),
+        integerAtLeast(std::move(integerAtLeast)) {}
+
+        InstructionOperandPattern(
+            IntegerRange integerRange)
+        : kind(InstructionOperandPatternKind::IntegerRange),
+        integerRange(std::move(integerRange)) {}
+
+        InstructionOperandPattern(
+            Register register_)
+        : kind(InstructionOperandPatternKind::Register),
+        register_(std::move(register_)) {}
+
+        InstructionOperandPattern(
+            Unary unary)
+        : kind(InstructionOperandPatternKind::Unary),
+        unary(std::move(unary)) {}
+
+        ~InstructionOperandPattern();
+
+        template <typename T> const T* tryGet() const;
 
         FwdUniquePtr<InstructionOperandPattern> clone() const;
         int compare(const InstructionOperandPattern& other) const;
@@ -327,19 +454,47 @@ namespace wiz {
             return compare(other) >= 0;
         }
 
-        using VariantType = Variant<
-            BitIndex,
-            Boolean,
-            Capture,
-            Dereference,
-            Index,
-            IntegerAtLeast,
-            IntegerRange,
-            Register,
-            Unary
-        >;
-        VariantType variant;
+        InstructionOperandPatternKind kind;
+        union {
+            BitIndex bitIndex;
+            Boolean boolean;
+            Capture capture;
+            Dereference dereference;
+            Index index;
+            IntegerAtLeast integerAtLeast;
+            IntegerRange integerRange;
+            Register register_;
+            Unary unary;
+        };
     };
+
+    template <> WIZ_FORCE_INLINE const InstructionOperandPattern::BitIndex* InstructionOperandPattern::tryGet<InstructionOperandPattern::BitIndex>() const {
+        return kind == InstructionOperandPatternKind::BitIndex ? &bitIndex : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const InstructionOperandPattern::Boolean* InstructionOperandPattern::tryGet<InstructionOperandPattern::Boolean>() const {
+        return kind == InstructionOperandPatternKind::Boolean ? &boolean : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const InstructionOperandPattern::Capture* InstructionOperandPattern::tryGet<InstructionOperandPattern::Capture>() const {
+        return kind == InstructionOperandPatternKind::Capture ? &capture : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const InstructionOperandPattern::Dereference* InstructionOperandPattern::tryGet<InstructionOperandPattern::Dereference>() const {
+        return kind == InstructionOperandPatternKind::Dereference ? &dereference : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const InstructionOperandPattern::Index* InstructionOperandPattern::tryGet<InstructionOperandPattern::Index>() const {
+        return kind == InstructionOperandPatternKind::Index ? &index : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const InstructionOperandPattern::IntegerAtLeast* InstructionOperandPattern::tryGet<InstructionOperandPattern::IntegerAtLeast>() const {
+        return kind == InstructionOperandPatternKind::IntegerAtLeast ? &integerAtLeast : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const InstructionOperandPattern::IntegerRange* InstructionOperandPattern::tryGet<InstructionOperandPattern::IntegerRange>() const {
+        return kind == InstructionOperandPatternKind::IntegerRange ? &integerRange : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const InstructionOperandPattern::Register* InstructionOperandPattern::tryGet<InstructionOperandPattern::Register>() const {
+        return kind == InstructionOperandPatternKind::Register ? &register_ : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const InstructionOperandPattern::Unary* InstructionOperandPattern::tryGet<InstructionOperandPattern::Unary>() const {
+        return kind == InstructionOperandPatternKind::Unary ? &unary : nullptr;
+    }
 
     struct InstructionOperandRoot {
         InstructionOperandRoot()
@@ -387,6 +542,14 @@ namespace wiz {
         InstructionWriteFunc write;
     };
 
+    enum class InstructionTypeKind {
+        BranchKind,
+        UnaryOperatorKind,
+        BinaryOperatorKind,
+        VoidIntrinsic,
+        LoadIntrinsic,
+    };
+
     struct InstructionType {
         // Takes a list of source operands to match on.
         // Called like a void function.
@@ -409,10 +572,32 @@ namespace wiz {
         InstructionType(const InstructionType&) = default;
         InstructionType(InstructionType&&) = default;
 
-        template <typename T>
         InstructionType(
-            T&& variant)
-        : variant(std::forward<T>(variant)) {}
+            BranchKind branchKind)
+        : kind(InstructionTypeKind::BranchKind),
+        branchKind(branchKind) {}
+
+        InstructionType(
+            UnaryOperatorKind unaryOperatorKind)
+        : kind(InstructionTypeKind::UnaryOperatorKind),
+        unaryOperatorKind(unaryOperatorKind) {}
+
+        InstructionType(
+            BinaryOperatorKind binaryOperatorKind)
+        : kind(InstructionTypeKind::BinaryOperatorKind),
+        binaryOperatorKind(binaryOperatorKind) {}
+
+        InstructionType(
+            VoidIntrinsic voidIntrinsic)
+        : kind(InstructionTypeKind::VoidIntrinsic),
+        voidIntrinsic(voidIntrinsic) {}
+
+        InstructionType(
+            LoadIntrinsic loadIntrinsic)
+        : kind(InstructionTypeKind::LoadIntrinsic),
+        loadIntrinsic(loadIntrinsic) {}
+
+        template <typename T> const T* tryGet() const;
 
         int compare(const InstructionType& other) const;
         std::size_t hash() const;
@@ -441,16 +626,31 @@ namespace wiz {
             return compare(other) >= 0;
         }
 
-        using VariantType = Variant<
-            BranchKind,
-            UnaryOperatorKind,
-            BinaryOperatorKind,
-            VoidIntrinsic,
-            LoadIntrinsic
-        >;
-
-        VariantType variant;
+        InstructionTypeKind kind;
+        union {
+            BranchKind branchKind;
+            UnaryOperatorKind unaryOperatorKind;
+            BinaryOperatorKind binaryOperatorKind;
+            VoidIntrinsic voidIntrinsic;
+            LoadIntrinsic loadIntrinsic;
+        };
     };
+
+    template <> WIZ_FORCE_INLINE const BranchKind* InstructionType::tryGet<BranchKind>() const {
+        return kind == InstructionTypeKind::BranchKind ? &branchKind : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const UnaryOperatorKind* InstructionType::tryGet<UnaryOperatorKind>() const {
+        return kind == InstructionTypeKind::UnaryOperatorKind ? &unaryOperatorKind : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const BinaryOperatorKind* InstructionType::tryGet<BinaryOperatorKind>() const {
+        return kind == InstructionTypeKind::BinaryOperatorKind ? &binaryOperatorKind : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const InstructionType::VoidIntrinsic* InstructionType::tryGet<InstructionType::VoidIntrinsic>() const {
+        return kind == InstructionTypeKind::VoidIntrinsic ? &voidIntrinsic : nullptr;
+    }
+    template <> WIZ_FORCE_INLINE const InstructionType::LoadIntrinsic* InstructionType::tryGet<InstructionType::LoadIntrinsic>() const {
+        return kind == InstructionTypeKind::LoadIntrinsic ? &loadIntrinsic : nullptr;
+    }
 
     struct InstructionSignature {
         InstructionSignature(

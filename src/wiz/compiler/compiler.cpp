@@ -4534,8 +4534,8 @@ namespace wiz {
                     auto left = createOperandFromExpression(binaryOperator.left.get(), quiet);
                     auto right = createOperandFromExpression(binaryOperator.right.get(), quiet);
                     if (left && right) {
-                        const auto leftIntegerOperand = left->variant.tryGet<InstructionOperand::Integer>();
-                        const auto rightIntegerOperand = right->variant.tryGet<InstructionOperand::Integer>();
+                        const auto leftIntegerOperand = left->tryGet<InstructionOperand::Integer>();
+                        const auto rightIntegerOperand = right->tryGet<InstructionOperand::Integer>();
 
                         if (leftIntegerOperand != nullptr && rightIntegerOperand != nullptr) {
                             if (leftIntegerOperand->placeholder) {
@@ -4612,7 +4612,7 @@ namespace wiz {
                             const auto far = (unaryOperator.operand->info->qualifiers & Qualifiers::Far) != Qualifiers::None;
 
                             if (const auto indirectionSize = calculateStorageSize(expression->info->type.get(), "operand"_sv)) {
-                                if (const auto bin = operand->variant.tryGet<InstructionOperand::Binary>()) {
+                                if (const auto bin = operand->tryGet<InstructionOperand::Binary>()) {
                                     if (bin->kind == BinaryOperatorKind::Addition) {
                                         return makeFwdUnique<InstructionOperand>(InstructionOperand::Index(
                                             far,
@@ -4621,7 +4621,7 @@ namespace wiz {
                                             1,
                                             *indirectionSize));
                                     } else if (bin->kind == BinaryOperatorKind::Subtraction) {
-                                        if (const auto rightIntegerOperand = bin->right->variant.tryGet<InstructionOperand::Integer>()) {
+                                        if (const auto rightIntegerOperand = bin->right->tryGet<InstructionOperand::Integer>()) {
                                             if (rightIntegerOperand->placeholder) {
                                                 return makeFwdUnique<InstructionOperand>(InstructionOperand::Index(
                                                     far,
@@ -5550,9 +5550,9 @@ namespace wiz {
     void Compiler::raiseEmitIntrinsicError(const InstructionType& instructionType, const std::vector<InstructionOperandRoot>& operandRoots, SourceLocation location) {
         std::string intrinsicName;
         bool isLoadIntrinsic = false;
-        if (const auto voidIntrinsic = instructionType.variant.tryGet<InstructionType::VoidIntrinsic>()) {
+        if (const auto voidIntrinsic = instructionType.tryGet<InstructionType::VoidIntrinsic>()) {
             intrinsicName = voidIntrinsic->definition->name.toString();
-        } else if (const auto loadIntrinsic = instructionType.variant.tryGet<InstructionType::LoadIntrinsic>()) {
+        } else if (const auto loadIntrinsic = instructionType.tryGet<InstructionType::LoadIntrinsic>()) {
             intrinsicName = loadIntrinsic->definition->name.toString();
             isLoadIntrinsic = true;
         } else {
@@ -6784,10 +6784,9 @@ namespace wiz {
         // First pass: calculate data/instruction sizes, assign labels.
         for (std::size_t i = 0; i != irNodes.size(); ++i) {
             const auto& irNode = irNodes[i];
-            const auto& variant = irNode->variant;
-            switch (variant.index()) {
-                case IrNode::VariantType::typeIndexOf<IrNode::PushRelocation>(): {
-                    const auto& pushRelocation = variant.get<IrNode::PushRelocation>();
+            switch (irNode->kind) {
+                case IrNodeKind::PushRelocation: {
+                    const auto& pushRelocation = irNode->pushRelocation;
                     bankStack.push_back(currentBank);
                     currentBank = pushRelocation.bank;
 
@@ -6796,19 +6795,19 @@ namespace wiz {
                     }
                     break;
                 }
-                case IrNode::VariantType::typeIndexOf<IrNode::PopRelocation>(): {
+                case IrNodeKind::PopRelocation: {
                     currentBank = bankStack.back();
                     bankStack.pop_back();
                     break;
                 }
-                case IrNode::VariantType::typeIndexOf<IrNode::Label>(): {
-                    const auto& label = variant.get<IrNode::Label>();
+                case IrNodeKind::Label: {
+                    const auto& label = irNode->label;
                     auto& funcDefinition = label.definition->variant.get<Definition::Func>();
                     funcDefinition.address = currentBank->getAddress();                    
                     break;
                 }
-                case IrNode::VariantType::typeIndexOf<IrNode::Code>(): {
-                    const auto& code = variant.get<IrNode::Code>();
+                case IrNodeKind::Code: {
+                    const auto& code = irNode->code;
                     const auto& instruction = code.instruction;
                     if (instruction->signature.extract(code.operandRoots, captureLists)) {
                         bool removed = false;
@@ -6817,17 +6816,17 @@ namespace wiz {
                         // (Also handle a checking multiple labels when defined with no code between)
                         // TODO: maybe move this optimization till the very end?
                         // There's some cases this can't catch, but doing this after addresses are calculated will make for a mess.
-                        if (const auto branchKind = instruction->signature.type.variant.tryGet<BranchKind>()) {
+                        if (const auto branchKind = instruction->signature.type.tryGet<BranchKind>()) {
                             if (*branchKind == BranchKind::Goto) {
                                 const auto& patterns = instruction->signature.operandPatterns;
 
-                                if (patterns.size() >= 2 && patterns[1]->variant.is<InstructionOperandPattern::IntegerRange>()) {
+                                if (patterns.size() >= 2 && patterns[1]->kind == InstructionOperandPatternKind::IntegerRange) {
                                     if (const auto resolvedIdentifier = code.operandRoots[1].expression->tryGet<Expression::ResolvedIdentifier>()) {
                                         std::size_t nextIndex = i + 1;
 
                                         while (nextIndex < irNodes.size()) {
                                             const auto& nextIrNode = irNodes[nextIndex];
-                                            if (const auto nextLabel = nextIrNode->variant.tryGet<IrNode::Label>()) {
+                                            if (const auto nextLabel = nextIrNode->tryGet<IrNode::Label>()) {
                                                 if (resolvedIdentifier->definition == nextLabel->definition) {
                                                     removed = true;
                                                     break;
@@ -6854,8 +6853,8 @@ namespace wiz {
                     }
                     break;
                 }
-                case IrNode::VariantType::typeIndexOf<IrNode::Var>(): {
-                    const auto& var = variant.get<IrNode::Var>();
+                case IrNodeKind::Var: {
+                    const auto& var = irNode->var;
                     auto& varDefinition = var.definition->variant.get<Definition::Var>();
 
                     Optional<std::size_t> oldPosition;
@@ -6915,10 +6914,9 @@ namespace wiz {
 
         // Second pass: resolve all link-time expressions, write the instructions into the correct banks.
         for (const auto& irNode : irNodes) {
-            const auto& variant = irNode->variant;
-            switch (variant.index()) {
-                case IrNode::VariantType::typeIndexOf<IrNode::PushRelocation>(): {
-                    const auto& pushRelocation = variant.get<IrNode::PushRelocation>();
+            switch (irNode->kind) {
+                case IrNodeKind::PushRelocation: {
+                    const auto& pushRelocation = irNode->pushRelocation;
                     bankStack.push_back(currentBank);
                     currentBank = pushRelocation.bank;
 
@@ -6927,13 +6925,13 @@ namespace wiz {
                     }
                     break;
                 }
-                case IrNode::VariantType::typeIndexOf<IrNode::PopRelocation>(): {
+                case IrNodeKind::PopRelocation: {
                     currentBank = bankStack.back();
                     bankStack.pop_back();
                     break;
                 }
-                case IrNode::VariantType::typeIndexOf<IrNode::Label>(): {
-                    const auto& label = variant.get<IrNode::Label>();
+                case IrNodeKind::Label: {
+                    const auto& label = irNode->label;
                     Address labelAddress;
 
                     auto& funcDefinition = label.definition->variant.get<Definition::Func>();
@@ -6961,8 +6959,8 @@ namespace wiz {
                     }
                     break;
                 }
-                case IrNode::VariantType::typeIndexOf<IrNode::Code>(): {
-                    const auto& code = variant.get<IrNode::Code>();
+                case IrNodeKind::Code: {
+                    const auto& code = irNode->code;
                     const auto& instruction = code.instruction;
 
                     tempOperandRoots.clear();
@@ -7006,8 +7004,8 @@ namespace wiz {
                     }
                     break;
                 }
-                case IrNode::VariantType::typeIndexOf<IrNode::Var>(): {
-                    const auto& var = variant.get<IrNode::Var>();
+                case IrNodeKind::Var: {
+                    const auto& var = irNode->var;
                     auto& varDefinition = var.definition->variant.get<Definition::Var>();
 
                     Optional<std::size_t> oldPosition;

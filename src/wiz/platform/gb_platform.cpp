@@ -177,7 +177,7 @@ namespace wiz {
                 static_cast<void>(location);
 
                 buffer.insert(buffer.end(), options.opcode.begin(), options.opcode.end());
-                buffer.push_back(static_cast<std::uint8_t>(captureLists[options.parameter[0]][0]->variant.get<InstructionOperand::Integer>().value));
+                buffer.push_back(static_cast<std::uint8_t>(captureLists[options.parameter[0]][0]->integer.value));
                 return true;
             });
         const auto encodingU16Operand = builtins.createInstructionEncoding(
@@ -190,7 +190,7 @@ namespace wiz {
                 static_cast<void>(bank);
                 static_cast<void>(location);
 
-                const auto value = static_cast<std::uint16_t>(captureLists[options.parameter[0]][0]->variant.get<InstructionOperand::Integer>().value);
+                const auto value = static_cast<std::uint16_t>(captureLists[options.parameter[0]][0]->integer.value);
                 buffer.insert(buffer.end(), options.opcode.begin(), options.opcode.end());
                 buffer.push_back(static_cast<std::uint8_t>(value & 0xFF));
                 buffer.push_back(static_cast<std::uint8_t>((value >> 8) & 0xFF));
@@ -205,7 +205,7 @@ namespace wiz {
                 buffer.insert(buffer.end(), options.opcode.begin(), options.opcode.end());
 
                 const auto base = static_cast<std::int32_t>(bank->getAddress().absolutePosition.get() & 0xFFFF);
-                const auto dest = static_cast<std::int32_t>(captureLists[options.parameter[0]][0]->variant.get<InstructionOperand::Integer>().value);
+                const auto dest = static_cast<std::int32_t>(captureLists[options.parameter[0]][0]->integer.value);
                 const auto offset = dest - base - 2;
                 if (offset >= -128 && offset <= 127) {
                     buffer.push_back(offset < 0
@@ -227,7 +227,7 @@ namespace wiz {
                 static_cast<void>(bank);
                 buffer.insert(buffer.end(), options.opcode.begin(), options.opcode.end());
 
-                const auto i8val = static_cast<int>(captureLists[options.parameter[0]][0]->variant.get<InstructionOperand::Integer>().value);
+                const auto i8val = static_cast<int>(captureLists[options.parameter[0]][0]->integer.value);
                 if (i8val >= -128 && i8val <= 127) {
                     buffer.push_back(i8val < 0
                         ? (static_cast<std::uint8_t>(-i8val) ^ 0xFF) + 1
@@ -241,14 +241,14 @@ namespace wiz {
             });
         const auto encodingRepeatedImplicit = builtins.createInstructionEncoding(
             [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
-                return static_cast<std::size_t>(captureLists[options.parameter[0]][0]->variant.get<InstructionOperand::Integer>().value) * options.opcode.size();
+                return static_cast<std::size_t>(captureLists[options.parameter[0]][0]->integer.value) * options.opcode.size();
             },
             [](Report* report, const Bank* bank, std::vector<std::uint8_t>& buffer, const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists, SourceLocation location) {
                 static_cast<void>(report);
                 static_cast<void>(bank);
                 static_cast<void>(location);
 
-                const auto count = static_cast<std::uint8_t>(captureLists[options.parameter[0]][0]->variant.get<InstructionOperand::Integer>().value);
+                const auto count = static_cast<std::uint8_t>(captureLists[options.parameter[0]][0]->integer.value);
                 for (std::size_t i = 0; i != count; ++i) {
                     buffer.insert(buffer.end(), options.opcode.begin(), options.opcode.end());
                 }
@@ -266,7 +266,7 @@ namespace wiz {
 
                 // n = $1th capture of $0
                 buffer.insert(buffer.end(), options.opcode.begin(), options.opcode.end());
-                const auto n = static_cast<std::uint8_t>(captureLists[options.parameter[0]][options.parameter[1]]->variant.get<InstructionOperand::Integer>().value);
+                const auto n = static_cast<std::uint8_t>(captureLists[options.parameter[0]][options.parameter[1]]->integer.value);
                 buffer[buffer.size() - 1] |= static_cast<std::uint8_t>(n << 3);
                 return true;
             });
@@ -472,7 +472,7 @@ namespace wiz {
                     const auto sourceRegisterOperand = std::get<0>(sourceRegister);
 
                     bool match = false;
-                    if (const auto reg = sourceRegisterOperand->variant.tryGet<InstructionOperandPattern::Register>()) {
+                    if (const auto reg = sourceRegisterOperand->tryGet<InstructionOperandPattern::Register>()) {
                         if (reg->definition == a && (binKind == BinaryOperatorKind::LeftShift || binKind == BinaryOperatorKind::LogicalLeftShift)) {
                             builtins.createInstruction(InstructionSignature(binKind, 0, {sourceRegisterOperand, patternImmU8}), encodingRepeatedImplicit, InstructionOptions({0x87}, {1}, {}));
                             match = true;

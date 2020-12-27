@@ -175,7 +175,6 @@ namespace wiz {
         FwdUniquePtr<const TypeExpression> clone() const;
 
         TypeExpressionKind kind;
-
         union {
             Array array;
             DesignatedStorage designatedStorage;
