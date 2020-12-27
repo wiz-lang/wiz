@@ -8,71 +8,77 @@ namespace wiz {
         delete ptr;
     }
 
+    TypeExpression::~TypeExpression() {
+        switch (kind) {
+            case TypeExpressionKind::Array: array.~Array(); break;
+            case TypeExpressionKind::DesignatedStorage: designatedStorage.~DesignatedStorage(); break;
+            case TypeExpressionKind::Function: function.~Function(); break;
+            case TypeExpressionKind::Identifier: identifier.~Identifier(); break;
+            case TypeExpressionKind::Pointer: pointer.~Pointer(); break;
+            case TypeExpressionKind::ResolvedIdentifier: resolvedIdentifier.~ResolvedIdentifier(); break;
+            case TypeExpressionKind::Tuple: tuple.~Tuple(); break;
+            case TypeExpressionKind::TypeOf: typeOf.~TypeOf(); break;
+            default: std::abort();
+        }
+    }
+
     FwdUniquePtr<const TypeExpression> TypeExpression::clone() const {
-        switch (variant.index()) {
-            case VariantType::typeIndexOf<Array>(): {
-                const auto& arrayType = variant.get<Array>();
+        switch (kind) {
+            case TypeExpressionKind::Array: {
                 return makeFwdUnique<const TypeExpression>(
                     Array(
-                        arrayType.elementType ? arrayType.elementType->clone() : nullptr,
-                        arrayType.size ? arrayType.size->clone() : nullptr),
+                        array.elementType ? array.elementType->clone() : nullptr,
+                        array.size ? array.size->clone() : nullptr),
                     location);
             }
-            case VariantType::typeIndexOf<DesignatedStorage>(): {
-                const auto& dsType = variant.get<DesignatedStorage>();
+            case TypeExpressionKind::DesignatedStorage: {
                 return makeFwdUnique<const TypeExpression>(
                     DesignatedStorage(
-                        dsType.elementType ? dsType.elementType->clone() : nullptr,
-                        dsType.holder ? dsType.holder->clone() : nullptr),
+                        designatedStorage.elementType ? designatedStorage.elementType->clone() : nullptr,
+                        designatedStorage.holder ? designatedStorage.holder->clone() : nullptr),
                     location);
             }
-            case VariantType::typeIndexOf<Function>(): {
-                const auto& functionType = variant.get<Function>();
+            case TypeExpressionKind::Function: {
                 std::vector<FwdUniquePtr<const TypeExpression>> clonedParameterTypes;
-                clonedParameterTypes.reserve(functionType.parameterTypes.size());
-                for (const auto& parameterType : functionType.parameterTypes) {
+                clonedParameterTypes.reserve(function.parameterTypes.size());
+                for (const auto& parameterType : function.parameterTypes) {
                     clonedParameterTypes.push_back(parameterType ? parameterType->clone() : nullptr);
                 }
                 return makeFwdUnique<const TypeExpression>(
                     Function(
-                        functionType.far,
+                        function.far,
                         std::move(clonedParameterTypes),
-                        functionType.returnType ? functionType.returnType->clone() : nullptr),
+                        function.returnType ? function.returnType->clone() : nullptr),
                     location);
             }
-            case VariantType::typeIndexOf<Identifier>(): {
-                const auto& identifierType = variant.get<Identifier>();
+            case TypeExpressionKind::Identifier: {
                 return makeFwdUnique<const TypeExpression>(
-                    Identifier(identifierType.pieces),
+                    Identifier(identifier.pieces),
                     location);             
             }
-            case VariantType::typeIndexOf<Pointer>(): {
-                const auto& pointerType = variant.get<Pointer>();
+            case TypeExpressionKind::Pointer: {
                 return makeFwdUnique<const TypeExpression>(
                     Pointer(
-                        pointerType.elementType ? pointerType.elementType->clone() : nullptr,
-                        pointerType.qualifiers),
+                        pointer.elementType ? pointer.elementType->clone() : nullptr,
+                        pointer.qualifiers),
                     location);
             }
-            case VariantType::typeIndexOf<ResolvedIdentifier>(): {
-                const auto& resolvedIdentifierType = variant.get<ResolvedIdentifier>();
+            case TypeExpressionKind::ResolvedIdentifier: {
                 return makeFwdUnique<const TypeExpression>(
-                    ResolvedIdentifier(resolvedIdentifierType.definition),
+                    ResolvedIdentifier(resolvedIdentifier.definition),
                     location);
             }
-            case VariantType::typeIndexOf<Tuple>(): {
-                const auto& tupleType = variant.get<Tuple>();
+            case TypeExpressionKind::Tuple: {
                 std::vector<FwdUniquePtr<const TypeExpression>> clonedElementTypes;
-                clonedElementTypes.reserve(tupleType.elementTypes.size());
-                for (const auto& elementType : tupleType.elementTypes) {
+                clonedElementTypes.reserve(tuple.elementTypes.size());
+                for (const auto& elementType : tuple.elementTypes) {
                     clonedElementTypes.push_back(elementType ? elementType->clone() : nullptr);
                 }
                 return makeFwdUnique<const TypeExpression>(
                     Tuple(std::move(clonedElementTypes)),
                     location);
             }
-            case VariantType::typeIndexOf<TypeOf>(): {
-                const auto& typeOf = variant.get<TypeOf>();
+            case TypeExpressionKind::TypeOf: {
                 return makeFwdUnique<const TypeExpression>(
                     TypeOf(typeOf.expression->clone()),
                     location);

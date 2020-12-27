@@ -259,10 +259,9 @@ namespace wiz {
     }
 
     FwdUniquePtr<const TypeExpression> Compiler::reduceTypeExpression(const TypeExpression* typeExpression) {
-        const auto& variant = typeExpression->variant;
-        switch (variant.index()) {
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Array>(): {
-                const auto& arrayType = variant.get<TypeExpression::Array>();
+        switch (typeExpression->kind) {
+            case TypeExpressionKind::Array: {
+                const auto& arrayType = typeExpression->array;
                 auto reducedElementType = reduceTypeExpression(arrayType.elementType.get());
                 auto reducedSize = arrayType.size != nullptr ? reduceExpression(arrayType.size.get()) : nullptr;
                 if (reducedElementType != nullptr && (arrayType.size == nullptr || reducedSize != nullptr)) {
@@ -282,8 +281,8 @@ namespace wiz {
                     return nullptr;
                 }
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::DesignatedStorage>(): {
-                const auto& designatedStorageType = variant.get<TypeExpression::DesignatedStorage>();
+            case TypeExpressionKind::DesignatedStorage: {
+                const auto& designatedStorageType = typeExpression->designatedStorage;
                 auto reducedElementType = reduceTypeExpression(designatedStorageType.elementType.get());
                 auto reducedHolder = reduceExpression(designatedStorageType.holder.get());
 
@@ -319,8 +318,8 @@ namespace wiz {
                 }
                 return nullptr;
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Function>(): {
-                const auto& funcType = variant.get<TypeExpression::Function>();
+            case TypeExpressionKind::Function: {
+                const auto& funcType = typeExpression->function;
                 auto reducedReturnType = reduceTypeExpression(funcType.returnType.get());
                 if (reducedReturnType == nullptr) {
                     return nullptr;
@@ -337,8 +336,8 @@ namespace wiz {
                 }
                 return makeFwdUnique<const TypeExpression>(TypeExpression::Function(funcType.far, std::move(reducedParameterTypes), std::move(reducedReturnType)), typeExpression->location);
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Identifier>(): {
-                const auto& identifierType = variant.get<TypeExpression::Identifier>();
+            case TypeExpressionKind::Identifier: {
+                const auto& identifierType = typeExpression->identifier;
                 const auto& pieces = identifierType.pieces;
                 const auto resolveResult = resolveIdentifier(pieces, typeExpression->location);
 
@@ -366,8 +365,8 @@ namespace wiz {
                     return nullptr;
                 }
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Pointer>(): {
-                const auto& pointerType = variant.get<TypeExpression::Pointer>();
+            case TypeExpressionKind::Pointer: {
+                const auto& pointerType = typeExpression->pointer;
                 auto reducedElementType = reduceTypeExpression(pointerType.elementType.get());
                 if (reducedElementType != nullptr) { 
                     return makeFwdUnique<const TypeExpression>(TypeExpression::Pointer(std::move(reducedElementType), pointerType.qualifiers), typeExpression->location);
@@ -375,12 +374,12 @@ namespace wiz {
                     return nullptr;
                 }
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::ResolvedIdentifier>(): {
-                const auto& resolvedIdentifier = variant.get<TypeExpression::ResolvedIdentifier>();
+            case TypeExpressionKind::ResolvedIdentifier: {
+                const auto& resolvedIdentifier = typeExpression->resolvedIdentifier;
                 return makeFwdUnique<const TypeExpression>(resolvedIdentifier, typeExpression->location);
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Tuple>(): {
-                const auto& tupleType = variant.get<TypeExpression::Tuple>();
+            case TypeExpressionKind::Tuple: {
+                const auto& tupleType = typeExpression->tuple;
                 std::vector<FwdUniquePtr<const TypeExpression>> reducedElementTypes;
                 reducedElementTypes.reserve(tupleType.elementTypes.size());
                 for (const auto& elementType : tupleType.elementTypes) {
@@ -392,8 +391,8 @@ namespace wiz {
                 }
                 return makeFwdUnique<const TypeExpression>(TypeExpression::Tuple(std::move(reducedElementTypes)), typeExpression->location);            
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::TypeOf>(): {
-                const auto& typeOf = variant.get<TypeExpression::TypeOf>();
+            case TypeExpressionKind::TypeOf: {
+                const auto& typeOf = typeExpression->typeOf;
                 auto reducedExpression = reduceExpression(typeOf.expression.get());    
                 if (reducedExpression == nullptr) {
                     return nullptr;
@@ -670,7 +669,7 @@ namespace wiz {
                             } else if (isLeftArray && isRightArray) {
                                 const auto& leftItems = left->variant.get<Expression::ArrayLiteral>().items;
                                 const auto& rightItems = right->variant.get<Expression::ArrayLiteral>().items;
-                                const auto elementType = resultType->variant.get<TypeExpression::Array>().elementType.get();
+                                const auto elementType = resultType->array.elementType.get();
 
                                 std::vector<FwdUniquePtr<const Expression>> reducedItems;
                                 reducedItems.reserve(leftItems.size() + rightItems.size());
@@ -706,7 +705,7 @@ namespace wiz {
                         if (isIntegerType(right->info->type.get())) {
                             const auto qualifiers = left->info->qualifiers & (Qualifiers::LValue | Qualifiers::Const | Qualifiers::WriteOnly | Qualifiers::Far);
 
-                            if (left->info->type->variant.is<TypeExpression::Array>()) {
+                            if (left->info->type->kind == TypeExpressionKind::Array) {
                                 if (right->variant.is<Expression::IntegerLiteral>()) {
                                     const auto indexValue = right->variant.get<Expression::IntegerLiteral>().value;
 
@@ -744,10 +743,10 @@ namespace wiz {
                                     } else if (const auto resolvedIdentifier = left->variant.tryGet<Expression::ResolvedIdentifier>()) {
                                         if (const auto varDefinition = resolvedIdentifier->definition->variant.tryGet<Definition::Var>()) {
                                             if (varDefinition->address.hasValue() && varDefinition->address->absolutePosition.hasValue()) {
-                                                auto resultType = left->info->type->variant.get<TypeExpression::Array>().elementType->clone();
+                                                auto resultType = left->info->type->array.elementType->clone();
                                                 auto addressType = makeFwdUnique<const TypeExpression>(
                                                     TypeExpression::Pointer(
-                                                        left->info->type->variant.get<TypeExpression::Array>().elementType->clone(),
+                                                        left->info->type->array.elementType->clone(),
                                                         left->info->qualifiers & (Qualifiers::Const | Qualifiers::WriteOnly | Qualifiers::Far)),
                                                     resultType->location);
                                                 const auto pointerSizedType = (left->info->qualifiers & Qualifiers::Far) != Qualifiers::None ? platform->getFarPointerSizedType() : platform->getPointerSizedType();
@@ -766,10 +765,10 @@ namespace wiz {
                                             }
                                         }
                                     } else if (const auto addressLiteral = left->variant.tryGet<Expression::IntegerLiteral>()) {
-                                        auto resultType = left->info->type->variant.get<TypeExpression::Array>().elementType->clone();
+                                        auto resultType = left->info->type->array.elementType->clone();
                                         auto addressType = makeFwdUnique<const TypeExpression>(
                                             TypeExpression::Pointer(
-                                                left->info->type->variant.get<TypeExpression::Array>().elementType->clone(),
+                                                left->info->type->array.elementType->clone(),
                                                 left->info->qualifiers & (Qualifiers::Const | Qualifiers::WriteOnly | Qualifiers::Far)),
                                             resultType->location);
                                         const auto pointerSizedType = (left->info->qualifiers & Qualifiers::Far) != Qualifiers::None ? platform->getFarPointerSizedType() : platform->getPointerSizedType();
@@ -788,18 +787,18 @@ namespace wiz {
                                     }
                                 }
 
-                                if (left->info->type->variant.get<TypeExpression::Array>().elementType == nullptr) {
+                                if (left->info->type->array.elementType == nullptr) {
                                     report->error("array has unknown element type", expression->location);
                                     return nullptr;
                                 }
 
-                                auto resultType = left->info->type->variant.get<TypeExpression::Array>().elementType->clone();
+                                auto resultType = left->info->type->array.elementType->clone();
 
                                 return makeFwdUnique<const Expression>(
                                     Expression::BinaryOperator(op, std::move(left), std::move(right)),
                                     expression->location,
                                     ExpressionInfo(EvaluationContext::RunTime, std::move(resultType), qualifiers));                            
-                            } else if (left->info->type->variant.is<TypeExpression::Tuple>()) {
+                            } else if (left->info->type->kind == TypeExpressionKind::Tuple) {
                                 if (left->variant.is<Expression::TupleLiteral>() && right->variant.is<Expression::IntegerLiteral>()) {
                                     const auto& items = left->variant.get<Expression::TupleLiteral>().items;
                                     const auto indexValue = right->variant.get<Expression::IntegerLiteral>().value;
@@ -819,7 +818,7 @@ namespace wiz {
 
                                 report->error("tuple index must be a compile-time integer literal", expression->location);
                                 return nullptr;
-                            } else if (const auto pointerType = left->info->type->variant.tryGet<TypeExpression::Pointer>()) {
+                            } else if (const auto pointerType = left->info->type->tryGet<TypeExpression::Pointer>()) {
                                 const auto qualifiers = Qualifiers::LValue | (pointerType->qualifiers & (Qualifiers::Const | Qualifiers::WriteOnly | Qualifiers::Far));
                                 auto resultType = pointerType->elementType->clone();
 
@@ -1032,7 +1031,7 @@ namespace wiz {
 
                         return result;
                     } else if (const auto funcDefinition = definition->variant.tryGet<Definition::Func>()) {
-                        auto& functionType = funcDefinition->resolvedSignatureType->variant.get<TypeExpression::Function>();
+                        auto& functionType = funcDefinition->resolvedSignatureType->function;
                         auto resultType = functionType.returnType->clone();
 
                         if (functionType.parameterTypes.size() != reducedArguments.size()) {
@@ -1092,7 +1091,7 @@ namespace wiz {
                         return nullptr;
                     }
                 } else {
-                    if (const auto functionType = function->info->type->variant.tryGet<TypeExpression::Function>()) {
+                    if (const auto functionType = function->info->type->tryGet<TypeExpression::Function>()) {
                         auto resultType = functionType->returnType->clone();
 
                         if (call.inlined) {
@@ -1363,7 +1362,7 @@ namespace wiz {
                 if (!reducedTypeExpression) {
                     return nullptr;
                 }
-                if (const auto resolvedIdentifierType = reducedTypeExpression->variant.tryGet<TypeExpression::ResolvedIdentifier>()) {
+                if (const auto resolvedIdentifierType = reducedTypeExpression->tryGet<TypeExpression::ResolvedIdentifier>()) {
                     if (const auto structDefinition = resolvedIdentifierType->definition->variant.tryGet<Definition::Struct>()) {
                         if (const auto memberDefinition = structDefinition->environment->findLocalMemberDefinition(offsetOf.field)) {
                             const auto& structMemberDefinition = memberDefinition->variant.get<Definition::StructMember>();
@@ -1444,7 +1443,7 @@ namespace wiz {
                 }
 
                 Definition* definition = nullptr;
-                if (const auto resolvedTypeIdentifier = reducedTypeExpression->variant.tryGet<TypeExpression::ResolvedIdentifier>()) {
+                if (const auto resolvedTypeIdentifier = reducedTypeExpression->tryGet<TypeExpression::ResolvedIdentifier>()) {
                     if (resolvedTypeIdentifier->definition->variant.is<Definition::Struct>()) {
                         definition = resolvedTypeIdentifier->definition;
                     }
@@ -1634,7 +1633,7 @@ namespace wiz {
                     // Indirection. Run-time.
                     // *T -> T
                     case UnaryOperatorKind::Indirection: {
-                        if (const auto& pointerType = operand->info->type->variant.tryGet<TypeExpression::Pointer>()) {
+                        if (const auto& pointerType = operand->info->type->tryGet<TypeExpression::Pointer>()) {
                             const auto qualifiers = Qualifiers::LValue | (pointerType->qualifiers & (Qualifiers::Const | Qualifiers::WriteOnly | Qualifiers::Far));
                             auto resultType = pointerType->elementType->clone();
 
@@ -1655,7 +1654,7 @@ namespace wiz {
                     case UnaryOperatorKind::FarAddressOf: {
                         if (const auto nestedUnaryOperator = operand->variant.tryGet<Expression::UnaryOperator>()) {
                             if (nestedUnaryOperator->op == UnaryOperatorKind::Indirection) {
-                                if (const auto pointerType = nestedUnaryOperator->operand->info->type->variant.tryGet<TypeExpression::Pointer>()) {
+                                if (const auto pointerType = nestedUnaryOperator->operand->info->type->tryGet<TypeExpression::Pointer>()) {
                                     if (((pointerType->qualifiers & Qualifiers::Far) != Qualifiers::None) != (op == UnaryOperatorKind::FarAddressOf)) {
                                         report->error(getUnaryOperatorName(unaryOperator.op).toString() + " is not defined for provided operand type `" + getTypeName(operand->info->type.get()) + "`", expression->location);
                                     }
@@ -1674,7 +1673,7 @@ namespace wiz {
                                     context = right->info->context;
                                 }
 
-                                if (const auto pointerType = binaryOperator->left->info->type->variant.tryGet<TypeExpression::Pointer>()) {
+                                if (const auto pointerType = binaryOperator->left->info->type->tryGet<TypeExpression::Pointer>()) {
                                     if (((pointerType->qualifiers & Qualifiers::Far) != Qualifiers::None) != (op == UnaryOperatorKind::FarAddressOf)) {
                                         if (op == UnaryOperatorKind::AddressOf) {
                                             report->error(getUnaryOperatorName(unaryOperator.op).toString() + " is not defined for provided operand type `" + getTypeName(operand->info->type.get()) + "`. use `far &` instead", expression->location);
@@ -1961,8 +1960,8 @@ namespace wiz {
                             constDefinition.initializerExpression = std::move(operand);
 
                             const auto elementTypePtr =
-                                constType->variant.is<TypeExpression::Array>()
-                                ? constType->variant.get<TypeExpression::Array>().elementType.get()
+                                constType->kind == TypeExpressionKind::Array
+                                ? constType->array.elementType.get()
                                 : constType;
 
                             const auto elementStorageSize = calculateStorageSize(elementTypePtr, ""_sv);
@@ -2150,7 +2149,7 @@ namespace wiz {
                     : "var") + " " + getResolvedIdentifierName(definition, pieces) + "` before its type was known", location);
                 return nullptr;
             }
-            if (const auto designatedStorageType = varDefinition->resolvedType->variant.tryGet<TypeExpression::DesignatedStorage>()) {
+            if (const auto designatedStorageType = varDefinition->resolvedType->tryGet<TypeExpression::DesignatedStorage>()) {
                 return designatedStorageType->holder->clone(location, ExpressionInfo(
                     EvaluationContext::RunTime,
                     designatedStorageType->elementType->clone(),
@@ -2159,7 +2158,7 @@ namespace wiz {
             }
             return makeFwdUnique<const Expression>(Expression::ResolvedIdentifier(definition, pieces), location,
                 ExpressionInfo(
-                    varDefinition->resolvedType->variant.is<TypeExpression::Array>() ? EvaluationContext::LinkTime : EvaluationContext::RunTime,
+                    varDefinition->resolvedType->kind == TypeExpressionKind::Array ? EvaluationContext::LinkTime : EvaluationContext::RunTime,
                     varDefinition->resolvedType->clone(),
                     Qualifiers::LValue | (varDefinition->qualifiers & (Qualifiers::Const | Qualifiers::WriteOnly))));
         } else if (const auto registerDefinition = definition->variant.tryGet<Definition::BuiltinRegister>()) {
@@ -2292,7 +2291,7 @@ namespace wiz {
                             expression->info->qualifiers & (Qualifiers::LValue | Qualifiers::Const | Qualifiers::WriteOnly | Qualifiers::Far)));
                 }
             }
-        } else if (const auto& pointerType = typeExpression->variant.tryGet<TypeExpression::Pointer>()) {
+        } else if (const auto& pointerType = typeExpression->tryGet<TypeExpression::Pointer>()) {
             const auto qualifiers = Qualifiers::LValue | (pointerType->qualifiers & (Qualifiers::Const | Qualifiers::WriteOnly | Qualifiers::Far));
             auto resultType = pointerType->elementType->clone();
             auto indirection = makeFwdUnique<const Expression>(
@@ -2304,7 +2303,7 @@ namespace wiz {
             const auto prop = builtins.findPropertyByName(name);
             switch (prop) {
                 case Builtins::Property::Len: {
-                     if (const auto& arrayType = typeExpression->variant.tryGet<TypeExpression::Array>()) {
+                     if (const auto& arrayType = typeExpression->tryGet<TypeExpression::Array>()) {
                          if (const auto& sizeLiteral = arrayType->size->variant.tryGet<Expression::IntegerLiteral>()) {
                              return makeFwdUnique<const Expression>(Expression::IntegerLiteral(Int128(sizeLiteral->value)), expression->location,
                                  ExpressionInfo(EvaluationContext::CompileTime,
@@ -2339,7 +2338,7 @@ namespace wiz {
             expression->info->type->location);
 
         if (absolutePosition.hasValue()) {
-            if (resultType->variant.is<TypeExpression::Array>()) {
+            if (resultType->kind == TypeExpressionKind::Array) {
                 return makeFwdUnique<const Expression>(
                     Expression::IntegerLiteral(Int128(absolutePosition.get()) + offset),
                     expression->location,
@@ -2356,7 +2355,7 @@ namespace wiz {
                     ExpressionInfo(EvaluationContext::RunTime, std::move(resultType), qualifiers));
             }
         } else {
-            if (resultType->variant.is<TypeExpression::Array>()) {
+            if (resultType->kind == TypeExpressionKind::Array) {
                 return makeFwdUnique<const Expression>(
                     Expression::BinaryOperator(
                         BinaryOperatorKind::Addition,
@@ -2686,7 +2685,7 @@ namespace wiz {
 
     Definition* Compiler::tryGetResolvedIdentifierTypeDefinition(const TypeExpression* typeExpression) const {
         if (typeExpression != nullptr) {
-            if (const auto resolvedDefinitionType = typeExpression->variant.tryGet<TypeExpression::ResolvedIdentifier>()) {
+            if (const auto resolvedDefinitionType = typeExpression->tryGet<TypeExpression::ResolvedIdentifier>()) {
                 const auto definition = resolvedDefinitionType->definition;
                 if (isTypeDefinition(definition)) {
                     return definition;
@@ -2713,7 +2712,7 @@ namespace wiz {
     }
 
     bool Compiler::isEmptyTupleType(const TypeExpression* typeExpression) const {
-        if (const auto tupleReturnType = typeExpression->variant.tryGet<TypeExpression::Tuple>()) {
+        if (const auto tupleReturnType = typeExpression->tryGet<TypeExpression::Tuple>()) {
             if (tupleReturnType->elementTypes.size() == 0) {
                 return true;
             }
@@ -2731,13 +2730,13 @@ namespace wiz {
     }
 
     bool Compiler::isPointerLikeType(const TypeExpression* typeExpression) const {
-        return typeExpression->variant.is<TypeExpression::Pointer>() || typeExpression->variant.is<TypeExpression::Function>();
+        return typeExpression->kind == TypeExpressionKind::Pointer || typeExpression->kind == TypeExpressionKind::Function;
     }
 
     bool Compiler::isFarType(const TypeExpression* typeExpression) const {
-        if (const auto pointerType = typeExpression->variant.tryGet<TypeExpression::Pointer>()) {
+        if (const auto pointerType = typeExpression->tryGet<TypeExpression::Pointer>()) {
             return (pointerType->qualifiers & Qualifiers::Far) == Qualifiers::Far;
-        } else if (const auto functionType = typeExpression->variant.tryGet<TypeExpression::Function>()) {
+        } else if (const auto functionType = typeExpression->tryGet<TypeExpression::Function>()) {
             return functionType->far;
         } 
         return false;
@@ -2781,8 +2780,8 @@ namespace wiz {
             return nullptr;
         }
 
-        if (const auto leftArrayType = left->info->type->variant.tryGet<TypeExpression::Array>()) {
-            if (const auto rightArrayType = right->info->type->variant.tryGet<TypeExpression::Array>()) {
+        if (const auto leftArrayType = left->info->type->tryGet<TypeExpression::Array>()) {
+            if (const auto rightArrayType = right->info->type->tryGet<TypeExpression::Array>()) {
                 const auto leftElementType = leftArrayType->elementType.get();
                 const auto rightElementType = rightArrayType->elementType.get();
 
@@ -2834,8 +2833,8 @@ namespace wiz {
         if (canNarrowExpression(initializer, declarationType)) {
             const auto& initializerType = initializer->info->type;
 
-            if (const auto sourceArrayType = initializerType->variant.tryGet<TypeExpression::Array>()) {
-                if (const auto destinationArrayType = declarationType->variant.tryGet<TypeExpression::Array>()) {
+            if (const auto sourceArrayType = initializerType->tryGet<TypeExpression::Array>()) {
+                if (const auto destinationArrayType = declarationType->tryGet<TypeExpression::Array>()) {
                     if (sourceArrayType->size && destinationArrayType->size) {
                         const auto sourceSize = sourceArrayType->size->variant.get<Expression::IntegerLiteral>().value;
                         const auto destinationSize = destinationArrayType->size->variant.get<Expression::IntegerLiteral>().value;
@@ -2860,8 +2859,8 @@ namespace wiz {
 
         const auto sourceExpressionType = sourceExpression->info->type.get();
 
-        if (const auto destinationArrayType = destinationType->variant.tryGet<TypeExpression::Array>()) {
-            if (const auto sourceArrayType = sourceExpressionType->variant.tryGet<TypeExpression::Array>()) {
+        if (const auto destinationArrayType = destinationType->tryGet<TypeExpression::Array>()) {
+            if (const auto sourceArrayType = sourceExpressionType->tryGet<TypeExpression::Array>()) {
                 if (destinationArrayType->size != nullptr && sourceArrayType->size->variant.get<Expression::IntegerLiteral>().value != destinationArrayType->size->variant.get<Expression::IntegerLiteral>().value) {
                     return false;
                 }
@@ -2885,12 +2884,12 @@ namespace wiz {
             }
         }
 
-        if (const auto destinationDesignatedStorageType = destinationType->variant.tryGet<TypeExpression::DesignatedStorage>()) {
+        if (const auto destinationDesignatedStorageType = destinationType->tryGet<TypeExpression::DesignatedStorage>()) {
             return canNarrowExpression(sourceExpression, destinationDesignatedStorageType->elementType.get());
         }
 
-        if (const auto destinationPointerType = destinationType->variant.tryGet<TypeExpression::Pointer>()) {
-            if (const auto sourcePointerType = sourceExpressionType->variant.tryGet<TypeExpression::Pointer>()) {
+        if (const auto destinationPointerType = destinationType->tryGet<TypeExpression::Pointer>()) {
+            if (const auto sourcePointerType = sourceExpressionType->tryGet<TypeExpression::Pointer>()) {
                 const auto destinationElementType = destinationPointerType->elementType.get();
                 const auto sourceElementType = sourcePointerType->elementType.get();
 
@@ -2946,8 +2945,8 @@ namespace wiz {
 
         const auto sourceExpressionType = sourceExpression->info->type.get();
 
-        if (const auto destinationArrayType = destinationType->variant.tryGet<TypeExpression::Array>()) {
-            if (const auto sourceArrayType = sourceExpressionType->variant.tryGet<TypeExpression::Array>()) {
+        if (const auto destinationArrayType = destinationType->tryGet<TypeExpression::Array>()) {
+            if (const auto sourceArrayType = sourceExpressionType->tryGet<TypeExpression::Array>()) {
                 const auto destinationElementType = destinationArrayType->elementType.get();
 
                 if (isTypeEquivalent(destinationElementType, sourceArrayType->elementType.get())) {
@@ -2971,13 +2970,13 @@ namespace wiz {
             return sourceExpression->clone();
         }
 
-        if (const auto destinationDesignatedStorageType = destinationType->variant.tryGet<TypeExpression::DesignatedStorage>()) {
+        if (const auto destinationDesignatedStorageType = destinationType->tryGet<TypeExpression::DesignatedStorage>()) {
             return createConvertedExpression(sourceExpression, destinationDesignatedStorageType->elementType.get());
         }
 
         // Adding const or writeonly to expression that didn't have it.
-        if (const auto destinationPointerType = destinationType->variant.tryGet<TypeExpression::Pointer>()) {
-            if (const auto sourcePointerType = sourceExpressionType->variant.tryGet<TypeExpression::Pointer>()) {
+        if (const auto destinationPointerType = destinationType->tryGet<TypeExpression::Pointer>()) {
+            if (const auto sourcePointerType = sourceExpressionType->tryGet<TypeExpression::Pointer>()) {
                 const auto destinationElementType = destinationPointerType->elementType.get();
                 const auto sourceElementType = sourcePointerType->elementType.get();
 
@@ -3031,18 +3030,17 @@ namespace wiz {
             return false;
         }
 
-        if (const auto rightDesignatedStorageType = rightTypeExpression->variant.tryGet<TypeExpression::DesignatedStorage>()) {
+        if (const auto rightDesignatedStorageType = rightTypeExpression->tryGet<TypeExpression::DesignatedStorage>()) {
             const auto leftSize = calculateStorageSize(leftTypeExpression, ""_sv);
             const auto rightSize = calculateStorageSize(rightDesignatedStorageType->elementType.get(), ""_sv);
 
             return leftSize.hasValue() && rightSize.hasValue() && *leftSize == *rightSize;
         }
 
-        const auto& leftVariant = leftTypeExpression->variant;
-        switch (leftVariant.index()) {
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Array>(): {
-                const auto& leftArrayType = leftVariant.get<TypeExpression::Array>();
-                if (const auto rightArrayType = rightTypeExpression->variant.tryGet<TypeExpression::Array>()) {
+        switch (leftTypeExpression->kind) {
+            case TypeExpressionKind::Array: {
+                const auto& leftArrayType = leftTypeExpression->array;
+                if (const auto rightArrayType = rightTypeExpression->tryGet<TypeExpression::Array>()) {
 
                     if (leftArrayType.size && rightArrayType->size) {
                         const auto leftSize = leftArrayType.size->variant.get<Expression::IntegerLiteral>().value;
@@ -3056,16 +3054,16 @@ namespace wiz {
                 }
                 return false;
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::DesignatedStorage>(): {
-                const auto& leftDesignatedStorageType = leftVariant.get<TypeExpression::DesignatedStorage>();
+            case TypeExpressionKind::DesignatedStorage: {
+                const auto& leftDesignatedStorageType = leftTypeExpression->designatedStorage;
                 const auto leftSize = calculateStorageSize(leftDesignatedStorageType.elementType.get(), ""_sv);
                 const auto rightSize = calculateStorageSize(rightTypeExpression, ""_sv);
 
                 return leftSize.hasValue() && rightSize.hasValue() && *leftSize == *rightSize;
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Function>(): {
-                const auto& leftFunctionType = leftVariant.get<TypeExpression::Function>();
-                if (const auto rightFunctionType = rightTypeExpression->variant.tryGet<TypeExpression::Function>()) {
+            case TypeExpressionKind::Function: {
+                const auto& leftFunctionType = leftTypeExpression->function;
+                if (const auto rightFunctionType = rightTypeExpression->tryGet<TypeExpression::Function>()) {
                     const auto& leftParameterTypes = leftFunctionType.parameterTypes;
                     const auto& rightParameterTypes = rightFunctionType->parameterTypes;
 
@@ -3084,25 +3082,25 @@ namespace wiz {
                 }
                 return false;
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Identifier>(): std::abort(); return false;
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Pointer>(): {
-                const auto& leftPointerType = leftVariant.get<TypeExpression::Pointer>();
-                if (const auto rightPointerType = rightTypeExpression->variant.tryGet<TypeExpression::Pointer>()) {
+            case TypeExpressionKind::Identifier: std::abort(); return false;
+            case TypeExpressionKind::Pointer: {
+                const auto& leftPointerType = leftTypeExpression->pointer;
+                if (const auto rightPointerType = rightTypeExpression->tryGet<TypeExpression::Pointer>()) {
                     return isTypeEquivalent(leftPointerType.elementType.get(), rightPointerType->elementType.get())
                         && leftPointerType.qualifiers == rightPointerType->qualifiers;
                 }
                 return false;
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::ResolvedIdentifier>(): {
-                const auto& leftResolvedIdentifierType = leftVariant.get<TypeExpression::ResolvedIdentifier>();
-                if (const auto rightResolvedIdentifierType = rightTypeExpression->variant.tryGet<TypeExpression::ResolvedIdentifier>()) {
+            case TypeExpressionKind::ResolvedIdentifier: {
+                const auto& leftResolvedIdentifierType = leftTypeExpression->resolvedIdentifier;
+                if (const auto rightResolvedIdentifierType = rightTypeExpression->tryGet<TypeExpression::ResolvedIdentifier>()) {
                     return leftResolvedIdentifierType.definition == rightResolvedIdentifierType->definition;
                 }
                 return false;
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Tuple>(): {
-                const auto& leftTuple = leftVariant.get<TypeExpression::Tuple>();
-                if (const auto rightTuple = rightTypeExpression->variant.tryGet<TypeExpression::Tuple>()) {
+            case TypeExpressionKind::Tuple: {
+                const auto& leftTuple = leftTypeExpression->tuple;
+                if (const auto rightTuple = rightTypeExpression->tryGet<TypeExpression::Tuple>()) {
                     const auto& leftElementTypes = leftTuple.elementTypes;
                     const auto& rightElementTypes = rightTuple->elementTypes;
 
@@ -3118,7 +3116,7 @@ namespace wiz {
                 }
                 return false;
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::TypeOf>():  return false;
+            case TypeExpressionKind::TypeOf:  return false;
             default: std::abort(); return false;
         }
     }
@@ -3128,10 +3126,9 @@ namespace wiz {
             return "<unknown type>";
         }
 
-        const auto& variant = typeExpression->variant;
-        switch (variant.index()) {
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Array>(): {
-                const auto& arrayType = variant.get<TypeExpression::Array>();
+        switch (typeExpression->kind) {
+            case TypeExpressionKind::Array: {
+                const auto& arrayType = typeExpression->array;
                 std::string result = "[" + getTypeName(arrayType.elementType.get());
                 if (arrayType.size != nullptr) {
                     result += "; ";
@@ -3143,8 +3140,8 @@ namespace wiz {
                 }
                 return result + "]";
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::DesignatedStorage>(): {
-                const auto& designatedStorageType = variant.get<TypeExpression::DesignatedStorage>();
+            case TypeExpressionKind::DesignatedStorage: {
+                const auto& designatedStorageType = typeExpression->designatedStorage;
 
 				std::string result = getTypeName(designatedStorageType.elementType.get()) + " in ";
 				if (const auto& holder = designatedStorageType.holder) {
@@ -3161,8 +3158,8 @@ namespace wiz {
 				result += "<designated storage>"; 
 				return result;
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Function>(): {
-                const auto& functionType = variant.get<TypeExpression::Function>();
+            case TypeExpressionKind::Function: {
+                const auto& functionType = typeExpression->function;
                 auto result = std::string(functionType.far ? "far " : "") + "func";
                 const auto& parameterTypes = functionType.parameterTypes;
                 if (parameterTypes.size() > 0) {
@@ -3174,19 +3171,19 @@ namespace wiz {
                 }
 
                 const auto& returnType = functionType.returnType;
-                if (!returnType->variant.is<TypeExpression::Tuple>()
-                || returnType->variant.get<TypeExpression::Tuple>().elementTypes.size() != 0) {
+                if (returnType->kind != TypeExpressionKind::Tuple
+                || returnType->tuple.elementTypes.size() != 0) {
                     result += " : " + getTypeName(functionType.returnType.get());
                 }
                 return result;
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Identifier>(): {
-                const auto& identifierType = variant.get<TypeExpression::Identifier>();
+            case TypeExpressionKind::Identifier: {
+                const auto& identifierType = typeExpression->identifier;
                 const auto& pieces = identifierType.pieces;
                 return text::join(pieces.begin(), pieces.end(), ".");
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Pointer>(): {
-                const auto& pointerType = variant.get<TypeExpression::Pointer>();
+            case TypeExpressionKind::Pointer: {
+                const auto& pointerType = typeExpression->pointer;
                 return 
                     std::string(((pointerType.qualifiers & Qualifiers::Far) != Qualifiers::None) ? "far " : "")
                     + "*"
@@ -3196,16 +3193,16 @@ namespace wiz {
                         : "")
                     + getTypeName(pointerType.elementType.get());
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::ResolvedIdentifier>(): {
-                const auto& resolvedIdentifierType = variant.get<TypeExpression::ResolvedIdentifier>();
+            case TypeExpressionKind::ResolvedIdentifier: {
+                const auto& resolvedIdentifierType = typeExpression->resolvedIdentifier;
                 const auto& pieces = resolvedIdentifierType.pieces;
                 if (pieces.size() > 0) {
                     return text::join(pieces.begin(), pieces.end(), ".");
                 }
                 return resolvedIdentifierType.definition->name.toString();
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Tuple>(): {
-                const auto& tupleType = variant.get<TypeExpression::Tuple>();
+            case TypeExpressionKind::Tuple: {
+                const auto& tupleType = typeExpression->tuple;
                 std::string result = "(";
                 const auto& elementTypes = tupleType.elementTypes;
                 for (std::size_t i = 0; i != elementTypes.size(); ++i) {
@@ -3214,7 +3211,7 @@ namespace wiz {
                 result += ")";
                 return result;
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::TypeOf>(): return "`typeof`";
+            case TypeExpressionKind::TypeOf: return "`typeof`";
             default: std::abort(); return "";
         }
     }
@@ -3224,10 +3221,9 @@ namespace wiz {
             return Optional<std::size_t>();
         }
 
-        const auto& variant = typeExpression->variant;
-        switch (variant.index()) {
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Array>(): {
-                const auto& arrayType = variant.get<TypeExpression::Array>();
+        switch (typeExpression->kind) {
+            case TypeExpressionKind::Array: {
+                const auto& arrayType = typeExpression->array;
                 if (arrayType.size != nullptr) {
                     const auto elementSize = calculateStorageSize(arrayType.elementType.get(), description);
                     if (elementSize.hasValue()) {
@@ -3252,20 +3248,20 @@ namespace wiz {
                 }
                 return Optional<std::size_t>();
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::DesignatedStorage>(): return Optional<std::size_t>();
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Function>(): {
-                const auto& functionType = variant.get<TypeExpression::Function>();
+            case TypeExpressionKind::DesignatedStorage: return Optional<std::size_t>();
+            case TypeExpressionKind::Function: {
+                const auto& functionType = typeExpression->function;
                 const auto pointerSizedType = functionType.far ? platform->getFarPointerSizedType() : platform->getPointerSizedType();
                 return Optional<std::size_t>(pointerSizedType->variant.get<Definition::BuiltinIntegerType>().size);
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Identifier>(): std::abort(); return Optional<std::size_t>();
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Pointer>(): {
-                const auto& pointerType = variant.get<TypeExpression::Pointer>();
+            case TypeExpressionKind::Identifier: std::abort(); return Optional<std::size_t>();
+            case TypeExpressionKind::Pointer: {
+                const auto& pointerType = typeExpression->pointer;
                 const auto pointerSizedType = (pointerType.qualifiers & Qualifiers::Far) != Qualifiers::None ? platform->getFarPointerSizedType() : platform->getPointerSizedType();
                 return Optional<std::size_t>(pointerSizedType->variant.get<Definition::BuiltinIntegerType>().size);
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::ResolvedIdentifier>(): {
-                const auto& resolvedIdentifierType = variant.get<TypeExpression::ResolvedIdentifier>();
+            case TypeExpressionKind::ResolvedIdentifier: {
+                const auto& resolvedIdentifierType = typeExpression->resolvedIdentifier;
                 const auto definition = resolvedIdentifierType.definition;
                 if (resolvedIdentifierType.definition->variant.is<Definition::BuiltinBoolType>()) {
                     return Optional<std::size_t>(1);
@@ -3286,8 +3282,8 @@ namespace wiz {
                 }
                 return Optional<std::size_t>();
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::Tuple>(): {
-                const auto& tupleType = variant.get<TypeExpression::Tuple>();
+            case TypeExpressionKind::Tuple: {
+                const auto& tupleType = typeExpression->tuple;
                 std::size_t result = 0;
                 const auto& elementTypes = tupleType.elementTypes;
 
@@ -3309,7 +3305,7 @@ namespace wiz {
 
                 return Optional<std::size_t>(result);
             }
-            case TypeExpression::VariantType::typeIndexOf<TypeExpression::TypeOf>(): return Optional<std::size_t>();
+            case TypeExpressionKind::TypeOf: return Optional<std::size_t>();
             default: std::abort(); return Optional<std::size_t>();
         }
     }
@@ -3444,7 +3440,7 @@ namespace wiz {
             }
             case Expression::VariantType::typeIndexOf<Expression::StructLiteral>(): {
                 const auto& structLiteral = variant.get<Expression::StructLiteral>();
-                const auto definition = structLiteral.type->variant.get<TypeExpression::ResolvedIdentifier>().definition;
+                const auto definition = structLiteral.type->resolvedIdentifier.definition;
                 const auto& structDefinition = definition->variant.get<Definition::Struct>();                
                 const auto sizeBefore = result.size();
 
@@ -4098,8 +4094,8 @@ namespace wiz {
                 if (const auto resolvedType = bankDefinition->resolvedType.get()) {
                     bool validBankType = false;
 
-                    if (const auto arrayType = resolvedType->variant.tryGet<TypeExpression::Array>()) {
-                        if (const auto elementType = arrayType->elementType->variant.tryGet<TypeExpression::ResolvedIdentifier>()) {
+                    if (const auto arrayType = resolvedType->tryGet<TypeExpression::Array>()) {
+                        if (const auto elementType = arrayType->elementType->tryGet<TypeExpression::ResolvedIdentifier>()) {
                             if (const auto bankType = elementType->definition->variant.tryGet<Definition::BuiltinBankType>()) {
                                 if (arrayType->size) {
                                     if (auto reducedSizeExpression = reduceExpression(arrayType->size.get())) {
@@ -4212,7 +4208,7 @@ namespace wiz {
                     auto& parameterVarDefinition = parameter->variant.get<Definition::Var>();
 
                     if (parameterVarDefinition.enclosingFunction != nullptr) {
-                        if (!parameterVarDefinition.typeExpression->variant.is<TypeExpression::DesignatedStorage>()) {
+                        if (parameterVarDefinition.typeExpression->kind != TypeExpressionKind::DesignatedStorage) {
                             report->error("function parameter `" + parameter->name.toString() + "` must have a designated storage type", statement->location);
                             break;
                         }
@@ -4312,7 +4308,7 @@ namespace wiz {
 
         if (auto reducedValue = reduceExpression(initializer)) {
             if (const auto declarationType = varDefinition.reducedTypeExpression.get()) {
-                if (declarationType->variant.is<TypeExpression::DesignatedStorage>()) {
+                if (declarationType->kind == TypeExpressionKind::DesignatedStorage) {
                     report->error(description.toString() + " cannot have type `" + getTypeName(varDefinition.reducedTypeExpression.get()) + "`", location);
                     return false;
                 }
@@ -4328,7 +4324,7 @@ namespace wiz {
             }
 
             if (varDefinition.initializerExpression != nullptr) {
-                if (const auto arrayType = varDefinition.initializerExpression->info->type->variant.tryGet<TypeExpression::Array>()) {
+                if (const auto arrayType = varDefinition.initializerExpression->info->type->tryGet<TypeExpression::Array>()) {
                     if (arrayType->elementType == nullptr) {
                         report->error("array has unknown element type", location);
                         return false;
@@ -4355,7 +4351,7 @@ namespace wiz {
             return false;
         }
 
-        if (varDefinition.resolvedType->variant.is<TypeExpression::DesignatedStorage>()) {
+        if (varDefinition.resolvedType->kind == TypeExpressionKind::DesignatedStorage) {
             if ((varDefinition.qualifiers & (Qualifiers::Extern | Qualifiers::Const | Qualifiers::WriteOnly)) != Qualifiers::None) {
                 report->error(((varDefinition.qualifiers & Qualifiers::Extern) != Qualifiers::None ? "extern " : "") + description.toString() + " of `" + name.toString() + "` cannot have designated storage type", location);
             }
@@ -4466,8 +4462,8 @@ namespace wiz {
 
             const auto expressionType = expression->info->type.get();
 
-            if (!expressionType->variant.is<TypeExpression::Array>()
-            && (!isFunctionLiteral || !expressionType->variant.is<TypeExpression::Function>())) {
+            if (expressionType->kind != TypeExpressionKind::Array
+            && (!isFunctionLiteral || expressionType->kind != TypeExpressionKind::Function)) {
                 if (const auto indirectionSize = calculateStorageSize(expressionType, "operand"_sv)) {
                     return makeFwdUnique<InstructionOperand>(InstructionOperand::Dereference(far, std::move(operand), *indirectionSize));
                 }
@@ -5028,7 +5024,7 @@ namespace wiz {
     bool Compiler::emitArgumentPassIr(const TypeExpression* functionTypeExpression, const std::vector<Definition*>& parameters, const std::vector<FwdUniquePtr<const Expression>>& arguments, SourceLocation location) {
         static_cast<void>(location);
 
-        auto& functionType = functionTypeExpression->variant.get<TypeExpression::Function>();
+        auto& functionType = functionTypeExpression->function;
 
         if (functionType.parameterTypes.size() != arguments.size()) {
             return false;
@@ -5037,7 +5033,7 @@ namespace wiz {
         for (std::size_t i = 0; i != arguments.size(); ++i) {
             const auto& parameterType = functionType.parameterTypes[i];
             const auto& argument = arguments[i];
-            if (auto designatedStorageType = parameterType->variant.tryGet<TypeExpression::DesignatedStorage>()) {
+            if (auto designatedStorageType = parameterType->tryGet<TypeExpression::DesignatedStorage>()) {
                 emitAssignmentExpressionIr(designatedStorageType->holder.get(), argument.get(), argument->location);
 
             } else {
@@ -5058,7 +5054,7 @@ namespace wiz {
             const auto definition = resolvedIdentifier->definition;
 
             if (const auto funcDefinition = definition->variant.tryGet<Definition::Func>()) {
-                auto& functionType = funcDefinition->resolvedSignatureType->variant.get<TypeExpression::Function>();
+                auto& functionType = funcDefinition->resolvedSignatureType->function;
 
                 if (!emitArgumentPassIr(funcDefinition->resolvedSignatureType.get(), funcDefinition->parameters, arguments, location)) {
                     return false;
@@ -5130,7 +5126,7 @@ namespace wiz {
                 if (resultDestination != nullptr) {
                     const auto returnType = functionType.returnType.get();
 
-					if (const auto designatedStorageType = returnType->variant.tryGet<TypeExpression::DesignatedStorage>()) {
+					if (const auto designatedStorageType = returnType->tryGet<TypeExpression::DesignatedStorage>()) {
 						auto destOperand = createOperandFromExpression(resultDestination, true);
 						auto sourceOperand = createOperandFromExpression(designatedStorageType->holder.get(), true);
 
@@ -5256,7 +5252,7 @@ namespace wiz {
                     return false;
                 }
             }
-        } else if (const auto functionType = function->info->type->variant.tryGet<TypeExpression::Function>()) {
+        } else if (const auto functionType = function->info->type->tryGet<TypeExpression::Function>()) {
             auto destOperand = createOperandFromExpression(function, true);
 
             if (!destOperand) {
@@ -5287,7 +5283,7 @@ namespace wiz {
                 if (resultDestination != nullptr) {
                     const auto returnType = functionType->returnType.get();
 
-                    if (auto designatedStorageType = returnType->variant.tryGet<TypeExpression::DesignatedStorage>()) {
+                    if (auto designatedStorageType = returnType->tryGet<TypeExpression::DesignatedStorage>()) {
                         emitAssignmentExpressionIr(resultDestination, designatedStorageType->holder.get(), location);
                     } else {
                         report->error("could not generate assignment for `func` result of type `" + getTypeName(returnType) + "`", location);
@@ -5819,7 +5815,7 @@ namespace wiz {
     }
 
     bool Compiler::emitReturnAssignmentIr(std::size_t distanceHint, const TypeExpression* returnType, const Expression* returnValue, SourceLocation location) {
-        if (const auto designatedStorageType = returnType->variant.tryGet<TypeExpression::DesignatedStorage>()) {
+        if (const auto designatedStorageType = returnType->tryGet<TypeExpression::DesignatedStorage>()) {
             const auto holderExpression = designatedStorageType->holder.get();
 
             if (const auto call = returnValue->variant.tryGet<Expression::Call>()) {
@@ -5878,7 +5874,7 @@ namespace wiz {
             case BranchKind::Return: {
                 if (currentFunction != nullptr) {
                     const auto& funcDefinition = currentFunction->variant.get<Definition::Func>();
-                    const auto returnType = funcDefinition.resolvedSignatureType->variant.get<TypeExpression::Function>().returnType.get();
+                    const auto returnType = funcDefinition.resolvedSignatureType->function.returnType.get();
                     bool isVoid = isEmptyTupleType(returnType);
                     bool needsIntermediateBranch = false;
 
@@ -5886,7 +5882,7 @@ namespace wiz {
                         if (condition != nullptr) {
                             needsIntermediateBranch = true;
 
-                            if (const auto designatedStorageType = returnType->variant.tryGet<TypeExpression::DesignatedStorage>()) {
+                            if (const auto designatedStorageType = returnType->tryGet<TypeExpression::DesignatedStorage>()) {
                                 auto destOperand = createOperandFromExpression(designatedStorageType->holder.get(), true);
                                 auto sourceOperand = createOperandFromExpression(returnValue, true);
 
@@ -5951,7 +5947,7 @@ namespace wiz {
         }
 
         if (destination) {
-            if (!destination->info->type->variant.is<TypeExpression::Function>()) {
+            if (destination->info->type->kind != TypeExpressionKind::Function) {
                 report->error("branch destination must be a label or function, but got expression of type `" + getTypeName(destination->info->type.get()) + "`", destination->location);
                 return false;
             }
@@ -6225,7 +6221,7 @@ namespace wiz {
 
         currentFunction = definition;
         const auto returnKind = funcDefinition.returnKind;
-        const auto returnType = funcDefinition.resolvedSignatureType->variant.get<TypeExpression::Function>().returnType.get();
+        const auto returnType = funcDefinition.resolvedSignatureType->function.returnType.get();
 
         returnLabel = nullptr;
         if (returnKind == BranchKind::None) {
@@ -6383,7 +6379,7 @@ namespace wiz {
                 }
 
                 const auto& rangeLiteral = reducedSequence->variant.tryGet<Expression::RangeLiteral>();
-                const auto counterResolvedIdentifierType = reducedCounter->info->type->variant.tryGet<TypeExpression::ResolvedIdentifier>();
+                const auto counterResolvedIdentifierType = reducedCounter->info->type->tryGet<TypeExpression::ResolvedIdentifier>();
                 const auto counterBuiltinIntegerType = counterResolvedIdentifierType ? counterResolvedIdentifierType->definition->variant.tryGet<Definition::BuiltinIntegerType>() : nullptr;
                 if (!counterBuiltinIntegerType) {
                     report->error("`for` loop counter start must be a sized integer type.", statement->location);
