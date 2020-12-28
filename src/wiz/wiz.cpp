@@ -20,7 +20,6 @@
 #include <wiz/utility/report.h>
 #include <wiz/utility/writer.h>
 #include <wiz/utility/optional.h>
-#include <wiz/utility/overload.h>
 #include <wiz/utility/array_view.h>
 #include <wiz/utility/string_view.h>
 #include <wiz/utility/string_pool.h>

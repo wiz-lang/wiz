@@ -95,9 +95,9 @@ namespace wiz {
             for (const auto& it : namesToDefinitions) {
                 const auto name = it.first;
                 const auto& def = it.second;
-                if (auto ns = def->variant.tryGet<Definition::Namespace>()) {
+                if (auto ns = def->tryGet<Definition::Namespace>()) {
                     if (const auto importedDef = import->findLocalMemberDefinition(name)) {
-                        if (const auto importedNS = importedDef->variant.tryGet<Definition::Namespace>()) {
+                        if (const auto importedNS = importedDef->tryGet<Definition::Namespace>()) {
                             ns->environment->addRecursiveImport(importedNS->environment);
                         }
                     }

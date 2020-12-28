@@ -1,6 +1,5 @@
 #include <wiz/ast/expression.h>
 #include <wiz/ast/type_expression.h>
-#include <wiz/utility/overload.h>
 
 namespace wiz {
     template <>

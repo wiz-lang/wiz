@@ -2,7 +2,6 @@
 #define WIZ_PLATFORM_GB_H
 
 #include <wiz/platform/platform.h>
-#include <wiz/utility/variant.h>
 
 namespace wiz {
     class GameBoyPlatform : public Platform {

@@ -716,7 +716,7 @@ namespace wiz {
         }
 
         expectTokenType(TokenType::Equals); // =
-        auto value = parseExpressionWithOptions(ExpressionParseOptions::of<ExpressionParseOption::AllowStructLiterals>()); // expression(allow_struct_literals)
+        auto value = parseExpressionWithOptions(ExpressionParseOptions::AllowStructLiterals); // expression(allow_struct_literals)
         expectStatementEnd("`let` declaration"_sv);
 
         return makeFwdUnique<const Statement>(Statement::Let(name, isFunction, parameters, std::move(value)), location);
@@ -774,7 +774,7 @@ namespace wiz {
 
             if (token.type == TokenType::Equals) {
                 nextToken(); // `=`
-                expression = parseExpressionWithOptions(ExpressionParseOptions::of<ExpressionParseOption::AllowStructLiterals>()); // expression(allow_struct_literals)
+                expression = parseExpressionWithOptions(ExpressionParseOptions::AllowStructLiterals); // expression(allow_struct_literals)
             }
 
             items.push_back(std::make_unique<Statement::Enum::Item>(itemName, std::move(expression), itemLocation));
@@ -925,7 +925,7 @@ namespace wiz {
         FwdUniquePtr<const Expression> value;
         if (token.type == TokenType::Equals) { 
             nextToken(); // `=`
-            value = parseExpressionWithOptions(ExpressionParseOptions::of<ExpressionParseOption::AllowStructLiterals>()); // expression(allow_struct_literals)
+            value = parseExpressionWithOptions(ExpressionParseOptions::AllowStructLiterals); // expression(allow_struct_literals)
         }
         expectStatementEnd(StringView(description));
 
@@ -1182,7 +1182,7 @@ namespace wiz {
         const auto location = scanner->getLocation();
         
         nextToken(); // IDENTIFIER (keyword `if`)
-        auto condition = parseExpressionWithOptions(ExpressionParseOptions::of<ExpressionParseOption::Conditional>()); // expression(conditional)
+        auto condition = parseExpressionWithOptions(ExpressionParseOptions::Conditional); // expression(conditional)
         auto body = parseBlockStatement(); // block
         FwdUniquePtr<const Statement> alternative;
 
@@ -1205,7 +1205,7 @@ namespace wiz {
         const auto location = scanner->getLocation();
 
         nextToken(); // IDENTIFIER (keyword `while`)
-        auto condition = parseExpressionWithOptions(ExpressionParseOptions::of<ExpressionParseOption::Conditional>()); // expression(conditional)
+        auto condition = parseExpressionWithOptions(ExpressionParseOptions::Conditional); // expression(conditional)
         auto body = parseBlockStatement(); // block
 
         return makeFwdUnique<const Statement>(Statement::While(distanceHint, std::move(condition), std::move(body)), location);
@@ -1221,7 +1221,7 @@ namespace wiz {
         FwdUniquePtr<const Expression> condition;
         if (token.keyword == Keyword::While) {
             nextToken(); // IDENTIFIER (keyword `while`)
-            condition = parseExpressionWithOptions(ExpressionParseOptions::of<ExpressionParseOption::Conditional>()); // expression(conditional)
+            condition = parseExpressionWithOptions(ExpressionParseOptions::Conditional); // expression(conditional)
         } else {
             reject(token, "`while`"_sv, true);
         }
@@ -1375,7 +1375,7 @@ namespace wiz {
             if (op != BinaryOperatorKind::None) {
                 const auto location = scanner->getLocation();
                 nextToken(); // operator token
-                auto right = parseAssignment(options.include<ExpressionParseOption::AllowStructLiterals>()); // assignment
+                auto right = parseAssignment(options | ExpressionParseOptions::AllowStructLiterals); // assignment
                 right = makeFwdUnique<const Expression>(Expression::BinaryOperator(
                     op, left->clone(), std::move(right)), location, Optional<ExpressionInfo>());
                 return makeFwdUnique<const Expression>(Expression::BinaryOperator(
@@ -1383,7 +1383,7 @@ namespace wiz {
             } else if (token.type == TokenType::Equals) {
                 const auto location = scanner->getLocation();
                 nextToken(); // `=`
-                auto right = parseAssignment(options.include<ExpressionParseOption::AllowStructLiterals>()); // assignment
+                auto right = parseAssignment(options | ExpressionParseOptions::AllowStructLiterals); // assignment
                 return makeFwdUnique<const Expression>(Expression::BinaryOperator(
                     BinaryOperatorKind::Assignment, std::move(left), std::move(right)), location, Optional<ExpressionInfo>());                
             } else {
@@ -1743,7 +1743,7 @@ namespace wiz {
                     break;
                 }
                 case TokenType::Comma: {
-                    if (options.has<ExpressionParseOption::Parenthesized>()) {
+                    if ((options & ExpressionParseOptions::Parenthesized) != ExpressionParseOptions::None) {
                         const auto location = scanner->getLocation();
                         nextToken(); // `,`
 
@@ -1802,7 +1802,7 @@ namespace wiz {
         if (token.type != TokenType::RightParenthesis) {
             // expression (`,` expression)* `)`
             while (report->alive()) {
-                auto expr = parseExpressionWithOptions(ExpressionParseOptions::of<ExpressionParseOption::AllowStructLiterals>()); // expression
+                auto expr = parseExpressionWithOptions(ExpressionParseOptions::AllowStructLiterals); // expression
                 arguments.push_back(std::move(expr));
 
                 // (`,` expression)*
@@ -1849,7 +1849,7 @@ namespace wiz {
         //      term(general)
         //      | block `;`? expr
         const auto location = scanner->getLocation();
-        if (options.has<ExpressionParseOption::Conditional>()) {
+        if ((options & ExpressionParseOptions::Conditional) != ExpressionParseOptions::None) {
             if (token.type == TokenType::LeftBrace) {
                 auto block = parseBlockStatement();
 
@@ -1900,7 +1900,7 @@ namespace wiz {
                     nextToken(); // `)`
                     return makeFwdUnique<const Expression>(Expression::TupleLiteral({}), location, Optional<ExpressionInfo>());
                 } else {
-                    auto expr = parseExpressionWithOptions(options.include<ExpressionParseOption::Parenthesized, ExpressionParseOption::AllowStructLiterals>()); // expression 
+                    auto expr = parseExpressionWithOptions(options | ExpressionParseOptions::Parenthesized | ExpressionParseOptions::AllowStructLiterals); // expression 
                     expectTokenType(TokenType::RightParenthesis); // `)`
                     if (expr && expr->kind == ExpressionKind::TupleLiteral) {
                         return expr;
@@ -1919,7 +1919,7 @@ namespace wiz {
                     return makeFwdUnique<const Expression>(Expression::ArrayLiteral(), location, Optional<ExpressionInfo>());
                 } else {
                     // nonempty_list = expression (list_comprehension | list_padding_specifier | list_remainder)
-                    auto head = parseExpressionWithOptions(ExpressionParseOptions::of<ExpressionParseOption::AllowStructLiterals>()); // expression
+                    auto head = parseExpressionWithOptions(ExpressionParseOptions::AllowStructLiterals); // expression
 
                     if (token.keyword == Keyword::For) {
                         // list_comprehension = `for` `let` IDENTIFIER `in` expression `]`
@@ -1979,7 +1979,7 @@ namespace wiz {
                                 break;
                             }
 
-                            auto expr = parseExpressionWithOptions(ExpressionParseOptions::of<ExpressionParseOption::AllowStructLiterals>()); // expression
+                            auto expr = parseExpressionWithOptions(ExpressionParseOptions::AllowStructLiterals); // expression
                             items.push_back(std::move(expr));
                         }
                         if (!expectTokenType(TokenType::RightBracket)) {
@@ -1995,7 +1995,7 @@ namespace wiz {
                     case Keyword::None: {
                         auto qualifiedIdentifier = parseQualifiedIdentifier();
 
-                        if (options.has<ExpressionParseOption::AllowStructLiterals>()
+                        if ((options & ExpressionParseOptions::AllowStructLiterals) != ExpressionParseOptions::None
                         && token.type == TokenType::LeftBrace) {
                             nextToken(); // `{`
 
@@ -2011,7 +2011,7 @@ namespace wiz {
 
                                 expectTokenType(TokenType::Equals); // `=`
 
-                                auto value = parseExpressionWithOptions(ExpressionParseOptions::of<ExpressionParseOption::AllowStructLiterals>()); // expression(allow_struct_literals)
+                                auto value = parseExpressionWithOptions(ExpressionParseOptions::AllowStructLiterals); // expression(allow_struct_literals)
 
                                 const auto match = items.find(name);
                                 if (match != items.end()) {

@@ -971,7 +971,7 @@ namespace wiz {
             }
             case BinaryOperatorKind::LessThan:
             case BinaryOperatorKind::GreaterThanOrEqual: {
-                if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
+                if (const auto integerType = type->tryGet<Definition::BuiltinIntegerType>()) {
                     if (integerType->min.isNegative()) {
                         if (const auto rightImmediate = right->tryGet<Expression::IntegerLiteral>()) {
                             if (rightImmediate->value.isZero()) {
@@ -1020,7 +1020,7 @@ namespace wiz {
                 return nullptr;
             }
             case BinaryOperatorKind::LessThanOrEqual: {
-                if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
+                if (const auto integerType = type->tryGet<Definition::BuiltinIntegerType>()) {
                     if (integerType->min.isNegative()) {
                         // a <= right -> { cmp(a, right); } && (zero || negative)
                         if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
@@ -1059,7 +1059,7 @@ namespace wiz {
                 return nullptr;
             }
             case BinaryOperatorKind::GreaterThan: {
-                if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
+                if (const auto integerType = type->tryGet<Definition::BuiltinIntegerType>()) {
                     if (integerType->min.isNegative()) {
                         // a > right -> { cmp(a, right); } && !zero && !negative
                         if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
@@ -1100,7 +1100,7 @@ namespace wiz {
             case BinaryOperatorKind::BitIndexing: {
                 // left $ right -> { bit(left, right); } && !zero
                 if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
-                    if (leftRegister->definition->variant.is<Definition::BuiltinRegister>()) {
+                    if (leftRegister->definition->kind == DefinitionKind::BuiltinRegister) {
                         if (const auto rightInteger = right->tryGet<Expression::IntegerLiteral>()) {
                             const auto bitIndex = rightInteger->value;
 

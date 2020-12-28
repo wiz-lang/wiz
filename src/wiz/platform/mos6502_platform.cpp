@@ -870,7 +870,7 @@ namespace wiz {
             }
             case BinaryOperatorKind::LessThan: 
             case BinaryOperatorKind::GreaterThanOrEqual: {
-                if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
+                if (const auto integerType = type->tryGet<Definition::BuiltinIntegerType>()) {
                     if (integerType->min.isNegative()) {
                         // left < 0 -> { cmp(left, right); } && negative
                         // left >= 0 -> { cmp(left, right); } && !negative
@@ -918,7 +918,7 @@ namespace wiz {
                 return nullptr;
             }
             case BinaryOperatorKind::LessThanOrEqual: {
-                if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
+                if (const auto integerType = type->tryGet<Definition::BuiltinIntegerType>()) {
                     if (integerType->min.isNegative()) {
                         // left <= 0 -> { cmp(left, 0); } && (zero || negative)
                         if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
@@ -957,7 +957,7 @@ namespace wiz {
                 return nullptr;
             }
             case BinaryOperatorKind::GreaterThan: {
-                if (const auto integerType = type->variant.tryGet<Definition::BuiltinIntegerType>()) {
+                if (const auto integerType = type->tryGet<Definition::BuiltinIntegerType>()) {
                     if (integerType->min.isNegative()) {
                         // left > 0 -> { cmp(left, 0); } && !zero && !negative
                         if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {

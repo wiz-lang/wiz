@@ -2,7 +2,6 @@
 #define WIZ_PLATFORM_MOS6502_H
 
 #include <wiz/platform/platform.h>
-#include <wiz/utility/variant.h>
 
 namespace wiz {
     class Mos6502Platform : public Platform {

@@ -2,7 +2,6 @@
 #define WIZ_PLATFORM_SPC700_H
 
 #include <wiz/platform/platform.h>
-#include <wiz/utility/variant.h>
 
 namespace wiz {
     struct Instruction;

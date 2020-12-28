@@ -13,8 +13,8 @@
 #include <wiz/utility/array_view.h>
 #include <wiz/utility/report.h>
 #include <wiz/utility/fwd_unique_ptr.h>
-#include <wiz/utility/bit_flags.h>
 #include <wiz/utility/import_options.h>
+#include <wiz/utility/bitwise_overloads.h>
 
 namespace wiz {
     class Reader;
@@ -29,6 +29,14 @@ namespace wiz {
     struct Expression;
     struct TypeExpression;
     
+    enum class ExpressionParseOptions {
+        None = 0x00,
+        Conditional = 0x01,
+        Parenthesized = 0x02,
+        AllowStructLiterals = 0x04,
+    };
+    WIZ_BITWISE_OVERLOADS(ExpressionParseOptions)
+
     class Parser {
         public:
             Parser(StringPool* stringPool, ImportManager* importManager, Report* report);
@@ -39,15 +47,6 @@ namespace wiz {
         private:
             Parser(const Parser&) = delete;  
             Parser& operator=(const Parser&) = delete;
-
-            enum class ExpressionParseOption {
-                Conditional,
-                Parenthesized,
-                AllowStructLiterals,
-
-                Count
-            };
-            using ExpressionParseOptions = BitFlags<ExpressionParseOption, ExpressionParseOption::Count>;
 
             void nextToken();
             void peek(std::size_t count);

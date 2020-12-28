@@ -2,7 +2,6 @@
 #define WIZ_PLATFORM_WDC65816_H
 
 #include <wiz/platform/platform.h>
-#include <wiz/utility/variant.h>
 
 namespace wiz {
     class Wdc65816Platform : public Platform {

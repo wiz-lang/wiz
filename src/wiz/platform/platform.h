@@ -8,7 +8,6 @@
 
 #include <wiz/utility/string_pool.h>
 #include <wiz/utility/array_view.h>
-#include <wiz/utility/variant.h>
 #include <wiz/utility/int128.h>
 #include <wiz/utility/fwd_unique_ptr.h>
 #include <wiz/compiler/instruction.h>

@@ -2,7 +2,6 @@
 #define WIZ_PLATFORM_POKEMON_MINI_H
 
 #include <wiz/platform/platform.h>
-#include <wiz/utility/variant.h>
 
 namespace wiz {
     class PokemonMiniPlatform : public Platform {

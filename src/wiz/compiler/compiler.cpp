@@ -20,7 +20,6 @@
 #include <wiz/utility/reader.h>
 #include <wiz/utility/report.h>
 #include <wiz/utility/writer.h>
-#include <wiz/utility/overload.h>
 #include <wiz/utility/scope_guard.h>
 #include <wiz/utility/import_manager.h>
 
@@ -181,7 +180,7 @@ namespace wiz {
         const auto suffix = ++labelSuffixes[prefix];
         const auto labelId = stringPool->intern(prefix.toString() + std::to_string(suffix));
         const auto result = definitionPool.addNew(Definition::Func(true, false, false, BranchKind::None, builtins.getUnitTuple(), currentScope, nullptr), labelId, nullptr);
-        auto& func = result->variant.get<Definition::Func>();
+        auto& func = result->func;
         func.resolvedSignatureType = makeFwdUnique<const TypeExpression>(TypeExpression::Function(false, {}, func.returnTypeExpression->clone()), func.returnTypeExpression->location);
         return result;
     }
@@ -214,7 +213,7 @@ namespace wiz {
                 currentScope->findUnqualifiedDefinitions(piece, results);
             } else {
                 for (const auto definition : previousResults) {
-                    if (const auto ns = definition->variant.tryGet<Definition::Namespace>()) {
+                    if (const auto ns = definition->tryGet<Definition::Namespace>()) {
                         ns->environment->findMemberDefinitions(piece, results);
                     }
                 }
@@ -226,7 +225,7 @@ namespace wiz {
 
             const auto firstMatch = *results.begin();
 
-            if (pieceIndex == pieces.size() - 1 || !firstMatch->variant.is<Definition::Namespace>()) {
+            if (pieceIndex == pieces.size() - 1 || firstMatch->kind != DefinitionKind::Namespace) {
                 if (results.size() == 1) {
                     return {firstMatch, pieceIndex};
                 } else {
@@ -353,7 +352,7 @@ namespace wiz {
 
                 if (isTypeDefinition(definition)) {
                     return makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(definition, pieces), typeExpression->location); 
-                } else if (const auto typeAlias = definition->variant.tryGet<Definition::TypeAlias>()) {                  
+                } else if (const auto typeAlias = definition->tryGet<Definition::TypeAlias>()) {                  
                     if (typeAlias->resolvedType == nullptr) {
                         report->error("encountered a reference to typealias `" + text::join(pieces.begin(), pieces.end(), ".") + "` before its underlying type was known", typeExpression->location);
                         return nullptr;
@@ -424,7 +423,7 @@ namespace wiz {
                 auto scope = std::make_unique<SymbolTable>(currentScope, StringView());
                 auto tempDeclaration = statementPool.addNew(Statement::InternalDeclaration(), expression->location);
                 auto tempDefinition = scope->createDefinition(report, Definition::Let({}, nullptr), arrayComprehension.name, tempDeclaration);
-                auto& tempLetDefinition = tempDefinition->variant.get<Definition::Let>();
+                auto& tempLetDefinition = tempDefinition->let;
 
                 const TypeExpression* elementType = nullptr;
 
@@ -740,7 +739,7 @@ namespace wiz {
                                                 makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(builtins.getDefinition(Builtins::DefinitionType::IExpr)), expression->location),
                                                 Qualifiers::None));
                                     } else if (const auto resolvedIdentifier = left->tryGet<Expression::ResolvedIdentifier>()) {
-                                        if (const auto varDefinition = resolvedIdentifier->definition->variant.tryGet<Definition::Var>()) {
+                                        if (const auto varDefinition = resolvedIdentifier->definition->tryGet<Definition::Var>()) {
                                             if (varDefinition->address.hasValue() && varDefinition->address->absolutePosition.hasValue()) {
                                                 auto resultType = left->info->type->array.elementType->clone();
                                                 auto addressType = makeFwdUnique<const TypeExpression>(
@@ -749,7 +748,7 @@ namespace wiz {
                                                         left->info->qualifiers & (Qualifiers::Const | Qualifiers::WriteOnly | Qualifiers::Far)),
                                                     resultType->location);
                                                 const auto pointerSizedType = (left->info->qualifiers & Qualifiers::Far) != Qualifiers::None ? platform->getFarPointerSizedType() : platform->getPointerSizedType();
-                                                const auto mask = Int128((1U << (8U * pointerSizedType->variant.get<Definition::BuiltinIntegerType>().size)) - 1);
+                                                const auto mask = Int128((1U << (8U * pointerSizedType->builtinIntegerType.size)) - 1);
 
                                                 if (const auto elementSize = calculateStorageSize(resultType.get(), "operand"_sv)) {
                                                     return makeFwdUnique<const Expression>(
@@ -771,7 +770,7 @@ namespace wiz {
                                                 left->info->qualifiers & (Qualifiers::Const | Qualifiers::WriteOnly | Qualifiers::Far)),
                                             resultType->location);
                                         const auto pointerSizedType = (left->info->qualifiers & Qualifiers::Far) != Qualifiers::None ? platform->getFarPointerSizedType() : platform->getPointerSizedType();
-                                        const auto mask = Int128((1U << (8U * pointerSizedType->variant.get<Definition::BuiltinIntegerType>().size)) - 1);
+                                        const auto mask = Int128((1U << (8U * pointerSizedType->builtinIntegerType.size)) - 1);
 
                                         if (const auto elementSize = calculateStorageSize(resultType.get(), "operand"_sv)) {
                                             return makeFwdUnique<const Expression>(
@@ -826,7 +825,7 @@ namespace wiz {
                                     expression->location,
                                     ExpressionInfo(EvaluationContext::RunTime, std::move(resultType), qualifiers));
                             } else if (const auto typeDefinition = tryGetResolvedIdentifierTypeDefinition(left->info->type.get())) {
-                                if (typeDefinition->variant.is<Definition::BuiltinRangeType>()) {
+                                if (typeDefinition->kind == DefinitionKind::BuiltinRangeType) {
                                     if (const auto length = tryGetSequenceLiteralLength(left.get())) {
                                         if (const auto indexLiteral = right->tryGet<Expression::IntegerLiteral>()) {
                                             const auto indexValue = indexLiteral->value;
@@ -956,7 +955,7 @@ namespace wiz {
 
                 if (const auto resolvedIdentifier = function->tryGet<Expression::ResolvedIdentifier>()) {
                     const auto definition = resolvedIdentifier->definition;
-                    if (const auto letDefinition = definition->variant.tryGet<Definition::Let>()) {
+                    if (const auto letDefinition = definition->tryGet<Definition::Let>()) {
                         if (call.inlined) {
                             report->error("`inline` keyword cannot be applied to a `let` function call.", expression->location);
                             return nullptr;
@@ -1029,7 +1028,7 @@ namespace wiz {
                         }
 
                         return result;
-                    } else if (const auto funcDefinition = definition->variant.tryGet<Definition::Func>()) {
+                    } else if (const auto funcDefinition = definition->tryGet<Definition::Func>()) {
                         auto& functionType = funcDefinition->resolvedSignatureType->function;
                         auto resultType = functionType.returnType->clone();
 
@@ -1061,7 +1060,7 @@ namespace wiz {
                             Expression::Call(call.inlined, std::move(function), std::move(reducedArguments)),
                             expression->location,
                             ExpressionInfo(EvaluationContext::RunTime, std::move(resultType), Qualifiers::None));
-                    } else if (const auto loadIntrinsic = definition->variant.tryGet<Definition::BuiltinLoadIntrinsic>()) {
+                    } else if (const auto loadIntrinsic = definition->tryGet<Definition::BuiltinLoadIntrinsic>()) {
                         if (call.inlined) {
                             report->error("`inline` keyword is not valid for instrinsics.", expression->location);
                             return nullptr;
@@ -1073,7 +1072,7 @@ namespace wiz {
                             ExpressionInfo(EvaluationContext::RunTime,
                                 makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(loadIntrinsic->type), expression->location),
                                 Qualifiers::None));
-                    } else if (definition->variant.is<Definition::BuiltinVoidIntrinsic>()) {
+                    } else if (definition->kind == DefinitionKind::BuiltinVoidIntrinsic) {
                         if (call.inlined) {
                             report->error("`inline` keyword is not valid for instrinsics.", expression->location);
                             return nullptr;
@@ -1152,7 +1151,7 @@ namespace wiz {
                 }
 
                 if (const auto resolvedIdentifier = operand->tryGet<Expression::ResolvedIdentifier>()) {
-                    if (const auto funcDefinition = resolvedIdentifier->definition->variant.tryGet<Definition::Func>()) {
+                    if (const auto funcDefinition = resolvedIdentifier->definition->tryGet<Definition::Func>()) {
                         if (funcDefinition->inlined) {
                             report->error("`" + resolvedIdentifier->definition->name.toString() + "` is an `inline func` so it cannot be casted", expression->location);
                             return nullptr;
@@ -1168,7 +1167,7 @@ namespace wiz {
 
                 if (isIntegerType(sourceType.get()) || isEnumType(sourceType.get()) || isPointerLikeType(sourceType.get())) {
                     if (const auto destTypeDefinition = tryGetResolvedIdentifierTypeDefinition(destType.get())) {
-                        if (const auto destBuiltinIntegerType = destTypeDefinition->variant.tryGet<Definition::BuiltinIntegerType>()) {
+                        if (const auto destBuiltinIntegerType = destTypeDefinition->tryGet<Definition::BuiltinIntegerType>()) {
                             validCast = true;
 
                             if (validCast && integerValue.hasValue()) {
@@ -1179,7 +1178,7 @@ namespace wiz {
                                     expression->location,
                                     ExpressionInfo(EvaluationContext::CompileTime, std::move(destType), Qualifiers::None));
                             }
-                        } else if (destTypeDefinition->variant.is<Definition::BuiltinIntegerExpressionType>() || destTypeDefinition->variant.is<Definition::Enum>()) {
+                        } else if (destTypeDefinition->kind == DefinitionKind::BuiltinIntegerExpressionType || destTypeDefinition->kind == DefinitionKind::Enum) {
                             validCast = true;
 
                             if (validCast && integerValue.hasValue()) {
@@ -1201,7 +1200,7 @@ namespace wiz {
                             const auto pointerSizedType = destFar ? platform->getFarPointerSizedType() : platform->getPointerSizedType();
 
                             return makeFwdUnique<const Expression>(
-                                Expression::IntegerLiteral(*integerValue & Int128((1U << (8U * pointerSizedType->variant.get<Definition::BuiltinIntegerType>().size)) - 1)),
+                                Expression::IntegerLiteral(*integerValue & Int128((1U << (8U * pointerSizedType->builtinIntegerType.size)) - 1)),
                                 expression->location,
                                 ExpressionInfo(EvaluationContext::CompileTime, std::move(destType), destFar ? Qualifiers::Far : Qualifiers::None));
                         }
@@ -1336,12 +1335,12 @@ namespace wiz {
                 Definition* typeDefinition = nullptr;
                 if (integerLiteral.suffix.getLength() > 0) {
                     typeDefinition = builtins.getBuiltinScope()->findLocalMemberDefinition(integerLiteral.suffix);
-                    if (typeDefinition == nullptr || !typeDefinition->variant.is<Definition::BuiltinIntegerType>()) {
+                    if (typeDefinition == nullptr || typeDefinition->kind != DefinitionKind::BuiltinIntegerType) {
                         report->error("unrecognized integer literal suffix `" + integerLiteral.suffix.toString() + "`", expression->location);
                         return nullptr;
                     }
 
-                    const auto& builtinIntegerType = typeDefinition->variant.get<Definition::BuiltinIntegerType>();
+                    const auto& builtinIntegerType = typeDefinition->builtinIntegerType;
                     if (integerLiteral.value < builtinIntegerType.min || integerLiteral.value > builtinIntegerType.max) {
                         report->error("integer literal `" + integerLiteral.value.toString() + "` with `" + integerLiteral.suffix.toString() + "` suffix is outside valid range `" + builtinIntegerType.min.toString() + "` .. `" + builtinIntegerType.max.toString() + "`", expression->location);
                         return nullptr;
@@ -1362,9 +1361,9 @@ namespace wiz {
                     return nullptr;
                 }
                 if (const auto resolvedIdentifierType = reducedTypeExpression->tryGet<TypeExpression::ResolvedIdentifier>()) {
-                    if (const auto structDefinition = resolvedIdentifierType->definition->variant.tryGet<Definition::Struct>()) {
+                    if (const auto structDefinition = resolvedIdentifierType->definition->tryGet<Definition::Struct>()) {
                         if (const auto memberDefinition = structDefinition->environment->findLocalMemberDefinition(offsetOf.field)) {
-                            const auto& structMemberDefinition = memberDefinition->variant.get<Definition::StructMember>();
+                            const auto& structMemberDefinition = memberDefinition->structMember;
 
                             if (structMemberDefinition.offset.hasValue()) {
                                 return makeFwdUnique<const Expression>(Expression::IntegerLiteral(Int128(*structMemberDefinition.offset)), expression->location,
@@ -1443,7 +1442,7 @@ namespace wiz {
 
                 Definition* definition = nullptr;
                 if (const auto resolvedTypeIdentifier = reducedTypeExpression->tryGet<TypeExpression::ResolvedIdentifier>()) {
-                    if (resolvedTypeIdentifier->definition->variant.is<Definition::Struct>()) {
+                    if (resolvedTypeIdentifier->definition->kind == DefinitionKind::Struct) {
                         definition = resolvedTypeIdentifier->definition;
                     }
                 }
@@ -1452,7 +1451,7 @@ namespace wiz {
                     return nullptr;                    
                 }
                 
-                const auto& structDefinition = definition->variant.get<Definition::Struct>();
+                const auto& structDefinition = definition->struct_;
                 std::unordered_map<StringView, std::unique_ptr<const Expression::StructLiteral::Item>> reducedItems;
 
                 bool invalidLiteral = false;
@@ -1463,7 +1462,7 @@ namespace wiz {
                     const auto& item = it.second;
 
                     if (const auto memberDefinition = structDefinition.environment->findLocalMemberDefinition(name)) {
-                        const auto& structMemberDefinition = memberDefinition->variant.get<Definition::StructMember>();
+                        const auto& structMemberDefinition = memberDefinition->structMember;
 
                         auto reducedValue = reduceExpression(item->value.get());
                         if (reducedValue != nullptr) {
@@ -1691,10 +1690,10 @@ namespace wiz {
                             }
                         } else if (const auto resolvedIdentifier = operand->tryGet<Expression::ResolvedIdentifier>()) {
                             const auto pointerSizedType = op == UnaryOperatorKind::FarAddressOf ? platform->getFarPointerSizedType() : platform->getPointerSizedType();
-                            const auto mask = Int128((1U << (8U * pointerSizedType->variant.get<Definition::BuiltinIntegerType>().size)) - 1);
+                            const auto mask = Int128((1U << (8U * pointerSizedType->builtinIntegerType.size)) - 1);
                             const auto farQualifier = op == UnaryOperatorKind::FarAddressOf ? Qualifiers::Far : Qualifiers::None;
 
-                            if (const auto varDefinition = resolvedIdentifier->definition->variant.tryGet<Definition::Var>()) {
+                            if (const auto varDefinition = resolvedIdentifier->definition->tryGet<Definition::Var>()) {
                                 auto resultType = makeFwdUnique<const TypeExpression>(
                                     TypeExpression::Pointer(
                                         operand->info->type->clone(),
@@ -1710,7 +1709,7 @@ namespace wiz {
                                         Expression::UnaryOperator(unaryOperator.op, std::move(operand)), expression->location,
                                         ExpressionInfo(EvaluationContext::LinkTime, std::move(resultType), farQualifier));
                                 }
-                            } else if (const auto funcDefinition = resolvedIdentifier->definition->variant.tryGet<Definition::Func>()) {
+                            } else if (const auto funcDefinition = resolvedIdentifier->definition->tryGet<Definition::Func>()) {
                                 if (funcDefinition->inlined) {
                                     report->error("`" + resolvedIdentifier->definition->name.toString() + "` is an `inline func` so it has no address that can be taken with " + getUnaryOperatorName(unaryOperator.op).toString(), expression->location);
                                     return nullptr;
@@ -1756,14 +1755,14 @@ namespace wiz {
                             } else {
                                 if (const auto integerLiteral = operand->tryGet<Expression::IntegerLiteral>()) {
                                     if (const auto typeDefinition = tryGetResolvedIdentifierTypeDefinition(resultType)) {
-                                        if (const auto builtinIntegerType = typeDefinition->variant.tryGet<Definition::BuiltinIntegerType>()) {
+                                        if (const auto builtinIntegerType = typeDefinition->tryGet<Definition::BuiltinIntegerType>()) {
                                             const auto mask = Int128((1U << (8U * builtinIntegerType->size)) - 1);
                                             const auto result = ~integerLiteral->value & mask;
                                             return makeFwdUnique<const Expression>(
                                                 Expression::IntegerLiteral(result),
                                                 expression->location,
                                                 ExpressionInfo(EvaluationContext::CompileTime, resultType->clone(), Qualifiers::None));
-                                        } else if (typeDefinition->variant.is<Definition::BuiltinIntegerExpressionType>()) {
+                                        } else if (typeDefinition->kind == DefinitionKind::BuiltinIntegerExpressionType) {
                                             return makeFwdUnique<const Expression>(
                                                 Expression::IntegerLiteral(~integerLiteral->value), expression->location,
                                                 ExpressionInfo(EvaluationContext::CompileTime, resultType->clone(), Qualifiers::None));
@@ -1807,7 +1806,7 @@ namespace wiz {
                                     const auto value = result.second;
 
                                     if (const auto typeDefinition = tryGetResolvedIdentifierTypeDefinition(resultType)) {
-                                        if (const auto builtinIntegerType = typeDefinition->variant.tryGet<Definition::BuiltinIntegerType>()) {
+                                        if (const auto builtinIntegerType = typeDefinition->tryGet<Definition::BuiltinIntegerType>()) {
                                             if (value < builtinIntegerType->min || value > builtinIntegerType->max) {
                                                 report->error(getUnaryOperatorName(unaryOperator.op).toString() + " resulted in `" + getTypeName(resultType) + "` value of `" + value.toString() + "` outside valid range `" + builtinIntegerType->min.toString() + "` .. `" + builtinIntegerType->max.toString() + "`", expression->location);
                                                 return nullptr;
@@ -1877,7 +1876,7 @@ namespace wiz {
                                 ExpressionInfo(EvaluationContext::CompileTime, std::move(resultType), Qualifiers::None));                                
                         } else if (const auto resolvedIdentifier = operand->tryGet<Expression::ResolvedIdentifier>()) {
                             const auto definition = resolvedIdentifier->definition;
-                            if (const auto registerDefinition = definition->variant.tryGet<Definition::BuiltinRegister>()) {
+                            if (const auto registerDefinition = definition->tryGet<Definition::BuiltinRegister>()) {
                                 const auto subRegisters = builtins.findRegisterDecomposition(definition);
                                 if (subRegisters.getLength() == 0) {
                                     report->error("`" + definition->name.toString() + "` cannot be split into smaller registers, so it cannot be used with " + getUnaryOperatorName(unaryOperator.op).toString(), expression->location);
@@ -1887,20 +1886,20 @@ namespace wiz {
                                     return nullptr;
                                 } else {
                                     const auto subRegister = subRegisters[offset];
-                                    const auto& subRegisterDefinition = subRegisters[offset]->variant.get<Definition::BuiltinRegister>();
+                                    const auto& subRegisterDefinition = subRegisters[offset]->builtinRegister;
 
                                     return makeFwdUnique<const Expression>(Expression::ResolvedIdentifier(subRegister, {}), expression->location,
                                         ExpressionInfo(EvaluationContext::RunTime,
                                             makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(subRegisterDefinition.type), expression->location),
                                             Qualifiers::LValue));
                                 }
-                            } else if (const auto varDefinition = definition->variant.tryGet<Definition::Var>()) {
+                            } else if (const auto varDefinition = definition->tryGet<Definition::Var>()) {
                                 simplify = true;
 
                                 if (varDefinition->address.hasValue() && varDefinition->address->absolutePosition.hasValue()) {
                                     absolutePosition = varDefinition->address->absolutePosition.get();
                                 }
-                            } else if (const auto funcDefinition = definition->variant.tryGet<Definition::Func>()) {
+                            } else if (const auto funcDefinition = definition->tryGet<Definition::Func>()) {
                                 if (funcDefinition->inlined) {
                                     report->error("`" + definition->name.toString() + "` is an `inline func` so it cannot be used with " + getUnaryOperatorName(unaryOperator.op).toString(), expression->location);
                                     return nullptr;
@@ -1953,7 +1952,7 @@ namespace wiz {
                             const auto constName = stringPool->intern("$data" + std::to_string(definitionPool.size()));
                             auto constDeclaration = statementPool.addNew(Statement::InternalDeclaration(), expression->location);
                             auto definition = definitionPool.addNew(Definition::Var(Qualifiers::Const, currentFunction, nullptr, nullptr, 0), constName, constDeclaration);
-                            auto& constDefinition = definition->variant.get<Definition::Var>();
+                            auto& constDefinition = definition->var;
 
                             constDefinition.resolvedType = constType;
                             constDefinition.initializerExpression = std::move(operand);
@@ -2120,7 +2119,7 @@ namespace wiz {
     }
 
     FwdUniquePtr<const Expression> Compiler::resolveDefinitionExpression(Definition* definition, const std::vector<StringView>& pieces, SourceLocation location) {
-        if (const auto letDefinition = definition->variant.tryGet<Definition::Let>()) {
+        if (const auto letDefinition = definition->tryGet<Definition::Let>()) {
             if (letDefinition->parameters.size() == 0) {
                 FwdUniquePtr<const Expression> result;
 
@@ -2140,7 +2139,7 @@ namespace wiz {
                         makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(builtins.getDefinition(Builtins::DefinitionType::Let)), location),
                         Qualifiers::None));
             }
-        } else if (const auto varDefinition = definition->variant.tryGet<Definition::Var>()) {
+        } else if (const auto varDefinition = definition->tryGet<Definition::Var>()) {
             if (varDefinition->resolvedType == nullptr) {
                 report->error("encountered a reference to `" + std::string(
                     ((varDefinition->qualifiers & Qualifiers::Const) != Qualifiers::None) ? "const"
@@ -2160,12 +2159,12 @@ namespace wiz {
                     varDefinition->resolvedType->kind == TypeExpressionKind::Array ? EvaluationContext::LinkTime : EvaluationContext::RunTime,
                     varDefinition->resolvedType->clone(),
                     Qualifiers::LValue | (varDefinition->qualifiers & (Qualifiers::Const | Qualifiers::WriteOnly))));
-        } else if (const auto registerDefinition = definition->variant.tryGet<Definition::BuiltinRegister>()) {
+        } else if (const auto registerDefinition = definition->tryGet<Definition::BuiltinRegister>()) {
             return makeFwdUnique<const Expression>(Expression::ResolvedIdentifier(definition, pieces), location,
                 ExpressionInfo(EvaluationContext::RunTime,
                     makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(registerDefinition->type), location),
                     Qualifiers::LValue));
-        } else if (const auto funcDefinition = definition->variant.tryGet<Definition::Func>()) {
+        } else if (const auto funcDefinition = definition->tryGet<Definition::Func>()) {
             if (funcDefinition->resolvedSignatureType == nullptr) {
                 report->error("encountered a reference to func `" + getResolvedIdentifierName(definition, pieces) + "` before its type was known", location);
                 return nullptr;
@@ -2182,17 +2181,17 @@ namespace wiz {
                     context,
                     funcDefinition->resolvedSignatureType->clone(),
                     (funcDefinition->far ? Qualifiers::Far : Qualifiers::None)));
-        } else if (definition->variant.is<Definition::BuiltinVoidIntrinsic>()) {
+        } else if (definition->kind == DefinitionKind::BuiltinVoidIntrinsic) {
             return makeFwdUnique<const Expression>(Expression::ResolvedIdentifier(definition, pieces), location,
                 ExpressionInfo(EvaluationContext::RunTime,
                     makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(builtins.getDefinition(Builtins::DefinitionType::Intrinsic)), location),
                 Qualifiers::None));
-        } else if (definition->variant.is<Definition::BuiltinLoadIntrinsic>()) {
+        } else if (definition->kind == DefinitionKind::BuiltinLoadIntrinsic) {
             return makeFwdUnique<const Expression>(Expression::ResolvedIdentifier(definition, pieces), location,
                 ExpressionInfo(EvaluationContext::RunTime,
                     makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(builtins.getDefinition(Builtins::DefinitionType::Intrinsic)), location),
                 Qualifiers::None));
-        } else if (const auto enumMemberDefinition = definition->variant.tryGet<Definition::EnumMember>()) {
+        } else if (const auto enumMemberDefinition = definition->tryGet<Definition::EnumMember>()) {
             if (enumMemberDefinition->reducedExpression == nullptr) {
                 report->error("encountered a reference to enum value `" + getResolvedIdentifierName(definition, pieces) + "` before its value was known", location);
                 return nullptr;
@@ -2206,14 +2205,14 @@ namespace wiz {
 
     FwdUniquePtr<const Expression> Compiler::resolveTypeMemberExpression(const TypeExpression* typeExpression, StringView name) {
         if (const auto resolvedTypeIdentifier = tryGetResolvedIdentifierTypeDefinition(typeExpression)) {
-            if (const auto enumDefinition = resolvedTypeIdentifier->variant.tryGet<Definition::Enum>()) {
+            if (const auto enumDefinition = resolvedTypeIdentifier->tryGet<Definition::Enum>()) {
                 if (const auto enumMemberDefinition = enumDefinition->environment->findLocalMemberDefinition(name)) {
                     return resolveDefinitionExpression(enumMemberDefinition, {}, typeExpression->location);
                 }
             } else {
                 const auto prop = builtins.findPropertyByName(name);
 
-                if (const auto builtinIntegerType = resolvedTypeIdentifier->variant.tryGet<Definition::BuiltinIntegerType>()) {
+                if (const auto builtinIntegerType = resolvedTypeIdentifier->tryGet<Definition::BuiltinIntegerType>()) {
                     switch (prop) {
                         case Builtins::Property::MinValue: {
                             return makeFwdUnique<const Expression>(Expression::IntegerLiteral(Int128(builtinIntegerType->min)), typeExpression->location,
@@ -2241,9 +2240,9 @@ namespace wiz {
         const auto typeExpression = expression->info->type.get();
 
         if (const auto resolvedTypeIdentifier = tryGetResolvedIdentifierTypeDefinition(typeExpression)) {
-            if (const auto structDefinition = resolvedTypeIdentifier->variant.tryGet<Definition::Struct>()) {
+            if (const auto structDefinition = resolvedTypeIdentifier->tryGet<Definition::Struct>()) {
                 if (const auto memberDefinition = structDefinition->environment->findLocalMemberDefinition(name)) {
-                    const auto& structMemberDefinition = memberDefinition->variant.get<Definition::StructMember>();
+                    const auto& structMemberDefinition = memberDefinition->structMember;
                     auto resultType = structMemberDefinition.resolvedType->clone();
 
                     bool simplify = false;
@@ -2254,7 +2253,7 @@ namespace wiz {
                         const auto& match = structLiteral->items.find(name);
                         return match->second->value->clone();
                     } else if (const auto resolvedExpressionIdentifier = expression->tryGet<Expression::ResolvedIdentifier>()) {
-                        if (const auto varDefinition = resolvedExpressionIdentifier->definition->variant.tryGet<Definition::Var>()) {
+                        if (const auto varDefinition = resolvedExpressionIdentifier->definition->tryGet<Definition::Var>()) {
                             simplify = true;
 
                             if (varDefinition->address.hasValue() && varDefinition->address->absolutePosition.hasValue()) {
@@ -2459,7 +2458,7 @@ namespace wiz {
                     case Int128::CheckedArithmeticResult::Success: {
                         const auto& value = result.second;
                         if (const auto typeDefinition = tryGetResolvedIdentifierTypeDefinition(resultType)) {
-                            if (const auto builtinIntegerType = typeDefinition->variant.tryGet<Definition::BuiltinIntegerType>()) {
+                            if (const auto builtinIntegerType = typeDefinition->tryGet<Definition::BuiltinIntegerType>()) {
                                 if (value < builtinIntegerType->min || value > builtinIntegerType->max) {
                                     report->error(getBinaryOperatorName(op).toString() + " resulted in `" + getTypeName(resultType) + "` value of `" + value.toString() + "` outside valid range `" + builtinIntegerType->min.toString() + "` .. `" + builtinIntegerType->max.toString() + "`", expression->location);
                                     return nullptr;
@@ -2561,7 +2560,7 @@ namespace wiz {
     FwdUniquePtr<const Expression> Compiler::simplifyBinaryRotateExpression(const Expression* expression, BinaryOperatorKind op, FwdUniquePtr<const Expression> left, FwdUniquePtr<const Expression> right) {
         if (const auto resultType = findCompatibleBinaryArithmeticExpressionType(left.get(), right.get())) {
             if (const auto resultTypeDefinition = tryGetResolvedIdentifierTypeDefinition(resultType)) {
-                if (const auto resultBuiltinIntegerType = resultTypeDefinition->variant.tryGet<Definition::BuiltinIntegerType>()) {
+                if (const auto resultBuiltinIntegerType = resultTypeDefinition->tryGet<Definition::BuiltinIntegerType>()) {
                     const auto leftContext = left->info->context;
                     const auto rightContext = right->info->context;
                     if (leftContext == EvaluationContext::RunTime || rightContext == EvaluationContext::RunTime) {
@@ -2670,13 +2669,13 @@ namespace wiz {
     }
 
     bool Compiler::isTypeDefinition(const Definition* definition) const {
-        if (definition->variant.is<Definition::BuiltinBankType>()
-        || definition->variant.is<Definition::BuiltinBoolType>()
-        || definition->variant.is<Definition::BuiltinIntegerType>()
-        || definition->variant.is<Definition::BuiltinIntegerExpressionType>()
-        || definition->variant.is<Definition::BuiltinRangeType>()
-        || definition->variant.is<Definition::Enum>()
-        || definition->variant.is<Definition::Struct>()) {
+        if (definition->kind == DefinitionKind::BuiltinBankType
+        || definition->kind == DefinitionKind::BuiltinBoolType
+        || definition->kind == DefinitionKind::BuiltinIntegerType
+        || definition->kind == DefinitionKind::BuiltinIntegerExpressionType
+        || definition->kind == DefinitionKind::BuiltinRangeType
+        || definition->kind == DefinitionKind::Enum
+        || definition->kind == DefinitionKind::Struct) {
             return true;
         }
         return false;
@@ -2698,8 +2697,8 @@ namespace wiz {
     bool Compiler::isIntegerType(const TypeExpression* typeExpression) const {
         const auto definition = tryGetResolvedIdentifierTypeDefinition(typeExpression);
         if (definition != nullptr) {
-            return definition->variant.is<Definition::BuiltinIntegerExpressionType>()
-            || definition->variant.is<Definition::BuiltinIntegerType>();
+            return definition->kind == DefinitionKind::BuiltinIntegerExpressionType
+            || definition->kind == DefinitionKind::BuiltinIntegerType;
         } else {
             return false;
         }
@@ -2707,7 +2706,7 @@ namespace wiz {
 
     bool Compiler::isBooleanType(const TypeExpression* typeExpression) const {
         const auto definition = tryGetResolvedIdentifierTypeDefinition(typeExpression);
-        return definition != nullptr && definition->variant.is<Definition::BuiltinBoolType>();
+        return definition != nullptr && definition->kind == DefinitionKind::BuiltinBoolType;
     }
 
     bool Compiler::isEmptyTupleType(const TypeExpression* typeExpression) const {
@@ -2722,7 +2721,7 @@ namespace wiz {
     bool Compiler::isEnumType(const TypeExpression* typeExpression) const {
         const auto definition = tryGetResolvedIdentifierTypeDefinition(typeExpression);
         if (definition != nullptr) {
-            return definition->variant.is<Definition::Enum>();
+            return definition->kind == DefinitionKind::Enum;
         } else {
             return false;
         }
@@ -2756,14 +2755,14 @@ namespace wiz {
                     return left->info->type.get();
                 }
                 // If left type is iexpr and right side isn't, attempt to narrow to right side type.
-                if (leftDefinition->variant.is<Definition::BuiltinIntegerExpressionType>()
-                && rightDefinition->variant.is<Definition::BuiltinIntegerType>()
+                if (leftDefinition->kind == DefinitionKind::BuiltinIntegerExpressionType
+                && rightDefinition->kind == DefinitionKind::BuiltinIntegerType
                 && canNarrowIntegerExpression(left, rightDefinition)) {
                     return right->info->type.get();
                 }
                 // If right type is iexpr and left side isn't, attempt to narrow to right side type.
-                if (rightDefinition->variant.is<Definition::BuiltinIntegerExpressionType>()
-                && leftDefinition->variant.is<Definition::BuiltinIntegerType>()
+                if (rightDefinition->kind == DefinitionKind::BuiltinIntegerExpressionType
+                && leftDefinition->kind == DefinitionKind::BuiltinIntegerType
                 && canNarrowIntegerExpression(right, leftDefinition)) {
                     return left->info->type.get();
                 }
@@ -2914,7 +2913,7 @@ namespace wiz {
                 // Are they different types, but both integers?
                 if (isIntegerType(sourceExpressionType) && isIntegerType(destinationType)) {
                     // If source expression type is iexpr and destination type is some bounded integer type, attempt to narrow to destination type.
-                    if (sourceExpressionTypeDefinition->variant.is<Definition::BuiltinIntegerExpressionType>()) {
+                    if (sourceExpressionTypeDefinition->kind == DefinitionKind::BuiltinIntegerExpressionType) {
                         return canNarrowIntegerExpression(sourceExpression, destinationTypeDefinition);
                     }
                 }
@@ -2926,7 +2925,7 @@ namespace wiz {
 
     bool Compiler::canNarrowIntegerExpression(const Expression* expression, const Definition* integerTypeDefinition) const {
         if (const auto integerLiteral = expression->tryGet<Expression::IntegerLiteral>()) {
-            if (const auto builtinIntegerType = integerTypeDefinition->variant.tryGet<Definition::BuiltinIntegerType>()) {            
+            if (const auto builtinIntegerType = integerTypeDefinition->tryGet<Definition::BuiltinIntegerType>()) {            
                 if (integerLiteral->value >= builtinIntegerType->min
                 && integerLiteral->value <= builtinIntegerType->max) {
                     return true;
@@ -3006,9 +3005,9 @@ namespace wiz {
                 // Are they different types, but both integers?
                 if (isIntegerType(sourceExpressionType) && isIntegerType(destinationType)) {
                     // If source expression type is iexpr and destination type is some bounded integer type, attempt to narrow to destination type.
-                    if (sourceExpressionTypeDefinition->variant.is<Definition::BuiltinIntegerExpressionType>()) {
+                    if (sourceExpressionTypeDefinition->kind == DefinitionKind::BuiltinIntegerExpressionType) {
                         if (const auto integerLiteral = sourceExpression->tryGet<Expression::IntegerLiteral>()) {
-                            if (const auto builtinIntegerType = destinationTypeDefinition->variant.tryGet<Definition::BuiltinIntegerType>()) {            
+                            if (const auto builtinIntegerType = destinationTypeDefinition->tryGet<Definition::BuiltinIntegerType>()) {            
                                 if (integerLiteral->value >= builtinIntegerType->min
                                 && integerLiteral->value <= builtinIntegerType->max) {
                                     return makeFwdUnique<const Expression>(Expression::IntegerLiteral(integerLiteral->value), sourceExpression->location,
@@ -3251,26 +3250,26 @@ namespace wiz {
             case TypeExpressionKind::Function: {
                 const auto& functionType = typeExpression->function;
                 const auto pointerSizedType = functionType.far ? platform->getFarPointerSizedType() : platform->getPointerSizedType();
-                return Optional<std::size_t>(pointerSizedType->variant.get<Definition::BuiltinIntegerType>().size);
+                return Optional<std::size_t>(pointerSizedType->builtinIntegerType.size);
             }
             case TypeExpressionKind::Identifier: std::abort(); return Optional<std::size_t>();
             case TypeExpressionKind::Pointer: {
                 const auto& pointerType = typeExpression->pointer;
                 const auto pointerSizedType = (pointerType.qualifiers & Qualifiers::Far) != Qualifiers::None ? platform->getFarPointerSizedType() : platform->getPointerSizedType();
-                return Optional<std::size_t>(pointerSizedType->variant.get<Definition::BuiltinIntegerType>().size);
+                return Optional<std::size_t>(pointerSizedType->builtinIntegerType.size);
             }
             case TypeExpressionKind::ResolvedIdentifier: {
                 const auto& resolvedIdentifierType = typeExpression->resolvedIdentifier;
                 const auto definition = resolvedIdentifierType.definition;
-                if (resolvedIdentifierType.definition->variant.is<Definition::BuiltinBoolType>()) {
+                if (resolvedIdentifierType.definition->kind == DefinitionKind::BuiltinBoolType) {
                     return Optional<std::size_t>(1);
-                } else if (const auto builtinIntegerType = resolvedIdentifierType.definition->variant.tryGet<Definition::BuiltinIntegerType>()) {
+                } else if (const auto builtinIntegerType = resolvedIdentifierType.definition->tryGet<Definition::BuiltinIntegerType>()) {
                     return Optional<std::size_t>(builtinIntegerType->size);
-                } else if (const auto enumType = resolvedIdentifierType.definition->variant.tryGet<Definition::Enum>()) {
+                } else if (const auto enumType = resolvedIdentifierType.definition->tryGet<Definition::Enum>()) {
                     if (enumType->resolvedUnderlyingType != nullptr) {
                         return calculateStorageSize(enumType->resolvedUnderlyingType.get(), description);
                     }
-                } else if (const auto structType = resolvedIdentifierType.definition->variant.tryGet<Definition::Struct>()) {
+                } else if (const auto structType = resolvedIdentifierType.definition->tryGet<Definition::Struct>()) {
                     if (structType->size) {
                         return Optional<std::size_t>(structType->size);
                     }
@@ -3317,7 +3316,7 @@ namespace wiz {
                         report->error("address must be a non-negative integer, but got `" + addressLiteral->value.toString() + "` instead", reducedAddressExpression->location);
                     } else {
                         const auto maxPointerSizedType = platform->getFarPointerSizedType();
-                        const auto addressMax = Int128((1U << (8U * maxPointerSizedType->variant.get<Definition::BuiltinIntegerType>().size)) - 1);
+                        const auto addressMax = Int128((1U << (8U * maxPointerSizedType->builtinIntegerType.size)) - 1);
                         if (addressLiteral->value > addressMax) {
                             report->error("address of `0x" + addressLiteral->value.toString(16) + "` is outside the valid address range `0` .. `0x" + addressMax.toString(16) + "` supported by this platform.", reducedAddressExpression->location);
                         } else {
@@ -3411,7 +3410,7 @@ namespace wiz {
                 const auto definition = resolvedIdentifier.definition;
 
                 Optional<std::size_t> absolutePosition;
-                if (const auto funcDefinition = definition->variant.tryGet<Definition::Func>()) {
+                if (const auto funcDefinition = definition->tryGet<Definition::Func>()) {
                     if (funcDefinition->inlined) {
                         report->error("`inline func` has no address so it cannot be used as a constant initializer", expression->location);
                     } else {
@@ -3422,7 +3421,7 @@ namespace wiz {
                 }
 
                 if (absolutePosition.hasValue()) {
-                    return serializeInteger(Int128(*absolutePosition), platform->getPointerSizedType()->variant.get<Definition::BuiltinIntegerType>().size, result);
+                    return serializeInteger(Int128(*absolutePosition), platform->getPointerSizedType()->builtinIntegerType.size, result);
                 }
                 return false;
             }
@@ -3439,7 +3438,7 @@ namespace wiz {
             case ExpressionKind::StructLiteral: {
                 const auto& structLiteral = expression->structLiteral;
                 const auto definition = structLiteral.type->resolvedIdentifier.definition;
-                const auto& structDefinition = definition->variant.get<Definition::Struct>();                
+                const auto& structDefinition = definition->struct_;                
                 const auto sizeBefore = result.size();
 
 
@@ -3500,7 +3499,7 @@ namespace wiz {
         }
 
         if (const auto definition = resolveResult.first) {
-            if (auto bankDefinition = definition->variant.tryGet<Definition::Bank>()) {
+            if (auto bankDefinition = definition->tryGet<Definition::Bank>()) {
                 currentBank = bankDefinition->bank;
 
                 if (dest != nullptr) {
@@ -3511,7 +3510,7 @@ namespace wiz {
                             } else {
                                 const auto oldPosition = currentBank->getAddress().absolutePosition;
                                 const auto maxPointerSizedType = platform->getFarPointerSizedType();
-                                const auto addressMax = Int128((1U << (8U * maxPointerSizedType->variant.get<Definition::BuiltinIntegerType>().size)) - 1);
+                                const auto addressMax = Int128((1U << (8U * maxPointerSizedType->builtinIntegerType.size)) - 1);
 
                                 if (addressLiteral->value > addressMax) {
                                     report->error("address of `0x" + addressLiteral->value.toString(16) + "` is outside the address range `0` .. `0x" + addressMax.toString(16) + "` supported by this platform.", reducedAddressExpression->location);
@@ -3715,7 +3714,7 @@ namespace wiz {
 
                 definitionsToResolve.push_back(definition);
 
-                auto& enumDefinition = definition->variant.get<Definition::Enum>();
+                auto& enumDefinition = definition->enum_;
 
                 enterScope(scope);
 
@@ -3799,7 +3798,7 @@ namespace wiz {
                     break;
                 }
 
-                auto& funcDefinition = definition->variant.get<Definition::Func>();
+                auto& funcDefinition = definition->func;
 
                 enterScope(getOrCreateStatementScope(StringView(), body, currentScope));
                 for (const auto& parameter : funcDeclaration.parameters) {
@@ -3847,7 +3846,7 @@ namespace wiz {
                     break;
                 }
 
-                auto& func = definition->variant.get<Definition::Func>();
+                auto& func = definition->func;
                 func.resolvedSignatureType = makeFwdUnique<const TypeExpression>(TypeExpression::Function(labelDeclaration.far, {}, func.returnTypeExpression->clone()), func.returnTypeExpression->location);
                 break;
             }
@@ -3860,7 +3859,7 @@ namespace wiz {
                 const auto& namespaceDeclaration = statement->namespace_;
                 SymbolTable* scope = nullptr;
                 if (const auto definition = currentScope->findLocalMemberDefinition(namespaceDeclaration.name)) {
-                    if (const auto ns = definition->variant.tryGet<Definition::Namespace>()) {
+                    if (const auto ns = definition->tryGet<Definition::Namespace>()) {
                         // Reuse scope if it already exists.
                         scope = ns->environment;
                     } else {
@@ -3875,7 +3874,7 @@ namespace wiz {
                     tempImportedDefinitions.clear();
                     currentScope->findImportedMemberDefinitions(namespaceDeclaration.name, tempImportedDefinitions);
                     for (const auto importedDefinition : tempImportedDefinitions) {
-                        if (const auto ns = importedDefinition->variant.tryGet<Definition::Namespace>()) {
+                        if (const auto ns = importedDefinition->tryGet<Definition::Namespace>()) {
                             scope->addRecursiveImport(ns->environment);
                         }
                     }
@@ -3898,7 +3897,7 @@ namespace wiz {
                     break;
                 }
 
-                auto& structDefinition = definition->variant.get<Definition::Struct>();
+                auto& structDefinition = definition->struct_;
 
                 enterScope(scope);
 
@@ -3962,7 +3961,7 @@ namespace wiz {
 
     bool Compiler::resolveDefinitionTypes() {
         for (auto& definition : definitionsToResolve) {
-            if (auto enumDefinition = definition->variant.tryGet<Definition::Enum>()) {
+            if (auto enumDefinition = definition->tryGet<Definition::Enum>()) {
                 enterScope(definition->parentScope);
 
                 if (const auto underlyingTypeExpression = enumDefinition->underlyingTypeExpression) {
@@ -3983,7 +3982,7 @@ namespace wiz {
 
                 enterScope(enumDefinition->environment);
                 for (auto member : enumDefinition->members) {
-                    auto& enumMemberDefinition = member->variant.get<Definition::EnumMember>();
+                    auto& enumMemberDefinition = member->enumMember;
 
                     if (enumMemberDefinition.expression == previousExpression) {
                         enumMemberDefinition.reducedExpression = makeFwdUnique<const Expression>(
@@ -4009,7 +4008,7 @@ namespace wiz {
                 }
                 exitScope();
                 exitScope();
-            } else if (auto structDefinition = definition->variant.tryGet<Definition::Struct>()) {
+            } else if (auto structDefinition = definition->tryGet<Definition::Struct>()) {
                 const auto description = structDefinition->kind == StructKind::Struct ? "`struct` member"_sv : "`union` member"_sv;
 
                 enterScope(definition->parentScope);
@@ -4018,7 +4017,7 @@ namespace wiz {
                 std::size_t offset = 0;
                 std::size_t totalSize = 0;
                 for (auto member : structDefinition->members) {
-                    auto& structMemberDefinition = member->variant.get<Definition::StructMember>();
+                    auto& structMemberDefinition = member->structMember;
                     structMemberDefinition.offset = offset;
 
                     if (auto resolvedType = reduceTypeExpression(structMemberDefinition.typeExpression)) {
@@ -4038,7 +4037,7 @@ namespace wiz {
 
                 exitScope();
                 exitScope();
-            } else if (auto typeAliasDefinition = definition->variant.tryGet<Definition::TypeAlias>()) {
+            } else if (auto typeAliasDefinition = definition->tryGet<Definition::TypeAlias>()) {
                 enterScope(definition->parentScope);
                 typeAliasDefinition->resolvedType = reduceTypeExpression(typeAliasDefinition->typeExpression);
                 exitScope();
@@ -4046,14 +4045,14 @@ namespace wiz {
         }
 
         for (auto& definition : definitionsToResolve) {
-            if (auto varDefinition = definition->variant.tryGet<Definition::Var>()) {
+            if (auto varDefinition = definition->tryGet<Definition::Var>()) {
                 enterScope(definition->parentScope);
                 if (const auto typeExpression = varDefinition->typeExpression) {
                     varDefinition->reducedTypeExpression = reduceTypeExpression(typeExpression);
                     varDefinition->resolvedType = varDefinition->reducedTypeExpression.get();
                 }
                 exitScope();
-            } else if (auto funcDefinition = definition->variant.tryGet<Definition::Func>()) {
+            } else if (auto funcDefinition = definition->tryGet<Definition::Func>()) {
                 enterScope(definition->parentScope);
 
                 bool valid = true;
@@ -4068,7 +4067,7 @@ namespace wiz {
                 parameterTypes.reserve(funcDefinition->parameters.size());
 
                 for (const auto& parameter : funcDefinition->parameters) {
-                    auto& parameterDefinition = parameter->variant.get<Definition::Var>();
+                    auto& parameterDefinition = parameter->var;
                     if (auto parameterType = reduceTypeExpression(parameterDefinition.typeExpression)) {
                         parameterDefinition.reducedTypeExpression = parameterType->clone();
                         parameterDefinition.resolvedType = parameterDefinition.reducedTypeExpression.get();
@@ -4082,7 +4081,7 @@ namespace wiz {
                     funcDefinition->resolvedSignatureType = makeFwdUnique<const TypeExpression>(TypeExpression::Function(funcDefinition->far, std::move(parameterTypes), std::move(returnType)), definition->declaration->location);
                 }
                 exitScope();
-            } else if (auto bankDefinition = definition->variant.tryGet<Definition::Bank>()) {
+            } else if (auto bankDefinition = definition->tryGet<Definition::Bank>()) {
                 enterScope(definition->parentScope);
                 bankDefinition->resolvedType = reduceTypeExpression(bankDefinition->typeExpression);
 
@@ -4093,7 +4092,7 @@ namespace wiz {
 
                     if (const auto arrayType = resolvedType->tryGet<TypeExpression::Array>()) {
                         if (const auto elementType = arrayType->elementType->tryGet<TypeExpression::ResolvedIdentifier>()) {
-                            if (const auto bankType = elementType->definition->variant.tryGet<Definition::BuiltinBankType>()) {
+                            if (const auto bankType = elementType->definition->tryGet<Definition::BuiltinBankType>()) {
                                 if (arrayType->size) {
                                     if (auto reducedSizeExpression = reduceExpression(arrayType->size.get())) {
                                         if (const auto sizeLiteral = reducedSizeExpression->tryGet<Expression::IntegerLiteral>()) {
@@ -4102,7 +4101,7 @@ namespace wiz {
                                                 report->error("bank size must be greater than zero, but got `" + sizeLiteral->value.toString() + "` instead", reducedSizeExpression->location);
                                             } else {
                                                 const auto maxPointerSizedType = platform->getFarPointerSizedType();
-                                                const auto addressEnd = Int128(1U << (8U * maxPointerSizedType->variant.get<Definition::BuiltinIntegerType>().size));
+                                                const auto addressEnd = Int128(1U << (8U * maxPointerSizedType->builtinIntegerType.size));
 
                                                 if (sizeLiteral->value > addressEnd) {
                                                     report->error("bank size of `" + sizeLiteral->value.toString() + "` will cause an upper address outside the valid address range `0` .. `0x" + (addressEnd - Int128::one()).toString(16) + "` supported by this platform.", reducedSizeExpression->location);
@@ -4193,7 +4192,7 @@ namespace wiz {
                 const auto& funcDeclaration = statement->func;
 
                 auto definition = currentScope->findLocalMemberDefinition(funcDeclaration.name);
-                auto& funcDefinition = definition->variant.get<Definition::Func>();    
+                auto& funcDefinition = definition->func;    
                 
                 const auto oldFunction = currentFunction;
                 const auto onExit = makeScopeGuard([&]() {
@@ -4201,7 +4200,7 @@ namespace wiz {
                 });
 
                 for (auto& parameter : funcDefinition.parameters) {
-                    auto& parameterVarDefinition = parameter->variant.get<Definition::Var>();
+                    auto& parameterVarDefinition = parameter->var;
 
                     if (parameterVarDefinition.enclosingFunction != nullptr) {
                         if (parameterVarDefinition.typeExpression->kind != TypeExpressionKind::DesignatedStorage) {
@@ -4288,7 +4287,7 @@ namespace wiz {
     }
 
     bool Compiler::resolveVariableInitializer(Definition* definition, const Expression* initializer, StringView description, SourceLocation location) {
-        auto& varDefinition = definition->variant.get<Definition::Var>();
+        auto& varDefinition = definition->var;
 
         if (currentBank == nullptr || !isBankKindStored(currentBank->getKind())) {
             report->error(description.toString() + " with initializer " + (currentBank == nullptr ? "must be inside an `in` statement" : "is not allowed in bank `" + currentBank->getName().toString() + "`"), location);
@@ -4339,7 +4338,7 @@ namespace wiz {
     }
 
     bool Compiler::reserveVariableStorage(Definition* definition, StringView description, SourceLocation location) {
-        auto& varDefinition = definition->variant.get<Definition::Var>();
+        auto& varDefinition = definition->var;
         const auto name = definition->name;
 
         if (!varDefinition.resolvedType) {
@@ -4403,11 +4402,11 @@ namespace wiz {
     }
 
     FwdUniquePtr<InstructionOperand> Compiler::createPlaceholderFromResolvedTypeDefinition(const Definition* resolvedTypeDefinition) const {
-        if (const auto builtinIntegerType = resolvedTypeDefinition->variant.tryGet<Definition::BuiltinIntegerType>()) {
+        if (const auto builtinIntegerType = resolvedTypeDefinition->tryGet<Definition::BuiltinIntegerType>()) {
             const auto placeholder = platform->getPlaceholderValue();
             const auto mask = Int128((1U << (8U * builtinIntegerType->size)) - 1);
             return makeFwdUnique<InstructionOperand>(InstructionOperand::Integer(placeholder & mask, true));
-        } else if (resolvedTypeDefinition->variant.is<Definition::BuiltinBoolType>()) {
+        } else if (resolvedTypeDefinition->kind == DefinitionKind::BuiltinBoolType) {
             return makeFwdUnique<InstructionOperand>(InstructionOperand::Boolean(false, true));
         } 
         return nullptr;
@@ -4429,12 +4428,12 @@ namespace wiz {
         bool isFunctionLiteral = false;
         Optional<std::size_t> absolutePosition;
 
-        if (const auto varDefinition = definition->variant.tryGet<Definition::Var>()) {
+        if (const auto varDefinition = definition->tryGet<Definition::Var>()) {
             isAddressableOperand = true;
             if (const auto address = varDefinition->address.tryGet()) {
                 absolutePosition = address->absolutePosition;
             }
-        } else if (const auto funcDefinition = definition->variant.tryGet<Definition::Func>()) {
+        } else if (const auto funcDefinition = definition->tryGet<Definition::Func>()) {
             if (funcDefinition->inlined) {
                 return nullptr;
             }
@@ -4450,7 +4449,7 @@ namespace wiz {
         if (isAddressableOperand) {
             FwdUniquePtr<InstructionOperand> operand;
             if (absolutePosition.hasValue()) {
-                const auto mask = Int128((1U << (8U * pointerSizedType->variant.get<Definition::BuiltinIntegerType>().size)) - 1);
+                const auto mask = Int128((1U << (8U * pointerSizedType->builtinIntegerType.size)) - 1);
                 operand = makeFwdUnique<InstructionOperand>(InstructionOperand::Integer(Int128(*absolutePosition) & mask));
             } else {
                 operand = createPlaceholderFromResolvedTypeDefinition(pointerSizedType);
@@ -4469,7 +4468,7 @@ namespace wiz {
             }
         }
 
-        if (definition->variant.is<Definition::BuiltinRegister>()) {
+        if (definition->kind == DefinitionKind::BuiltinRegister) {
             return makeFwdUnique<InstructionOperand>(InstructionOperand::Register(definition));
         }
 
@@ -4568,7 +4567,7 @@ namespace wiz {
                             validRuntimeCast = true;
                         } else {
                             if (const auto resolvedIdentifier = cast.operand->tryGet<Expression::ResolvedIdentifier>()) {
-                                if (resolvedIdentifier->definition->variant.is<Definition::BuiltinRegister>()) {
+                                if (resolvedIdentifier->definition->kind == DefinitionKind::BuiltinRegister) {
                                     validRuntimeCast = true;
                                 }
                             }
@@ -5044,7 +5043,7 @@ namespace wiz {
         if (const auto resolvedIdentifier = function->tryGet<Expression::ResolvedIdentifier>()) {
             const auto definition = resolvedIdentifier->definition;
 
-            if (const auto funcDefinition = definition->variant.tryGet<Definition::Func>()) {
+            if (const auto funcDefinition = definition->tryGet<Definition::Func>()) {
                 auto& functionType = funcDefinition->resolvedSignatureType->function;
 
                 if (!emitArgumentPassIr(funcDefinition->resolvedSignatureType.get(), funcDefinition->parameters, arguments, location)) {
@@ -5129,7 +5128,7 @@ namespace wiz {
 				}
 
                 return true;
-            } else if (definition->variant.is<Definition::BuiltinVoidIntrinsic>()) {
+            } else if (definition->kind == DefinitionKind::BuiltinVoidIntrinsic) {
                 if (resultDestination != nullptr) {
                     report->error("void intrinsic `" + definition->name.toString() + "` has no return value so its result cannot be stored.", location);
                     return false;
@@ -5184,7 +5183,7 @@ namespace wiz {
                     raiseEmitIntrinsicError(InstructionType(InstructionType::VoidIntrinsic(definition)), operandRoots, location);
                     return false;
                 }
-            } else if (definition->variant.is<Definition::BuiltinLoadIntrinsic>()) {
+            } else if (definition->kind == DefinitionKind::BuiltinLoadIntrinsic) {
                 if (resultDestination == nullptr) {
                     report->error("load intrinsic `" + definition->name.toString() + "` must have its result stored somewhere.", location);
                     return false;
@@ -5864,7 +5863,7 @@ namespace wiz {
             }
             case BranchKind::Return: {
                 if (currentFunction != nullptr) {
-                    const auto& funcDefinition = currentFunction->variant.get<Definition::Func>();
+                    const auto& funcDefinition = currentFunction->func;
                     const auto returnType = funcDefinition.resolvedSignatureType->function.returnType.get();
                     bool isVoid = isEmptyTupleType(returnType);
                     bool needsIntermediateBranch = false;
@@ -6089,7 +6088,7 @@ namespace wiz {
                     return true;
                 }
             } else if (const auto resolvedIdentifier = condition->tryGet<Expression::ResolvedIdentifier>()) {
-                if (const auto builtinRegister = resolvedIdentifier->definition->variant.tryGet<Definition::BuiltinRegister>()) {
+                if (const auto builtinRegister = resolvedIdentifier->definition->tryGet<Definition::BuiltinRegister>()) {
                     static_cast<void>(builtinRegister);
                     
                     std::vector<InstructionOperandRoot> operandRoots;
@@ -6206,7 +6205,7 @@ namespace wiz {
     }
 
     bool Compiler::emitFunctionIr(Definition* definition, SourceLocation location) {
-        auto& funcDefinition = definition->variant.get<Definition::Func>();
+        auto& funcDefinition = definition->func;
 
         const auto oldFunction = currentFunction;
         const auto oldReturnLabel = returnLabel;
@@ -6375,7 +6374,7 @@ namespace wiz {
 
                 const auto& rangeLiteral = reducedSequence->tryGet<Expression::RangeLiteral>();
                 const auto counterResolvedIdentifierType = reducedCounter->info->type->tryGet<TypeExpression::ResolvedIdentifier>();
-                const auto counterBuiltinIntegerType = counterResolvedIdentifierType ? counterResolvedIdentifierType->definition->variant.tryGet<Definition::BuiltinIntegerType>() : nullptr;
+                const auto counterBuiltinIntegerType = counterResolvedIdentifierType ? counterResolvedIdentifierType->definition->tryGet<Definition::BuiltinIntegerType>() : nullptr;
                 if (!counterBuiltinIntegerType) {
                     report->error("`for` loop counter start must be a sized integer type.", statement->location);
                     break;
@@ -6503,7 +6502,7 @@ namespace wiz {
             case StatementKind::Func: {
                 const auto& funcDeclaration = statement->func;
                 auto definition = currentScope->findLocalMemberDefinition(funcDeclaration.name);
-                auto& funcDefinition = definition->variant.get<Definition::Func>();
+                auto& funcDefinition = definition->func;
 
                 if (funcDefinition.inlined) {
                     //report->error("TODO: `inline func`", statement->location);
@@ -6624,7 +6623,7 @@ namespace wiz {
                     if (valid) {
                         auto tempDeclaration = statementPool.addNew(Statement::InternalDeclaration(), statement->location);
                         auto tempDefinition = currentScope->createDefinition(report, Definition::Let({}, nullptr), inlineForStatement.name, tempDeclaration);
-                        auto& tempLetDefinition = tempDefinition->variant.get<Definition::Let>();
+                        auto& tempLetDefinition = tempDefinition->let;
 
                         auto sourceItem = getSequenceLiteralItem(reducedSequence.get(), i);
                         tempLetDefinition.expression = sourceItem.get();
@@ -6709,7 +6708,7 @@ namespace wiz {
                 const auto& varDeclaration = statement->var;
                 for (const auto& name : varDeclaration.names) {
                     auto definition = currentScope->findLocalMemberDefinition(name);
-                    auto& varDefinition = definition->variant.get<Definition::Var>();
+                    auto& varDefinition = definition->var;
 
                     if ((varDefinition.qualifiers & Qualifiers::Extern) == Qualifiers::None) {
                         if (currentBank == nullptr && varDefinition.addressExpression == nullptr) {
@@ -6802,7 +6801,7 @@ namespace wiz {
                 }
                 case IrNodeKind::Label: {
                     const auto& label = irNode->label;
-                    auto& funcDefinition = label.definition->variant.get<Definition::Func>();
+                    auto& funcDefinition = label.definition->func;
                     funcDefinition.address = currentBank->getAddress();                    
                     break;
                 }
@@ -6855,7 +6854,7 @@ namespace wiz {
                 }
                 case IrNodeKind::Var: {
                     const auto& var = irNode->var;
-                    auto& varDefinition = var.definition->variant.get<Definition::Var>();
+                    auto& varDefinition = var.definition->var;
 
                     Optional<std::size_t> oldPosition;
                     if (varDefinition.addressExpression != nullptr) {
@@ -6934,7 +6933,7 @@ namespace wiz {
                     const auto& label = irNode->label;
                     Address labelAddress;
 
-                    auto& funcDefinition = label.definition->variant.get<Definition::Func>();
+                    auto& funcDefinition = label.definition->func;
                     labelAddress = funcDefinition.address.get();
 
                     const auto currentBankAddress = currentBank->getAddress();
@@ -7006,7 +7005,7 @@ namespace wiz {
                 }
                 case IrNodeKind::Var: {
                     const auto& var = irNode->var;
-                    auto& varDefinition = var.definition->variant.get<Definition::Var>();
+                    auto& varDefinition = var.definition->var;
 
                     Optional<std::size_t> oldPosition;
                     if (varDefinition.addressExpression != nullptr) {
