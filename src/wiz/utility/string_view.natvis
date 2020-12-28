@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="wiz::StringView">
+    <DisplayString>{data,[length]s8}</DisplayString>
+    <StringView>data,[length]s8</StringView>
+    <Expand>
+      <Item Name="[length]" ExcludeView="simple">length</Item>
+      <ArrayItems>
+        <Size>length</Size>
+        <ValuePointer>data</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+</AutoVisualizer>
