@@ -136,12 +136,14 @@ namespace wiz {
             const auto value = static_cast<std::size_t>(expansionRamSize->second);
             if (value != 0) {
                 auto logValue = log2(value);
-                if (value < 4096) {
-                    report->error("`expansion_ram_size` of \"" + std::to_string(value) + "\" is not supported (must be at least 4096 bytes)", expansionRamSize->first->location);
+                if (value < 2048) {
+                    report->error("`expansion_ram_size` of \"" + std::to_string(value) + "\" is not supported (must be at least 2048 bytes)", expansionRamSize->first->location);
+                } else if (value > 262144) {
+                    report->error("`expansion_ram_size` of \"" + std::to_string(value) + "\" is not supported (must be no more than 262144 bytes)", expansionRamSize->first->location);
                 } else if (value > (static_cast<std::size_t>(1) << logValue)) {
                     report->error("`expansion_ram_size` of \"" + std::to_string(value) + "\" is not supported (must be a power-of-two)", expansionRamSize->first->location);
                 } else {
-                    data[headerAddress + 0xBD] = static_cast<std::uint8_t>(log2(value) - log2(4096));
+                    data[headerAddress + 0xBD] = static_cast<std::uint8_t>(log2(value) - log2(1024));
                 }
             }
         }
@@ -173,16 +175,18 @@ namespace wiz {
                 const auto value = static_cast<std::size_t>(ramSize->second);
                 if (value != 0) {
                     auto logValue = log2(value);
-                    if (value < 4096) {
-                        report->error("`ram_size` of \"" + std::to_string(value) + "\" is not supported (must be at least 4096 bytes)", ramSize->first->location);
+                    if (value < 2048) {
+                        report->error("`ram_size` of \"" + std::to_string(value) + "\" is not supported (must be at least 2048 bytes)", ramSize->first->location);
+                    } else if (value > 262144) {
+                        report->error("`ram_size` of \"" + std::to_string(value) + "\" is not supported (must be no more than 262144 bytes)", ramSize->first->location);
                     } else if (value > (static_cast<std::size_t>(1) << logValue)) {
                         report->error("`ram_size` of \"" + std::to_string(value) + "\" is not supported (must be a power-of-two)", ramSize->first->location);
                     } else {
-                        data[headerAddress + 0xD8] = static_cast<std::uint8_t>(log2(value) - log2(4096));
-                        if (cartTypeLower >= 0x03) {
+                        data[headerAddress + 0xD8] = static_cast<std::uint8_t>(log2(value) - log2(1024));
+                        if (cartTypeLower == 0x03) {
                             cartTypeLower = 0x04;
-                        } else {
-                            cartTypeLower = 0x04;
+                        } else if (cartTypeLower == 0x00) {
+                            cartTypeLower = 0x01;
                         }
                     }
                 }
