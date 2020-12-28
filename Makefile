@@ -10,7 +10,7 @@ endif
 
 ifeq ($(OS),Windows_NT)
 	EXE := .exe
-	LOCATE_COMMAND := where
+	LOCATE_COMMAND := makefile_find_command
 else
 	EXE :=
 	LOCATE_COMMAND := command -v
@@ -19,6 +19,8 @@ endif
 HAS_CC := $(shell $(LOCATE_COMMAND) cc)
 HAS_GCC := $(shell $(LOCATE_COMMAND) gcc)
 HAS_CLANG := $(shell $(LOCATE_COMMAND) clang)
+
+$(info HAS_GCC $(HAS_GCC))
 
 ifndef HAS_PREDEFINED_CC
 ifdef HAS_CC
