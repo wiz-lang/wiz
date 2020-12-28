@@ -135,6 +135,7 @@
     <ClCompile Include="..\src\wiz\wiz.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Natvis Include="..\src\wiz\utility\int128.natvis" />
     <Natvis Include="..\src\wiz\utility\string_view.natvis" />
     <Natvis Include="..\src\wiz\utility\unique_ptr.natvis" />
     <Natvis Include="..\src\wiz\utility\variant.natvis" />
