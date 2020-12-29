@@ -110,6 +110,7 @@ namespace wiz {
             bool isEnumType(const TypeExpression* typeExpression) const;
             bool isPointerLikeType(const TypeExpression* typeExpression) const;
             bool isFarType(const TypeExpression* typeExpression) const;
+            const TypeExpression* getDesignatedStorageElementType(const TypeExpression* typeExpression) const;
             const TypeExpression* findCompatibleBinaryArithmeticExpressionType(const Expression* left, const Expression* right) const;
             const TypeExpression* findCompatibleConcatenationExpressionType(const Expression* left, const Expression* right) const;
             const TypeExpression* findCompatibleAssignmentType(const Expression* initializer, const TypeExpression* declarationType) const;

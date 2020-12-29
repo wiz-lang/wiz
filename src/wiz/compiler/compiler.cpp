@@ -2740,6 +2740,13 @@ namespace wiz {
         return false;
     }
 
+    const TypeExpression* Compiler::getDesignatedStorageElementType(const TypeExpression* typeExpression) const {
+        while (typeExpression->kind == TypeExpressionKind::DesignatedStorage) {
+            typeExpression = typeExpression->designatedStorage.elementType.get();
+        }
+        return typeExpression;
+    }
+
     const TypeExpression* Compiler::findCompatibleBinaryArithmeticExpressionType(const Expression* left, const Expression* right) const {
         if (left == nullptr || right == nullptr || left->info->type == nullptr || right->info->type == nullptr) {
             return nullptr;
@@ -2882,8 +2889,8 @@ namespace wiz {
             }
         }
 
-        if (const auto destinationDesignatedStorageType = destinationType->tryGet<TypeExpression::DesignatedStorage>()) {
-            return canNarrowExpression(sourceExpression, destinationDesignatedStorageType->elementType.get());
+        if (destinationType->kind == TypeExpressionKind::DesignatedStorage) {
+            return canNarrowExpression(sourceExpression, getDesignatedStorageElementType(destinationType));
         }
 
         if (const auto destinationPointerType = destinationType->tryGet<TypeExpression::Pointer>()) {
@@ -2968,8 +2975,8 @@ namespace wiz {
             return sourceExpression->clone();
         }
 
-        if (const auto destinationDesignatedStorageType = destinationType->tryGet<TypeExpression::DesignatedStorage>()) {
-            return createConvertedExpression(sourceExpression, destinationDesignatedStorageType->elementType.get());
+        if (destinationType->kind == TypeExpressionKind::DesignatedStorage) {
+            return createConvertedExpression(sourceExpression, getDesignatedStorageElementType(destinationType));
         }
 
         // Adding const or writeonly to expression that didn't have it.
@@ -3028,9 +3035,9 @@ namespace wiz {
             return false;
         }
 
-        if (const auto rightDesignatedStorageType = rightTypeExpression->tryGet<TypeExpression::DesignatedStorage>()) {
-            const auto leftSize = calculateStorageSize(leftTypeExpression, ""_sv);
-            const auto rightSize = calculateStorageSize(rightDesignatedStorageType->elementType.get(), ""_sv);
+        if (rightTypeExpression->kind == TypeExpressionKind::DesignatedStorage) {
+            const auto leftSize = calculateStorageSize(getDesignatedStorageElementType(leftTypeExpression), ""_sv);
+            const auto rightSize = calculateStorageSize(getDesignatedStorageElementType(rightTypeExpression), ""_sv);
 
             return leftSize.hasValue() && rightSize.hasValue() && *leftSize == *rightSize;
         }
@@ -3054,8 +3061,8 @@ namespace wiz {
             }
             case TypeExpressionKind::DesignatedStorage: {
                 const auto& leftDesignatedStorageType = leftTypeExpression->designatedStorage;
-                const auto leftSize = calculateStorageSize(leftDesignatedStorageType.elementType.get(), ""_sv);
-                const auto rightSize = calculateStorageSize(rightTypeExpression, ""_sv);
+                const auto leftSize = calculateStorageSize(getDesignatedStorageElementType(leftTypeExpression), ""_sv);
+                const auto rightSize = calculateStorageSize(getDesignatedStorageElementType(rightTypeExpression), ""_sv);
 
                 return leftSize.hasValue() && rightSize.hasValue() && *leftSize == *rightSize;
             }
@@ -7035,8 +7042,8 @@ namespace wiz {
                     tempBuffer.reserve(varDefinition.storageSize.get());
 
                     if (hasInitializer) {
-                        if (!serializeConstantInitializer(finalInitializerExpression, tempBuffer)) {
-                            report->error("constant initializer could not be resolved at compile-time", irNode->location, ReportErrorFlags::Fatal);
+                        if (!finalInitializerExpression || !serializeConstantInitializer(finalInitializerExpression, tempBuffer)) {
+                            report->error("constant initializer could not be resolved at link-time", irNode->location, ReportErrorFlags::Fatal);
                             break;
                         }
                     } else {
