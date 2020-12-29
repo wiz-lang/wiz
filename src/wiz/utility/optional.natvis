@@ -2,7 +2,7 @@
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
   <Type Name="wiz::Optional&lt;*&gt;">
     <DisplayString Condition="hasValue_ == false">empty</DisplayString>
-    <DisplayString>{*($T1 *)&amp;(data)}</DisplayString>
+    <DisplayString Condition="hasValue_ == true">{*($T1 *)&amp;(data)}</DisplayString>
     <Expand>
       <Item Name="[value]" Condition="hasValue_ == true">*($T1 *)&amp;(data)</Item>
     </Expand>

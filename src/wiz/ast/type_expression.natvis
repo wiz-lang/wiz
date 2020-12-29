@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="wiz::TypeExpression">
+    <DisplayString Condition="kind == wiz::TypeExpressionKind::Array">{kind,en} {array}</DisplayString>
+    <DisplayString Condition="kind == wiz::TypeExpressionKind::DesignatedStorage">{kind,en} {designatedStorage}</DisplayString>
+    <DisplayString Condition="kind == wiz::TypeExpressionKind::Function">{kind,en} {function}</DisplayString>
+    <DisplayString Condition="kind == wiz::TypeExpressionKind::Identifier">{kind,en} {identifier}</DisplayString>
+    <DisplayString Condition="kind == wiz::TypeExpressionKind::Pointer">{kind,en} {pointer}</DisplayString>
+    <DisplayString Condition="kind == wiz::TypeExpressionKind::ResolvedIdentifier">{kind,en} {resolvedIdentifier}</DisplayString>
+    <DisplayString Condition="kind == wiz::TypeExpressionKind::Tuple">{kind,en} {tuple}</DisplayString>
+    <DisplayString Condition="kind == wiz::TypeExpressionKind::TypeOf">{kind,en} {typeOf}</DisplayString>
+    <Expand>
+      <Item Name="[kind]">kind</Item>
+      <Item Name="[array]" Condition="kind == wiz::TypeExpressionKind::Array">array</Item>
+      <Item Name="[designatedStorage]" Condition="kind == wiz::TypeExpressionKind::DesignatedStorage">designatedStorage</Item>
+      <Item Name="[function]" Condition="kind == wiz::TypeExpressionKind::Function">function</Item>
+      <Item Name="[identifier]" Condition="kind == wiz::TypeExpressionKind::Identifier">identifier</Item>
+      <Item Name="[pointer]" Condition="kind == wiz::TypeExpressionKind::Pointer">pointer</Item>
+      <Item Name="[resolvedIdentifier]" Condition="kind == wiz::TypeExpressionKind::ResolvedIdentifier">resolvedIdentifier</Item>
+      <Item Name="[tuple]" Condition="kind == wiz::TypeExpressionKind::Tuple">tuple</Item>
+      <Item Name="[typeOf]" Condition="kind == wiz::TypeExpressionKind::TypeOf">typeOf</Item>
+      <Item Name="[location]">location</Item>
+    </Expand>
+  </Type>
+</AutoVisualizer>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="wiz::Expression">
+    <DisplayString Condition="kind == wiz::ExpressionKind::ArrayComprehension">{kind,en} {arrayComprehension}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::ArrayPadLiteral">{kind,en} {arrayPadLiteral}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::ArrayLiteral">{kind,en} {arrayLiteral}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::BinaryOperator">{kind,en} {binaryOperator}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::BooleanLiteral">{kind,en} {booleanLiteral}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::Call">{kind,en} {call}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::Cast">{kind,en} {cast}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::Embed">{kind,en} {embed}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::FieldAccess">{kind,en} {fieldAccess}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::Identifier">{kind,en} {identifier}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::IntegerLiteral">{kind,en} {integerLiteral}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::OffsetOf">{kind,en} {offsetOf}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::RangeLiteral">{kind,en} {rangeLiteral}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::ResolvedIdentifier">{kind,en} {resolvedIdentifier}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::SideEffect">{kind,en} {sideEffect}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::StringLiteral">{kind,en} {stringLiteral}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::StructLiteral">{kind,en} {structLiteral}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::TupleLiteral">{kind,en} {tupleLiteral}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::TypeOf">{kind,en} {typeOf}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::TypeQuery">{kind,en} {typeQuery}</DisplayString>
+    <DisplayString Condition="kind == wiz::ExpressionKind::UnaryOperator">{kind,en} {unaryOperator}</DisplayString>
+    <Expand>
+      <Item Name="[kind]">kind</Item>
+      <Item Name="[arrayComprehension]" Condition="kind == wiz::ExpressionKind::ArrayComprehension">arrayComprehension</Item>
+      <Item Name="[arrayPadLiteral]" Condition="kind == wiz::ExpressionKind::ArrayPadLiteral">arrayPadLiteral</Item>
+      <Item Name="[arrayLiteral]" Condition="kind == wiz::ExpressionKind::ArrayLiteral">arrayLiteral</Item>
+      <Item Name="[binaryOperator]" Condition="kind == wiz::ExpressionKind::BinaryOperator">binaryOperator</Item>
+      <Item Name="[booleanLiteral]" Condition="kind == wiz::ExpressionKind::BooleanLiteral">booleanLiteral</Item>
+      <Item Name="[call]" Condition="kind == wiz::ExpressionKind::Call">call</Item>
+      <Item Name="[cast]" Condition="kind == wiz::ExpressionKind::Cast">cast</Item>
+      <Item Name="[embed]" Condition="kind == wiz::ExpressionKind::Embed">embed</Item>
+      <Item Name="[fieldAccess]" Condition="kind == wiz::ExpressionKind::FieldAccess">fieldAccess</Item>
+      <Item Name="[identifier]" Condition="kind == wiz::ExpressionKind::Identifier">identifier</Item>
+      <Item Name="[integerLiteral]" Condition="kind == wiz::ExpressionKind::IntegerLiteral">integerLiteral</Item>
+      <Item Name="[offsetOf]" Condition="kind == wiz::ExpressionKind::OffsetOf">offsetOf</Item>
+      <Item Name="[rangeLiteral]" Condition="kind == wiz::ExpressionKind::RangeLiteral">rangeLiteral</Item>
+      <Item Name="[resolvedIdentifier]" Condition="kind == wiz::ExpressionKind::ResolvedIdentifier">resolvedIdentifier</Item>
+      <Item Name="[sideEffect]" Condition="kind == wiz::ExpressionKind::SideEffect">sideEffect</Item>
+      <Item Name="[stringLiteral]" Condition="kind == wiz::ExpressionKind::StringLiteral">stringLiteral</Item>
+      <Item Name="[structLiteral]" Condition="kind == wiz::ExpressionKind::StructLiteral">structLiteral</Item>
+      <Item Name="[tupleLiteral]" Condition="kind == wiz::ExpressionKind::TupleLiteral">tupleLiteral</Item>
+      <Item Name="[typeOf]" Condition="kind == wiz::ExpressionKind::TypeOf">typeOf</Item>
+      <Item Name="[typeQuery]" Condition="kind == wiz::ExpressionKind::TypeQuery">typeQuery</Item>
+      <Item Name="[unaryOperator]" Condition="kind == wiz::ExpressionKind::UnaryOperator">unaryOperator</Item>
+      <Item Name="[location]">location</Item>
+      <Item Name="[info]">info</Item>
+    </Expand>
+  </Type>
+</AutoVisualizer>

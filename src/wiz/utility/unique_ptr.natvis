@@ -3,7 +3,7 @@
   <Type Name="wiz::UniquePtr&lt;*&gt;">
     <SmartPointer Usage="Minimal">ptr</SmartPointer>
     <DisplayString Condition="ptr == 0">empty</DisplayString>
-    <DisplayString Condition="ptr != 0">UniquePtr {*ptr}</DisplayString>
+    <DisplayString Condition="ptr != 0">{ptr}</DisplayString>
     <Expand>
       <Item Name="[ptr]" Condition="ptr != 0">ptr</Item>
     </Expand>

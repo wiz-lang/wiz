@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="wiz::SourceLocation">
+    <DisplayString Condition="displayPath.length == 0">empty location</DisplayString>
+    <DisplayString Condition="displayPath.length != 0">{displayPath,s8b}:{line,d}</DisplayString>
+  </Type>
+</AutoVisualizer>

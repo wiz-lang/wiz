@@ -367,10 +367,32 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Natvis Include="..\src\wiz\utility\variant.natvis" />
-    <Natvis Include="..\src\wiz\utility\optional.natvis" />
-    <Natvis Include="..\src\wiz\utility\unique_ptr.natvis" />
-    <Natvis Include="..\src\wiz\utility\string_view.natvis" />
-    <Natvis Include="..\src\wiz\utility\int128.natvis" />
+    <Natvis Include="..\src\wiz\utility\int128.natvis">
+      <Filter>Header Files\utility</Filter>
+    </Natvis>
+    <Natvis Include="..\src\wiz\utility\optional.natvis">
+      <Filter>Header Files\utility</Filter>
+    </Natvis>
+    <Natvis Include="..\src\wiz\utility\string_view.natvis">
+      <Filter>Header Files\utility</Filter>
+    </Natvis>
+    <Natvis Include="..\src\wiz\utility\unique_ptr.natvis">
+      <Filter>Header Files\utility</Filter>
+    </Natvis>
+    <Natvis Include="..\src\wiz\utility\variant.natvis">
+      <Filter>Header Files\utility</Filter>
+    </Natvis>
+    <Natvis Include="..\src\wiz\ast\expression.natvis">
+      <Filter>Header Files\ast</Filter>
+    </Natvis>
+    <Natvis Include="..\src\wiz\ast\statement.natvis">
+      <Filter>Header Files\ast</Filter>
+    </Natvis>
+    <Natvis Include="..\src\wiz\utility\source_location.natvis">
+      <Filter>Header Files\utility</Filter>
+    </Natvis>
+    <Natvis Include="..\src\wiz\ast\type_expression.natvis">
+      <Filter>Header Files\ast</Filter>
+    </Natvis>
   </ItemGroup>
 </Project>

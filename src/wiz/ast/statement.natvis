@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="wiz::Statement">
+    <DisplayString Condition="kind == wiz::StatementKind::Attribution">{kind,en} {attribution}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::Bank">{kind,en} {bank}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::Block">{kind,en} {block}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::Branch">{kind,en} {branch}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::Config">{kind,en} {config}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::DoWhile">{kind,en} {doWhile}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::Enum">{kind,en} {enum_}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::ExpressionStatement">{kind,en} {expressionStatement}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::File">{kind,en} {file}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::For">{kind,en} {for_}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::Func">{kind,en} {func}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::If">{kind,en} {if_}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::In">{kind,en} {in}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::InlineFor">{kind,en} {inlineFor}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::ImportReference">{kind,en} {importReference}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::InternalDeclaration">{kind,en} {internalDeclaration}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::Label">{kind,en} {label}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::Let">{kind,en} {let}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::Namespace">{kind,en} {namespace_}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::Struct">{kind,en} {struct_}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::TypeAlias">{kind,en} {typeAlias}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::Var">{kind,en} {var}</DisplayString>
+    <DisplayString Condition="kind == wiz::StatementKind::While">{kind,en} {while_}</DisplayString>
+    <Expand>
+      <Item Name="[kind]">kind</Item>
+      <Item Name="[attribution]" Condition="kind == wiz::StatementKind::Attribution">attribution</Item>
+      <Item Name="[bank]" Condition="kind == wiz::StatementKind::Bank">bank</Item>
+      <Item Name="[block]" Condition="kind == wiz::StatementKind::Block">block</Item>
+      <Item Name="[branch]" Condition="kind == wiz::StatementKind::Branch">branch</Item>
+      <Item Name="[config]" Condition="kind == wiz::StatementKind::Config">config</Item>
+      <Item Name="[doWhile]" Condition="kind == wiz::StatementKind::DoWhile">doWhile</Item>
+      <Item Name="[enum_]" Condition="kind == wiz::StatementKind::Enum">enum_</Item>
+      <Item Name="[expressionStatement]" Condition="kind == wiz::StatementKind::ExpressionStatement">expressionStatement</Item>
+      <Item Name="[file]" Condition="kind == wiz::StatementKind::File">file</Item>
+      <Item Name="[for_]" Condition="kind == wiz::StatementKind::For">for_</Item>
+      <Item Name="[func]" Condition="kind == wiz::StatementKind::Func">func</Item>
+      <Item Name="[if_]" Condition="kind == wiz::StatementKind::If">if_</Item>
+      <Item Name="[in]" Condition="kind == wiz::StatementKind::In">in</Item>
+      <Item Name="[inlineFor]" Condition="kind == wiz::StatementKind::InlineFor">inlineFor</Item>
+      <Item Name="[importReference]" Condition="kind == wiz::StatementKind::ImportReference">importReference</Item>
+      <Item Name="[internalDeclaration]" Condition="kind == wiz::StatementKind::InternalDeclaration">internalDeclaration</Item>
+      <Item Name="[label]" Condition="kind == wiz::StatementKind::Label">label</Item>
+      <Item Name="[let]" Condition="kind == wiz::StatementKind::Let">let</Item>
+      <Item Name="[namespace_]" Condition="kind == wiz::StatementKind::Namespace">namespace_</Item>
+      <Item Name="[struct_]" Condition="kind == wiz::StatementKind::Struct">struct_</Item>
+      <Item Name="[typeAlias]" Condition="kind == wiz::StatementKind::TypeAlias">typeAlias</Item>
+      <Item Name="[var]" Condition="kind == wiz::StatementKind::Var">var</Item>
+      <Item Name="[while_]" Condition="kind == wiz::StatementKind::While">while_</Item>
+      <Item Name="[location]">location</Item>
+    </Expand>
+  </Type>
+</AutoVisualizer>
