@@ -138,6 +138,9 @@
     <Natvis Include="..\src\wiz\ast\expression.natvis" />
     <Natvis Include="..\src\wiz\ast\statement.natvis" />
     <Natvis Include="..\src\wiz\ast\type_expression.natvis" />
+    <Natvis Include="..\src\wiz\compiler\definition.natvis" />
+    <Natvis Include="..\src\wiz\compiler\instruction.natvis" />
+    <Natvis Include="..\src\wiz\compiler\ir_node.natvis" />
     <Natvis Include="..\src\wiz\utility\int128.natvis" />
     <Natvis Include="..\src\wiz\utility\source_location.natvis" />
     <Natvis Include="..\src\wiz\utility\string_view.natvis" />

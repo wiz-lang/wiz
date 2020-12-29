@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="wiz::IrNode">                    
+    <DisplayString Condition="kind == wiz::IrNodeKind::PushRelocation">{kind,en} {pushRelocation}</DisplayString>
+    <DisplayString Condition="kind == wiz::IrNodeKind::PopRelocation">{kind,en} {popRelocation}</DisplayString>
+    <DisplayString Condition="kind == wiz::IrNodeKind::Label">{kind,en} {label}</DisplayString>
+    <DisplayString Condition="kind == wiz::IrNodeKind::Code">{kind,en} {code}</DisplayString>
+    <DisplayString Condition="kind == wiz::IrNodeKind::Var">{kind,en} {var}</DisplayString>
+    <Expand>
+      <Item Name="[kind]">kind</Item>
+      <Item Name="[pushRelocation]" Condition="kind == wiz::DefinitionKind::BuiltinBankType">pushRelocation</Item>
+      <Item Name="[popRelocation]" Condition="kind == wiz::DefinitionKind::BuiltinBoolType">popRelocation</Item>
+      <Item Name="[label]" Condition="kind == wiz::DefinitionKind::BuiltinIntegerType">label</Item>
+      <Item Name="[code]" Condition="kind == wiz::DefinitionKind::BuiltinIntegerExpressionType">code</Item>
+      <Item Name="[var]" Condition="kind == wiz::DefinitionKind::BuiltinIntrinsicType">var</Item>
+      <Item Name="[location]">location</Item>
+    </Expand>
+  </Type>
+</AutoVisualizer>

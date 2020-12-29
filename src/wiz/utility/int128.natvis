@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
   <Type Name="wiz::Int128">
-    <DisplayString Condition="high == 0">Int128({low})</DisplayString>
-    <DisplayString Condition="high == 0xFFFFFFFFFFFFFFFF">Int128(-{(low ^ 0xFFFFFFFFFFFFFFFF) + 1})</DisplayString>
+    <DisplayString Condition="high == 0">{low}</DisplayString>
+    <DisplayString Condition="high == 0xFFFFFFFFFFFFFFFF">-{(low ^ 0xFFFFFFFFFFFFFFFF) + 1}</DisplayString>
     <DisplayString Condition="high != 0 &amp;&amp; high != 0xFFFFFFFFFFFFFFFF">Int128({high,X}{low,Xb})</DisplayString>
   </Type>
 </AutoVisualizer>

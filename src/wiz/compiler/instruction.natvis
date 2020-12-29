@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="wiz::InstructionOperand">
+    <DisplayString Condition="kind == wiz::InstructionOperandKind::BitIndex">{kind,en} {bitIndex}</DisplayString>
+    <DisplayString Condition="kind == wiz::InstructionOperandKind::Binary">{kind,en} {binary}</DisplayString>
+    <DisplayString Condition="kind == wiz::InstructionOperandKind::Boolean">{kind,en} {boolean}</DisplayString>
+    <DisplayString Condition="kind == wiz::InstructionOperandKind::Dereference">{kind,en} {dereference}</DisplayString>
+    <DisplayString Condition="kind == wiz::InstructionOperandKind::Index">{kind,en} {index}</DisplayString>
+    <DisplayString Condition="kind == wiz::InstructionOperandKind::Integer">{kind,en} {integer}</DisplayString>
+    <DisplayString Condition="kind == wiz::InstructionOperandKind::Register">{kind,en} {register_}</DisplayString>
+    <DisplayString Condition="kind == wiz::InstructionOperandKind::Unary">{kind,en} {unary}</DisplayString>
+    <Expand>
+      <Item Name="[kind]">kind</Item>
+      <Item Name="[bitIndex]" Condition="kind == wiz::InstructionOperandKind::BitIndex">bitIndex</Item>
+      <Item Name="[binary]" Condition="kind == wiz::InstructionOperandKind::Binary">binary</Item>
+      <Item Name="[boolean]" Condition="kind == wiz::InstructionOperandKind::Boolean">boolean</Item>
+      <Item Name="[dereference]" Condition="kind == wiz::InstructionOperandKind::Dereference">dereference</Item>
+      <Item Name="[index]" Condition="kind == wiz::InstructionOperandKind::Index">index</Item>
+      <Item Name="[integer]" Condition="kind == wiz::InstructionOperandKind::Integer">integer</Item>
+      <Item Name="[register_]" Condition="kind == wiz::InstructionOperandKind::Register">register_</Item>
+      <Item Name="[unary]" Condition="kind == wiz::InstructionOperandKind::Unary">unary</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="wiz::InstructionOperandPattern">
+    <DisplayString Condition="kind == wiz::InstructionOperandPatternKind::BitIndex">{kind,en} {bitIndex}</DisplayString>
+    <DisplayString Condition="kind == wiz::InstructionOperandPatternKind::Boolean">{kind,en} {boolean}</DisplayString>
+    <DisplayString Condition="kind == wiz::InstructionOperandPatternKind::Capture">{kind,en} {capture}</DisplayString>
+    <DisplayString Condition="kind == wiz::InstructionOperandPatternKind::Dereference">{kind,en} {dereference}</DisplayString>
+    <DisplayString Condition="kind == wiz::InstructionOperandPatternKind::Index">{kind,en} {index}</DisplayString>
+    <DisplayString Condition="kind == wiz::InstructionOperandPatternKind::IntegerAtLeast">{kind,en} {integerAtLeast}</DisplayString>
+    <DisplayString Condition="kind == wiz::InstructionOperandPatternKind::IntegerRange">{kind,en} {integerRange}</DisplayString>
+    <DisplayString Condition="kind == wiz::InstructionOperandPatternKind::Register">{kind,en} {register_}</DisplayString>
+    <DisplayString Condition="kind == wiz::InstructionOperandPatternKind::Unary">{kind,en} {unary}</DisplayString>
+    <Expand>
+      <Item Name="[kind]">kind</Item>
+      <Item Name="[bitIndex]" Condition="wiz::InstructionOperandPatternKind::BitIndex">bitIndex</Item>
+      <Item Name="[boolean]" Condition="wiz::InstructionOperandPatternKind::Boolean">boolean</Item>
+      <Item Name="[capture]" Condition="wiz::InstructionOperandPatternKind::Capture">capture</Item>
+      <Item Name="[dereference]" Condition="wiz::InstructionOperandPatternKind::Dereference">dereference</Item>
+      <Item Name="[index]" Condition="wiz::InstructionOperandPatternKind::Index">index</Item>
+      <Item Name="[integerAtLeast]" Condition="wiz::InstructionOperandPatternKind::IntegerAtLeast">integerAtLeast</Item>
+      <Item Name="[integerRange]" Condition="wiz::InstructionOperandPatternKind::IntegerRange">integerRange</Item>
+      <Item Name="[register_]" Condition="wiz::InstructionOperandPatternKind::Register">register_</Item>
+      <Item Name="[unary]" Condition="wiz::InstructionOperandPatternKind::Unary">unary</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="wiz::InstructionType">
+    <DisplayString Condition="kind == wiz::InstructionTypeKind::BranchKind">{kind,en} {branchKind}</DisplayString>
+    <DisplayString Condition="kind == wiz::InstructionTypeKind::UnaryOperatorKind">{kind,en} {unaryOperatorKind}</DisplayString>
+    <DisplayString Condition="kind == wiz::InstructionTypeKind::BinaryOperatorKind">{kind,en} {binaryOperatorKind}</DisplayString>
+    <DisplayString Condition="kind == wiz::InstructionTypeKind::VoidIntrinsic">{kind,en} {voidIntrinsic}</DisplayString>
+    <DisplayString Condition="kind == wiz::InstructionTypeKind::LoadIntrinsic">{kind,en} {loadIntrinsic}</DisplayString>
+    <Expand>
+      <Item Name="[kind]">kind</Item>
+      <Item Name="[branchKind]" Condition="wiz::InstructionTypeKind::BranchKind">branchKind</Item>
+      <Item Name="[unaryOperatorKind]" Condition="wiz::InstructionTypeKind::UnaryOperatorKind">unaryOperatorKind</Item>
+      <Item Name="[binaryOperatorKind]" Condition="wiz::InstructionTypeKind::BinaryOperatorKind">binaryOperatorKind</Item>
+      <Item Name="[voidIntrinsic]" Condition="wiz::InstructionTypeKind::VoidIntrinsic">voidIntrinsic</Item>
+      <Item Name="[loadIntrinsic]" Condition="wiz::InstructionTypeKind::LoadIntrinsic">loadIntrinsic</Item>
+    </Expand>
+  </Type>
+</AutoVisualizer>

@@ -394,5 +394,14 @@
     <Natvis Include="..\src\wiz\ast\type_expression.natvis">
       <Filter>Header Files\ast</Filter>
     </Natvis>
+    <Natvis Include="..\src\wiz\compiler\definition.natvis">
+      <Filter>Header Files\compiler</Filter>
+    </Natvis>
+    <Natvis Include="..\src\wiz\compiler\instruction.natvis">
+      <Filter>Header Files\compiler</Filter>
+    </Natvis>
+    <Natvis Include="..\src\wiz\compiler\ir_node.natvis">
+      <Filter>Header Files\compiler</Filter>
+    </Natvis>
   </ItemGroup>
 </Project>

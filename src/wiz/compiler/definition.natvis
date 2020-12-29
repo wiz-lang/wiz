@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="wiz::Definition">
+    <DisplayString Condition="kind == wiz::DefinitionKind::BuiltinBankType">{name} : {kind,en} {builtinBankType}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::BuiltinBoolType">{name} : {kind,en} {builtinBoolType}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::BuiltinIntegerType">{name} : {kind,en} {builtinIntegerType}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::BuiltinIntegerExpressionType">{name} : {kind,en} {builtinIntegerExpressionType}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::BuiltinIntrinsicType">{name} : {kind,en} {builtinIntrinsicType}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::BuiltinLetType">{name} : {kind,en} {builtinLetType}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::BuiltinLoadIntrinsic">{name} : {kind,en} {builtinLoadIntrinsic}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::BuiltinRangeType">{name} : {kind,en} {builtinRangeType}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::BuiltinRegister">{name} : {kind,en} {builtinRegister}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::BuiltinTypeOfType">{name} : {kind,en} {builtinTypeOfType}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::BuiltinVoidIntrinsic">{name} : {kind,en} {builtinVoidIntrinsic}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::Bank">{name} : {kind,en} {bank}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::Enum">{name} : {kind,en} {enum_}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::EnumMember">{name} : {kind,en} {enumMember}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::Func">{name} : {kind,en} {func}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::Let">{name} : {kind,en} {let}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::Namespace">{name} : {kind,en} {namespace_}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::Struct">{name} : {kind,en} {struct_}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::StructMember">{name} : {kind,en} {structMember}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::TypeAlias">{name} : {kind,en} {typeAlias}</DisplayString>
+    <DisplayString Condition="kind == wiz::DefinitionKind::Var">{name} : {kind,en} {var}</DisplayString>
+    <Expand>
+      <Item Name="[name]">name</Item>
+      <Item Name="[kind]">kind</Item>
+      <Item Name="[builtinBankType]" Condition="kind == wiz::DefinitionKind::BuiltinBankType">builtinBankType</Item>
+      <Item Name="[builtinBoolType]" Condition="kind == wiz::DefinitionKind::BuiltinBoolType">builtinBoolType</Item>
+      <Item Name="[builtinIntegerType]" Condition="kind == wiz::DefinitionKind::BuiltinIntegerType">builtinIntegerType</Item>
+      <Item Name="[builtinIntegerExpressionType]" Condition="kind == wiz::DefinitionKind::BuiltinIntegerExpressionType">builtinIntegerExpressionType</Item>
+      <Item Name="[builtinIntrinsicType]" Condition="kind == wiz::DefinitionKind::BuiltinIntrinsicType">builtinIntrinsicType</Item>
+      <Item Name="[builtinLetType]" Condition="kind == wiz::DefinitionKind::BuiltinLetType">builtinLetType</Item>
+      <Item Name="[builtinLoadIntrinsic]" Condition="kind == wiz::DefinitionKind::BuiltinLoadIntrinsic">builtinLoadIntrinsic</Item>
+      <Item Name="[builtinRangeType]" Condition="kind == wiz::DefinitionKind::BuiltinRangeType">builtinRangeType</Item>
+      <Item Name="[builtinRegister]" Condition="kind == wiz::DefinitionKind::BuiltinRegister">builtinRegister</Item>
+      <Item Name="[builtinTypeOfType]" Condition="kind == wiz::DefinitionKind::BuiltinTypeOfType">builtinTypeOfType</Item>
+      <Item Name="[builtinVoidIntrinsic]" Condition="kind == wiz::DefinitionKind::BuiltinVoidIntrinsic">builtinVoidIntrinsic</Item>
+      <Item Name="[bank]" Condition="kind == wiz::DefinitionKind::Bank">bank</Item>
+      <Item Name="[enum_]" Condition="kind == wiz::DefinitionKind::Enum">enum_</Item>
+      <Item Name="[enumMember]" Condition="kind == wiz::DefinitionKind::EnumMember">enumMember</Item>
+      <Item Name="[func]" Condition="kind == wiz::DefinitionKind::Func">func</Item>
+      <Item Name="[let]" Condition="kind == wiz::DefinitionKind::Let">let</Item>
+      <Item Name="[namespace_]" Condition="kind == wiz::DefinitionKind::Namespace">namespace_</Item>
+      <Item Name="[struct_]" Condition="kind == wiz::DefinitionKind::Struct">struct_</Item>
+      <Item Name="[structMember]" Condition="kind == wiz::DefinitionKind::StructMember">structMember</Item>
+      <Item Name="[typeAlias]" Condition="kind == wiz::DefinitionKind::TypeAlias">typeAlias</Item>
+      <Item Name="[var]" Condition="kind == wiz::DefinitionKind::Var">var</Item>
+      <Item Name="[declaration]">declaration</Item>
+      <Item Name="[parentScope]">parentScope</Item>
+    </Expand>
+  </Type>
+</AutoVisualizer>

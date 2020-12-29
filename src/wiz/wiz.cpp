@@ -29,18 +29,16 @@
 
 namespace wiz {
 #if 0
-    void dumpAddress(Report* report, const Definition* definition, FormatOutput& output) {
-        const auto& variant = definition->variant;
-
+    void dumpAddress(Report* report, const Definition* definition, FormatContext& output) {
         Optional<Address> address;
 
-        switch (variant.index()) {
-            case Definition::VariantType::typeIndexOf<Definition::Var>(): {
-                address = variant.get<Definition::Var>().address;
+        switch (definition->kind) {
+            case DefinitionKind::Var: {
+                address = definition->var.address;
                 break;
             }
-            case Definition::VariantType::typeIndexOf<Definition::Func>(): {
-                address = variant.get<Definition::Func>().address;
+            case DefinitionKind::Func: {
+                address = definition->func.address;
                 break;
             }
             default: break;
@@ -333,7 +331,7 @@ namespace wiz {
                 const auto definitions = compiler.getRegisteredDefinitions();
 
                 for (const auto& definition : definitions) {
-                    dumpAddress(report, definition, output);
+                    dumpAddress(report, definition, context);
                 }
 #endif
                 report->notice("Done.");
