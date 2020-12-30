@@ -2,7 +2,7 @@
 
 #include <wiz/ast/expression.h>
 #include <wiz/compiler/config.h>
-#include <wiz/format/nes_format.h>
+#include <wiz/format/output/nes_output_format.h>
 
 namespace wiz {
     namespace {
@@ -70,10 +70,10 @@ namespace wiz {
         };
     }
 
-    NesFormat::NesFormat() {}
-    NesFormat::~NesFormat() {}
+    NesOutputFormat::NesOutputFormat() {}
+    NesOutputFormat::~NesOutputFormat() {}
 
-    bool NesFormat::generate(FormatContext& context) {        
+    bool NesOutputFormat::generate(OutputFormatContext& context) {        
         // https://wiki.nesdev.com/w/index.php/INES
         // https://wiki.nesdev.com/w/index.php/NES_2.0
 

@@ -1,12 +1,12 @@
 #include <wiz/ast/expression.h>
 #include <wiz/compiler/config.h>
-#include <wiz/format/binary_format.h>
+#include <wiz/format/output/binary_output_format.h>
 
 namespace wiz {
-    BinaryFormat::BinaryFormat() {}
-    BinaryFormat::~BinaryFormat() {}
+    BinaryOutputFormat::BinaryOutputFormat() {}
+    BinaryOutputFormat::~BinaryOutputFormat() {}
 
-    bool BinaryFormat::generate(FormatContext& context) {
+    bool BinaryOutputFormat::generate(OutputFormatContext& context) {
         const auto report = context.report;
         const auto config = context.config;
         const auto& banks = context.banks;

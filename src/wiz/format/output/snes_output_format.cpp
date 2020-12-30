@@ -2,7 +2,7 @@
 
 #include <wiz/ast/expression.h>
 #include <wiz/compiler/config.h>
-#include <wiz/format/snes_format.h>
+#include <wiz/format/output/snes_output_format.h>
 #include <wiz/utility/misc.h>
 
 namespace wiz {
@@ -75,10 +75,10 @@ namespace wiz {
         const std::size_t SmcRomBlockSize = 8192;
     }
 
-    SnesFormat::SnesFormat() {}
-    SnesFormat::~SnesFormat() {}
+    SnesOutputFormat::SnesOutputFormat() {}
+    SnesOutputFormat::~SnesOutputFormat() {}
 
-    bool SnesFormat::generate(FormatContext& context) {
+    bool SnesOutputFormat::generate(OutputFormatContext& context) {
         // http://old.smwiki.net/wiki/Internal_ROM_Header
         // https://github.com/gilligan/snesdev/blob/master/docs/fullsnes.txt
         // https://en.wikibooks.org/wiki/Super_NES_Programming/SNES_memory_map#The_SNES_header
@@ -272,13 +272,13 @@ namespace wiz {
         return true;
     }
 
-    SnesSmcFormat::SnesSmcFormat() {}
-    SnesSmcFormat::~SnesSmcFormat() {}
+    SnesSmcOutputFormat::SnesSmcOutputFormat() {}
+    SnesSmcOutputFormat::~SnesSmcOutputFormat() {}
 
-    bool SnesSmcFormat::generate(FormatContext& context) {
+    bool SnesSmcOutputFormat::generate(OutputFormatContext& context) {
         // https://en.wikibooks.org/wiki/Super_NES_Programming/SNES_memory_map#The_SNES_header       
 
-        SnesFormat snesFormat;
+        SnesOutputFormat snesFormat;
         if (!snesFormat.generate(context)) {
             return false;
         }

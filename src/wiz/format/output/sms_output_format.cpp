@@ -1,6 +1,6 @@
 #include <wiz/ast/expression.h>
 #include <wiz/compiler/config.h>
-#include <wiz/format/sms_format.h>
+#include <wiz/format/output/sms_output_format.h>
 
 namespace wiz {
     namespace {
@@ -8,12 +8,12 @@ namespace wiz {
         const StringView HeaderSignature("TMR SEGA  ");
     }
 
-    SmsFormat::SmsFormat(SystemType systemType)
+    SmsOutputFormat::SmsOutputFormat(SystemType systemType)
     : systemType(systemType) {}
 
-    SmsFormat::~SmsFormat() {}
+    SmsOutputFormat::~SmsOutputFormat() {}
 
-    bool SmsFormat::generate(FormatContext& context) {
+    bool SmsOutputFormat::generate(OutputFormatContext& context) {
         // http://www.smspower.org/Development/ROMHeader
         const auto report = context.report;
         const auto config = context.config;

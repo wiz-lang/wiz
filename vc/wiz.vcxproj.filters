@@ -49,6 +49,12 @@
     <Filter Include="Source Files\format">
       <UniqueIdentifier>{c0a3a6b1-4c8b-4146-9663-7e4b18a62a01}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\format\output">
+      <UniqueIdentifier>{431e91cc-0056-42ee-a327-cf698fc3afa7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\format\output">
+      <UniqueIdentifier>{df70dd57-6b62-4ffa-963d-fffe0467556b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\wiz\parser\parser.h">
@@ -162,35 +168,17 @@
     <ClInclude Include="..\src\wiz\utility\misc.h">
       <Filter>Header Files\utility</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\wiz\format\format.h">
-      <Filter>Header Files\format</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\wiz\platform\mos6502_platform.h">
       <Filter>Header Files\platform</Filter>
     </ClInclude>
     <ClInclude Include="..\src\wiz\platform\z80_platform.h">
       <Filter>Header Files\platform</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\wiz\format\nes_format.h">
-      <Filter>Header Files\format</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\wiz\format\sms_format.h">
-      <Filter>Header Files\format</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\wiz\format\snes_format.h">
-      <Filter>Header Files\format</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\wiz\format\gb_format.h">
-      <Filter>Header Files\format</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\wiz\platform\gb_platform.h">
       <Filter>Header Files\platform</Filter>
     </ClInclude>
     <ClInclude Include="..\src\wiz\compiler\config.h">
       <Filter>Header Files\compiler</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\wiz\format\binary_format.h">
-      <Filter>Header Files\format</Filter>
     </ClInclude>
     <ClInclude Include="..\src\wiz\platform\wdc65816_platform.h">
       <Filter>Header Files\platform</Filter>
@@ -233,6 +221,24 @@
     </ClInclude>
     <ClInclude Include="..\src\wiz\utility\bitwise_overloads.h">
       <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\wiz\format\output\binary_output_format.h">
+      <Filter>Header Files\format\output</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\wiz\format\output\gb_output_format.h">
+      <Filter>Header Files\format\output</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\wiz\format\output\nes_output_format.h">
+      <Filter>Header Files\format\output</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\wiz\format\output\output_format.h">
+      <Filter>Header Files\format\output</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\wiz\format\output\sms_output_format.h">
+      <Filter>Header Files\format\output</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\wiz\format\output\snes_output_format.h">
+      <Filter>Header Files\format\output</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -308,38 +314,20 @@
     <ClCompile Include="..\src\wiz\utility\writer.cpp">
       <Filter>Source Files\utility</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\wiz\format\format.cpp">
-      <Filter>Source Files\format</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\wiz\platform\mos6502_platform.cpp">
       <Filter>Source Files\platform</Filter>
     </ClCompile>
     <ClCompile Include="..\src\wiz\platform\z80_platform.cpp">
       <Filter>Source Files\platform</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\wiz\format\nes_format.cpp">
-      <Filter>Source Files\format</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\wiz\format\sms_format.cpp">
-      <Filter>Source Files\format</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\wiz\format\snes_format.cpp">
-      <Filter>Source Files\format</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\wiz\platform\gb_platform.cpp">
       <Filter>Source Files\platform</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\wiz\format\gb_format.cpp">
-      <Filter>Source Files\format</Filter>
     </ClCompile>
     <ClCompile Include="..\src\wiz\compiler\config.cpp">
       <Filter>Source Files\compiler</Filter>
     </ClCompile>
     <ClCompile Include="..\src\wiz\utility\misc.cpp">
       <Filter>Source Files\utility</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\wiz\format\binary_format.cpp">
-      <Filter>Source Files\format</Filter>
     </ClCompile>
     <ClCompile Include="..\src\wiz\platform\wdc65816_platform.cpp">
       <Filter>Source Files\platform</Filter>
@@ -364,6 +352,24 @@
     </ClCompile>
     <ClCompile Include="..\src\wiz\platform\pokemon_mini_platform.cpp">
       <Filter>Source Files\platform</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wiz\format\output\binary_output_format.cpp">
+      <Filter>Source Files\format\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wiz\format\output\gb_output_format.cpp">
+      <Filter>Source Files\format\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wiz\format\output\nes_output_format.cpp">
+      <Filter>Source Files\format\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wiz\format\output\output_format.cpp">
+      <Filter>Source Files\format\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wiz\format\output\sms_output_format.cpp">
+      <Filter>Source Files\format\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wiz\format\output\snes_output_format.cpp">
+      <Filter>Source Files\format\output</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

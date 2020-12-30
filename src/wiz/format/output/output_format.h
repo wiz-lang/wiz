@@ -1,5 +1,5 @@
-#ifndef WIZ_FORMAT_FORMAT_H
-#define WIZ_FORMAT_FORMAT_H
+#ifndef WIZ_FORMAT_OUTPUT_OUTPUT_FORMAT_H
+#define WIZ_FORMAT_OUTPUT_OUTPUT_FORMAT_H
 
 #include <cstdint>
 #include <unordered_map>
@@ -14,8 +14,8 @@
 namespace wiz {
     class Config;
 
-    struct FormatContext {
-        FormatContext(Report* report,
+    struct OutputFormatContext {
+        OutputFormatContext(Report* report,
             StringPool* stringPool,
             const Config* config,
             StringView outputName,
@@ -36,23 +36,23 @@ namespace wiz {
         std::vector<std::uint8_t> data;
     };
 
-    class Format {
+    class OutputFormat {
         public:
-            virtual ~Format() {};
+            virtual ~OutputFormat() {};
 
-            virtual bool generate(FormatContext& context) = 0;
+            virtual bool generate(OutputFormatContext& context) = 0;
     };
 
-    class FormatCollection {
+    class OutputFormatCollection {
         public:
-            FormatCollection();
-            ~FormatCollection();
+            OutputFormatCollection();
+            ~OutputFormatCollection();
 
-            void add(StringView name, std::unique_ptr<Format> format);
-            Format* find(StringView name) const;
+            void add(StringView name, std::unique_ptr<OutputFormat> format);
+            OutputFormat* find(StringView name) const;
 
         private:
-            std::unordered_map<StringView, std::unique_ptr<Format>> formats;
+            std::unordered_map<StringView, std::unique_ptr<OutputFormat>> formats;
     };
 }
 

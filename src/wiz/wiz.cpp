@@ -11,7 +11,7 @@
 #include <wiz/compiler/compiler.h>
 #include <wiz/compiler/definition.h>
 #include <wiz/compiler/symbol_table.h>
-#include <wiz/format/format.h>
+#include <wiz/format/output/output_format.h>
 #include <wiz/platform/platform.h>
 #include <wiz/utility/tty.h>
 #include <wiz/utility/path.h>
@@ -29,7 +29,7 @@
 
 namespace wiz {
 #if 0
-    void dumpAddress(Report* report, const Definition* definition, FormatContext& output) {
+    void dumpAddress(const Definition* definition, OutputFormatContext& outputFormatContext) {
         Optional<Address> address;
 
         switch (definition->kind) {
@@ -48,7 +48,7 @@ namespace wiz {
             if (address->relativePosition.hasValue() && address->absolutePosition.hasValue()) {
                 const auto offset = address->relativePosition.get() + output.bankOffsets[address->bank];
 
-                report->log("var " + definition->name.toString()
+                outputFormatContext->report->log("var " + definition->name.toString()
                     + " @ " + Int128(address->absolutePosition.get()).toString(16)
                     + (address->bank != nullptr
                         ? " (in bank " + address->bank->getName().toString() + ")"
@@ -62,7 +62,7 @@ namespace wiz {
     int run(Report* report, ResourceManager* resourceManager, ArrayView<const char*> arguments) {
         StringPool stringPool;
         PlatformCollection platformCollection;
-        FormatCollection formatCollection;
+        OutputFormatCollection formatCollection;
         StringView inputName;
         StringView outputName;
         std::vector<StringView> importDirs;
@@ -290,36 +290,36 @@ namespace wiz {
             Compiler compiler(std::move(program), platform, &stringPool, &config, &importManager, report, std::move(defines));
 
             if (compiler.compile()) {
-                Format* format = nullptr;
+                OutputFormat* outputFormat = nullptr;
 
                 if (const auto formatValue = config.checkString(report, "format"_sv, false)) {
-                    format = formatCollection.find(formatValue->second);
-                    if (format == nullptr) {
+                    outputFormat = formatCollection.find(formatValue->second);
+                    if (outputFormat == nullptr) {
                         report->error("`format` of \"" + formatValue->second.toString() + "\" is not supported.", formatValue->first->location, ReportErrorFlags::Fatal);
                         return 1;
                     }
                 }
 
-                if (format == nullptr) {
-                    format = formatCollection.find(path::getExtension(outputName));
+                if (outputFormat == nullptr) {
+                    outputFormat = formatCollection.find(path::getExtension(outputName));
 
-                    if (format == nullptr) {
-                        format = formatCollection.find("bin"_sv);
+                    if (outputFormat == nullptr) {
+                        outputFormat = formatCollection.find("bin"_sv);
                     }
                 }
 
                 report->log(">> Writing ROM...");
 
                 auto banks = compiler.getRegisteredBanks();
-                FormatContext context(report, &stringPool, &config, outputName, banks);
+                OutputFormatContext outputFormatContext(report, &stringPool, &config, outputName, banks);
 
-                if (!format->generate(context) || !report->validate()) {
+                if (!outputFormat->generate(outputFormatContext) || !report->validate()) {
                     return 1;
                 }
 
                 {
                     auto writer = resourceManager->openWriter(outputName);
-                    if (writer && writer->write(context.data)) {
+                    if (writer && writer->write(outputFormatContext.data)) {
                         report->log(">> Wrote to \"" + outputName.toString() + "\".");
                     } else {
                         report->error("Output file \"" + outputName.toString() + "\" could not be written.", SourceLocation(), ReportErrorFlags::Fatal);
@@ -331,7 +331,7 @@ namespace wiz {
                 const auto definitions = compiler.getRegisteredDefinitions();
 
                 for (const auto& definition : definitions) {
-                    dumpAddress(report, definition, context);
+                    dumpAddress(definition, outputFormatContext);
                 }
 #endif
                 report->notice("Done.");

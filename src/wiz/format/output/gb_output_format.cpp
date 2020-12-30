@@ -5,7 +5,7 @@
 #include <wiz/utility/misc.h>
 #include <wiz/ast/expression.h>
 #include <wiz/compiler/config.h>
-#include <wiz/format/gb_format.h>
+#include <wiz/format/output/gb_output_format.h>
 
 namespace wiz {
     namespace {
@@ -51,10 +51,10 @@ namespace wiz {
         };
     }
 
-    GameBoyFormat::GameBoyFormat() {}
-    GameBoyFormat::~GameBoyFormat() {}
+    GameBoyOutputFormat::GameBoyOutputFormat() {}
+    GameBoyOutputFormat::~GameBoyOutputFormat() {}
 
-    bool GameBoyFormat::generate(FormatContext& context) {
+    bool GameBoyOutputFormat::generate(OutputFormatContext& context) {
         // http://problemkaputt.de/pandocs.htm#thecartridgeheader
 
         const auto report = context.report;
