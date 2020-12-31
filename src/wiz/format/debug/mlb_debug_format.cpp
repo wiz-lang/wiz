@@ -80,29 +80,39 @@ namespace wiz {
 
                     const auto outputRelative = isLabelOutputRelative(definition);
 
-                    Optional<std::size_t> startValue;
-                    Optional<std::size_t> endValue;
+                    Optional<std::size_t> maybeStartValue;
                     if (outputRelative) {
                         const auto offset = outputContext->getOutputOffset(address.get());
                         if (offset.hasValue()) {
-                            startValue = offset.get() - 16;
+                            maybeStartValue = offset.get() - 16;
                         }
                     } else {
-                        startValue = address->absolutePosition.get();
+                        maybeStartValue = address->absolutePosition.get();
                     }
 
-                    if (!startValue.hasValue()) {
+                    if (!maybeStartValue.hasValue()) {
                         return;
                     }
 
+                    std::size_t startValue = maybeStartValue.get();
+                    std::size_t endValue = maybeStartValue.get();
                     if (definition->kind == DefinitionKind::Var) {
-                        endValue = startValue.get() + definition->var.storageSize.get() - 1;
+                        endValue = maybeStartValue.get() + definition->var.storageSize.get() - 1;
                     }
 
-                    auto addressString = toHexString(startValue.get());
-                    if (endValue.hasValue() && endValue.get() != startValue.get()) {
+                    for (std::size_t i = maybeStartValue.get(); i <= endValue; i++) {
+                        const auto match = context.addressOwnership.find(i);
+                        if (match != context.addressOwnership.end()) {
+                            return;
+                        } else {
+                            context.addressOwnership[i] = definition;
+                        }
+                    }
+
+                    auto addressString = toHexString(startValue);
+                    if (endValue != startValue) {
                         addressString += '-';
-                        addressString += toHexString(endValue.get());
+                        addressString += toHexString(endValue);
                     }
 
                     std::string fullName;

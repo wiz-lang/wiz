@@ -40,6 +40,8 @@ namespace wiz {
         StringView outputName;
         const OutputFormatContext* outputContext;
         std::vector<const Definition*> definitions;
+
+        std::unordered_map<std::size_t, const Definition*> addressOwnership;
     };    
 
     class DebugFormat {
