@@ -86,6 +86,8 @@ namespace wiz {
 
         data.insert(data.end(), HeaderSize, 0);
 
+        context.fileHeaderPrefixSize = HeaderSize;
+
         for (const auto& bank : banks) {
             if (isBankKindStored(bank->getKind()) && bank->getKind() != BankKind::CharacterRom) {
                 const auto bankData = bank->getData();

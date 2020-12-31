@@ -252,6 +252,9 @@
     <ClInclude Include="..\src\wiz\format\debug\mlb_debug_format.h">
       <Filter>Header Files\format\debug</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\wiz\format\debug\rgbds_sym_debug_format.h">
+      <Filter>Header Files\format\debug</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\wiz\parser\parser.cpp">
@@ -387,6 +390,9 @@
       <Filter>Source Files\format\debug</Filter>
     </ClCompile>
     <ClCompile Include="..\src\wiz\format\debug\debug_format.cpp">
+      <Filter>Source Files\format\debug</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wiz\format\debug\rgbds_sym_debug_format.cpp">
       <Filter>Source Files\format\debug</Filter>
     </ClCompile>
   </ItemGroup>

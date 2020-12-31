@@ -56,6 +56,8 @@ namespace wiz {
         std::string truncate(StringView text, std::size_t length);
         std::vector<StringView> split(StringView text, StringView delimiters, std::size_t offset = 0);
         std::string replaceAll(const std::string& text, const std::string& search, const std::string& replace);
+        std::string padLeft(const std::string& text, char padding, std::size_t length);
+        std::string padRight(const std::string& text, char padding, std::size_t length);
 
 #ifdef _WIN32
         constexpr StringView OsNewLine = "\r\n"_sv;

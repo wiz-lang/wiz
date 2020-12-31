@@ -99,5 +99,21 @@ namespace wiz {
 
             return result;
         }
+
+        std::string padLeft(const std::string& text, char padding, std::size_t length) {
+            auto result = text;
+            if (result.length() < length) {
+                result.insert(result.begin(), length - result.length(), padding);
+            }
+            return result;
+        }
+
+        std::string padRight(const std::string& text, char padding, std::size_t length) {
+            auto result = text;
+            if (result.length() < length) {
+                result.append(length - result.length(), padding);
+            }
+            return result;
+        }
     }
 }

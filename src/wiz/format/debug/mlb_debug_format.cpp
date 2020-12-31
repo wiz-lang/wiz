@@ -12,8 +12,6 @@
 
 namespace wiz {
     namespace {
-        constexpr std::size_t NesHeaderLength = 16;
-
         bool isLabelOutputRelative(const Definition* definition) {
             switch (definition->kind) {
                 case DefinitionKind::Func:
@@ -24,9 +22,11 @@ namespace wiz {
                     if (address->absolutePosition.hasValue()) {
                         if (address->absolutePosition.get() < 0x800) {
                             return false;
-                        } else if (address->absolutePosition.get() >= 0x6000 && address->absolutePosition.get() < 0x8000) {
+                        } else if (address->absolutePosition.get() >= 0x6000
+                        && address->absolutePosition.get() < 0x8000) {
                             return false;
-                        } else if ((definition->var.qualifiers & Qualifiers::Extern) != Qualifiers::None || !address->relativePosition.hasValue()) {
+                        } else if ((definition->var.qualifiers & Qualifiers::Extern) != Qualifiers::None
+                        || !address->relativePosition.hasValue()) {
                             return false;
                         } else if ((definition->var.qualifiers & Qualifiers::Const) != Qualifiers::None) {
                             return true;
@@ -50,9 +50,11 @@ namespace wiz {
                     if (address->absolutePosition.hasValue()) {
                         if (address->absolutePosition.get() < 0x800) {
                             return "R"_sv;
-                        } else if (address->absolutePosition.get() >= 0x6000 && address->absolutePosition.get() < 0x8000) {
+                        } else if (address->absolutePosition.get() >= 0x6000
+                        && address->absolutePosition.get() < 0x8000) {
                             return "SW"_sv;
-                        } else if ((definition->var.qualifiers & Qualifiers::Extern) != Qualifiers::None || !address->relativePosition.hasValue()) {
+                        } else if ((definition->var.qualifiers & Qualifiers::Extern) != Qualifiers::None
+                        || !address->relativePosition.hasValue()) {
                             return "G"_sv;
                         } else if ((definition->var.qualifiers & Qualifiers::Const) != Qualifiers::None) {
                             return "P"_sv;
@@ -86,7 +88,7 @@ namespace wiz {
                     if (outputRelative) {
                         const auto offset = outputContext->getOutputOffset(address.get());
                         if (offset.hasValue()) {
-                            maybeStartValue = offset.get() - NesHeaderLength;
+                            maybeStartValue = std::max<std::size_t>(offset.get() - outputContext->fileHeaderPrefixSize, 0);
                         }
                     } else {
                         maybeStartValue = address->absolutePosition.get();
@@ -98,7 +100,7 @@ namespace wiz {
 
                     const auto startValue = maybeStartValue.get();
                     const auto endValue = definition->kind == DefinitionKind::Var
-                        ? startValue + std::max<std::size_t>(definition->var.storageSize.get() - 1, 0U)
+                        ? startValue + std::max<std::size_t>(definition->var.storageSize.get() - 1, 0)
                         : startValue;
 
                     for (std::size_t i = startValue; i <= endValue; i++) {
@@ -141,7 +143,6 @@ namespace wiz {
                 }
             }
         }
-
     }
 
     MlbDebugFormat::MlbDebugFormat() {}
@@ -151,7 +152,7 @@ namespace wiz {
         const auto debugName = path::stripExtension(context.outputName).toString() + ".mlb";
 
         if (auto writer = context.resourceManager->openWriter(StringView(debugName))) {
-            for (auto& definition : context.definitions) {
+            for (const auto& definition : context.definitions) {
                 dumpAddress(writer.get(), definition, context);
             }
         }       

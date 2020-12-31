@@ -35,6 +35,10 @@ namespace wiz {
         StringView outputName;
         ArrayView<const Bank*> banks;
 
+        // The size of the file header, non-zero only if it exists in its own section outside the main program ROM.
+        // (Used to determine the 'true offset' of ROM banks, as debug symbols may need.) 
+        std::size_t fileHeaderPrefixSize = 0;
+
         std::unordered_map<const Bank*, std::size_t> bankOffsets;
         std::vector<std::uint8_t> data;
     };
