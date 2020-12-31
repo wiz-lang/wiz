@@ -12,6 +12,8 @@
 
 namespace wiz {
     namespace {
+        constexpr std::size_t NesHeaderLength = 16;
+
         bool isLabelOutputRelative(const Definition* definition) {
             switch (definition->kind) {
                 case DefinitionKind::Func:
@@ -84,7 +86,7 @@ namespace wiz {
                     if (outputRelative) {
                         const auto offset = outputContext->getOutputOffset(address.get());
                         if (offset.hasValue()) {
-                            maybeStartValue = offset.get() - 16;
+                            maybeStartValue = offset.get() - NesHeaderLength;
                         }
                     } else {
                         maybeStartValue = address->absolutePosition.get();
@@ -94,13 +96,12 @@ namespace wiz {
                         return;
                     }
 
-                    std::size_t startValue = maybeStartValue.get();
-                    std::size_t endValue = maybeStartValue.get();
-                    if (definition->kind == DefinitionKind::Var) {
-                        endValue = maybeStartValue.get() + definition->var.storageSize.get() - 1;
-                    }
+                    const auto startValue = maybeStartValue.get();
+                    const auto endValue = definition->kind == DefinitionKind::Var
+                        ? startValue + std::max(definition->var.storageSize.get() - 1, 0U)
+                        : startValue;
 
-                    for (std::size_t i = maybeStartValue.get(); i <= endValue; i++) {
+                    for (std::size_t i = startValue; i <= endValue; i++) {
                         const auto match = context.addressOwnership.find(i);
                         if (match != context.addressOwnership.end()) {
                             return;
