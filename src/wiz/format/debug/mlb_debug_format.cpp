@@ -78,7 +78,7 @@ namespace wiz {
                         return;
                     }
 
-                    bool outputRelative = isLabelOutputRelative(definition);
+                    const auto outputRelative = isLabelOutputRelative(definition);
 
                     Optional<std::size_t> addressValue;
                     if (outputRelative) {
@@ -94,7 +94,7 @@ namespace wiz {
                         return;
                     }
 
-                    auto addressString = toHexString(addressValue.get());
+                    const auto addressString = toHexString(addressValue.get());
 
                     std::string fullName;
                     if (definition->parentScope != nullptr) {

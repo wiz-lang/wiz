@@ -340,8 +340,7 @@ namespace wiz {
                     }
                 }
 
-                if (debugFormatName.getLength() != 0)
-                {
+                if (debugFormatName.getLength() != 0) {
                     DebugFormatContext debugContext(resourceManager, report, &stringPool, &config, outputName, &outputContext, compiler.getRegisteredDefinitions());
 
                     // FIXME: hardcoded.
