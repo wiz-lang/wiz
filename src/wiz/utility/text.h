@@ -55,6 +55,13 @@ namespace wiz {
         std::string escape(StringView text, char quote);
         std::string truncate(StringView text, std::size_t length);
         std::vector<StringView> split(StringView text, StringView delimiters, std::size_t offset = 0);
+        std::string replaceAll(const std::string& text, const std::string& search, const std::string& replace);
+
+#ifdef _WIN32
+        constexpr StringView OsNewLine = "\r\n"_sv;
+#else
+        constexpr StringView OsNewLine = "\n"_sv;
+#endif
     }
 }
 

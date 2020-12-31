@@ -55,6 +55,12 @@
     <Filter Include="Source Files\format\output">
       <UniqueIdentifier>{df70dd57-6b62-4ffa-963d-fffe0467556b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\format\debug">
+      <UniqueIdentifier>{7bd8612f-e91b-4263-b6b8-14847af3661e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\format\debug">
+      <UniqueIdentifier>{b4b33f5f-6d49-4f08-9314-e61ad276ec2a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\wiz\parser\parser.h">
@@ -240,6 +246,12 @@
     <ClInclude Include="..\src\wiz\format\output\snes_output_format.h">
       <Filter>Header Files\format\output</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\wiz\format\debug\debug_format.h">
+      <Filter>Header Files\format\debug</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\wiz\format\debug\mlb_debug_format.h">
+      <Filter>Header Files\format\debug</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\wiz\parser\parser.cpp">
@@ -370,6 +382,12 @@
     </ClCompile>
     <ClCompile Include="..\src\wiz\format\output\snes_output_format.cpp">
       <Filter>Source Files\format\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wiz\format\debug\mlb_debug_format.cpp">
+      <Filter>Source Files\format\debug</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wiz\format\debug\debug_format.cpp">
+      <Filter>Source Files\format\debug</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

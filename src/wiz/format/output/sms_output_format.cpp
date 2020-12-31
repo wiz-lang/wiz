@@ -1,6 +1,8 @@
 #include <wiz/ast/expression.h>
+#include <wiz/compiler/bank.h>
 #include <wiz/compiler/config.h>
 #include <wiz/format/output/sms_output_format.h>
+#include <wiz/utility/report.h>
 
 namespace wiz {
     namespace {
@@ -10,7 +12,6 @@ namespace wiz {
 
     SmsOutputFormat::SmsOutputFormat(SystemType systemType)
     : systemType(systemType) {}
-
     SmsOutputFormat::~SmsOutputFormat() {}
 
     bool SmsOutputFormat::generate(OutputFormatContext& context) {

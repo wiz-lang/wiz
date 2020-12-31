@@ -9,7 +9,7 @@
 namespace wiz {
     std::string SymbolTable::generateBlockName() {
         static unsigned int blockIndex = 0;
-        char buffer[std::numeric_limits<unsigned int>::digits + 8];
+        char buffer[std::numeric_limits<unsigned int>::digits + 8] = {0};
         std::sprintf(buffer, "%%%X%%", blockIndex++);
         return std::string(buffer);
     }

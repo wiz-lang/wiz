@@ -6,6 +6,15 @@
 #include <wiz/format/output/snes_output_format.h>
 
 namespace wiz {
+    Optional<std::size_t> OutputFormatContext::getOutputOffset(Address address) const {
+        const auto bankOffset = bankOffsets.find(address.bank);
+        return bankOffset != bankOffsets.end() && address.relativePosition.hasValue()
+            ? address.relativePosition.get() + bankOffset->second
+            : Optional<std::size_t>();
+    }
+
+
+
     OutputFormatCollection::OutputFormatCollection() {
         add("bin"_sv, std::make_unique<BinaryOutputFormat>());
         add("gb"_sv, std::make_unique<GameBoyOutputFormat>());

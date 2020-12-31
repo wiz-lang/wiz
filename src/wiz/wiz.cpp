@@ -26,23 +26,12 @@
 #include <wiz/utility/option_parser.h>
 #include <wiz/utility/import_manager.h>
 #include <wiz/utility/resource_manager.h>
+#include <wiz/format/debug/debug_format.h>
 
 namespace wiz {
 #if 0
     void dumpAddress(const Definition* definition, OutputFormatContext& outputFormatContext) {
-        Optional<Address> address;
-
-        switch (definition->kind) {
-            case DefinitionKind::Var: {
-                address = definition->var.address;
-                break;
-            }
-            case DefinitionKind::Func: {
-                address = definition->func.address;
-                break;
-            }
-            default: break;
-        }
+        Optional<Address> address = definition->getAddress();
 
         if (address.hasValue()) {
             if (address->relativePosition.hasValue() && address->absolutePosition.hasValue()) {
@@ -62,9 +51,11 @@ namespace wiz {
     int run(Report* report, ResourceManager* resourceManager, ArrayView<const char*> arguments) {
         StringPool stringPool;
         PlatformCollection platformCollection;
-        OutputFormatCollection formatCollection;
+        OutputFormatCollection outputFormatCollection;
+        DebugFormatCollection debugFormatCollection;
         StringView inputName;
         StringView outputName;
+        StringView debugFormatName;
         std::vector<StringView> importDirs;
         std::unordered_map<StringView, FwdUniquePtr<const Expression>> defines;
         Platform* platform = nullptr;
@@ -82,8 +73,9 @@ namespace wiz {
             ImportDir,
             Color,
             Version,
-            Help,
             FromStdin,
+            SymbolFormat,
+            Help,
         };
 
         std::string platformNames = "";
@@ -91,11 +83,21 @@ namespace wiz {
             platformNames += "\n    `" + platformCollection.getPlatformName(i).toString() + "`";
         }
 
+        std::string debugFormatNames = "";
+        for (std::size_t i = 0, count = debugFormatCollection.getFormatNameCount(); i != count; ++i) {
+            debugFormatNames += "\n    `" + debugFormatCollection.getFormatName(i).toString() + "`";
+        }
+
         const auto systemOptionHelp = stringPool.intern(
             std::string() +
-            "    indicates the target system to be used for the program.\n"
+            "    specifies the target system to be used for the program.\n"
             "    (some common systems can be auto-detected from their output filename.)\n\n" +
             "    possible options:" + platformNames);
+        const auto debugFormatOptionHelp = stringPool.intern(
+            std::string() +
+            "    specifies a symbol table format to export alongside this program.\n"
+            "    If set, symbol files will be written to the same folder as the output file.\n\n" +
+            "    possible options:" + debugFormatNames);
 
         auto optionParser = OptionParser<OptionType>{         
             {OptionType::Output, "output", 'o', true, "filename",
@@ -112,10 +114,12 @@ namespace wiz {
                 "    `ansi` - force ansi escape sequences to be used for text coloring."},
             {OptionType::Version, "version", 0, false, "",
                 "    prints the current compiler version."},
+            {OptionType::FromStdin, "", '-', false, "",
+                "    if used as an input path, wiz will read from stdin."}, 
+            {OptionType::SymbolFormat, "symbol-format", 's', true, "type",
+                debugFormatOptionHelp.getData()},
             {OptionType::Help, "help", 0, false, "",
                 "    displays this help message."},
-            {OptionType::FromStdin, "", '-', false, "",
-                "    if used as an input path, wiz will read from stdin."},                
         };
 
         if (!optionParser.parse(arguments)) {
@@ -144,6 +148,15 @@ namespace wiz {
 
         for (const auto& option : options) {
             switch (option.type) {
+                case OptionType::None: {
+                    if (inputName.getLength() == 0) {
+                        inputName = option.value;
+                    } else {
+                        report->notice("only one input filename can be specified. (previously specified as `" + inputName.toString() + "`)");
+                        invalidOptions = true;
+                    }
+                    break;
+                }
                 case OptionType::Output: {
                     if (outputName.getLength() == 0) {
                         outputName = option.value;
@@ -179,6 +192,10 @@ namespace wiz {
                     report->getLogger()->setColorSetting(setting);
                     break;
                 }
+                case OptionType::Version: {
+                    report->log(std::string("wiz version ") + wiz::version::Text);
+                    return 0;
+                }
                 case OptionType::FromStdin: {
                     if (inputName.getLength() == 0) {
                         inputName = "-"_sv;
@@ -188,9 +205,14 @@ namespace wiz {
                     }
                     break;
                 }
-                case OptionType::Version: {
-                    report->log(std::string("wiz version ") + wiz::version::Text);
-                    return 0;
+                case OptionType::SymbolFormat: {
+                    if (debugFormatName.getLength() == 0) {
+                        debugFormatName = option.value;
+                    } else {
+                        report->notice("only one symbol format can be specified. (previously specified as `" + debugFormatName.toString() + "`)");
+                        invalidOptions = true;
+                    }
+                    break;
                 }
                 case OptionType::Help: {
                     report->log("usage: wiz [options] <input>");
@@ -230,15 +252,6 @@ namespace wiz {
                     }
 
                     return 0;
-                }
-                case OptionType::None: {
-                    if (inputName.getLength() == 0) {
-                        inputName = option.value;
-                    } else {
-                        report->notice("only one input filename can be specified. (previously specified as `" + inputName.toString() + "`)");
-                        invalidOptions = true;
-                    }
-                    break;
                 }
             }
         }
@@ -293,38 +306,53 @@ namespace wiz {
                 OutputFormat* outputFormat = nullptr;
 
                 if (const auto formatValue = config.checkString(report, "format"_sv, false)) {
-                    outputFormat = formatCollection.find(formatValue->second);
+                    outputFormat = outputFormatCollection.find(formatValue->second);
                     if (outputFormat == nullptr) {
-                        report->error("`format` of \"" + formatValue->second.toString() + "\" is not supported.", formatValue->first->location, ReportErrorFlags::Fatal);
+                        report->error("`format` of `" + formatValue->second.toString() + "` is not supported.", formatValue->first->location, ReportErrorFlags::Fatal);
                         return 1;
                     }
                 }
 
                 if (outputFormat == nullptr) {
-                    outputFormat = formatCollection.find(path::getExtension(outputName));
+                    outputFormat = outputFormatCollection.find(path::getExtension(outputName));
 
                     if (outputFormat == nullptr) {
-                        outputFormat = formatCollection.find("bin"_sv);
+                        outputFormat = outputFormatCollection.find("bin"_sv);
                     }
                 }
 
                 report->log(">> Writing ROM...");
 
                 auto banks = compiler.getRegisteredBanks();
-                OutputFormatContext outputFormatContext(report, &stringPool, &config, outputName, banks);
+                OutputFormatContext outputContext(report, &stringPool, &config, outputName, banks);
 
-                if (!outputFormat->generate(outputFormatContext) || !report->validate()) {
+                if (!outputFormat->generate(outputContext) || !report->validate()) {
                     return 1;
                 }
 
                 {
                     auto writer = resourceManager->openWriter(outputName);
-                    if (writer && writer->write(outputFormatContext.data)) {
+                    if (writer && writer->write(outputContext.data)) {
                         report->log(">> Wrote to \"" + outputName.toString() + "\".");
                     } else {
                         report->error("Output file \"" + outputName.toString() + "\" could not be written.", SourceLocation(), ReportErrorFlags::Fatal);
                         return 1;
                     }
+                }
+
+                if (debugFormatName.getLength() != 0)
+                {
+                    DebugFormatContext debugContext(resourceManager, report, &stringPool, &config, outputName, &outputContext, compiler.getRegisteredDefinitions());
+
+                    // FIXME: hardcoded.
+                    const auto debugFormat = debugFormatCollection.find(debugFormatName);
+                    if (debugFormat == nullptr) {
+                        report->error(
+                            "`--symbol-format` argument of `" + debugFormatName.toString() + "` is not supported.\n"
+                            "    use `--help` to see usage of this command-line option.", SourceLocation(), ReportErrorFlags::Fatal);
+                    }
+
+                    debugFormat->generate(debugContext);
                 }
 
 #if 0

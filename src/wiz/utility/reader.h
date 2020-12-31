@@ -23,13 +23,13 @@ namespace wiz {
             FileReader(StringView filename);
             FileReader(StringView filename, std::FILE* file);
             FileReader(FileReader&& reader) = default;
-            virtual ~FileReader() override;
+            ~FileReader() override;
 
             FileReader& operator =(FileReader&& reader) = default;
 
-            virtual bool isOpen() const override;
-            virtual bool readLine(std::string& result) override;
-            virtual std::string readFully() override;
+            bool isOpen() const override;
+            bool readLine(std::string& result) override;
+            std::string readFully() override;
 
         private:
             FileReader(const FileReader&) = delete;  
@@ -42,11 +42,11 @@ namespace wiz {
     class MemoryReader : public Reader {
         public:
             MemoryReader(const std::string& buffer);
-            virtual ~MemoryReader() override;
+            ~MemoryReader() override;
             
-            virtual bool isOpen() const override;
-            virtual bool readLine(std::string& result) override;
-            virtual std::string readFully() override;
+            bool isOpen() const override;
+            bool readLine(std::string& result) override;
+            std::string readFully() override;
         private:
             std::string buffer;
             std::size_t offset;

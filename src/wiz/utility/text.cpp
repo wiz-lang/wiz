@@ -84,5 +84,20 @@ namespace wiz {
             result.push_back(text.sub(last));
             return result;
         }
+
+        std::string replaceAll(const std::string& text, const std::string& search, const std::string& replace) {
+            auto result = text;
+            auto pos = result.find(search, 0);
+
+            if (pos != std::string::npos) {
+                do {
+                    result.replace(pos, search.length(), replace);
+                    pos += replace.length();
+                    pos = result.find(search, pos);
+                } while (pos != std::string::npos);
+            }
+
+            return result;
+        }
     }
 }

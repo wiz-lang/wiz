@@ -1,11 +1,13 @@
 #include <algorithm>
 #include <cctype>
 
-#include <wiz/utility/path.h>
-#include <wiz/utility/misc.h>
 #include <wiz/ast/expression.h>
+#include <wiz/compiler/bank.h>
 #include <wiz/compiler/config.h>
 #include <wiz/format/output/gb_output_format.h>
+#include <wiz/utility/path.h>
+#include <wiz/utility/misc.h>
+#include <wiz/utility/report.h>
 
 namespace wiz {
     namespace {

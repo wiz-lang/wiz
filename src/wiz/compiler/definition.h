@@ -442,6 +442,8 @@ namespace wiz {
         template <typename T> T* tryGet();
         template <typename T> const T* tryGet() const;
 
+        Optional<Address> getAddress() const;
+
         DefinitionKind kind;
         union {
             BuiltinBankType builtinBankType;
@@ -600,7 +602,7 @@ namespace wiz {
     }
     template <> WIZ_FORCE_INLINE const Definition::Var* Definition::tryGet<Definition::Var>() const {
         return kind == DefinitionKind::Var ? &var : nullptr;
-    }
-}
+    }    
+}        
 
 #endif

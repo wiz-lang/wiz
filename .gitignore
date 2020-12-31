@@ -58,4 +58,5 @@ obj/
 *.psess
 *.bin
 *.rom
+*.mlb
 vc/.vs

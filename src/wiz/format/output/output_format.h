@@ -4,15 +4,16 @@
 #include <cstdint>
 #include <unordered_map>
 
-#include <wiz/compiler/bank.h>
-#include <wiz/utility/report.h>
+#include <wiz/compiler/address.h>
 #include <wiz/utility/string_view.h>
 #include <wiz/utility/array_view.h>
 #include <wiz/utility/fwd_unique_ptr.h>
-#include <wiz/utility/string_pool.h>
 
 namespace wiz {
+    class Bank;
     class Config;
+    class Report;
+    class StringPool;
 
     struct OutputFormatContext {
         OutputFormatContext(Report* report,
@@ -25,6 +26,8 @@ namespace wiz {
         config(config),
         outputName(outputName),
         banks(banks) {}
+
+        Optional<std::size_t> getOutputOffset(Address address) const;
 
         Report* report;
         StringPool* stringPool;

@@ -9,20 +9,29 @@
 #include <wiz/utility/string_view.h>
 
 namespace wiz {
+    enum class WriterMode {
+        Text,
+        Binary,
+    };
+
     class Writer {
         public:
             virtual ~Writer() {}
             virtual bool isOpen() const = 0;
             virtual bool write(const std::vector<std::uint8_t>& data) = 0;
+            virtual bool write(StringView data) = 0;
+            virtual bool writeLine(StringView data) = 0;
     };
 
     class FileWriter : public Writer {
         public:
             FileWriter(StringView filename);
-            virtual ~FileWriter() override;
+            ~FileWriter() override;
 
-            virtual bool isOpen() const override;
-            virtual bool write(const std::vector<std::uint8_t>& data) override;
+            bool isOpen() const override;
+            bool write(const std::vector<std::uint8_t>& data) override;
+            bool write(StringView data) override;
+            bool writeLine(StringView data) override;
 
         private:
             FileWriter(const FileWriter&) = delete;  
@@ -35,10 +44,12 @@ namespace wiz {
     class MemoryWriter : public Writer {
         public:
             MemoryWriter(std::vector<std::uint8_t>& buffer);
-            virtual ~MemoryWriter() override;
+            ~MemoryWriter() override;
             
-            virtual bool isOpen() const override;
-            virtual bool write(const std::vector<std::uint8_t>& data) override;
+            bool isOpen() const override;
+            bool write(const std::vector<std::uint8_t>& data) override;
+            bool write(StringView data) override;
+            bool writeLine(StringView data) override;
 
         private:
             std::vector<std::uint8_t>& buffer;

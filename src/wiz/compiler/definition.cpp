@@ -32,4 +32,12 @@ namespace wiz {
             case DefinitionKind::Var: var.~Var(); break;
         }
     }
+
+    Optional<Address> Definition::getAddress() const {
+        switch (kind) {
+            case DefinitionKind::Var: return var.address;
+            case DefinitionKind::Func: return func.address;
+            default: return Optional<Address>();
+        }
+    }
 }

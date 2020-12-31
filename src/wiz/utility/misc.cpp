@@ -8,4 +8,10 @@ namespace wiz {
         }
         return result;
     }
+
+    std::string toHexString(std::size_t value) {
+        char buffer[std::numeric_limits<std::size_t>::digits + 1] = {0};
+        std::sprintf(buffer, "%X", value);
+        return std::string(buffer);
+    }
 }

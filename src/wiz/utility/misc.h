@@ -1,6 +1,7 @@
 #ifndef WIZ_UTILITY_MISC_H
 #define WIZ_UTILITY_MISC_H
 
+#include <string>
 #include <vector>
 #include <utility>
 #include <wiz/utility/fwd_unique_ptr.h>
@@ -46,6 +47,8 @@ namespace wiz {
     }
 
     std::size_t log2(std::size_t value);
+
+    std::string toHexString(std::size_t value);
 }
 
 #endif

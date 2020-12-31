@@ -1,8 +1,10 @@
 #include <algorithm>
 
 #include <wiz/ast/expression.h>
+#include <wiz/compiler/bank.h>
 #include <wiz/compiler/config.h>
 #include <wiz/format/output/nes_output_format.h>
+#include <wiz/utility/report.h>
 
 namespace wiz {
     namespace {
