@@ -80,21 +80,30 @@ namespace wiz {
 
                     const auto outputRelative = isLabelOutputRelative(definition);
 
-                    Optional<std::size_t> addressValue;
+                    Optional<std::size_t> startValue;
+                    Optional<std::size_t> endValue;
                     if (outputRelative) {
                         const auto offset = outputContext->getOutputOffset(address.get());
                         if (offset.hasValue()) {
-                            addressValue = offset.get() - 16;
+                            startValue = offset.get() - 16;
                         }
                     } else {
-                        addressValue = address->absolutePosition.get();
+                        startValue = address->absolutePosition.get();
                     }
 
-                    if (!addressValue.hasValue()) {
+                    if (!startValue.hasValue()) {
                         return;
                     }
 
-                    const auto addressString = toHexString(addressValue.get());
+                    if (definition->kind == DefinitionKind::Var) {
+                        endValue = startValue.get() + definition->var.storageSize.get() - 1;
+                    }
+
+                    auto addressString = toHexString(startValue.get());
+                    if (endValue.hasValue() && endValue.get() != startValue.get()) {
+                        addressString += '-';
+                        addressString += toHexString(endValue.get());
+                    }
 
                     std::string fullName;
                     if ((definition->name.getLength() == 0 || definition->name[0] != '$')
@@ -107,6 +116,7 @@ namespace wiz {
                     }
                     fullName += definition->name.toString();
                     
+                    fullName = text::replaceAll(fullName, ".", "_");
                     fullName = text::replaceAll(fullName, "$", "__");
                     fullName = text::replaceAll(fullName, "%", "__");
 
