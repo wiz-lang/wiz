@@ -98,7 +98,7 @@ namespace wiz {
 
                     const auto startValue = maybeStartValue.get();
                     const auto endValue = definition->kind == DefinitionKind::Var
-                        ? startValue + std::max(definition->var.storageSize.get() - 1, 0U)
+                        ? startValue + std::max<std::size_t>(definition->var.storageSize.get() - 1, 0U)
                         : startValue;
 
                     for (std::size_t i = startValue; i <= endValue; i++) {
