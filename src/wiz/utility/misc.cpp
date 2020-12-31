@@ -11,7 +11,7 @@ namespace wiz {
 
     std::string toHexString(std::size_t value) {
         char buffer[std::numeric_limits<std::size_t>::digits + 1] = {0};
-        std::sprintf(buffer, "%X", value);
+        std::sprintf(buffer, "%X", static_cast<unsigned int>(value));
         return std::string(buffer);
     }
 }

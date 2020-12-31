@@ -40,8 +40,8 @@ WIZ_OUT_DIR := bin
 WIZ_TEST_DIR := tests
 WIZ_TEST_TMP_DIR := bin/test-tmp
 
-WIZ_H_MATCH := $(wildcard $(WIZ_SRC)/wiz/*.h $(WIZ_SRC)/wiz/ast/*.h $(WIZ_SRC)/wiz/compiler/*.h $(WIZ_SRC)/wiz/parser/*.h  $(WIZ_SRC)/wiz/utility/*.h $(WIZ_SRC)/wiz/definition/*.h $(WIZ_SRC)/wiz/platform/*.h $(WIZ_SRC)/wiz/format/*.h)
-WIZ_CPP_MATCH := $(wildcard $(WIZ_SRC)/wiz/*.cpp $(WIZ_SRC)/wiz/ast/*.cpp $(WIZ_SRC)/wiz/compiler/*.cpp $(WIZ_SRC)/wiz/parser/*.cpp  $(WIZ_SRC)/wiz/utility/*.cpp $(WIZ_SRC)/wiz/definition/*.cpp $(WIZ_SRC)/wiz/platform/*.cpp $(WIZ_SRC)/wiz/format/*.cpp)
+WIZ_H_MATCH := $(wildcard $(WIZ_SRC)/wiz/*.h $(WIZ_SRC)/wiz/ast/*.h $(WIZ_SRC)/wiz/compiler/*.h $(WIZ_SRC)/wiz/parser/*.h  $(WIZ_SRC)/wiz/utility/*.h $(WIZ_SRC)/wiz/definition/*.h $(WIZ_SRC)/wiz/platform/*.h $(WIZ_SRC)/wiz/format/*.h $(WIZ_SRC)/wiz/format/output/*.h $(WIZ_SRC)/wiz/format/debug/*.h)
+WIZ_CPP_MATCH := $(wildcard $(WIZ_SRC)/wiz/*.cpp $(WIZ_SRC)/wiz/ast/*.cpp $(WIZ_SRC)/wiz/compiler/*.cpp $(WIZ_SRC)/wiz/parser/*.cpp  $(WIZ_SRC)/wiz/utility/*.cpp $(WIZ_SRC)/wiz/definition/*.cpp $(WIZ_SRC)/wiz/platform/*.cpp $(WIZ_SRC)/wiz/format/*.cpp $(WIZ_SRC)/wiz/format/output/*.cpp $(WIZ_SRC)/wiz/format/debug/*.cpp)
 WIZ_H_EXCLUDE := 
 WIZ_CPP_EXCLUDE := 
 

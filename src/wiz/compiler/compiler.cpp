@@ -3060,7 +3060,6 @@ namespace wiz {
                 return false;
             }
             case TypeExpressionKind::DesignatedStorage: {
-                const auto& leftDesignatedStorageType = leftTypeExpression->designatedStorage;
                 const auto leftSize = calculateStorageSize(getDesignatedStorageElementType(leftTypeExpression), ""_sv);
                 const auto rightSize = calculateStorageSize(getDesignatedStorageElementType(rightTypeExpression), ""_sv);
 
