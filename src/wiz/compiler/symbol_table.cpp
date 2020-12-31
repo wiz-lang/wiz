@@ -9,8 +9,8 @@
 namespace wiz {
     std::string SymbolTable::generateBlockName() {
         static unsigned int blockIndex = 0;
-        char buffer[std::numeric_limits<unsigned int>::digits + 8] = {0};
-        std::sprintf(buffer, "%%%X%%", blockIndex++);
+        char buffer[std::numeric_limits<unsigned int>::digits10 + 5] = {0};
+        std::sprintf(buffer, "%%blk%u", blockIndex++);
         return std::string(buffer);
     }
 
@@ -32,12 +32,15 @@ namespace wiz {
     std::string SymbolTable::getFullName() const {
         if (!parent) {
             return namespaceName.toString();
-        } else {
-            if (namespaceName.getLength() > 0 && namespaceName[0] == '%') {
+        } else if (namespaceName.getLength() > 0) {
+            if (namespaceName[0] == '%') {
                 return namespaceName.toString();
+            } else {
+                std::string parentName = parent->getFullName();
+                return (parentName.length() ? parentName + "." : "") + namespaceName.toString();
             }
-            std::string parentName = parent->getFullName();
-            return (parentName.length() ? parentName + "." : "") + namespaceName.toString();
+        } else {
+            return "";
         }
     }
 

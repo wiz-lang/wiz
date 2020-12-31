@@ -97,14 +97,18 @@ namespace wiz {
                     const auto addressString = toHexString(addressValue.get());
 
                     std::string fullName;
-                    if (definition->parentScope != nullptr) {
+                    if ((definition->name.getLength() == 0 || definition->name[0] != '$')
+                    && definition->parentScope != nullptr) {
                         const auto prefix = definition->parentScope->getFullName();
                         if (!prefix.empty()) {
                             fullName = prefix;
                             fullName += '.';
                         }
                     }
-                    fullName += text::replaceAll(definition->name.toString(), "$", "__");
+                    fullName += definition->name.toString();
+                    
+                    fullName = text::replaceAll(fullName, "$", "__");
+                    fullName = text::replaceAll(fullName, "%", "__");
 
                     for (const auto& labelType : labelTypes) {
                         writer->write(StringView(&labelType, 1));

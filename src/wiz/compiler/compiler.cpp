@@ -3695,7 +3695,7 @@ namespace wiz {
             }
             case StatementKind::Block: {
                 const auto& blockStatement = statement->block;
-                enterScope(getOrCreateStatementScope(StringView(), statement, currentScope));
+                enterScope(getOrCreateStatementScope(stringPool->intern(SymbolTable::generateBlockName()), statement, currentScope));
                 for (const auto& item : blockStatement.items) {
                     reserveDefinitions(item.get());
                 }
@@ -3806,7 +3806,7 @@ namespace wiz {
 
                 auto& funcDefinition = definition->func;
 
-                enterScope(getOrCreateStatementScope(StringView(), body, currentScope));
+                enterScope(getOrCreateStatementScope(stringPool->intern(SymbolTable::generateBlockName()), body, currentScope));
                 for (const auto& parameter : funcDeclaration.parameters) {
                     funcDefinition.parameters.push_back(currentScope->createDefinition(report, Definition::Var(Qualifiers::None, definition, nullptr, parameter->typeExpression.get(), 0), parameter->name, statement));
                 }
@@ -5077,7 +5077,7 @@ namespace wiz {
                     enterInlineSite(registeredInlineSites.addNew());
 
                     const auto funcDeclaration = definition->declaration;
-                    enterScope(getOrCreateStatementScope(StringView(), funcDeclaration, funcDefinition->enclosingScope));
+                    enterScope(getOrCreateStatementScope(stringPool->intern(SymbolTable::generateBlockName()), funcDeclaration, funcDefinition->enclosingScope));
 
                     bool valid = reserveDefinitions(funcDeclaration) && resolveDefinitionTypes() && reserveStorage(funcDeclaration);
 
@@ -6606,7 +6606,7 @@ namespace wiz {
                     break;
                 }
 
-                enterScope(getOrCreateStatementScope(StringView(), statement, currentScope));
+                enterScope(getOrCreateStatementScope(stringPool->intern(SymbolTable::generateBlockName()), statement, currentScope));
                 
                 const auto beginLabelDefinition = createAnonymousLabelDefinition("$loop"_sv);
                 const auto endLabelDefinition = createAnonymousLabelDefinition("$endloop"_sv);
@@ -6617,7 +6617,7 @@ namespace wiz {
 
                 for (std::size_t i = 0; i != *length; ++i) {
                     enterInlineSite(registeredInlineSites.addNew());
-                    enterScope(getOrCreateStatementScope(StringView(), statement, currentScope));
+                    enterScope(getOrCreateStatementScope(stringPool->intern(SymbolTable::generateBlockName()), statement, currentScope));
 
                     const auto continueLabelDefinition = createAnonymousLabelDefinition("$continue"_sv);
 
