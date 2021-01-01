@@ -70,7 +70,6 @@ namespace wiz {
 
     // TODO: msl files (mesen-s smybol files)
     // TODO: sym files (bsnes-plus)
-    // TODO: sym files (bgb)
     // TODO: dbg files (mesen source mapping)
     // TODO: nl files (FCEUX)
     // TODO: investigate Mednafen, no$sns, no$gmb, MEKA, OpenMSX, and others for their formats.

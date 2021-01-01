@@ -38,6 +38,10 @@ namespace wiz {
         // The size of the file header, non-zero only if it exists in its own section outside the main program ROM.
         // (Used to determine the 'true offset' of ROM banks, as debug symbols may need.) 
         std::size_t fileHeaderPrefixSize = 0;
+        // The default debug bank size of the bank part of PRG debug symbols for the platform.
+        // Some platforms simply use the absolute byte offset in the ROM file to determine their address,
+        // others need to divide the offset to get a bank index.
+        std::size_t debugBankSize = 65536;
 
         std::unordered_map<const Bank*, std::size_t> bankOffsets;
         std::vector<std::uint8_t> data;

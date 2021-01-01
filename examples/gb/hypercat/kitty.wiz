@@ -184,11 +184,11 @@ namespace kitty {
     }
 
     func update() {
-        let bubble = t0;
-        let head = t1;
-        let legs = t2;
-        let tail = t3;
-        let bob = t4;
+        var bubble : u8 in t0;
+        var head : u8 in t1;
+        var legs : u8 in t2;
+        var tail : u8 in t3;
+        var bob : u8 in t4;
 
         frame_lo = a = frame_lo + 1;
         b = a;

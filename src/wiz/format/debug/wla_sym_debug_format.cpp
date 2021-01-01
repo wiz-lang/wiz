@@ -3,13 +3,15 @@
 #include <wiz/compiler/definition.h>
 #include <wiz/compiler/symbol_table.h>
 #include <wiz/format/output/output_format.h>
-#include <wiz/format/debug/rgbds_sym_debug_format.h>
+#include <wiz/format/debug/wla_sym_debug_format.h>
 #include <wiz/utility/misc.h>
 #include <wiz/utility/path.h>
 #include <wiz/utility/text.h>
 #include <wiz/utility/writer.h>
 #include <wiz/utility/resource_manager.h>
 
+// See: https://wla-dx.readthedocs.io/en/latest/symbols.html
+// TODO: support [source files] and [addr-to-line mapping] functionality.
 namespace wiz {
     namespace {
         bool isDebugLabelOutputRelative(const Definition* definition) {
@@ -104,13 +106,14 @@ namespace wiz {
         }
     }
 
-    RgbdsSymDebugFormat::RgbdsSymDebugFormat() {}
-    RgbdsSymDebugFormat::~RgbdsSymDebugFormat() {}
+    WlaSymDebugFormat::WlaSymDebugFormat() {}
+    WlaSymDebugFormat::~WlaSymDebugFormat() {}
 
-    bool RgbdsSymDebugFormat::generate(DebugFormatContext& context) {
+    bool WlaSymDebugFormat::generate(DebugFormatContext& context) {
         const auto debugName = path::stripExtension(context.outputName).toString() + ".sym";
 
         if (auto writer = context.resourceManager->openWriter(StringView(debugName))) {
+            writer->writeLine("[labels]"_sv);
             for (const auto& definition : context.definitions) {
                 dumpAddress(writer.get(), definition, context);
             }

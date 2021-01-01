@@ -626,7 +626,7 @@ namespace wiz {
             case BinaryOperatorKind::LessThanOrEqual: {
                 // a == right -> { cmp(a, right); } && (zero || carry)
                 if (const auto integerType = type->tryGet<Definition::BuiltinIntegerType>()) {
-                    if (integerType->min.isPositive()) {
+                    if (!integerType->min.isNegative()) {
                         if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
                             if (leftRegister->definition == a) {
                                 return std::make_unique<PlatformTestAndBranch>(
@@ -647,7 +647,7 @@ namespace wiz {
             case BinaryOperatorKind::GreaterThan: {
                 // a == right -> { cmp(a, right); } && !zero && !carry
                 if (const auto integerType = type->tryGet<Definition::BuiltinIntegerType>()) {
-                    if (integerType->min.isPositive()) {
+                    if (!integerType->min.isNegative()) {
                         if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
                             if (leftRegister->definition == a) {
                                 return std::make_unique<PlatformTestAndBranch>(

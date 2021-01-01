@@ -76,6 +76,8 @@ namespace wiz {
             data.resize(RomBankSize, 0xFF);
         }
 
+        context.debugBankSize = 16384;
+
         memset(&data[0x134], 0, 0x14D - 0x134);
         memcpy(&data[0x104], LogoBitmap, sizeof(LogoBitmap));
         data[0x14B] = 0x33;

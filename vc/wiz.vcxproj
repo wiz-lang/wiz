@@ -45,6 +45,7 @@
     <ClInclude Include="..\src\wiz\format\debug\debug_format.h" />
     <ClInclude Include="..\src\wiz\format\debug\mlb_debug_format.h" />
     <ClInclude Include="..\src\wiz\format\debug\rgbds_sym_debug_format.h" />
+    <ClInclude Include="..\src\wiz\format\debug\wla_sym_debug_format.h" />
     <ClInclude Include="..\src\wiz\format\output\binary_output_format.h" />
     <ClInclude Include="..\src\wiz\format\output\gb_output_format.h" />
     <ClInclude Include="..\src\wiz\format\output\nes_output_format.h" />
@@ -109,6 +110,7 @@
     <ClCompile Include="..\src\wiz\format\debug\debug_format.cpp" />
     <ClCompile Include="..\src\wiz\format\debug\mlb_debug_format.cpp" />
     <ClCompile Include="..\src\wiz\format\debug\rgbds_sym_debug_format.cpp" />
+    <ClCompile Include="..\src\wiz\format\debug\wla_sym_debug_format.cpp" />
     <ClCompile Include="..\src\wiz\format\output\binary_output_format.cpp" />
     <ClCompile Include="..\src\wiz\format\output\gb_output_format.cpp" />
     <ClCompile Include="..\src\wiz\format\output\nes_output_format.cpp" />

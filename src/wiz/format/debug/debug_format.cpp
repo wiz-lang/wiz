@@ -1,11 +1,13 @@
 #include <wiz/format/debug/debug_format.h>
 #include <wiz/format/debug/mlb_debug_format.h>
 #include <wiz/format/debug/rgbds_sym_debug_format.h>
+#include <wiz/format/debug/wla_sym_debug_format.h>
 
 namespace wiz {
     DebugFormatCollection::DebugFormatCollection() {
         add("mlb"_sv, std::make_unique<MlbDebugFormat>());
         add("rgbds"_sv, std::make_unique<RgbdsSymDebugFormat>());
+        add("wla"_sv, std::make_unique<WlaSymDebugFormat>());
     }
 
     DebugFormatCollection::~DebugFormatCollection() {}
