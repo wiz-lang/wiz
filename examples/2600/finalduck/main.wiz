@@ -46,51 +46,51 @@ in ram {
         var x : [u8; COUNT];
         var y : [u8; COUNT];
         var data : [u8; COUNT];
-        var gfx_ptr : [*u8; COUNT];
+        var gfx_ptr : [*const u8; COUNT];
     }
 
     namespace player1 {
         let index = sprite.PLAYER1;
 
-        var x @ &sprite.x as u16 + index : u8;
-        var y @ &sprite.y as u16 + index : u8;
-        var reflect @ &sprite.data as u16 + index : u8;
-        var gfx_ptr @ &sprite.gfx_ptr as u16 + (index * 2) : *u8;
+        var x @ &sprite.x[index] : u8;
+        var y @ &sprite.y[index] : u8;
+        var reflect @ &sprite.data[index] : u8;
+        var gfx_ptr @ &sprite.gfx_ptr[index] : *const u8;
     }
 
     namespace player2 {
         let index = sprite.PLAYER2;
         
-        var x @ &sprite.x as u16 + index : u8;
-        var y @ &sprite.y as u16 + index : u8;
-        var reflect @ &sprite.data as u16 + index : u8;
-        var gfx_ptr @ &sprite.gfx_ptr as u16 + (index * 2) : *u8;
+        var x @ &sprite.x[index] : u8;
+        var y @ &sprite.y[index] : u8;
+        var reflect @ &sprite.data[index] : u8;
+        var gfx_ptr @ &sprite.gfx_ptr[index] : *const u8;
     }
 
     namespace missile1 {
         let index = sprite.MISSILE1;
         
-        var x @ &sprite.x as u16 + index : u8;
-        var y @ &sprite.y as u16 + index : u8;
-        var speed @ &sprite.data as u16 + index : u8;
-        var gfx_ptr @ &sprite.gfx_ptr as u16 + (index * 2) : *u8;
+        var x @ &sprite.x[index] : u8;
+        var y @ &sprite.y[index] : u8;
+        var speed @ &sprite.data[index] : u8;
+        var gfx_ptr @ &sprite.gfx_ptr[index] : *const u8;
     }
 
     namespace missile2 {
         let index = sprite.MISSILE2;
         
-        var x @ &sprite.x as u16 + index : u8;
-        var y @ &sprite.y as u16 + index : u8;
-        var speed @ &sprite.data as u16 + index : u8;
-        var gfx_ptr @ &sprite.gfx_ptr as u16 + (index * 2) : *u8;
+        var x @ &sprite.x[index] : u8;
+        var y @ &sprite.y[index] : u8;
+        var speed @ &sprite.data[index] : u8;
+        var gfx_ptr @ &sprite.gfx_ptr[index] : *const u8;
     }
 
     namespace ball {
         let index = sprite.BALL;
         
-        var x @ &sprite.x as u16 + index : u8;
-        var y @ &sprite.y as u16 + index : u8;
-        var gfx_ptr @ &sprite.gfx_ptr as u16 + (index * 2) : *u8;
+        var x @ &sprite.x[index] : u8;
+        var y @ &sprite.y[index] : u8;
+        var gfx_ptr @ &sprite.gfx_ptr[index] : *const u8;
     }
 }
 
