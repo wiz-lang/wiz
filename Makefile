@@ -75,10 +75,11 @@ endif
 ifeq ($(PLATFORM),native)
 ifeq ($(CFG),release)
 	CXX_FLAGS := -D_POSIX_SOURCE -Os -std=c++17 -MMD -Wall -Wextra $(WERR_) -Wold-style-cast -Wnon-virtual-dtor -fno-exceptions -fno-rtti
+	LXXFLAGS := -lm -s -flto
 else ifeq ($(CFG),debug)
 	CXX_FLAGS := -D_POSIX_SOURCE -DWIZ_DEBUG -g -std=c++17 -MMD -Wall -Wextra $(WERR_) -Wold-style-cast -Wnon-virtual-dtor -fno-exceptions -fno-rtti
-endif
 	LXXFLAGS := -lm
+endif
 	INCLUDES := -I$(WIZ_SRC)
 	WIZ := wiz$(EXE)
 else ifeq ($(PLATFORM),emcc)
