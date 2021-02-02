@@ -37,27 +37,29 @@ namespace entity {
     }
 
     func init_system() {
+        var index : u8 in x;
+
         a = 0;
 
-        for x in 0 .. COUNT - 1 {
-            type[x] = a;
-            flags[x] = a;
-            x_subpixel[x] = a;
-            x_pixel[x] = a;
-            x_screen[x] = a;
-            y_subpixel[x] = a;
-            y_pixel[x] = a;
-            y_screen[x] = a;
-            hp[x] = a;
-            flash_timer[x] = a;
-            v0[x] = a;
-            v1[x] = a;
-            v2[x] = a;
-            v3[x] = a;
-            v4[x] = a;
-            v5[x] = a;
-            v6[x] = a;
-            v7[x] = a;
+        for index in 0 .. COUNT - 1 {
+            type[index] = a;
+            flags[index] = a;
+            x_subpixel[index] = a;
+            x_pixel[index] = a;
+            x_screen[index] = a;
+            y_subpixel[index] = a;
+            y_pixel[index] = a;
+            y_screen[index] = a;
+            hp[index] = a;
+            flash_timer[index] = a;
+            v0[index] = a;
+            v1[index] = a;
+            v2[index] = a;
+            v3[index] = a;
+            v4[index] = a;
+            v5[index] = a;
+            v6[index] = a;
+            v7[index] = a;
         }
     }
 
@@ -67,38 +69,41 @@ namespace entity {
         spawn_x : u16 in w0,
         spawn_y : u16 in w2
     ) {
-        flags[x] = a = 0;
-        x_subpixel[x] = a;
-        y_subpixel[x] = a;
-        hp[x] = a;
-        flash_timer[x] = a;
-        v0[x] = a;
-        v1[x] = a;
-        v2[x] = a;
-        v3[x] = a;
-        v4[x] = a;
-        v5[x] = a;
-        v6[x] = a;
-        v7[x] = a;
-        x_pixel[x] = a = <:spawn_x;
-        x_screen[x] = a = >:spawn_x;
-        y_pixel[x] = a = <:spawn_y;
-        y_screen[x] = a = >:spawn_y;
+        flags[index] = a = 0;
+        x_subpixel[index] = a;
+        y_subpixel[index] = a;
+        hp[index] = a;
+        flash_timer[index] = a;
+        v0[index] = a;
+        v1[index] = a;
+        v2[index] = a;
+        v3[index] = a;
+        v4[index] = a;
+        v5[index] = a;
+        v6[index] = a;
+        v7[index] = a;
+        x_pixel[index] = a = <:spawn_x;
+        x_screen[index] = a = >:spawn_x;
+        y_pixel[index] = a = <:spawn_y;
+        y_screen[index] = a = >:spawn_y;
 
-        type[x] = a = y;
+        type[index] = a = spawn_type;
 
         if !zero {
-            <:w0 = a = (&entity_definitions.init_handlers_l as *u8)[y];
-            >:w0 = a = (&entity_definitions.init_handlers_h as *u8)[y];
-            return (*(&w0 as *func))();
+            var func_ptr @ &w0 : func;
+            <:func_ptr = a = (&entity_definitions.init_handlers_l as *u8)[spawn_type];
+            >:func_ptr = a = (&entity_definitions.init_handlers_h as *u8)[spawn_type];
+            return (*(&func_ptr as *func))();
         }
     }
 
     func spawn_entity(spawn_type : u8 in y, spawn_x : u16 in w0, spawn_y : u16 in w2) : bool in carry {
-        for x in 0 .. COUNT - 1 {
-            a = type[x];
+        var index : u8 in x;
+
+        for index in 0 .. COUNT - 1 {
+            a = type[index];
             if zero {
-                init_entity(x, spawn_type, spawn_x, spawn_y);
+                init_entity(index, spawn_type, spawn_x, spawn_y);
                 return true;
             }
         }
@@ -107,17 +112,22 @@ namespace entity {
     }
 
     func update_all() {
-        for x in 0 .. COUNT - 1 {
-            current_index = x;
+        var index : u8 in x;
 
-            y = a = type[x];
+        for index in 0 .. COUNT - 1 {
+            current_index = index;
+
+            var ent_type : u8 in y;
+            ent_type = a = type[index];
+
             if !zero {
-                <:w0 = a = (&entity_definitions.update_handlers_l as *u8)[y];
-                >:w0 = a = (&entity_definitions.update_handlers_h as *u8)[y];
-                call_handler(w0);
+                var func_ptr @ &w0 : func;
+                <:func_ptr = a = (&entity_definitions.update_handlers_l as *u8)[ent_type];
+                >:func_ptr = a = (&entity_definitions.update_handlers_h as *u8)[ent_type];
+                call_handler(func_ptr);
             }
 
-            x = current_index;
+            index = current_index;
         }
     }
 }

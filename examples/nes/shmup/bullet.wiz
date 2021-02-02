@@ -28,18 +28,20 @@ namespace bullet {
     }
 
     func init_system() {
+        var index : u8 in x;
+
         a = 0;
 
-        for x in 0 .. COUNT - 1 {
-            type[x] = a;
-            x_subpixel[x] = a;
-            x_pixel[x] = a;
-            x_screen[x] = a;
-            y_subpixel[x] = a;
-            y_pixel[x] = a;
-            y_screen[x] = a;
-            v0[x] = a;
-            v1[x] = a;
+        for index in 0 .. COUNT - 1 {
+            type[index] = a;
+            x_subpixel[index] = a;
+            x_pixel[index] = a;
+            x_screen[index] = a;
+            y_subpixel[index] = a;
+            y_pixel[index] = a;
+            y_screen[index] = a;
+            v0[index] = a;
+            v1[index] = a;
         }
     }
 
@@ -49,21 +51,22 @@ namespace bullet {
         spawn_x : u16 in w0,
         spawn_y : u16 in w2
     ) {
-        x_subpixel[x] = a;
-        y_subpixel[x] = a;
-        v0[x] = a;
-        v1[x] = a;
-        x_pixel[x] = a = <:spawn_x;
-        x_screen[x] = a = >:spawn_x;
-        y_pixel[x] = a = <:spawn_y;
-        y_screen[x] = a = >:spawn_y;
+        x_subpixel[index] = a;
+        y_subpixel[index] = a;
+        v0[index] = a;
+        v1[index] = a;
+        x_pixel[index] = a = <:spawn_x;
+        x_screen[index] = a = >:spawn_x;
+        y_pixel[index] = a = <:spawn_y;
+        y_screen[index] = a = >:spawn_y;
 
-        type[x] = a = y;
+        type[index] = a = spawn_type;
 
         if !zero {
-            <:w0 = a = (&bullet_definitions.init_handlers_l as *u8)[y];
-            >:w0 = a = (&bullet_definitions.init_handlers_h as *u8)[y];
-            return (*(&w0 as *func))();
+            var func_ptr @ &w0 : func;
+            <:func_ptr = a = (&bullet_definitions.init_handlers_l as *u8)[spawn_type];
+            >:func_ptr = a = (&bullet_definitions.init_handlers_h as *u8)[spawn_type];
+            return (*(&func_ptr as *func))();
         }
     }
 
@@ -88,17 +91,21 @@ namespace bullet {
     }
 
     func update_all() {
-        for x in 0 .. COUNT - 1 {
-            current_index = x;
+        var index : u8 in x;
 
-            y = a = type[x];
+        for index in 0 .. COUNT - 1 {
+            current_index = index;
+
+            var bullet_type : u8 in y;
+            bullet_type = a = type[index];
             if !zero {
-                <:w0 = a = (&bullet_definitions.update_handlers_l as *u8)[y];
-                >:w0 = a = (&bullet_definitions.update_handlers_h as *u8)[y];
-                call_handler(w0);
+                var func_ptr @ &w0 : func;
+                <:func_ptr = a = (&bullet_definitions.update_handlers_l as *u8)[bullet_type];
+                >:func_ptr = a = (&bullet_definitions.update_handlers_h as *u8)[bullet_type];
+                call_handler(func_ptr);
             }
 
-            x = current_index;
+            index = current_index;
         }
     }    
 }

@@ -1,5 +1,5 @@
 import "globals";
 
-func call_handler(func_ptr : u16 in w0) {
+func call_handler(func_ptr : func in w0) {
     return (*(&func_ptr as *func))();
 }

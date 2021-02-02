@@ -1982,13 +1982,13 @@ namespace wiz {
                                 Expression::IntegerLiteral(integerLiteral->value.logicalRightShift(8 * offset) & Int128(mask)), expression->location,
                                 ExpressionInfo(EvaluationContext::CompileTime, std::move(resultType), Qualifiers::None));
                         } else if (const auto resolvedIdentifier = operand->tryGet<Expression::ResolvedIdentifier>()) {
-                            if (definitionType != Builtins::DefinitionType::U8) {
-                                report->error("register decompisition is currently only supported for `u8` quantities, so it cannot be used with " + getUnaryOperatorName(unaryOperator.op).toString(), expression->location);
-                                return nullptr;
-                            }
-
                             const auto definition = resolvedIdentifier->definition;
                             if (const auto registerDefinition = definition->tryGet<Definition::BuiltinRegister>()) {
+                                if (definitionType != Builtins::DefinitionType::U8) {
+                                    report->error("register decompisition is currently only supported for `u8` quantities, so it cannot be used with " + getUnaryOperatorName(unaryOperator.op).toString(), expression->location);
+                                    return nullptr;
+                                }
+
                                 const auto subRegisters = builtins.findRegisterDecomposition(definition);
                                 if (subRegisters.getLength() == 0) {
                                     report->error("`" + definition->name.toString() + "` cannot be split into smaller registers, so it cannot be used with " + getUnaryOperatorName(unaryOperator.op).toString(), expression->location);
