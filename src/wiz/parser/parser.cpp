@@ -307,6 +307,9 @@ namespace wiz {
             case TokenType::LessColon:
             case TokenType::GreaterColon:
             case TokenType::HashColon:
+            case TokenType::LessGreaterColon:
+            case TokenType::GreaterHashColon:
+            case TokenType::DoubleGreaterColon:
             case TokenType::LeftParenthesis: {
                 return parseExpressionStatement();
             }
@@ -1662,6 +1665,9 @@ namespace wiz {
             case TokenType::LessColon: op = UnaryOperatorKind::LowByte; break;
             case TokenType::GreaterColon: op = UnaryOperatorKind::HighByte; break;
             case TokenType::HashColon: op = UnaryOperatorKind::BankByte; break;
+            case TokenType::LessGreaterColon: op = UnaryOperatorKind::LowWord; break;
+            case TokenType::GreaterHashColon: op = UnaryOperatorKind::MidWord; break;
+            case TokenType::DoubleGreaterColon: op = UnaryOperatorKind::HighWord; break;
             case TokenType::At: op = UnaryOperatorKind::AddressReserve; break;
             case TokenType::Identifier: {
                 if (token.keyword == Keyword::Far) {

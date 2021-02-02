@@ -129,7 +129,7 @@ in prg {
 
             snes.dma0.control = a = snes.dma.CONTROL_MODE_AB | snes.dma.CONTROL_MDMA_NO_INCREMENT;
             snes.dma0.mdma_dest = a = <:&snes.ppu.vram_write_data_l;
-            snes.dma0.src_address_hl = xx  = &w0 as u16;
+            snes.dma0.src_address_hl = xx  = <>:&w0;
             snes.dma0.src_address_bank = 0;
             snes.dma0.mdma_size_hl = xx = 0x10000 & 0xFFFF;
 
@@ -142,7 +142,7 @@ in prg {
 
             snes.dma0.control = a = snes.dma.CONTROL_MODE_A | snes.dma.CONTROL_MDMA_NO_INCREMENT;
             snes.dma0.mdma_dest = a = <:&snes.ppu.cgram_write_data;
-            snes.dma0.src_address_hl = xx = &b0 as u16;
+            snes.dma0.src_address_hl = xx = <>:&b0;
             snes.dma0.src_address_bank = 0;
             snes.dma0.mdma_size_hl = xx = 512;
 
@@ -154,7 +154,7 @@ in prg {
 
             snes.dma0.control = a = snes.dma.CONTROL_MODE_AB;
             snes.dma0.mdma_dest = a = <:&snes.ppu.vram_write_data_l;
-            snes.dma0.src_address_hl = xx = &hello_tiles_chr as u16;
+            snes.dma0.src_address_hl = xx = <>:&hello_tiles_chr;
             snes.dma0.src_address_bank = a = #:far &hello_tiles_chr;
             snes.dma0.mdma_size_hl = xx = sizeof(typeof(hello_tiles_chr));
 
@@ -162,7 +162,7 @@ in prg {
 
             snes.dma1.control = a = snes.dma.CONTROL_MODE_A;
             snes.dma1.mdma_dest = a = <:&snes.ppu.cgram_write_data;
-            snes.dma1.src_address_hl = xx = &bkg_palette_data as u16;
+            snes.dma1.src_address_hl = xx = <>:&bkg_palette_data;
             snes.dma1.src_address_bank = a = #:far &bkg_palette_data;
             snes.dma1.mdma_size_hl = xx = sizeof(typeof(bkg_palette_data));
 
@@ -239,11 +239,11 @@ in prg {
                 //   The real hardware/bsnes/higan can locate the buffer anywhere, and can
                 //   even read the ICD2 data port directly, or DMA to somewhere besides WRAM.
                 // See: https://github.com/devinacker/bsnes-plus/issues/247
-                snes.wram.address_hl = xx = &framebuffer[FRAMEBUFFER_READ_OFFSET] as u16;
+                snes.wram.address_hl = xx = <>:&framebuffer[FRAMEBUFFER_READ_OFFSET];
                 snes.wram.address_bank = a = #:far &framebuffer;
                 snes.dma4.control = a = snes.dma.CONTROL_MODE_A | snes.dma.CONTROL_MDMA_NO_INCREMENT;
                 snes.dma4.mdma_dest = a = <:&snes.wram.data;
-                snes.dma4.src_address_hl = xx = &icd2.vram.read_data as u16;
+                snes.dma4.src_address_hl = xx = <>:&icd2.vram.read_data;
                 snes.dma4.src_address_bank = a = #:far &icd2.vram.read_data;
                 snes.dma4.mdma_size_hl = xx = FRAMEBUFFER_BYTES_PER_TILE * FRAMEBUFFER_COLUMN_COUNT;
 
@@ -326,7 +326,7 @@ in prg {
 
                 snes.dma0.control = a = snes.dma.CONTROL_MODE_A;
                 snes.dma0.mdma_dest = a = <:&snes.ppu.vram_write_data_l;
-                snes.dma0.src_address_hl = yy = &framebuffer[FRAMEBUFFER_READ_OFFSET + 302] as u16;
+                snes.dma0.src_address_hl = yy = <>:&framebuffer[FRAMEBUFFER_READ_OFFSET + 302];
                 snes.dma0.src_address_bank = a = #:far &framebuffer;
                 snes.dma0.mdma_size_hl = xx;
 
@@ -342,8 +342,7 @@ in prg {
                 aa &= 0xFF;
                 xx = aa <<= 1;
 
-                // NOTE: Need to improve syntaax far addressing, need to improve syntax for unaligned accesses.
-                aa = *((far &sine_table as u24 + xx as u24) as far *u16);
+                aa = (far &sine_table as far *u16)[unaligned xx];
 
                 inline for in 1 .. 10 { cmp(aa, 0x8000); aa >>>>#= 1; }
 

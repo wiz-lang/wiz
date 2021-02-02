@@ -143,7 +143,7 @@ namespace wiz {
                     offset = length - 1;
                 }
 
-                for (std::size_t i = offset; i-- > 0;) {
+                for (std::size_t i = offset; i < length; --i) {
                     for (std::size_t j = 0; j != set.getLength(); ++j) {
                         if (data[i] == set[j]) {
                             return i;

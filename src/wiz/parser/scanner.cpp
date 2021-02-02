@@ -41,11 +41,13 @@ namespace wiz {
         Bar,
         Caret,
         LessThan,
+        LessThanGreaterThan,
         DoubleLessThan,
         TripleLessThan,
         QuadrupleLessThan,
         QuadrupleLessThanHash,
         GreaterThan,
+        GreaterThanHash,
         DoubleGreaterThan,
         TripleGreaterThan,
         QuadrupleGreaterThan,
@@ -731,9 +733,17 @@ namespace wiz {
                         state = State::Start;
                         switch (c) {
                             case '<': state = State::DoubleLessThan; break;
+                            case '>': state = State::LessThanGreaterThan; break;
                             case '=': position++; return Token(TokenType::LessThanEquals);
                             case ':': position++; return Token(TokenType::LessColon);
                             default: return Token(TokenType::LessThan);
+                        }
+                        break;
+                    case State::LessThanGreaterThan:
+                        state = State::Start;
+                        switch (c) {
+                            case ':': position++; return Token(TokenType::LessGreaterColon);
+                            default: return Token(TokenType::LessGreater);
                         }
                         break;
                     case State::DoubleLessThan:
@@ -771,15 +781,24 @@ namespace wiz {
                         state = State::Start;
                         switch (c) {
                             case '>': state = State::DoubleGreaterThan; break;
+                            case '#': state = State::GreaterThanHash; break;
                             case '=': position++; return Token(TokenType::GreaterThanEquals);
                             case ':': position++; return Token(TokenType::GreaterColon);
                             default: return Token(TokenType::GreaterThan);
+                        }
+                        break;
+                    case State::GreaterThanHash:
+                        state = State::Start;
+                        switch (c) {
+                            case ':': position++; return Token(TokenType::GreaterHashColon);
+                            default: return Token(TokenType::GreaterHash);
                         }
                         break;
                     case State::DoubleGreaterThan:
                         state = State::Start;
                         switch (c) {
                             case '>': state = State::TripleGreaterThan; break;
+                            case ':': position++; return Token(TokenType::DoubleGreaterColon);
                             case '=': position++; return Token(TokenType::DoubleGreaterThanEquals);
                             default: return Token(TokenType::DoubleGreaterThan);
                         }

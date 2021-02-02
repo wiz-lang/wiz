@@ -97,6 +97,9 @@ namespace wiz {
         LowByte,
         HighByte,
         BankByte,
+        LowWord,
+        MidWord,
+        HighWord,
         AddressReserve,
 
         Count,

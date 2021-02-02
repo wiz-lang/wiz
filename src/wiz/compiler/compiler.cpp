@@ -1699,6 +1699,9 @@ namespace wiz {
                     case UnaryOperatorKind::FarAddressOf: break;
                     case UnaryOperatorKind::LowByte: break;
                     case UnaryOperatorKind::HighByte: break;
+                    case UnaryOperatorKind::LowWord: break;
+                    case UnaryOperatorKind::MidWord: break;
+                    case UnaryOperatorKind::HighWord: break;
                     default: {
                         if ((operand->info->qualifiers & Qualifiers::WriteOnly) != Qualifiers::None) {
                             report->error("operand to " + getUnaryOperatorName(op).toString() + " cannot be `writeonly`", operand->location);
@@ -1924,18 +1927,27 @@ namespace wiz {
                         return nullptr;
                     }
 
-                    // Byte access operators.
-                    // T -> u8, where offset < sizeof(T) or T is iexpr.
+                    // Byte/word access operators.
+                    // T -> u8 or u16, where offset < sizeof(T) or T is iexpr.
+                    // TODO: disallow "mid-word" unaligned accesss if 16-bit accesses require alignment.
                     case UnaryOperatorKind::LowByte:
                     case UnaryOperatorKind::HighByte:
-                    case UnaryOperatorKind::BankByte: {
+                    case UnaryOperatorKind::BankByte:
+                    case UnaryOperatorKind::LowWord:
+                    case UnaryOperatorKind::MidWord:
+                    case UnaryOperatorKind::HighWord: {
                         const auto sourceType = operand->info->type.get();
 
                         std::size_t offset;
+                        std::size_t mask;
+                        Builtins::DefinitionType definitionType;
                         switch (unaryOperator.op) {
-                            case UnaryOperatorKind::LowByte: offset = 0; break;
-                            case UnaryOperatorKind::HighByte: offset = 1; break;
-                            case UnaryOperatorKind::BankByte: offset = 2; break;
+                            case UnaryOperatorKind::LowByte: offset = 0; definitionType = Builtins::DefinitionType::U8; mask = 0xFF; break;
+                            case UnaryOperatorKind::HighByte: offset = 1; definitionType = Builtins::DefinitionType::U8; mask = 0xFF; break;
+                            case UnaryOperatorKind::BankByte: offset = 2; definitionType = Builtins::DefinitionType::U8; mask = 0xFF; break;
+                            case UnaryOperatorKind::LowWord: offset = 0; definitionType = Builtins::DefinitionType::U16; mask = 0xFFFF; break;
+                            case UnaryOperatorKind::MidWord: offset = 1; definitionType = Builtins::DefinitionType::U16; mask = 0xFFFF; break;
+                            case UnaryOperatorKind::HighWord: offset = 2; definitionType = Builtins::DefinitionType::U16; mask = 0xFFFF; break;
                             default: std::abort(); return nullptr;
                         }
 
@@ -1959,8 +1971,7 @@ namespace wiz {
                             return nullptr;
                         }
 
-                        auto resultType = makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(builtins.getDefinition(Builtins::DefinitionType::U8)), expression->location);
-
+                        auto resultType = makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(builtins.getDefinition(definitionType)), expression->location);
 
                         bool simplify = false;
                         auto context = operand->info->context;
@@ -1968,9 +1979,14 @@ namespace wiz {
                     
                         if (const auto integerLiteral = operand->tryGet<Expression::IntegerLiteral>()) {
                             return makeFwdUnique<const Expression>(
-                                Expression::IntegerLiteral(integerLiteral->value.logicalRightShift(8 * offset) & Int128(0xFF)), expression->location,
-                                ExpressionInfo(EvaluationContext::CompileTime, std::move(resultType), Qualifiers::None));                                
+                                Expression::IntegerLiteral(integerLiteral->value.logicalRightShift(8 * offset) & Int128(mask)), expression->location,
+                                ExpressionInfo(EvaluationContext::CompileTime, std::move(resultType), Qualifiers::None));
                         } else if (const auto resolvedIdentifier = operand->tryGet<Expression::ResolvedIdentifier>()) {
+                            if (definitionType != Builtins::DefinitionType::U8) {
+                                report->error("register decompisition is currently only supported for `u8` quantities, so it cannot be used with " + getUnaryOperatorName(unaryOperator.op).toString(), expression->location);
+                                return nullptr;
+                            }
+
                             const auto definition = resolvedIdentifier->definition;
                             if (const auto registerDefinition = definition->tryGet<Definition::BuiltinRegister>()) {
                                 const auto subRegisters = builtins.findRegisterDecomposition(definition);
@@ -2003,7 +2019,7 @@ namespace wiz {
 
                                 if (funcDefinition->address.hasValue() && funcDefinition->address.get().absolutePosition.hasValue()) {
                                     return makeFwdUnique<const Expression>(
-                                        Expression::IntegerLiteral(Int128(funcDefinition->address->absolutePosition.get()).logicalRightShift(8 * offset) & Int128(0xFF)), expression->location,
+                                        Expression::IntegerLiteral(Int128(funcDefinition->address->absolutePosition.get()).logicalRightShift(8 * offset) & Int128(mask)), expression->location,
                                         ExpressionInfo(EvaluationContext::CompileTime, std::move(resultType), Qualifiers::None));
                                 }
                             }

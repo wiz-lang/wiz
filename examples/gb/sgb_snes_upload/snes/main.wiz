@@ -100,7 +100,7 @@ in prg {
             // TODO: fix pattern for long indirect-indexed-by-y mode.
             // TODO: some nicer way to address the specific u16 parts of a u24 or u32 or whatever?
 
-            xx = &spc_main as u16;
+            xx = <>:&spc_main;
             ptr0 = xx as *u8;
             #:fptr0 = a = #:far &spc_main;
 
@@ -109,7 +109,7 @@ in prg {
             snes2spc.transfer(xx, fptr0, yy);
             mem16();
             #[mem16] {            
-                xx = aa = *((far &spc_main as u24 + spc_main.len - 2) as far *u16);
+                xx = aa = (far &spc_main as far *u16)[unaligned spc_main.len - 2];
             }
             mem8();
             snes2spc.dispatch(xx);
@@ -122,7 +122,7 @@ in prg {
 
             snes.dma0.control = a = snes.dma.CONTROL_MODE_AB | snes.dma.CONTROL_MDMA_NO_INCREMENT;
             snes.dma0.mdma_dest = a = <:&snes.ppu.vram_write_data_l;
-            snes.dma0.src_address_hl = xx  = &w0 as u16;
+            snes.dma0.src_address_hl = xx  = <>:&w0;
             snes.dma0.src_address_bank = 0;
             snes.dma0.mdma_size_hl = xx = 0x10000 & 0xFFFF;
 
@@ -135,7 +135,7 @@ in prg {
 
             snes.dma0.control = a = snes.dma.CONTROL_MODE_A | snes.dma.CONTROL_MDMA_NO_INCREMENT;
             snes.dma0.mdma_dest = a = <:&snes.ppu.cgram_write_data;
-            snes.dma0.src_address_hl = xx = &b0 as u16;
+            snes.dma0.src_address_hl = xx = <>:&b0;
             snes.dma0.src_address_bank = 0;
             snes.dma0.mdma_size_hl = xx = 512;
 
@@ -147,7 +147,7 @@ in prg {
 
             snes.dma0.control = a = snes.dma.CONTROL_MODE_AB;
             snes.dma0.mdma_dest = a = <:&snes.ppu.vram_write_data_l;
-            snes.dma0.src_address_hl = xx = &hello_tiles_chr as u16;
+            snes.dma0.src_address_hl = xx = <>:&hello_tiles_chr;
             snes.dma0.src_address_bank = a = #:far &hello_tiles_chr;
             snes.dma0.mdma_size_hl = xx = sizeof(typeof(hello_tiles_chr));
 
@@ -155,7 +155,7 @@ in prg {
 
             snes.dma1.control = a = snes.dma.CONTROL_MODE_A;
             snes.dma1.mdma_dest = a = <:&snes.ppu.cgram_write_data;
-            snes.dma1.src_address_hl = xx = &bkg_palette_data as u16;
+            snes.dma1.src_address_hl = xx = <>:&bkg_palette_data;
             snes.dma1.src_address_bank = a = #:far &bkg_palette_data;
             snes.dma1.mdma_size_hl = xx = sizeof(typeof(bkg_palette_data));
 
@@ -174,7 +174,7 @@ in prg {
 
             snes.dma0.control = a = snes.dma.CONTROL_MODE_A;
             snes.dma0.mdma_dest = a = <:&snes.ppu.vram_write_data_l;
-            snes.dma0.src_address_hl = xx = &message as u16;
+            snes.dma0.src_address_hl = xx = <>:&message;
             snes.dma0.src_address_bank = a = #:far &message;
             snes.dma0.mdma_size_hl = xx = sizeof(typeof(message));
 
@@ -227,7 +227,7 @@ in prg {
             aa &= 0xFF;
             xx = aa <<= 1;
 
-            aa = *((far &sine_table as u24 + xx as u24) as far *u16);
+            aa = (far &sine_table as far *u16)[unaligned xx];
 
             inline for in 1 .. 10 { cmp(aa, 0x8000); aa >>>>#= 1; }
 

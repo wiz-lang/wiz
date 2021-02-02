@@ -93,6 +93,9 @@ namespace wiz {
         "<:",
         ">:",
         "#:",
+        "<>:",
+        ">#:",
+        ">>:",
         "@",
     };
 
@@ -114,6 +117,9 @@ namespace wiz {
         "low-byte access `<:`",
         "high-byte access `>:`",
         "bank-byte access `#:`",
+        "low-word access `<>:`",
+        "mid-word access `>#:`",
+        "high-word access `>>:`",
         "address-reserve `@`",
     };
 
