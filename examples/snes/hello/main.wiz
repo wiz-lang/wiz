@@ -185,7 +185,8 @@ in prg {
             }
             mem8();
 
-            xx = *((&sine_table as u16 + yy) as *u16);
+            xx = (&sine_table as *u16)[unaligned yy];
+            while true {}
             w0 = xx;
 
             mem16();

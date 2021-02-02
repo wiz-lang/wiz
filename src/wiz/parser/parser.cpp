@@ -1778,14 +1778,20 @@ namespace wiz {
                 }
                 case TokenType::LeftBracket: {
                     const auto location = scanner->getLocation();
+                    auto indexingKind = BinaryOperatorKind::Indexing;
+
                     nextToken(); // `[`
+                    if (token.keyword == Keyword::Unaligned) {
+                        nextToken(); // IDENTIFIER (keyword `unaligned`)
+                        indexingKind = BinaryOperatorKind::UnalignedIndexing;
+                    }
                     auto index = parseExpression(); // expression
                     // `]`
                     if (!expectTokenType(TokenType::RightBracket)) {
                         return nullptr;
                     }
                     operand = makeFwdUnique<const Expression>(Expression::BinaryOperator(
-                        BinaryOperatorKind::Indexing, std::move(operand), std::move(index)), location, Optional<ExpressionInfo>());
+                        indexingKind, std::move(operand), std::move(index)), location, Optional<ExpressionInfo>());
                     break;
                 }
                 default:

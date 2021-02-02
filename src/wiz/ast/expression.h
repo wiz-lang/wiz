@@ -59,6 +59,7 @@ namespace wiz {
         GreaterThan,
         GreaterThanOrEqual,
         Indexing,
+        UnalignedIndexing,
         LeftRotate,
         LeftRotateWithCarry,                    
         LeftShift,

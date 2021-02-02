@@ -48,6 +48,7 @@ namespace wiz {
             "true",
             "typealias",
             "typeof",
+            "unaligned",
             "union",
             "var",
             "via",

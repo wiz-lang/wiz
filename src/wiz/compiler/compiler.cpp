@@ -531,7 +531,7 @@ namespace wiz {
                     return nullptr;
                 }
 
-                if (op == BinaryOperatorKind::Indexing || op == BinaryOperatorKind::BitIndexing) {
+                if (op == BinaryOperatorKind::Indexing || op == BinaryOperatorKind::BitIndexing || op == BinaryOperatorKind::UnalignedIndexing) {
                     if ((right->info->qualifiers & Qualifiers::WriteOnly) != Qualifiers::None) {
                         report->error("subscript of " + getBinaryOperatorName(op).toString() + " cannot be `writeonly`", right->location);
                         return nullptr;
@@ -695,7 +695,7 @@ namespace wiz {
                     case BinaryOperatorKind::RightRotate:{
                          return simplifyBinaryRotateExpression(expression, op, std::move(left), std::move(right));
                     }
-
+                                                        
                     // Indexing.
                     // ([T; n], integer i) -> T
                     // ((T_1, T_2, ... T_n), integer i) -> T_i
@@ -847,6 +847,102 @@ namespace wiz {
                                         return nullptr;
                                     }
                                 }
+                            }
+                        }
+                           
+                        report->error(getBinaryOperatorName(op).toString() + " is not defined between provided operand types `" + getTypeName(left->info->type.get()) + "` and `" + getTypeName(right->info->type.get()) + "`", expression->location);
+                        return nullptr;
+                    }
+
+                    // Unaligned indexing.
+                    // ([T; n], integer i) -> T. in unaligned indexing, integer is an offet in bytes, not elements.
+                    //
+                    // NOTE: the term being indexed must be an array or pointer type, and must have an address and size.
+                    // - Compile-time literals (string literals, array literals, etc) cannot be indexed in an unaligned way, because they do not have addresses.
+                    // - Tuples and ranges also cannot be indexed in an unaligned way, because tuples are heterogenous, and ranges are in terms of iexpr (an unsized integer).
+                    // - I don't want to write the compile-time version of unaligned array/tuple access atm, even though these cases could be possible.
+                    case BinaryOperatorKind::UnalignedIndexing: {
+                        if (isIntegerType(right->info->type.get())) {
+                            const auto qualifiers = left->info->qualifiers & (Qualifiers::LValue | Qualifiers::Const | Qualifiers::WriteOnly | Qualifiers::Far);
+
+                            if (left->kind == ExpressionKind::ArrayLiteral) {
+                                report->error("array literals cannot be used with unaligned indexing", expression->location);
+                            } else if (left->kind == ExpressionKind::StringLiteral) {
+                                report->error("string literals cannot be used with unaligned indexing", expression->location);
+                            } else if (left->info->type->kind == TypeExpressionKind::Tuple) {
+                                report->error("tuples cannot be used with unaligned indexing", expression->location);
+                                return nullptr;
+                            } else if (const auto typeDefinition = tryGetResolvedIdentifierTypeDefinition(left->info->type.get())) {
+                                if (typeDefinition->kind == DefinitionKind::BuiltinRangeType) {
+                                    report->error("ranges cannot be used with unaligned indexing", expression->location);
+                                    return nullptr;
+                                }
+                            } else if (left->info->type->kind == TypeExpressionKind::Array) {
+                                if (right->kind == ExpressionKind::IntegerLiteral) {
+                                    const auto indexValue = right->integerLiteral.value;
+
+                                    if (const auto resolvedIdentifier = left->tryGet<Expression::ResolvedIdentifier>()) {
+                                        if (const auto varDefinition = resolvedIdentifier->definition->tryGet<Definition::Var>()) {
+                                            if (varDefinition->address.hasValue() && varDefinition->address->absolutePosition.hasValue()) {
+                                                auto resultType = left->info->type->array.elementType->clone();
+                                                auto addressType = makeFwdUnique<const TypeExpression>(
+                                                    TypeExpression::Pointer(
+                                                        left->info->type->array.elementType->clone(),
+                                                        left->info->qualifiers & (Qualifiers::Const | Qualifiers::WriteOnly | Qualifiers::Far)),
+                                                    resultType->location);
+                                                const auto pointerSizedType = (left->info->qualifiers & Qualifiers::Far) != Qualifiers::None ? platform->getFarPointerSizedType() : platform->getPointerSizedType();
+                                                const auto mask = Int128((1U << (8U * pointerSizedType->builtinIntegerType.size)) - 1);
+
+                                                return makeFwdUnique<const Expression>(
+                                                    Expression::UnaryOperator(
+                                                        UnaryOperatorKind::Indirection,
+                                                        makeFwdUnique<const Expression>(
+                                                            Expression::IntegerLiteral((Int128(varDefinition->address->absolutePosition.get()) + indexValue) & mask), expression->location,
+                                                            ExpressionInfo(EvaluationContext::CompileTime, std::move(addressType), Qualifiers::None))),
+                                                    expression->location,
+                                                    ExpressionInfo(EvaluationContext::RunTime, std::move(resultType), qualifiers));
+                                            }
+                                        }
+                                    } else if (const auto addressLiteral = left->tryGet<Expression::IntegerLiteral>()) {
+                                        auto resultType = left->info->type->array.elementType->clone();
+                                        auto addressType = makeFwdUnique<const TypeExpression>(
+                                            TypeExpression::Pointer(
+                                                left->info->type->array.elementType->clone(),
+                                                left->info->qualifiers & (Qualifiers::Const | Qualifiers::WriteOnly | Qualifiers::Far)),
+                                            resultType->location);
+                                        const auto pointerSizedType = (left->info->qualifiers & Qualifiers::Far) != Qualifiers::None ? platform->getFarPointerSizedType() : platform->getPointerSizedType();
+                                        const auto mask = Int128((1U << (8U * pointerSizedType->builtinIntegerType.size)) - 1);
+
+                                        return makeFwdUnique<const Expression>(
+                                            Expression::UnaryOperator(
+                                                UnaryOperatorKind::Indirection,
+                                                makeFwdUnique<const Expression>(
+                                                    Expression::IntegerLiteral((addressLiteral->value + indexValue) & mask), expression->location,
+                                                    ExpressionInfo(EvaluationContext::CompileTime, std::move(addressType), Qualifiers::None))),
+                                            expression->location,
+                                            ExpressionInfo(EvaluationContext::RunTime, std::move(resultType), qualifiers));
+                                    }
+                                }
+
+                                if (left->info->type->array.elementType == nullptr) {
+                                    report->error("array has unknown element type", expression->location);
+                                    return nullptr;
+                                }
+
+                                auto resultType = left->info->type->array.elementType->clone();
+
+                                return makeFwdUnique<const Expression>(
+                                    Expression::BinaryOperator(op, std::move(left), std::move(right)),
+                                    expression->location,
+                                    ExpressionInfo(EvaluationContext::RunTime, std::move(resultType), qualifiers));                            
+                            } else if (const auto pointerType = left->info->type->tryGet<TypeExpression::Pointer>()) {
+                                const auto qualifiers = Qualifiers::LValue | (pointerType->qualifiers & (Qualifiers::Const | Qualifiers::WriteOnly | Qualifiers::Far));
+                                auto resultType = pointerType->elementType->clone();
+
+                                return makeFwdUnique<const Expression>(
+                                    Expression::BinaryOperator(op, std::move(left), std::move(right)),
+                                    expression->location,
+                                    ExpressionInfo(EvaluationContext::RunTime, std::move(resultType), qualifiers));
                             }
                         }
                            
@@ -1661,7 +1757,7 @@ namespace wiz {
                                 }
                             }
                         } else if (const auto binaryOperator = operand->tryGet<Expression::BinaryOperator>()) {
-                            if (binaryOperator->op == BinaryOperatorKind::Indexing) {
+                            if (binaryOperator->op == BinaryOperatorKind::Indexing || binaryOperator->op == BinaryOperatorKind::UnalignedIndexing) {
                                 const auto left = binaryOperator->left.get();
                                 const auto right = binaryOperator->right.get();
                                 auto context = left->info->context;
@@ -1922,7 +2018,8 @@ namespace wiz {
                                 }
                             }
                         } else if (const auto binaryOperator = operand->tryGet<Expression::BinaryOperator>()) {
-                            if (binaryOperator->op == BinaryOperatorKind::Indexing) {
+                            if (binaryOperator->op == BinaryOperatorKind::Indexing
+                            || binaryOperator->op == BinaryOperatorKind::UnalignedIndexing) {
                                 simplify = true;
                             }
                         }
@@ -2271,7 +2368,8 @@ namespace wiz {
                             }
                         }
                     } else if (const auto binaryOperator = expression->tryGet<Expression::BinaryOperator>()) {
-                        if (binaryOperator->op == BinaryOperatorKind::Indexing) {
+                        if (binaryOperator->op == BinaryOperatorKind::Indexing
+                        || binaryOperator->op == BinaryOperatorKind::UnalignedIndexing) {
                             simplify = true;
                         }
                     }
@@ -4500,7 +4598,8 @@ namespace wiz {
             case ExpressionKind::ArrayPadLiteral: return nullptr;
             case ExpressionKind::BinaryOperator: {
                 const auto& binaryOperator = expression->binaryOperator;
-                if (binaryOperator.op == BinaryOperatorKind::Indexing) {
+                if (binaryOperator.op == BinaryOperatorKind::Indexing
+                || binaryOperator.op == BinaryOperatorKind::UnalignedIndexing) {
                     const auto indexLiteral = binaryOperator.right->tryGet<Expression::IntegerLiteral>();
 
                     if (binaryOperator.left->info->context == EvaluationContext::LinkTime && indexLiteral != nullptr) {
@@ -4519,11 +4618,20 @@ namespace wiz {
                             if (auto subscript = createOperandFromExpression(binaryOperator.right.get(), quiet)) {
                                 const auto far = (binaryOperator.left->info->qualifiers & Qualifiers::Far) != Qualifiers::None;
 
+                                if (operand->kind == InstructionOperandKind::Integer && subscript->kind == InstructionOperandKind::Integer) {
+                                    auto reducedOperand = makeFwdUnique<InstructionOperand>(InstructionOperand::Integer(operand->integer.value
+                                        + Int128(binaryOperator.op == BinaryOperatorKind::UnalignedIndexing ? 1 : *indirectionSize) * subscript->integer.value));
+                                    return makeFwdUnique<InstructionOperand>(InstructionOperand::Dereference(
+                                        far,
+                                        std::move(reducedOperand),
+                                        *indirectionSize));                                    
+                                }
+
                                 return makeFwdUnique<InstructionOperand>(InstructionOperand::Index(
                                     far,
                                     std::move(operand),
                                     std::move(subscript),
-                                    *indirectionSize,
+                                    binaryOperator.op == BinaryOperatorKind::UnalignedIndexing ? 1 : *indirectionSize,
                                     *indirectionSize));
                             }
                         }
@@ -4680,8 +4788,9 @@ namespace wiz {
                 case ExpressionKind::BinaryOperator: {
                     const auto& binaryOperator = expression->binaryOperator;
                     const auto op = binaryOperator.op;
-                    if (op == BinaryOperatorKind::BitIndexing
-                    || op == BinaryOperatorKind::Indexing) {
+                    if (op == BinaryOperatorKind::BitIndexing                    
+                    || op == BinaryOperatorKind::Indexing
+                    || op == BinaryOperatorKind::UnalignedIndexing) {
                         return true;
                     }
                     return false;
@@ -6722,7 +6831,7 @@ namespace wiz {
                             break;
                         }
 
-                        if (varDefinition.enclosingFunction == nullptr && isBankKindStored(currentBank->getKind())) {
+                        if (varDefinition.enclosingFunction == nullptr && currentBank != nullptr && isBankKindStored(currentBank->getKind())) {
                             irNodes.addNew(IrNode::Var(definition), statement->location);
 
                             for (auto& nestedConstant : varDefinition.nestedConstants) {
