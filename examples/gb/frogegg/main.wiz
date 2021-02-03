@@ -174,7 +174,7 @@ in rom @ 0x150 {
 
                         <:dest = a = <:dest + (32 * 2 - 4);
                         if carry {
-                            >:dest++; 
+                            ++>:dest;
                         }
                     }
 
