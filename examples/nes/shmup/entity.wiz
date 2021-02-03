@@ -90,7 +90,7 @@ namespace entity {
         type[index] = a = spawn_type;
 
         if !zero {
-            var func_ptr @ &w0 : func;
+            var func_ptr : func in call_handler.func_ptr;
             <:func_ptr = a = (&entity_definitions.init_handlers_l as *u8)[spawn_type];
             >:func_ptr = a = (&entity_definitions.init_handlers_h as *u8)[spawn_type];
             return (*(&func_ptr as *func))();
@@ -121,7 +121,7 @@ namespace entity {
             ent_type = a = type[index];
 
             if !zero {
-                var func_ptr @ &w0 : func;
+                var func_ptr : func in call_handler.func_ptr;
                 <:func_ptr = a = (&entity_definitions.update_handlers_l as *u8)[ent_type];
                 >:func_ptr = a = (&entity_definitions.update_handlers_h as *u8)[ent_type];
                 call_handler(func_ptr);

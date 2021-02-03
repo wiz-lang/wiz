@@ -61,11 +61,10 @@ in prg {
         } while !zero;
 
         {
-            y = 0;
-            x = nes.ppu.PALETTE_SIZE * nes.ppu.PALETTE_COUNT;
-            <:ptr0 = a = <:&palette;
-            >:ptr0 = a = >:&palette;
-            video.load_palette_offscreen(y, x, ptr0);
+            var source_ptr : *u8 in video.load_palette_offscreen.source_ptr;
+            <:source_ptr = a = <:&palette;
+            >:source_ptr = a = >:&palette;
+            video.load_palette_offscreen(0, nes.ppu.PALETTE_SIZE * nes.ppu.PALETTE_COUNT, source_ptr);
         }
 
         nes.ppu.address = a = >:nes.ppu.ADDRESS_NAMETABLE_0;  
@@ -85,27 +84,32 @@ in prg {
             let START_X = 1;
             let START_Y = 2;
             let TILE_ADDRESS = nes.ppu.ADDRESS_NAMETABLE_0 + START_Y * 32 + START_X;
-            <:w0 = a = <:TILE_ADDRESS;
-            >:w0 = a = >:TILE_ADDRESS;
-            <:ptr2 = a = <:&message;
-            >:ptr2 = a = >:&message;
-            video.print_text_offscreen(w0, ptr2);
+            let print_text_offscreen = video.print_text_offscreen;
+
+            var dest_address : u16 in video.print_text_offscreen.dest_address;
+            var source_ptr : *u8 in video.print_text_offscreen.source_ptr;
+            <:dest_address = a = <:TILE_ADDRESS;
+            >:dest_address = a = >:TILE_ADDRESS;
+            <:source_ptr = a = <:&message;
+            >:source_ptr = a = >:&message;
+            video.print_text_offscreen(dest_address, source_ptr);
         }
 
         {
-            <:w0 = a = <:nes.ppu.ADDRESS_NAMETABLE_1;
-            >:w0 = a = >:nes.ppu.ADDRESS_NAMETABLE_1;
+            var address : u16 in w0;
+            <:address = a = <:nes.ppu.ADDRESS_NAMETABLE_1;
+            >:address = a = >:nes.ppu.ADDRESS_NAMETABLE_1;
 
             y = 24;
             x = 0;
             do {
-                nes.ppu.address = a = >:w0;
-                nes.ppu.address = a = <:w0;
+                nes.ppu.address = a = >:address;
+                nes.ppu.address = a = <:address;
                 nes.ppu.data = a = (x & 1) + 0x10;
                 x++;
 
-                <:w0 = a = <:w0 + 41;
-                >:w0 = a = >:w0 +# 0;
+                <:address = a = <:address + 41;
+                >:address = a = >:address +# 0;
 
                 y--;                
             } while !zero;
@@ -220,22 +224,29 @@ in prg {
         entity.init_system();
 
         {
-            y = entity_definitions.Type.PLAYER as u8;
-            <:w0 = a = 128;
-            >:w0 = a = 0;
-            <:w2 = a = 128 + 32;
-            >:w2 = a = 0;
-            entity.spawn_entity(y, w0, w2);
+            var spawn_type : u8 in entity.spawn_entity.spawn_type;
+            var spawn_x : u16 in entity.spawn_entity.spawn_x;
+            var spawn_y : u16 in entity.spawn_entity.spawn_y;
+
+            spawn_type = entity_definitions.Type.PLAYER as u8;
+            <:spawn_x = a = 128;
+            >:spawn_x = a = 0;
+            <:spawn_y = a = 128 + 32;
+            >:spawn_y = a = 0;
+            entity.spawn_entity(spawn_type, spawn_x, spawn_y);
         }
 
-
         inline for let i in 0 .. 15 {
-            y = entity_definitions.Type.ENEMY_GHOST as u8;
-            <:w0 = a = 32 + (i % 3 * 24);
-            >:w0 = a = 0;
-            <:w2 = a = <:(48 + i * 8);
-            >:w2 = a = >:(48 + i * 8);
-            entity.spawn_entity(y, w0, w2);
+            var spawn_type : u8 in entity.spawn_entity.spawn_type;
+            var spawn_x : u16 in entity.spawn_entity.spawn_x;
+            var spawn_y : u16 in entity.spawn_entity.spawn_y;
+
+            spawn_type = entity_definitions.Type.ENEMY_GHOST as u8;
+            <:spawn_x = a = 32 + (i % 3 * 24);
+            >:spawn_x = a = 0;
+            <:spawn_y = a = <:(48 + i * 8);
+            >:spawn_y = a = >:(48 + i * 8);
+            entity.spawn_entity(spawn_type, spawn_x, spawn_y);
         }
 
         nes.ppu.scroll = a = 0;
@@ -297,7 +308,7 @@ in prg {
                 var ent_type : u8 in y;
                 ent_type = a = entity.type[x];
                 if !zero {
-                    var func_ptr @ &w0 : func;
+                    var func_ptr : func in w0;
                     <:func_ptr = a = (&entity_definitions.draw_handlers_l as *u8)[ent_type];
                     >:func_ptr = a = (&entity_definitions.draw_handlers_h as *u8)[ent_type];
                     call_handler(func_ptr);
@@ -308,7 +319,7 @@ in prg {
                 var bullet_type : u8 in y;
                 bullet_type = a = bullet.type[x];
                 if !zero {
-                    var func_ptr @ &w0 : func;
+                    var func_ptr : func in w0;
                     <:func_ptr = a = (&bullet_definitions.draw_handlers_l as *u8)[bullet_type];
                     >:func_ptr = a = (&bullet_definitions.draw_handlers_h as *u8)[bullet_type];
                     call_handler(func_ptr);
@@ -333,25 +344,29 @@ in prg {
     }
 
     func oam_start() {
-        x = 0;
-        oam_buffer_data[x] = a = 0x1F; x++;
-        oam_buffer_data[x] = a = 0x61; x++;
-        oam_buffer_data[x] = a = 0x00; x++;
-        oam_buffer_data[x] = a = 0x80; x++;
-        oam_buffer_index = x;
+        var index : u8 in x;    
+        index = 0;
+        oam_buffer_data[index] = a = 0x1F; index++;
+        oam_buffer_data[index] = a = 0x61; index++;
+        oam_buffer_data[index] = a = 0x00; index++;
+        oam_buffer_data[index] = a = 0x80; index++;
+        oam_buffer_index = index;
         oam_buffer_free_slots = a = 63;
     }
 
     func oam_finish() {
-        if { y = oam_buffer_free_slots; } && !zero {
+        var remaining : u8 in y;
+        if { remaining = oam_buffer_free_slots; } && !zero {
             a = 0xFF;
-            x = oam_buffer_index;
+
+            var index : u8 in x;
+            index = oam_buffer_index;
             do {
-                oam_buffer_data[x] = a; x++;
-                oam_buffer_data[x] = a; x++;
-                oam_buffer_data[x] = a; x++;
-                oam_buffer_data[x] = a; x++;
-                y--;
+                oam_buffer_data[index] = a; index++;
+                oam_buffer_data[index] = a; index++;
+                oam_buffer_data[index] = a; index++;
+                oam_buffer_data[index] = a; index++;
+                remaining--;
             } while !zero;
         }
     }

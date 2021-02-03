@@ -24,7 +24,7 @@ namespace video {
         do { a = vblank_disable_screen_requested; } while !zero;
     }
 
-    func load_palette_offscreen(dest_index : u8 in y, source_size : u8 in x, source_ptr : (*u8) in ptr0) {
+    func load_palette_offscreen(dest_index : u8 in y, source_size : u8 in x, source_ptr : *u8 in ptr0) {
         a = nes.ppu.status;
         nes.ppu.address = a = y + >:nes.ppu.ADDRESS_PALETTE_DATA;
         nes.ppu.address = a = <:nes.ppu.ADDRESS_PALETTE_DATA +# 0;
@@ -38,7 +38,7 @@ namespace video {
         } while !zero;
     }
 
-    func print_text_offscreen(dest_address : u16 in w0, source_ptr : (*u8) in ptr2) {
+    func print_text_offscreen(dest_address : u16 in w0, source_ptr : *u8 in ptr2) {
         a = nes.ppu.status;
         nes.ppu.address = a = >:dest_address;
         nes.ppu.address = a = <:dest_address;

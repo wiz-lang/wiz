@@ -324,16 +324,16 @@ namespace wiz {
                     return nullptr;
                 }
 
-                std::vector<FwdUniquePtr<const TypeExpression>> reducedParameterTypes;
-                reducedParameterTypes.reserve(funcType.parameterTypes.size());
-                for (const auto& parameterType : funcType.parameterTypes) {
-                    auto reducedParameterType = reduceTypeExpression(parameterType.get());
+                std::vector<UniquePtr<const TypeExpression::Function::Parameter>> reducedParameters;
+                reducedParameters.reserve(funcType.parameters.size());
+                for (const auto& parameter : funcType.parameters) {
+                    auto reducedParameterType = reduceTypeExpression(parameter->parameterType.get());
                     if (reducedParameterType == nullptr) {
                         return nullptr;
-                    }                    
-                    reducedParameterTypes.push_back(std::move(reducedParameterType));
+                    }
+                    reducedParameters.push_back(makeUnique<TypeExpression::Function::Parameter>(parameter->name, std::move(reducedParameterType)));
                 }
-                return makeFwdUnique<const TypeExpression>(TypeExpression::Function(funcType.far, std::move(reducedParameterTypes), std::move(reducedReturnType)), typeExpression->location);
+                return makeFwdUnique<const TypeExpression>(TypeExpression::Function(funcType.far, std::move(reducedParameters), std::move(reducedReturnType)), typeExpression->location);
             }
             case TypeExpressionKind::Identifier: {
                 const auto& identifierType = typeExpression->identifier;
@@ -1128,8 +1128,8 @@ namespace wiz {
                         auto& functionType = funcDefinition->resolvedSignatureType->function;
                         auto resultType = functionType.returnType->clone();
 
-                        if (functionType.parameterTypes.size() != reducedArguments.size()) {
-                            auto expected = functionType.parameterTypes.size();
+                        if (functionType.parameters.size() != reducedArguments.size()) {
+                            auto expected = functionType.parameters.size();
                             auto got = reducedArguments.size();
 
                             report->error("`func " + definition->name.toString()
@@ -1142,12 +1142,16 @@ namespace wiz {
 
                         for (std::size_t i = 0; i != reducedArguments.size(); ++i) {
                             const auto& reducedArgument = reducedArguments[i];
-                            const auto& parameterType = functionType.parameterTypes[i];
+                            const auto& parameterType = functionType.parameters[i]->parameterType;
 
                             if (const auto resultType = findCompatibleAssignmentType(reducedArgument.get(), parameterType.get())) {
                                 reducedArguments[i] = createConvertedExpression(reducedArgument.get(), resultType);
                             } else {
-                                report->error("argument of type `" + getTypeName(parameterType.get()) + "` cannot be assigned `" + getTypeName(reducedArgument->info->type.get()) + "` expression", expression->location);
+                                const auto parameterName = functionType.parameters[i]->name;
+                                report->error("argument " + (parameterName.getLength() != 0 ? "`" + parameterName.toString() + "`" : "")
+                                    + " of type `" + getTypeName(parameterType.get())
+                                    + "` cannot be assigned `" + getTypeName(reducedArgument->info->type.get()) + "` expression",
+                                    expression->location);
                                 return nullptr;
                             }
                         }
@@ -1193,8 +1197,8 @@ namespace wiz {
                             return nullptr;
                         }
 
-                        if (functionType->parameterTypes.size() != reducedArguments.size()) {
-                            const auto expected = functionType->parameterTypes.size();
+                        if (functionType->parameters.size() != reducedArguments.size()) {
+                            const auto expected = functionType->parameters.size();
                             const auto got = reducedArguments.size();
 
                             report->error("`func` expects exactly "
@@ -1207,12 +1211,16 @@ namespace wiz {
 
                         for (std::size_t i = 0; i != reducedArguments.size(); ++i) {
                             const auto& reducedArgument = reducedArguments[i];
-                            const auto& parameterType = functionType->parameterTypes[i];
+                            const auto& parameterType = functionType->parameters[i]->parameterType;
 
                             if (const auto resultType = findCompatibleAssignmentType(reducedArgument.get(), parameterType.get())) {
                                 reducedArguments[i] = createConvertedExpression(reducedArgument.get(), resultType);
                             } else {
-                                report->error("argument of type `" + getTypeName(parameterType.get()) + "` cannot be assigned `" + getTypeName(reducedArgument->info->type.get()) + "` expression", expression->location);
+                                const auto parameterName = functionType->parameters[i]->name;
+                                report->error("argument " + (parameterName.getLength() != 0 ? "`" + parameterName.toString() + "`" : "")
+                                    + " of type `" + getTypeName(parameterType.get())
+                                    + "` cannot be assigned `" + getTypeName(reducedArgument->info->type.get()) + "` expression",
+                                    expression->location);
                                 return nullptr;
                             }
                         }
@@ -1985,8 +1993,15 @@ namespace wiz {
                             const auto definition = resolvedIdentifier->definition;
                             if (const auto registerDefinition = definition->tryGet<Definition::BuiltinRegister>()) {
                                 if (definitionType != Builtins::DefinitionType::U8) {
-                                    report->error("register decompisition is currently only supported for `u8` quantities, so it cannot be used with " + getUnaryOperatorName(unaryOperator.op).toString(), expression->location);
-                                    return nullptr;
+                                    if (registerDefinition->type->kind == DefinitionKind::BuiltinIntegerType
+                                    && resultType->resolvedIdentifier.definition->builtinIntegerType.size == registerDefinition->type->builtinIntegerType.size) {
+                                        return makeFwdUnique<const Expression>(Expression::ResolvedIdentifier(definition, {}), expression->location,
+                                            ExpressionInfo(EvaluationContext::RunTime,
+                                                makeFwdUnique<const TypeExpression>(TypeExpression::ResolvedIdentifier(registerDefinition->type), expression->location),
+                                                Qualifiers::LValue));
+                                    } else {
+                                        report->error("register decomposition is currently only supported for `u8` quantities, so it cannot be used with " + getUnaryOperatorName(unaryOperator.op).toString(), expression->location);
+                                    }
                                 }
 
                                 const auto subRegisters = builtins.findRegisterDecomposition(definition);
@@ -2401,6 +2416,15 @@ namespace wiz {
                             EvaluationContext::RunTime,
                             std::move(resultType),
                             expression->info->qualifiers & (Qualifiers::LValue | Qualifiers::Const | Qualifiers::WriteOnly | Qualifiers::Far)));
+                }
+            }
+        } else if (const auto functionType = typeExpression->tryGet<TypeExpression::Function>()) {
+            for (const auto& parameter : functionType->parameters) {
+                if (parameter->name == name) {                    
+                    if (const auto designatedStorage = parameter->parameterType->tryGet<TypeExpression::DesignatedStorage>()) {
+                        auto reducedHolder = reduceExpression(designatedStorage->holder.get());
+                        return reducedHolder;
+                    }
                 }
             }
         } else if (const auto& pointerType = typeExpression->tryGet<TypeExpression::Pointer>()) {
@@ -3182,17 +3206,17 @@ namespace wiz {
             case TypeExpressionKind::Function: {
                 const auto& leftFunctionType = leftTypeExpression->function;
                 if (const auto rightFunctionType = rightTypeExpression->tryGet<TypeExpression::Function>()) {
-                    const auto& leftParameterTypes = leftFunctionType.parameterTypes;
-                    const auto& rightParameterTypes = rightFunctionType->parameterTypes;
+                    const auto& leftParameters = leftFunctionType.parameters;
+                    const auto& rightParameters = rightFunctionType->parameters;
 
                     if (!isTypeEquivalent(leftFunctionType.returnType.get(), rightFunctionType->returnType.get())) {
                         return false;
                     }
-                    if (leftParameterTypes.size() != rightParameterTypes.size()) {
+                    if (leftParameters.size() != rightParameters.size()) {
                         return false;
                     }
-                    for (std::size_t i = 0; i != leftParameterTypes.size(); ++i) {
-                        if (!isTypeEquivalent(leftParameterTypes[i].get(), rightParameterTypes[i].get())) {
+                    for (std::size_t i = 0; i != leftParameters.size(); ++i) {
+                        if (!isTypeEquivalent(leftParameters[i]->parameterType.get(), rightParameters[i]->parameterType.get())) {
                             return false;
                         }
                     }
@@ -3279,11 +3303,11 @@ namespace wiz {
             case TypeExpressionKind::Function: {
                 const auto& functionType = typeExpression->function;
                 auto result = std::string(functionType.far ? "far " : "") + "func";
-                const auto& parameterTypes = functionType.parameterTypes;
-                if (parameterTypes.size() > 0) {
+                const auto& parameters = functionType.parameters;
+                if (parameters.size() > 0) {
                     result += "(";
-                    for (std::size_t i = 0; i != parameterTypes.size(); ++i) {
-                        result += (i != 0 ? ", " : "") + getTypeName(parameterTypes[i].get());
+                    for (std::size_t i = 0; i != parameters.size(); ++i) {
+                        result += (i != 0 ? ", " : "") + getTypeName(parameters[i]->parameterType.get());
                     }
                     result += ")";
                 }
@@ -3921,8 +3945,11 @@ namespace wiz {
                 auto& funcDefinition = definition->func;
 
                 enterScope(getOrCreateStatementScope(stringPool->intern(SymbolTable::generateBlockName()), body, currentScope));
+                funcDefinition.environment = currentScope;
                 for (const auto& parameter : funcDeclaration.parameters) {
-                    funcDefinition.parameters.push_back(currentScope->createDefinition(report, Definition::Var(Qualifiers::None, definition, nullptr, parameter->typeExpression.get(), 0), parameter->name, statement));
+                    auto parameterDefinition = currentScope->createDefinition(report, Definition::Var(Qualifiers::None, definition, nullptr, parameter->typeExpression.get(), 0), parameter->name, statement);
+                    parameterDefinition->var.isParameter = true;
+                    funcDefinition.parameters.push_back(parameterDefinition);
                 }
                 exitScope();
 
@@ -4183,22 +4210,22 @@ namespace wiz {
                     valid = false;
                 }
 
-                std::vector<FwdUniquePtr<const TypeExpression>> parameterTypes;
-                parameterTypes.reserve(funcDefinition->parameters.size());
+                std::vector<UniquePtr<const TypeExpression::Function::Parameter>> parameters;
+                parameters.reserve(funcDefinition->parameters.size());
 
                 for (const auto& parameter : funcDefinition->parameters) {
                     auto& parameterDefinition = parameter->var;
                     if (auto parameterType = reduceTypeExpression(parameterDefinition.typeExpression)) {
                         parameterDefinition.reducedTypeExpression = parameterType->clone();
                         parameterDefinition.resolvedType = parameterDefinition.reducedTypeExpression.get();
-                        parameterTypes.push_back(std::move(parameterType));
+                        parameters.push_back(makeUnique<const TypeExpression::Function::Parameter>(parameter->name, std::move(parameterType)));
                     } else {
                         valid = false;
                     }
                 }
 
                 if (valid) {
-                    funcDefinition->resolvedSignatureType = makeFwdUnique<const TypeExpression>(TypeExpression::Function(funcDefinition->far, std::move(parameterTypes), std::move(returnType)), definition->declaration->location);
+                    funcDefinition->resolvedSignatureType = makeFwdUnique<const TypeExpression>(TypeExpression::Function(funcDefinition->far, std::move(parameters), std::move(returnType)), definition->declaration->location);
                 }
                 exitScope();
             } else if (auto bankDefinition = definition->tryGet<Definition::Bank>()) {
@@ -5147,12 +5174,12 @@ namespace wiz {
 
         auto& functionType = functionTypeExpression->function;
 
-        if (functionType.parameterTypes.size() != arguments.size()) {
+        if (functionType.parameters.size() != arguments.size()) {
             return false;
         }
 
         for (std::size_t i = 0; i != arguments.size(); ++i) {
-            const auto& parameterType = functionType.parameterTypes[i];
+            const auto& parameterType = functionType.parameters[i]->parameterType;
             const auto& argument = arguments[i];
             if (auto designatedStorageType = parameterType->tryGet<TypeExpression::DesignatedStorage>()) {
                 emitAssignmentExpressionIr(designatedStorageType->holder.get(), argument.get(), argument->location);

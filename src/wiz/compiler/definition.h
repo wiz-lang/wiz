@@ -161,6 +161,7 @@ namespace wiz {
             SymbolTable* enclosingScope;
             const Statement* body;
 
+            SymbolTable* environment = nullptr;
             Optional<Address> address;
             FwdUniquePtr<const TypeExpression> resolvedSignatureType;
             
@@ -240,6 +241,7 @@ namespace wiz {
             const TypeExpression* typeExpression;
             std::size_t alignment;
 
+            bool isParameter = false;
             const TypeExpression* resolvedType = nullptr;
             Optional<Address> address;
             Optional<std::size_t> storageSize;

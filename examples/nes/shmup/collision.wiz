@@ -92,5 +92,26 @@ namespace collision {
             video.disable_screen();
             return (*(0xFFFC as *func))();
         }
+
+        /*
+
+        // Doesn't compile atm but could be cool:
+        y = a = entity.type[x];
+
+        if {
+            // add a side-effect expression that can sit in for an argument list.
+            carry = detect_entity({
+                hitbox_x = a = entity.x_pixel[x] + (entity_definitions.hitbox_x[y] as u8);
+                hitbox_y = a = entity.y_pixel[x] + (entity_definitions.hitbox_y[y] as u8);
+                hitbox_x2 = a = entity.x_pixel[x] + (entity_definitions.hitbox_x2[y] as u8);
+                hitbox_y2 = a = entity.y_pixel[x] + (entity_definitions.hitbox_y2[y] as u8);
+                index = entity.PLAYER_INDEX;
+                count = a = entity.PLAYER_COUNT;
+            });
+        } && carry {
+            video.disable_screen();
+            return (*(0xFFFC as *func))();
+        }
+        */
     }    
 }

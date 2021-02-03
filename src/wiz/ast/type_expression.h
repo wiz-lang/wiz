@@ -48,16 +48,27 @@ namespace wiz {
         };
 
         struct Function {
+            struct Parameter {
+                Parameter(
+                    StringView name,
+                    FwdUniquePtr<const TypeExpression> parameterType)
+                : name(name),
+                parameterType(std::move(parameterType)) {}
+
+                StringView name;
+                FwdUniquePtr<const TypeExpression> parameterType;
+            };
+
             Function(
                 bool far,
-                std::vector<FwdUniquePtr<const TypeExpression>> parameterTypes,
+                std::vector<UniquePtr<const Parameter>> parameters,
                 FwdUniquePtr<const TypeExpression> returnType)
             : far(far),
-            parameterTypes(std::move(parameterTypes)),
+            parameters(std::move(parameters)),
             returnType(std::move(returnType)) {}
 
             bool far;
-            std::vector<FwdUniquePtr<const TypeExpression>> parameterTypes;
+            std::vector<UniquePtr<const Parameter>> parameters;
             FwdUniquePtr<const TypeExpression> returnType;
         };
 

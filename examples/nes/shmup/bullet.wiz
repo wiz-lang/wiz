@@ -63,22 +63,22 @@ namespace bullet {
         type[index] = a = spawn_type;
 
         if !zero {
-            var func_ptr @ &w0 : func;
+            var func_ptr : func in call_handler.func_ptr;
             <:func_ptr = a = (&bullet_definitions.init_handlers_l as *u8)[spawn_type];
             >:func_ptr = a = (&bullet_definitions.init_handlers_h as *u8)[spawn_type];
             return (*(&func_ptr as *func))();
         }
     }
 
-    func _spawn_bullet(spawn_type : u8 in y, spawn_x : u16 in w0, spawn_y : u16 in w2, start : u8 in x, count : u8 in b4) : bool in carry {
+    func _spawn_bullet(index : u8 in x, spawn_type : u8 in y, spawn_x : u16 in w0, spawn_y : u16 in w2, start : u8 in x, count : u8 in b4) : bool in carry {
         do {
-            a = type[x];
+            a = type[index];
             if zero {
-                init_bullet(x, spawn_type, spawn_x, spawn_y);
+                init_bullet(index, spawn_type, spawn_x, spawn_y);
                 return true;
             }
 
-            x++;
+            index++;
             count--;
         } while !zero;
 
@@ -86,8 +86,7 @@ namespace bullet {
     }
 
     func spawn_player_bullet(spawn_type : u8 in y, spawn_x : u16 in w0, spawn_y : u16 in w2) : bool in carry {
-        b4 = a = PLAYER_COUNT;
-        return _spawn_bullet(spawn_type, spawn_x, spawn_y, PLAYER_INDEX, b4);
+        return _spawn_bullet(0, spawn_type, spawn_x, spawn_y, PLAYER_INDEX, a = PLAYER_COUNT);
     }
 
     func update_all() {
@@ -99,7 +98,7 @@ namespace bullet {
             var bullet_type : u8 in y;
             bullet_type = a = type[index];
             if !zero {
-                var func_ptr @ &w0 : func;
+                var func_ptr : func in call_handler.func_ptr;
                 <:func_ptr = a = (&bullet_definitions.update_handlers_l as *u8)[bullet_type];
                 >:func_ptr = a = (&bullet_definitions.update_handlers_h as *u8)[bullet_type];
                 call_handler(func_ptr);

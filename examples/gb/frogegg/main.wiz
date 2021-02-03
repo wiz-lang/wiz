@@ -64,7 +64,7 @@ in rom @ 0x150 {
         // Clear screen.
         memset(&gb.ram.map[0], 4, 1024);
 
-        level_system.load(&level1_data as u16);
+        level_system.load(&level1_data[0]);
 
         // Turn the screen back on, with backgrounds enabled.
         gb.lcd.ctrl = a = gb.lcd.CTRL_ON | gb.lcd.CTRL_BG_ON;
@@ -105,88 +105,138 @@ in rom @ 0x150 {
 
     namespace level_system {
         #[fallthrough]
-        func load(source : u16 in hl) {
-            a = *(hl++ as *u8);
-            push(hl);
+        func load(source : *u8 in hl) {
+            a = *source++;
 
-            c = a; b = 0; inline for in 1 .. 2 { c <<= 1; b <<<<#= 1; }
+            push(source);
 
-            l = a = <:&environments + c;
-            h = a = >:&environments +# b;
+            var offset : u16 in bc;
+            <:offset = a;
+            >:offset = 0;
 
-            <:level.tiles = a = *(hl++ as *u8);
-            >:level.tiles = a = *(hl++ as *u8);
-            <:level.blocks = a = *(hl++ as *u8);
-            >:level.blocks = a = *(hl++ as *u8);
-            hl = pop();
+            inline for in 1 .. 2 {
+                <:offset <<= 1;
+                >:offset <<<<#= 1;
+            }
 
-            level.width = a = *(hl++ as *u8);
-            level.height = a = *(hl++ as *u8);
+            <>:source = <>:&environments + offset;
 
-            de = &gb.ram.map as u16;
+            <:level.tiles = a = *source++;
+            >:level.tiles = a = *source++;
+            <:level.blocks = a = *source++;
+            >:level.blocks = a = *source++;
+
+            <>:source = pop();
+
+            level.width = a = *source++;
+            level.height = a = *source++;
+
+            var dest : *u8 in de;
+            dest = &gb.ram.map[0];
+            // fallthrough.
         }
 
-        func load_tilemap_offscreen(dest : u16 in de, source : u16 in hl) {
-            b = 0x03;
+        func load_tilemap_offscreen(dest : *u8 in de, source : *u8 in hl) {
+            var rows_cols : u16 in bc;
+            var rows : u8 in b;
+            var cols : u8 in c;
+            rows = 0x03;
+
             ^do {
-                push(hl);
+                push(source);
 
-                c = 0x08;
+                cols = 0x08;
                 do {
-                    push(bc);
-                    push(de);
+                    push(rows_cols);
+                    push(dest);
 
-                    a = *(hl++ as *u8);
-                    push(hl);
+                    a = *source++;
 
-                    c = a; b = 0; inline for in 1 .. 3 { c <<= 1; b <<<<#= 1; }
-                    l = a = <:level.blocks + c;
-                    h = a = >:level.blocks +# b;
+                    push(source);
+
+                    var offset : u16 in bc;
+                    <:offset = a;
+                    >:offset = 0;
+
+                    inline for in 1 .. 3 {
+                        <:offset <<= 1;
+                        >:offset <<<<#= 1;
+                    }
+
+                    <:source = a = <:level.blocks;
+                    >:source = a = >:level.blocks;
+                    <>:source += offset;
 
                     inline for in 1 .. 4 {
                         inline for in 1 .. 2 {
-                            load_tile_offscreen(de, hl);
+                            load_tile_offscreen(dest, source);
                         }
 
-                        e = a = e + (32 * 2 - 4); if carry { d++; }
+                        <:dest = a = <:dest + (32 * 2 - 4);
+                        if carry {
+                            >:dest++; 
+                        }
                     }
 
-                    hl = pop();
+                    <>:source = pop();
+                    <>:dest = pop();
 
-                    de = pop();
-                    e = a = e + 4; if carry { d++; }
+                    <:dest = a = <:dest + 4;
+                    if carry {
+                        ++>:dest;
+                    }
 
-                    bc = pop();
-                    c--;
+                    rows_cols = pop();
+                    cols--;
                 } while !zero;
 
-                hl = pop();
-                l = a = level.width + l; if carry { h++; }
-                e = a = e + (32 * 7); if carry { d++; }
+                <>:source = pop();
+                <:source = a = level.width + l;
+                if carry {
+                    ++>:source;
+                }
+                <:dest = a = <:dest + (32 * 7);
+                if carry {
+                    ++>:dest;
+                }
 
-                b--;
+                rows--;
             } while !zero;
         }
 
-        func load_tile_offscreen(dest : u16 in de, source : u16 in hl) {
-            a = *(hl++ as *u8);
-            push(hl);
+        func load_tile_offscreen(dest : *u8 in de, source : *u8 in hl) {
+            a = *source++;
 
-            c = a; b = 0; inline for in 1 .. 2 { c <<= 1; b <<<<#= 1; }
-            l = a = <:level.tiles + c;
-            h = a = >:level.tiles +# b;
+            push(source);
 
-            *(de as *u8) = a = *(hl++ as *u8); de++;
-            *(de as *u8) = a = *(hl++ as *u8); de++;
+            var offset : u16 in bc;
+            <:offset = a;
+            >:offset = 0;
 
-            push(de);
-            e = a = e + (32 - 2); if carry { d++; }
+            inline for in 1 .. 2 {
+                <:offset <<= 1;
+                >:offset <<<<#= 1;
+            }
 
-            *(de as *u8) = a = *(hl++ as *u8); de++;
-            *(de as *u8) = a = *(hl++ as *u8); de++;
-            de = pop();
+            <:source = a = <:level.tiles;
+            >:source = a = >:level.tiles;
+            <>:source += offset;
 
-            hl = pop();
+            *dest++ = a = *source++;
+            *dest++ = a = *source++;
+
+            push(dest);
+
+            <:dest = a = <:dest + (32 - 2);
+            if carry {
+                ++>:dest;
+            }
+
+            *dest++ = a = *source++;
+            *dest++ = a = *source++;
+
+            <>:dest = pop();
+            <>:source = pop();
         }
     }
 

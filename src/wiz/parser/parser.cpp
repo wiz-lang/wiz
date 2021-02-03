@@ -2318,7 +2318,7 @@ namespace wiz {
     FwdUniquePtr<const TypeExpression> Parser::parseFunctionType(bool far) {
         const auto location = scanner->getLocation();
 
-        std::vector<FwdUniquePtr<const TypeExpression>> parameterTypes;
+        std::vector<UniquePtr<const TypeExpression::Function::Parameter>> parameters;
         FwdUniquePtr<const TypeExpression> returnType;
         nextToken(); // IDENTIFIER (keyword `func`)
 
@@ -2334,6 +2334,8 @@ namespace wiz {
                 }
 
                 if (token.type == TokenType::Identifier) {
+                    auto parameterName = ""_sv;
+
                     // named parameter = IDENTIFIER `:` type
                     if (token.keyword == Keyword::None) {
                         // A token of lookahead is needed to read the name and skip it, otherwise the identifier would be ambiguous as a type
@@ -2341,6 +2343,7 @@ namespace wiz {
                         if (lookaheadBuffer.size() > 0) {
                             const auto& lookahead = lookaheadBuffer.back();
                             if (lookahead.type == TokenType::Colon) {
+                                parameterName = token.text;
                                 nextToken(); // IDENTIFIER
                                 expectTokenType(TokenType::Colon);
                             }
@@ -2348,7 +2351,7 @@ namespace wiz {
                     }                    
 
                     auto parameterType = parseType();
-                    parameterTypes.push_back(std::move(parameterType));
+                    parameters.push_back(makeUnique<const TypeExpression::Function::Parameter>(parameterName, std::move(parameterType)));
                 } else if (token.type != TokenType::RightParenthesis) {
                     if (first) {
                         reject(token, "parameter after `(` in `func` definition"_sv, true);
@@ -2372,7 +2375,7 @@ namespace wiz {
             returnType = makeFwdUnique<const TypeExpression>(TypeExpression::Tuple({}), location);
         }
 
-        return makeFwdUnique<const TypeExpression>(TypeExpression::Function(far, std::move(parameterTypes), std::move(returnType)), location);
+        return makeFwdUnique<const TypeExpression>(TypeExpression::Function(far, std::move(parameters), std::move(returnType)), location);
     }
 
     FwdUniquePtr<const TypeExpression> Parser::parsePointerType(Qualifiers qualifiers) {

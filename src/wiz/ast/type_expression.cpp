@@ -38,15 +38,18 @@ namespace wiz {
                     location);
             }
             case TypeExpressionKind::Function: {
-                std::vector<FwdUniquePtr<const TypeExpression>> clonedParameterTypes;
-                clonedParameterTypes.reserve(function.parameterTypes.size());
-                for (const auto& parameterType : function.parameterTypes) {
-                    clonedParameterTypes.push_back(parameterType ? parameterType->clone() : nullptr);
+                std::vector<UniquePtr<const Function::Parameter>> clonedParameters;
+                clonedParameters.reserve(function.parameters.size());
+                for (const auto& parameter : function.parameters) {
+                    clonedParameters.push_back(makeUnique<const Function::Parameter>(
+                        parameter->name,
+                        parameter->parameterType ? parameter->parameterType->clone() : nullptr
+                    ));
                 }
                 return makeFwdUnique<const TypeExpression>(
                     Function(
                         function.far,
-                        std::move(clonedParameterTypes),
+                        std::move(clonedParameters),
                         function.returnType ? function.returnType->clone() : nullptr),
                     location);
             }
