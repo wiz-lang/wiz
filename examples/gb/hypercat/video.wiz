@@ -53,16 +53,20 @@ namespace video {
         >:oam_buffer_ptr = a = >:&oam_buffer_data;
     }
 
-    func oam_buffer_open() {
-        hl = &oam_buffer_ptr as u16;
-        a = *(hl++ as *u8);
-        h = *(hl as *u8);
+    func oam_buffer_open() : *u8 in hl {
+        var oam : *u8 in hl;
+
+        <>:oam = <>:&oam_buffer_ptr;
+        a = *oam++;
+        h = *oam;
         l = a;
+
+        return oam;
     }
 
-    func oam_buffer_close() {
-        <:oam_buffer_ptr = a = l;
-        >:oam_buffer_ptr = a = h;
+    func oam_buffer_close(oam : *u8 in hl) {
+        <:oam_buffer_ptr = a = <:oam;
+        >:oam_buffer_ptr = a = >:oam;
     }
 
     func acknowledge_update() {        

@@ -25,7 +25,7 @@ in rom @ 0x150 {
 
     #[fallthrough] func main() {
         interrupt = false;
-        hl = &stack.data as u16 + stack.SIZE - 1;
+        hl = <>:&stack.data[stack.SIZE - 1];
         sp = hl;
         
         gbc_util.detect();
@@ -67,9 +67,9 @@ in rom @ 0x150 {
     func title_mode() {
         video.disable();
 
-        text.print(&text.string.title as u16, &gb.ram.map as u16 + 32 * 3 + 1);
-        text.print(&text.string.press_start as u16, &gb.ram.map as u16 + 32 * 6 + 4);
-        text.print(&text.string.andrew_g_crowell as u16, &gb.ram.map as u16 + 32 * 15 + 1);
+        text.print(&text.string.title[0], &gb.ram.map[32 * 3 + 1]);
+        text.print(&text.string.press_start[0], &gb.ram.map[32 * 6 + 4]);
+        text.print(&text.string.andrew_g_crowell[0], &gb.ram.map[32 * 15 + 1]);
 
         gb.lcd.ctrl = a = gb.lcd.CTRL_ON | gb.lcd.CTRL_BG_ON | gb.lcd.CTRL_OBJ_ON;
 
@@ -93,12 +93,12 @@ in rom @ 0x150 {
         video.disable();
         memset(&gb.ram.map[0], 26, 1024);
 
-        text.print(&text.string.love as u16, &gb.ram.map as u16 + 32 * 1 + 1);
-        text.print(&text.string.food as u16, &gb.ram.map as u16 + 32 * 2 + 1);
-        text.print(&text.string.hug as u16, &gb.ram.map as u16 + 32 * 13 + 3);
-        text.print(&text.string.feed as u16, &gb.ram.map as u16 + 32 * 14 + 3);
-        text.print(&text.string.clean as u16, &gb.ram.map as u16 + 32 * 15 + 3);
-        text.print(&text.string.lights as u16, &gb.ram.map as u16 + 32 * 16 + 3);
+        text.print(&text.string.love[0], &gb.ram.map[32 * 1 + 1]);
+        text.print(&text.string.food[0], &gb.ram.map[32 * 2 + 1]);
+        text.print(&text.string.hug[0], &gb.ram.map[32 * 13 + 3]);
+        text.print(&text.string.feed[0], &gb.ram.map[32 * 14 + 3]);
+        text.print(&text.string.clean[0], &gb.ram.map[32 * 15 + 3]);
+        text.print(&text.string.lights[0], &gb.ram.map[32 * 16 + 3]);
 
         gb.lcd.ctrl = a = gb.lcd.CTRL_ON | gb.lcd.CTRL_BG_ON | gb.lcd.CTRL_OBJ_ON;
 

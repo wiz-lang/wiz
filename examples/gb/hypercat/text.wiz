@@ -15,17 +15,13 @@ namespace text {
         const lights = "LIGHTS\0";
     }
 
-    func print(message : u16 in bc, dest : u16 in de) {
-        while { a = *(bc as *u8); } && a != 0 {
-            a--;
-            a += &charset as u8;
-
-            l = a;
-            h = a = 0 +# (&charset as u16 >> 8) as u8;
-
-            *(de as *u8) = a = *(hl as *u8);
-            bc++;
-            de++;
+    func print(message : *const u8 in bc, dest : *u8 in de) {
+        while { a = *message; } && a != 0 {
+            var charset_entry : *const u8 in hl;
+            <:charset_entry = a = --a + <:&charset;
+            >:charset_entry = a = 0 +# >:&charset;
+            *dest++ = a = *charset_entry;
+            message++;
         }
     }
 }

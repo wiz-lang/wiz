@@ -89,16 +89,18 @@ namespace kitty {
     }
 
     func draw_hud() {
-        video.oam_buffer_open();
+        var oam : *u8 in hl;
+
+        oam = video.oam_buffer_open();
         d = a = nap.dark << 4;
         c = a = love.value;
         if a != 0 {
             do {
-                *(hl++ as *u8) = a = (1 << 3) + 16;
+                *oam++ = a = (1 << 3) + 16;
                 a = 5 + c;
-                *(hl++ as *u8) = a = (a << 3) + 8;
-                *(hl++ as *u8) = a = 0x42 + d;
-                *(hl++ as *u8) = a = 0;
+                *oam++ = a = (a << 3) + 8;
+                *oam++ = a = 0x42 + d;
+                *oam++ = a = 0;
                 c--;
             } while !zero;
         }
@@ -106,21 +108,21 @@ namespace kitty {
         c = a = food.value;
         if a != 0 {
             do {
-                *(hl++ as *u8) = a = (2 << 3) + 16;
+                *oam++ = a = (2 << 3) + 16;
                 a = 5 + c;
-                *(hl++ as *u8) = a = (a << 3) + 8;
-                *(hl++ as *u8) = a = 0x42 + d;
-                *(hl++ as *u8) = a = 0;
+                *oam++ = a = (a << 3) + 8;
+                *oam++ = a = 0x42 + d;
+                *oam++ = a = 0;
                 c--;
             } while !zero;
         }
 
         c = a = cursor;
-        *(hl++ as *u8) = a = ((13 + c) << 3) + 16;
-        *(hl++ as *u8) = a = (1 << 3) + 8;
-        *(hl++ as *u8) = a = 0x43 + d;
-        *(hl++ as *u8) = a = 0;
-        video.oam_buffer_close();
+        *oam++ = a = ((13 + c) << 3) + 16;
+        *oam++ = a = (1 << 3) + 8;
+        *oam++ = a = 0x43 + d;
+        *oam++ = a = 0;
+        video.oam_buffer_close(oam);
     }
 
     func update_menu() {
@@ -501,143 +503,144 @@ namespace kitty {
             bob = a = 1;
         }
 
-        video.oam_buffer_open();
+        var oam : *u8 in hl;
+        oam = video.oam_buffer_open();
 
         c = a = bob;
-        *(hl++ as *u8) = a = y + c + 0x00 - 0x10 + 16;
-        *(hl++ as *u8) = a = x + 0x00 + 8;
-        *(hl++ as *u8) = a = bubble + 0x00;
-        *(hl++ as *u8) = a = 0;
-        *(hl++ as *u8) = a = y + c + 0x00 - 0x10 + 16;
-        *(hl++ as *u8) = a = x + 0x08 + 8;
-        *(hl++ as *u8) = a = bubble + 0x01;
-        *(hl++ as *u8) = a = 0;
-        *(hl++ as *u8) = a = y + c + 0x08 - 0x10 + 16;
-        *(hl++ as *u8) = a = x + 0x00 + 8;
-        *(hl++ as *u8) = a = bubble + 0x10;
-        *(hl++ as *u8) = a = 0;
-        *(hl++ as *u8) = a = y + c + 0x08 - 0x10 + 16;
-        *(hl++ as *u8) = a = x + 0x08 + 8;
-        *(hl++ as *u8) = a = bubble + 0x11;
-        *(hl++ as *u8) = a = 0;
+        *oam++ = a = y + c + 0x00 - 0x10 + 16;
+        *oam++ = a = x + 0x00 + 8;
+        *oam++ = a = bubble + 0x00;
+        *oam++ = a = 0;
+        *oam++ = a = y + c + 0x00 - 0x10 + 16;
+        *oam++ = a = x + 0x08 + 8;
+        *oam++ = a = bubble + 0x01;
+        *oam++ = a = 0;
+        *oam++ = a = y + c + 0x08 - 0x10 + 16;
+        *oam++ = a = x + 0x00 + 8;
+        *oam++ = a = bubble + 0x10;
+        *oam++ = a = 0;
+        *oam++ = a = y + c + 0x08 - 0x10 + 16;
+        *oam++ = a = x + 0x08 + 8;
+        *oam++ = a = bubble + 0x11;
+        *oam++ = a = 0;
 
         if { a = food.feeding; } && a != 0 {
-            *(hl++ as *u8) = a = food.y + 0x08 + 16;
-            *(hl++ as *u8) = a = food.x + 0x08 + 8;
-            *(hl++ as *u8) = a = 0x2E;
-            *(hl++ as *u8) = a = 0;
-            *(hl++ as *u8) = a = food.y + 0x08 + 16;
-            *(hl++ as *u8) = a = food.x + 0x10 + 8;
-            *(hl++ as *u8) = a = 0x2F;
-            *(hl++ as *u8) = a = 0;
-            *(hl++ as *u8) = a = food.y + 0x10 + 16;
-            *(hl++ as *u8) = a = food.x + 0x08 + 8;
-            *(hl++ as *u8) = a = 0x3E;
-            *(hl++ as *u8) = a = 0;
-            *(hl++ as *u8) = a = food.y + 0x10 + 16;
-            *(hl++ as *u8) = a = food.x + 0x10 + 8;
-            *(hl++ as *u8) = a = 0x3F;
-            *(hl++ as *u8) = a = 0;
+            *oam++ = a = food.y + 0x08 + 16;
+            *oam++ = a = food.x + 0x08 + 8;
+            *oam++ = a = 0x2E;
+            *oam++ = a = 0;
+            *oam++ = a = food.y + 0x08 + 16;
+            *oam++ = a = food.x + 0x10 + 8;
+            *oam++ = a = 0x2F;
+            *oam++ = a = 0;
+            *oam++ = a = food.y + 0x10 + 16;
+            *oam++ = a = food.x + 0x08 + 8;
+            *oam++ = a = 0x3E;
+            *oam++ = a = 0;
+            *oam++ = a = food.y + 0x10 + 16;
+            *oam++ = a = food.x + 0x10 + 8;
+            *oam++ = a = 0x3F;
+            *oam++ = a = 0;
         }
 
         ^if { a = reverse; } && a != 0 {
-            *(hl++ as *u8) = a = y + c + 16;
-            *(hl++ as *u8) = a = x + 0x00 + 8;
-            *(hl++ as *u8) = a = head + 0x00;
-            *(hl++ as *u8) = a = 0;
-            *(hl++ as *u8) = a = y + c + 16;
-            *(hl++ as *u8) = a = x + 0x08 + 8;
-            *(hl++ as *u8) = a = head + 0x01;
-            *(hl++ as *u8) = a = 0;
-            *(hl++ as *u8) = a = y + 0x08 + 16;
-            *(hl++ as *u8) = a = x + 0x10 + 8;
-            *(hl++ as *u8) = a = tail + 0x00;
-            *(hl++ as *u8) = a = 0;
-            *(hl++ as *u8) = a = y + c + 0x08 + 16;
-            *(hl++ as *u8) = a = x + 0x00 + 8;
-            *(hl++ as *u8) = a = head + 0x10;
-            *(hl++ as *u8) = a = 0;
-            *(hl++ as *u8) = a = y + c + 0x08 + 16;
-            *(hl++ as *u8) = a = x + 0x08 + 8;
-            *(hl++ as *u8) = a = head + 0x11;
-            *(hl++ as *u8) = a = 0;
-            *(hl++ as *u8) = a = y + 0x08 + 16;
-            *(hl++ as *u8) = a = x + 0x10 + 8;
-            *(hl++ as *u8) = a = tail + 0x10;
-            *(hl++ as *u8) = a = 0;
-            *(hl++ as *u8) = a = y + 0x10 + 16;
-            *(hl++ as *u8) = a = x + 0x00 + 8;
-            *(hl++ as *u8) = a = legs + 0x00;
-            *(hl++ as *u8) = a = 0;
-            *(hl++ as *u8) = a = y + 0x10 + 16;
-            *(hl++ as *u8) = a = x + 0x08 + 8;
-            *(hl++ as *u8) = a = legs + 0x01;
-            *(hl++ as *u8) = a = 0;
-            *(hl++ as *u8) = a = y + 0x10 + 16;
-            *(hl++ as *u8) = a = x + 0x10 + 8;
-            *(hl++ as *u8) = a = legs + 0x02;
-            *(hl++ as *u8) = a = 0;
+            *oam++ = a = y + c + 16;
+            *oam++ = a = x + 0x00 + 8;
+            *oam++ = a = head + 0x00;
+            *oam++ = a = 0;
+            *oam++ = a = y + c + 16;
+            *oam++ = a = x + 0x08 + 8;
+            *oam++ = a = head + 0x01;
+            *oam++ = a = 0;
+            *oam++ = a = y + 0x08 + 16;
+            *oam++ = a = x + 0x10 + 8;
+            *oam++ = a = tail + 0x00;
+            *oam++ = a = 0;
+            *oam++ = a = y + c + 0x08 + 16;
+            *oam++ = a = x + 0x00 + 8;
+            *oam++ = a = head + 0x10;
+            *oam++ = a = 0;
+            *oam++ = a = y + c + 0x08 + 16;
+            *oam++ = a = x + 0x08 + 8;
+            *oam++ = a = head + 0x11;
+            *oam++ = a = 0;
+            *oam++ = a = y + 0x08 + 16;
+            *oam++ = a = x + 0x10 + 8;
+            *oam++ = a = tail + 0x10;
+            *oam++ = a = 0;
+            *oam++ = a = y + 0x10 + 16;
+            *oam++ = a = x + 0x00 + 8;
+            *oam++ = a = legs + 0x00;
+            *oam++ = a = 0;
+            *oam++ = a = y + 0x10 + 16;
+            *oam++ = a = x + 0x08 + 8;
+            *oam++ = a = legs + 0x01;
+            *oam++ = a = 0;
+            *oam++ = a = y + 0x10 + 16;
+            *oam++ = a = x + 0x10 + 8;
+            *oam++ = a = legs + 0x02;
+            *oam++ = a = 0;
         } else {
             let HFLIP = 0x20;
 
-            *(hl++ as *u8) = a = y + c + 16;
-            *(hl++ as *u8) = a = x + 0x10 - 0x00 + 8;
-            *(hl++ as *u8) = a = head + 0x00;
-            *(hl++ as *u8) = a = HFLIP;
-            *(hl++ as *u8) = a = y + c + 16;
-            *(hl++ as *u8) = a = x + 0x10 - 0x08 + 8;
-            *(hl++ as *u8) = a = head + 0x01;
-            *(hl++ as *u8) = a = HFLIP;
-            *(hl++ as *u8) = a = y + 0x08 + 16;
-            *(hl++ as *u8) = a = x + 0x10 - 0x10 + 8;
-            *(hl++ as *u8) = a = tail + 0x00;
-            *(hl++ as *u8) = a = HFLIP;
-            *(hl++ as *u8) = a = y + c + 0x08 + 16;
-            *(hl++ as *u8) = a = x + 0x10 - 0x00 + 8;
-            *(hl++ as *u8) = a = head + 0x10;
-            *(hl++ as *u8) = a = HFLIP;
-            *(hl++ as *u8) = a = y + c + 0x08 + 16;
-            *(hl++ as *u8) = a = x + 0x10 - 0x08 + 8;
-            *(hl++ as *u8) = a = head + 0x11;
-            *(hl++ as *u8) = a = HFLIP;
-            *(hl++ as *u8) = a = y + 0x08 + 16;
-            *(hl++ as *u8) = a = x + 0x10 - 0x10 + 8;
-            *(hl++ as *u8) = a = tail + 0x10;
-            *(hl++ as *u8) = a = HFLIP;
-            *(hl++ as *u8) = a = y + 0x10 + 16;
-            *(hl++ as *u8) = a = x + 0x10 - 0x00 + 8;
-            *(hl++ as *u8) = a = legs + 0x00;
-            *(hl++ as *u8) = a = HFLIP;
-            *(hl++ as *u8) = a = y + 0x10 + 16;
-            *(hl++ as *u8) = a = x + 0x10 - 0x08 + 8;
-            *(hl++ as *u8) = a = legs + 0x01;
-            *(hl++ as *u8) = a = HFLIP;
-            *(hl++ as *u8) = a = y + 0x10 + 16;
-            *(hl++ as *u8) = a = x + 0x10 - 0x10 + 8;
-            *(hl++ as *u8) = a = legs + 0x02;
-            *(hl++ as *u8) = a = HFLIP;
+            *oam++ = a = y + c + 16;
+            *oam++ = a = x + 0x10 - 0x00 + 8;
+            *oam++ = a = head + 0x00;
+            *oam++ = a = HFLIP;
+            *oam++ = a = y + c + 16;
+            *oam++ = a = x + 0x10 - 0x08 + 8;
+            *oam++ = a = head + 0x01;
+            *oam++ = a = HFLIP;
+            *oam++ = a = y + 0x08 + 16;
+            *oam++ = a = x + 0x10 - 0x10 + 8;
+            *oam++ = a = tail + 0x00;
+            *oam++ = a = HFLIP;
+            *oam++ = a = y + c + 0x08 + 16;
+            *oam++ = a = x + 0x10 - 0x00 + 8;
+            *oam++ = a = head + 0x10;
+            *oam++ = a = HFLIP;
+            *oam++ = a = y + c + 0x08 + 16;
+            *oam++ = a = x + 0x10 - 0x08 + 8;
+            *oam++ = a = head + 0x11;
+            *oam++ = a = HFLIP;
+            *oam++ = a = y + 0x08 + 16;
+            *oam++ = a = x + 0x10 - 0x10 + 8;
+            *oam++ = a = tail + 0x10;
+            *oam++ = a = HFLIP;
+            *oam++ = a = y + 0x10 + 16;
+            *oam++ = a = x + 0x10 - 0x00 + 8;
+            *oam++ = a = legs + 0x00;
+            *oam++ = a = HFLIP;
+            *oam++ = a = y + 0x10 + 16;
+            *oam++ = a = x + 0x10 - 0x08 + 8;
+            *oam++ = a = legs + 0x01;
+            *oam++ = a = HFLIP;
+            *oam++ = a = y + 0x10 + 16;
+            *oam++ = a = x + 0x10 - 0x10 + 8;
+            *oam++ = a = legs + 0x02;
+            *oam++ = a = HFLIP;
         }
 
         if { a = poop.pooped; } && a != 0 {
-            *(hl++ as *u8) = a = y + 0x08 + 16;
-            *(hl++ as *u8) = a = poop.x + 0x08 + 8;
-            *(hl++ as *u8) = a = 0x0E;
-            *(hl++ as *u8) = a = 0;
-            *(hl++ as *u8) = a = y + 0x08 + 16;
-            *(hl++ as *u8) = a = poop.x + 0x10 + 8;
-            *(hl++ as *u8) = a = 0x0F;
-            *(hl++ as *u8) = a = 0;
-            *(hl++ as *u8) = a = y + 0x10 + 16;
-            *(hl++ as *u8) = a = poop.x + 0x08 + 8;
-            *(hl++ as *u8) = a = 0x1E;
-            *(hl++ as *u8) = a = 0;
-            *(hl++ as *u8) = a = y + 0x10 + 16;
-            *(hl++ as *u8) = a = poop.x + 0x10 + 8;
-            *(hl++ as *u8) = a = 0x1F;
-            *(hl++ as *u8) = a = 0;
+            *oam++ = a = y + 0x08 + 16;
+            *oam++ = a = poop.x + 0x08 + 8;
+            *oam++ = a = 0x0E;
+            *oam++ = a = 0;
+            *oam++ = a = y + 0x08 + 16;
+            *oam++ = a = poop.x + 0x10 + 8;
+            *oam++ = a = 0x0F;
+            *oam++ = a = 0;
+            *oam++ = a = y + 0x10 + 16;
+            *oam++ = a = poop.x + 0x08 + 8;
+            *oam++ = a = 0x1E;
+            *oam++ = a = 0;
+            *oam++ = a = y + 0x10 + 16;
+            *oam++ = a = poop.x + 0x10 + 8;
+            *oam++ = a = 0x1F;
+            *oam++ = a = 0;
         }
 
-        video.oam_buffer_close();
+        video.oam_buffer_close(oam);
 
         video.dark_mode = a = nap.dark;
     }
