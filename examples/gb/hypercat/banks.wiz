@@ -12,8 +12,9 @@ bank ram2 @ 0xD000 : [vardata; 0x1000];
 bank hram @ 0xFF80 : [vardata; 0x80];
 
 in rom @ 0x38 {
-    debug_break();
-    goto 0x38 as func;
+    while true {
+        debug_break();
+    }
 }
 
 in rom @ 0x40 {

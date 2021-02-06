@@ -37,12 +37,13 @@ namespace video {
     }
 
     func request_update() {
-        hl = &request_redraw as u16;
-        ++*(hl as *u8);
+        var r : *u8 in hl;
+        r = &request_redraw;
+        ++*r;
 
         do {
             halt();
-            a = *(hl as *u8);
+            a = *r;
         } while a != 0;
     }
 
@@ -79,8 +80,9 @@ namespace video {
                 gb.mono.palette.bg = a = 0b11100100;
             }
 
-            hl = &request_redraw as u16;
-            --*(hl as *u8);
+            var r : *u8 in hl;
+            r = &request_redraw;
+            --*r;
         }
     }
 }

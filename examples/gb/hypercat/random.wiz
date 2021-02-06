@@ -15,16 +15,16 @@ namespace random {
 
     func next() : u8 in a {
         var table_index : u16 in bc;
-        var random_entry : *u8 in hl;
+        var entry : *u8 in hl;
 
         <:table_index = a = index;
         >:table_index = 0;
 
-        <>:random_entry = <>:&table + <>:table_index;
+        <>:entry = <>:&table + <>:table_index;
 
         table_index++;
         index = a = <:table_index;
-        value = a = *random_entry;
+        value = a = *entry;
         return a;
     }
 }
