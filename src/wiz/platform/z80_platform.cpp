@@ -371,7 +371,7 @@ namespace wiz {
 
                 const auto i8val = static_cast<int>(captureLists[options.parameter[0]][0]->integer.value);
                 if (i8val >= -128 && i8val <= 127) {
-                    buffer.push_back(i8val < 0
+                    buffer.insert(buffer.end() - 1, i8val < 0
                         ? (static_cast<std::uint8_t>(-i8val) ^ 0xFF) + 1
                         : static_cast<std::uint8_t>(i8val));
                     return true;
