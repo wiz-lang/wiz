@@ -1,0 +1,115 @@
+// SYSTEM  z80
+
+import "_z80_memmap.wiz";
+
+// BLOCK 000000
+in prg {
+
+func bitindex_i8_test {
+// BLOCK             dd cb 2a 46           bit 0, (ix + 42)
+    bit(*((ix + 42) as *u8), 0);
+// BLOCK             dd cb 2a 4e           bit 1, (ix + 42)
+    bit(*((ix + 42) as *u8), 1);
+// BLOCK             dd cb 2a 56           bit 2, (ix + 42)
+    bit(*((ix + 42) as *u8), 2);
+// BLOCK             dd cb 2a 5e           bit 3, (ix + 42)
+    bit(*((ix + 42) as *u8), 3);
+// BLOCK             dd cb 2a 66           bit 4, (ix + 42)
+    bit(*((ix + 42) as *u8), 4);
+// BLOCK             dd cb 2a 6e           bit 5, (ix + 42)
+    bit(*((ix + 42) as *u8), 5);
+// BLOCK             dd cb 2a 76           bit 6, (ix + 42)
+    bit(*((ix + 42) as *u8), 6);
+// BLOCK             dd cb 2a 7e           bit 7, (ix + 42)
+    bit(*((ix + 42) as *u8), 7);
+
+// BLOCK             dd cb 2a 86           res 0, (ix + 42)
+    (*((ix + 42) as *u8))$0 = false;
+// BLOCK             dd cb 2a 8e           res 1, (ix + 42)
+    (*((ix + 42) as *u8))$1 = false;
+// BLOCK             dd cb 2a 96           res 2, (ix + 42)
+    (*((ix + 42) as *u8))$2 = false;
+// BLOCK             dd cb 2a 9e           res 3, (ix + 42)
+    (*((ix + 42) as *u8))$3 = false;
+// BLOCK             dd cb 2a a6           res 4, (ix + 42)
+    (*((ix + 42) as *u8))$4 = false;
+// BLOCK             dd cb 2a ae           res 5, (ix + 42)
+    (*((ix + 42) as *u8))$5 = false;
+// BLOCK             dd cb 2a b6           res 6, (ix + 42)
+    (*((ix + 42) as *u8))$6 = false;
+// BLOCK             dd cb 2a be           res 7, (ix + 42)
+    (*((ix + 42) as *u8))$7 = false;
+
+// BLOCK             dd cb 2a c6           set 0, (ix + 42)
+    (*((ix + 42) as *u8))$0 = true;
+// BLOCK             dd cb 2a ce           set 1, (ix + 42)
+    (*((ix + 42) as *u8))$1 = true;
+// BLOCK             dd cb 2a d6           set 2, (ix + 42)
+    (*((ix + 42) as *u8))$2 = true;
+// BLOCK             dd cb 2a de           set 3, (ix + 42)
+    (*((ix + 42) as *u8))$3 = true;
+// BLOCK             dd cb 2a e6           set 4, (ix + 42)
+    (*((ix + 42) as *u8))$4 = true;
+// BLOCK             dd cb 2a ee           set 5, (ix + 42)
+    (*((ix + 42) as *u8))$5 = true;
+// BLOCK             dd cb 2a f6           set 6, (ix + 42)
+    (*((ix + 42) as *u8))$6 = true;
+// BLOCK             dd cb 2a fe           set 7, (ix + 42)
+    (*((ix + 42) as *u8))$7 = true;
+
+// BLOCK             fd cb 2a 46           bit 0, (ix + 42)
+    bit(*((iy + 42) as *u8), 0);
+// BLOCK             fd cb 2a 4e           bit 1, (iy + 42)
+    bit(*((iy + 42) as *u8), 1);
+// BLOCK             fd cb 2a 56           bit 2, (iy + 42)
+    bit(*((iy + 42) as *u8), 2);
+// BLOCK             fd cb 2a 5e           bit 3, (iy + 42)
+    bit(*((iy + 42) as *u8), 3);
+// BLOCK             fd cb 2a 66           bit 4, (iy + 42)
+    bit(*((iy + 42) as *u8), 4);
+// BLOCK             fd cb 2a 6e           bit 5, (iy + 42)
+    bit(*((iy + 42) as *u8), 5);
+// BLOCK             fd cb 2a 76           bit 6, (iy + 42)
+    bit(*((iy + 42) as *u8), 6);
+// BLOCK             fd cb 2a 7e           bit 7, (iy + 42)
+    bit(*((iy + 42) as *u8), 7);
+
+// BLOCK             fd cb 2a 86           res 0, (iy + 42)
+    (*((iy + 42) as *u8))$0 = false;
+// BLOCK             fd cb 2a 8e           res 1, (iy + 42)
+    (*((iy + 42) as *u8))$1 = false;
+// BLOCK             fd cb 2a 96           res 2, (iy + 42)
+    (*((iy + 42) as *u8))$2 = false;
+// BLOCK             fd cb 2a 9e           res 3, (iy + 42)
+    (*((iy + 42) as *u8))$3 = false;
+// BLOCK             fd cb 2a a6           res 4, (iy + 42)
+    (*((iy + 42) as *u8))$4 = false;
+// BLOCK             fd cb 2a ae           res 5, (iy + 42)
+    (*((iy + 42) as *u8))$5 = false;
+// BLOCK             fd cb 2a b6           res 6, (iy + 42)
+    (*((iy + 42) as *u8))$6 = false;
+// BLOCK             fd cb 2a be           res 7, (iy + 42)
+    (*((iy + 42) as *u8))$7 = false;
+
+// BLOCK             fd cb 2a c6           set 0, (iy + 42)
+    (*((iy + 42) as *u8))$0 = true;
+// BLOCK             fd cb 2a ce           set 1, (iy + 42)
+    (*((iy + 42) as *u8))$1 = true;
+// BLOCK             fd cb 2a d6           set 2, (iy + 42)
+    (*((iy + 42) as *u8))$2 = true;
+// BLOCK             fd cb 2a de           set 3, (iy + 42)
+    (*((iy + 42) as *u8))$3 = true;
+// BLOCK             fd cb 2a e6           set 4, (iy + 42)
+    (*((iy + 42) as *u8))$4 = true;
+// BLOCK             fd cb 2a ee           set 5, (iy + 42)
+    (*((iy + 42) as *u8))$5 = true;
+// BLOCK             fd cb 2a f6           set 6, (iy + 42)
+    (*((iy + 42) as *u8))$6 = true;
+// BLOCK             fd cb 2a fe           set 7, (iy + 42)
+    (*((iy + 42) as *u8))$7 = true;
+}
+
+// BLOCK
+
+}
+
