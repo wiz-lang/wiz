@@ -4441,20 +4441,10 @@ namespace wiz {
             return false;
         }
 
-        if (varDefinition.enclosingFunction != nullptr) {
-            report->error("local " + description.toString() + " with initializer is not currently supported", location);
-            return false;
-        }
-
         allowReservedConstants = true;
 
         if (auto reducedValue = reduceExpression(initializer)) {
             if (const auto declarationType = varDefinition.reducedTypeExpression.get()) {
-                if (declarationType->kind == TypeExpressionKind::DesignatedStorage) {
-                    report->error(description.toString() + " cannot have type `" + getTypeName(varDefinition.reducedTypeExpression.get()) + "`", location);
-                    return false;
-                }
-
                 if (const auto compatibleInitializerType = findCompatibleAssignmentType(reducedValue.get(), declarationType)) {
                     varDefinition.initializerExpression = createConvertedExpression(reducedValue.get(), compatibleInitializerType);
                 } else {
@@ -4474,7 +4464,11 @@ namespace wiz {
                 }
             }
 
-            varDefinition.resolvedType = varDefinition.initializerExpression->info->type.get();
+            if (varDefinition.reducedTypeExpression != nullptr && varDefinition.reducedTypeExpression->kind == TypeExpressionKind::DesignatedStorage) {
+                varDefinition.resolvedType = varDefinition.reducedTypeExpression.get();
+            } else {
+                varDefinition.resolvedType = varDefinition.initializerExpression->info->type.get();
+            }
         }
 
         allowReservedConstants = false;
@@ -6874,11 +6868,16 @@ namespace wiz {
                             break;
                         }
 
-                        if (varDefinition.enclosingFunction == nullptr && currentBank != nullptr && isBankKindStored(currentBank->getKind())) {
-                            irNodes.addNew(IrNode::Var(definition), statement->location);
+                        if (currentBank != nullptr && isBankKindStored(currentBank->getKind())) {
+                            if (varDefinition.resolvedType && varDefinition.resolvedType->kind == TypeExpressionKind::DesignatedStorage && varDefinition.initializerExpression != nullptr) {
+                                const auto destExpression = expressionPool.add(resolveDefinitionExpression(definition, {}, statement->location));
+                                emitAssignmentExpressionIr(destExpression, varDefinition.initializerExpression.get(), statement->location);
+                            } else if (varDefinition.enclosingFunction == nullptr) {
+                                irNodes.addNew(IrNode::Var(definition), statement->location);
 
-                            for (auto& nestedConstant : varDefinition.nestedConstants) {
-                                irNodes.addNew(IrNode::Var(nestedConstant), statement->location);
+                                for (auto& nestedConstant : varDefinition.nestedConstants) {
+                                    irNodes.addNew(IrNode::Var(nestedConstant), statement->location);
+                                }
                             }
                         }
                     }

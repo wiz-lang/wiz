@@ -131,8 +131,7 @@ in rom @ 0x150 {
             level.width = a = *source++;
             level.height = a = *source++;
 
-            var dest : *u8 in de;
-            dest = &gb.ram.map[0];
+            var dest : *u8 in de = &gb.ram.map[0];
             // fallthrough.
         }
 
