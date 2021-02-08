@@ -991,7 +991,7 @@ namespace wiz {
                                         operandRoots.push_back(InstructionOperandRoot(left, compiler.createOperandFromExpression(left, true)));
                                         operandRoots.push_back(InstructionOperandRoot(bitIndex7Expression.get(), compiler.createOperandFromExpression(bitIndex7Expression.get(), true)));
 
-                                        if (compiler.getBuiltins().selectInstruction(InstructionType::VoidIntrinsic(bit), 0, operandRoots)) {
+                                        if (compiler.getBuiltins().selectInstruction(InstructionType::VoidIntrinsic(bit), compiler.getModeFlags(), operandRoots)) {
                                             return std::make_unique<PlatformTestAndBranch>(
                                                 InstructionType::VoidIntrinsic(bit),
                                                 std::vector<const Expression*> {left, bitIndex7Expression.get()},
@@ -1099,20 +1099,16 @@ namespace wiz {
             }
             case BinaryOperatorKind::BitIndexing: {
                 // left $ right -> { bit(left, right); } && !zero
-                if (const auto leftRegister = left->tryGet<Expression::ResolvedIdentifier>()) {
-                    if (leftRegister->definition->kind == DefinitionKind::BuiltinRegister) {
-                        if (const auto rightInteger = right->tryGet<Expression::IntegerLiteral>()) {
-                            const auto bitIndex = rightInteger->value;
+                std::vector<InstructionOperandRoot> operandRoots;
+                operandRoots.push_back(InstructionOperandRoot(left, compiler.createOperandFromExpression(left, true)));
+                operandRoots.push_back(InstructionOperandRoot(right, compiler.createOperandFromExpression(right, true)));
 
-                            if (Int128(0) <= bitIndex && bitIndex <= Int128(7)) {
-                                return std::make_unique<PlatformTestAndBranch>(
-                                    InstructionType::VoidIntrinsic(bit),
-                                    std::vector<const Expression*> {left, right},
-                                    std::vector<PlatformBranch> { PlatformBranch(zero, false, true) }
-                                );
-                            }
-                        }
-                    }
+                if (compiler.getBuiltins().selectInstruction(InstructionType::VoidIntrinsic(bit), compiler.getModeFlags(), operandRoots)) {
+                    return std::make_unique<PlatformTestAndBranch>(
+                        InstructionType::VoidIntrinsic(bit),
+                        std::vector<const Expression*> {left, right},
+                        std::vector<PlatformBranch> { PlatformBranch(zero, false, true) }
+                    );
                 }
 
                 return nullptr;

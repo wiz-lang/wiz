@@ -107,9 +107,20 @@ func bitindex_i8_test {
     (*((iy + 42) as *u8))$6 = true;
 // BLOCK             fd cb 2a fe           set 7, (iy + 42)
     (*((iy + 42) as *u8))$7 = true;
+// BLOCK             c9                    ret
 }
 
-// BLOCK
-
+func bit_index_pointer_alias() {
+    struct Monster {
+        flags : u8,
+    }
+    var monster : *Monster in iy;
+// BLOCK             fd cb 00 86           res 0, (iy + 00)
+    monster.flags$0 = false;
+// BLOCK             fd cb 00 46           bit 0, (iy + 00)
+// BLOCK             c8                    ret z
+    return if !monster.flags$0;
+// BLOCK             c9                    ret
 }
 
+}
