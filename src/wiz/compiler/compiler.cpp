@@ -82,6 +82,21 @@ namespace wiz {
             scope->getDefinitions(results);
         }
 
+        std::sort(results.begin(), results.end(),
+            [](const Definition* a, const Definition* b) {
+                if (a->name.getLength() > 0 && (a->name[0] == '$' || a->name[0] == '%')
+                && b->name.getLength() > 0 && (b->name[0] != '$' && b->name[0] != '%')) {
+                    return false;
+                } else if (a->name.getLength() > 0 && (a->name[0] != '$' && a->name[0] != '%')
+                && b->name.getLength() > 0 && (b->name[0] == '$' || b->name[0] == '%')) {
+                    return true;
+                } else if (a->name != b->name) {
+                    return a->name < b->name;
+                } else {
+                    return a < b;
+                }
+            });
+
         return results;
     }
 
