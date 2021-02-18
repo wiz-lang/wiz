@@ -20,8 +20,6 @@ HAS_CC := $(shell $(LOCATE_COMMAND) cc)
 HAS_GCC := $(shell $(LOCATE_COMMAND) gcc)
 HAS_CLANG := $(shell $(LOCATE_COMMAND) clang)
 
-$(info HAS_GCC $(HAS_GCC))
-
 ifndef HAS_PREDEFINED_CC
 ifdef HAS_CC
 	CC := cc
