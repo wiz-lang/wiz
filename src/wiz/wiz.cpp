@@ -398,8 +398,8 @@ class EmLogger : public wiz::Logger {
             logger.call<void, std::string>("notice", message.c_str());
         }
 
-        virtual ColorSetting getColorSetting() const override { return ColorSetting::Auto; }
-        virtual void setColorSetting(ColorSetting value) override { static_cast<void>(value); }
+        virtual wiz::LoggerColorSetting getColorSetting() const override { return wiz::LoggerColorSetting::Auto; }
+        virtual void setColorSetting(wiz::LoggerColorSetting value) override { static_cast<void>(value); }
 
         emscripten::val logger;
 };
