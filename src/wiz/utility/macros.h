@@ -6,7 +6,7 @@
 #define WIZ_MAYBE_UNUSED_FORCE_INLINE(x) __forceinline x
 #elif defined(__clang__) || defined(__GNUC__)
 #define WIZ_FORCE_INLINE  inline
-#define WIZ_MAYBE_UNUSED_FORCE_INLINE(x) inline static x __attribute__((always_inline)) __attribute__((unused))
+#define WIZ_MAYBE_UNUSED_FORCE_INLINE(x) inline static __attribute__((always_inline)) __attribute__((unused)) x
 #else
 #define WIZ_FORCE_INLINE inline
 #define WIZ_MAYBE_UNUSED_FORCE_INLINE(x) inline x
