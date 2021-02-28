@@ -773,13 +773,13 @@ namespace wiz {
                 std::vector<std::uint8_t> opcode = op.second;
                 opcode[opcode.size() - 1] |= sig.baseOpcode;
 
-                builtins.createInstruction(InstructionSignature(op.first, modeMem8 | (sig.mem8Idx16Pattern != nullptr ? modeIdx8 : 0), {patternA, sig.mem8Idx8Pattern}), sig.mem8Encoding, InstructionOptions(std::move(opcode), {1}, {}));
+                builtins.createInstruction(InstructionSignature(op.first, modeMem8 | (sig.mem8Idx16Pattern != nullptr ? modeIdx8 : 0), {patternA, sig.mem8Idx8Pattern}), sig.mem8Encoding, InstructionOptions(opcode, {1}, {}));
                 if (sig.mem8Idx16Pattern != nullptr) { 
-                    builtins.createInstruction(InstructionSignature(op.first, modeMem8 | modeIdx16, {patternA, sig.mem8Idx16Pattern}), sig.mem8Encoding, InstructionOptions(std::move(opcode), {1}, {}));
+                    builtins.createInstruction(InstructionSignature(op.first, modeMem8 | modeIdx16, {patternA, sig.mem8Idx16Pattern}), sig.mem8Encoding, InstructionOptions(opcode, {1}, {}));
                 }
-                builtins.createInstruction(InstructionSignature(op.first, modeMem16 | (sig.mem16Idx16Pattern != nullptr ? modeIdx8 : 0), {patternAA, sig.mem16Idx8Pattern}), sig.mem16Encoding, InstructionOptions(std::move(opcode), {1}, {}));
+                builtins.createInstruction(InstructionSignature(op.first, modeMem16 | (sig.mem16Idx16Pattern != nullptr ? modeIdx8 : 0), {patternAA, sig.mem16Idx8Pattern}), sig.mem16Encoding, InstructionOptions(opcode, {1}, {}));
                 if (sig.mem16Idx16Pattern != nullptr) { 
-                    builtins.createInstruction(InstructionSignature(op.first, modeMem16 | modeIdx16, {patternAA, sig.mem16Idx16Pattern}), sig.mem16Encoding, InstructionOptions(std::move(opcode), {1}, {}));
+                    builtins.createInstruction(InstructionSignature(op.first, modeMem16 | modeIdx16, {patternAA, sig.mem16Idx16Pattern}), sig.mem16Encoding, InstructionOptions(opcode, {1}, {}));
                 }
             }
         }
@@ -790,13 +790,13 @@ namespace wiz {
             }
 
             std::vector<std::uint8_t> opcode {static_cast<std::uint8_t>(0x80 | sig.baseOpcode)};
-            builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, modeMem8 | (sig.mem8Idx16Pattern != nullptr ? modeIdx8 : 0), {sig.mem8Idx8Pattern, patternA}), sig.mem8Encoding, InstructionOptions(std::move(opcode), {0}, {}));
+            builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, modeMem8 | (sig.mem8Idx16Pattern != nullptr ? modeIdx8 : 0), {sig.mem8Idx8Pattern, patternA}), sig.mem8Encoding, InstructionOptions(opcode, {0}, {}));
             if (sig.mem8Idx16Pattern != nullptr) { 
-                builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, modeMem8 | modeIdx16, {sig.mem8Idx16Pattern, patternA}), sig.mem8Encoding, InstructionOptions(std::move(opcode), {0}, {}));
+                builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, modeMem8 | modeIdx16, {sig.mem8Idx16Pattern, patternA}), sig.mem8Encoding, InstructionOptions(opcode, {0}, {}));
             }
-            builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, modeMem16 | (sig.mem16Idx16Pattern != nullptr ? modeIdx8 : 0), {sig.mem16Idx8Pattern, patternAA}), sig.mem16Encoding, InstructionOptions(std::move(opcode), {0}, {}));
+            builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, modeMem16 | (sig.mem16Idx16Pattern != nullptr ? modeIdx8 : 0), {sig.mem16Idx8Pattern, patternAA}), sig.mem16Encoding, InstructionOptions(opcode, {0}, {}));
             if (sig.mem16Idx16Pattern != nullptr) { 
-                builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, modeMem16 | modeIdx16, {sig.mem16Idx16Pattern, patternAA}), sig.mem16Encoding, InstructionOptions(std::move(opcode), {0}, {}));
+                builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, modeMem16 | modeIdx16, {sig.mem16Idx16Pattern, patternAA}), sig.mem16Encoding, InstructionOptions(opcode, {0}, {}));
             }
         }
         // bit - overflow = mem $ 6, negative = mem $ 7, zero = mem & a

@@ -494,12 +494,12 @@ namespace wiz {
                 items.reserve(length);
 
                 const TypeExpression* elementType = reducedValueExpression->info->type.get();
-                for (std::size_t i = 0; i != length; ++i) {
-                    if (i == length - 1) {
-                        items.push_back(std::move(reducedValueExpression));
-                    } else {
+                if (length > 0) {
+                    for (std::size_t i = 0; i != length - 1; ++i) {
                         items.push_back(reducedValueExpression->clone());
                     }
+
+                    items.push_back(std::move(reducedValueExpression));
                 }
 
                 return createArrayLiteralExpression(std::move(items), elementType, expression->location);
@@ -2074,9 +2074,10 @@ namespace wiz {
                             return simplifyIndirectionOffsetExpression(std::move(resultType), operand.get(), context, absolutePosition, Int128(offset));
                         }
 
+                        const auto qualifiers = operand->info->qualifiers;
                         return makeFwdUnique<const Expression>(
                             Expression::UnaryOperator(unaryOperator.op, std::move(operand)), expression->location,
-                            ExpressionInfo(context, std::move(resultType), operand->info->qualifiers));
+                            ExpressionInfo(context, std::move(resultType), qualifiers));
                     }
 
                     // Address reserve operator `@`
@@ -5219,6 +5220,7 @@ namespace wiz {
 
                 if (inlined || funcDefinition->inlined) {
                     tailCall = false;
+                    static_cast<void>(tailCall);
 
                     auto oldReturnKind = funcDefinition->returnKind;
                     auto oldInlined = funcDefinition->inlined;
@@ -5245,6 +5247,7 @@ namespace wiz {
                     if (valid) {
                         // TODO: templating on type or expression???
                         valid = emitFunctionIr(definition, function->location);
+                        static_cast<void>(valid);
                     }
 
                     exitScope();
@@ -6097,9 +6100,7 @@ namespace wiz {
                 }
                 break;
             }
-            case BranchKind::None: {
-                return true;
-            }
+            case BranchKind::None: return true;
             default: break;
         }
 
@@ -6112,7 +6113,7 @@ namespace wiz {
 
         if (condition) {
             if (!isBooleanType(condition->info->type.get())) {
-                report->error("branch conditional must be a boolean expression, but got expression of type `" + getTypeName(condition->info->type.get()) + "`", destination->location);
+                report->error("branch conditional must be a boolean expression, but got expression of type `" + getTypeName(condition->info->type.get()) + "`", condition->location);
                 return false;
             }
 
@@ -6121,7 +6122,7 @@ namespace wiz {
                 if (op == UnaryOperatorKind::LogicalNegation) {
                     return emitBranchIr(distanceHint, kind, destination, returnValue, !negated, unaryOperator->operand.get(), condition->location);
                 } else {
-                    report->error(getUnaryOperatorName(op).toString() + " operator is not allowed in conditional", destination->location);
+                    report->error(getUnaryOperatorName(op).toString() + " operator is not allowed in conditional", condition->location);
                 }
             } else if (const auto binaryOperator = condition->tryGet<Expression::BinaryOperator>()) {
                 const auto preNegated = negated && getBinaryOperatorLogicalNegation(binaryOperator->op) != BinaryOperatorKind::None;

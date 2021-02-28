@@ -181,10 +181,10 @@ namespace wiz {
                     break;
                 }
                 case OptionType::Color: {
-                    Logger::ColorSetting setting = Logger::ColorSetting::None;
-                    if (option.value == "none"_sv) { setting = Logger::ColorSetting::None; } 
-                    else if (option.value == "auto"_sv) { setting = Logger::ColorSetting::Auto; }
-                    else if (option.value == "ansi"_sv) { setting = Logger::ColorSetting::ForceAnsi; }
+                    LoggerColorSetting setting = LoggerColorSetting::None;
+                    if (option.value == "none"_sv) { setting = LoggerColorSetting::None; } 
+                    else if (option.value == "auto"_sv) { setting = LoggerColorSetting::Auto; }
+                    else if (option.value == "ansi"_sv) { setting = LoggerColorSetting::ForceAnsi; }
                     else {
                         report->notice("unrecognized option `" + option.value.toString() + "` provided to `--color` argument.");
                     }
@@ -349,13 +349,13 @@ namespace wiz {
 
                     // FIXME: hardcoded.
                     const auto debugFormat = debugFormatCollection.find(debugFormatName);
-                    if (debugFormat == nullptr) {
+                    if (debugFormat != nullptr) {
+                        debugFormat->generate(debugContext);
+                    } else {
                         report->error(
                             "`--symbol-format` argument of `" + debugFormatName.toString() + "` is not supported.\n"
                             "    use `--help` to see usage of this command-line option.", SourceLocation(), ReportErrorFlags::Fatal);
                     }
-
-                    debugFormat->generate(debugContext);
                 }
 
 #if 0
@@ -442,7 +442,7 @@ EMSCRIPTEN_BINDINGS(wiz_module) {
 #else
 
 int main(int argc, const char** argv) {
-    wiz::Report report(std::make_unique<wiz::FileLogger>(stderr, wiz::Logger::ColorSetting::Auto));
+    wiz::Report report(std::make_unique<wiz::FileLogger>(stderr, wiz::LoggerColorSetting::Auto));
     wiz::FileResourceManager resourceManager;
     wiz::ArrayView<const char*> arguments(argv + 1, argc > 0 ? argc - 1 : 0);
     return wiz::run(&report, &resourceManager, arguments);
