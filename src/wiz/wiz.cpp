@@ -303,10 +303,12 @@ namespace wiz {
             Compiler compiler(std::move(program), platform, &stringPool, &config, &importManager, report, std::move(defines));
 
             if (compiler.compile()) {
+                StringView outputFormatName;
                 OutputFormat* outputFormat = nullptr;
 
                 if (const auto formatValue = config.checkString(report, "format"_sv, false)) {
-                    outputFormat = outputFormatCollection.find(formatValue->second);
+                    outputFormatName = formatValue->second;
+                    outputFormat = outputFormatCollection.find(outputFormatName);
                     if (outputFormat == nullptr) {
                         report->error("`format` of `" + formatValue->second.toString() + "` is not supported.", formatValue->first->location, ReportErrorFlags::Fatal);
                         return 1;
@@ -314,17 +316,19 @@ namespace wiz {
                 }
 
                 if (outputFormat == nullptr) {
-                    outputFormat = outputFormatCollection.find(path::getExtension(outputName));
+                    outputFormatName = path::getExtension(outputName);
+                    outputFormat = outputFormatCollection.find(outputFormatName);
 
                     if (outputFormat == nullptr) {
-                        outputFormat = outputFormatCollection.find("bin"_sv);
+                        outputFormatName = "bin"_sv;
+                        outputFormat = outputFormatCollection.find(outputFormatName);
                     }
                 }
 
                 report->log(">> Writing ROM...");
 
                 auto banks = compiler.getRegisteredBanks();
-                OutputFormatContext outputContext(report, &stringPool, &config, outputName, banks);
+                OutputFormatContext outputContext(report, &stringPool, &config, outputFormatName, outputName, banks);
 
                 if (!outputFormat->generate(outputContext) || !report->validate()) {
                     return 1;
@@ -341,7 +345,7 @@ namespace wiz {
                 }
 
                 if (debugFormatName.getLength() != 0) {
-                    DebugFormatContext debugContext(resourceManager, report, &stringPool, &config, outputName, &outputContext, compiler.getRegisteredDefinitions());
+                    DebugFormatContext debugContext(resourceManager, report, &stringPool, &config, debugFormatName, outputName, &outputContext, compiler.getRegisteredDefinitions());
 
                     // FIXME: hardcoded.
                     const auto debugFormat = debugFormatCollection.find(debugFormatName);

@@ -22,6 +22,7 @@ namespace wiz {
             Report* report,
             StringPool* stringPool,
             const Config* config,
+            StringView formatName,
             StringView outputName,
             const OutputFormatContext* outputContext,
             std::vector<const Definition*> definitions)
@@ -29,6 +30,7 @@ namespace wiz {
         report(report),
         stringPool(stringPool),
         config(config),
+        formatName(formatName),
         outputName(outputName),
         outputContext(outputContext),
         definitions(definitions) {}
@@ -37,6 +39,7 @@ namespace wiz {
         Report* report;
         StringPool* stringPool;
         const Config* config;
+        StringView formatName;
         StringView outputName;
         const OutputFormatContext* outputContext;
         std::vector<const Definition*> definitions;

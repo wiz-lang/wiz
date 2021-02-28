@@ -36,13 +36,19 @@ namespace wiz {
             return false;
         }
 
+        bool isSnesRelatedFormat(DebugFormatContext& context) {
+            return context.outputContext->formatName == "sfc"_sv
+                || context.outputContext->formatName == "smc"_sv;
+        }
+
         void dumpAddress(Writer* writer, const Definition* definition, DebugFormatContext& context) {
             const auto outputContext = context.outputContext;
             const auto address = definition->getAddress();
 
             if (address.hasValue()) {
                 if (address->absolutePosition.hasValue()) {
-                    const auto outputRelative = isDebugLabelOutputRelative(definition);
+                    const auto snes = isSnesRelatedFormat(context);
+                    const auto outputRelative = !snes && isDebugLabelOutputRelative(definition);
 
                     // Ignore hardware registers / 'extern'.
                     // If these are mapper-related, definitions for different mappers might alias each other.

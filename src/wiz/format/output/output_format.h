@@ -19,11 +19,13 @@ namespace wiz {
         OutputFormatContext(Report* report,
             StringPool* stringPool,
             const Config* config,
+            StringView formatName,
             StringView outputName,
             ArrayView<const Bank*> banks)
         : report(report),
         stringPool(stringPool),
         config(config),
+        formatName(formatName),
         outputName(outputName),
         banks(banks) {}
 
@@ -32,6 +34,7 @@ namespace wiz {
         Report* report;
         StringPool* stringPool;
         const Config* config;
+        StringView formatName;
         StringView outputName;
         ArrayView<const Bank*> banks;
 
