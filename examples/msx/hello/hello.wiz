@@ -4,7 +4,18 @@ bank rom1 @ 0x4000 : [constdata; 0x4000];
 bank rom2 @ 0x8000 : [constdata; 0x4000];
 bank ram @ 0xE000 : [vardata; 0x2000];
 
-in ram {}
+in ram {
+    struct Word {
+        low : u8,
+        high : u8,
+    }
+
+    struct Enemy {
+        hp : Word
+    }
+
+    var enemy_data : [Enemy; 32];
+}
 
 in rom1 {
     namespace header {
@@ -27,6 +38,15 @@ in rom1 {
         hl = &vdp_init_data as u16;
         b = vdp_init_data.len;
         do { io_write_inc_repeat(c, hl, b); } while !zero;
+
+        {
+            var enemy_ptr : *Enemy in ix;
+            enemy_ptr.hp.low = 1;
+            enemy_ptr.hp.high = 1;
+
+            bc = sizeof(Enemy);
+            <>:enemy_ptr += bc;
+        }
 
         // Clear VRAM.
         io_write(msx.io.vdp.control, a = <:0x0000);

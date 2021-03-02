@@ -2531,6 +2531,23 @@ namespace wiz {
                     return nullptr;
                 }
 
+                // If there are nested struct member accesses, fold together the constant offset part.
+                if (const auto cast = reducedAddressOf->tryGet<Expression::Cast>()) {
+                    const auto& castOperand = cast->operand;
+
+                    if (const auto binaryOperator = castOperand->tryGet<Expression::BinaryOperator>()) {
+                        if (binaryOperator->op == BinaryOperatorKind::Addition) {
+                            const auto& left = binaryOperator->left;
+                            const auto& right = binaryOperator->right;
+
+                            if (const auto offsetLiteral = right->tryGet<Expression::IntegerLiteral>()) {
+                                reducedAddressOf = left->clone();
+                                offset += offsetLiteral->value;
+                            }
+                        }
+                    }
+                }
+
                 return makeFwdUnique<const Expression>(
                     Expression::UnaryOperator(
                         UnaryOperatorKind::Indirection,
