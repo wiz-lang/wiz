@@ -1,0 +1,40 @@
+// SYSTEM  z80
+
+import "_z80_memmap.wiz";
+
+// BLOCK 000000
+in prg {
+
+func first_function() {
+// BLOCK             c9                    ret
+}
+
+func tailcall_test {
+// BLOCK             18 fd                 jr 0x0000
+    return first_function();
+// BLOCK             20 fb                 jr nz, 0x0000
+    return first_function() if !zero;
+// BLOCK             28 f9                 jr z, 0x0000
+    return first_function() if zero;
+// BLOCK             30 f7                 jr nc, 0x0000
+    return first_function() if !carry;
+// BLOCK             38 f5                 jr c, 0x0000
+    return first_function() if carry;
+
+// BLOCK             c3 00 00              jp 0x0000
+    ^return first_function();
+// BLOCK             c2 00 00              jp nz, 0x0000
+    ^return first_function() if !zero;
+// BLOCK             ca 00 00              jp z, 0x0000
+    ^return first_function() if zero;
+// BLOCK             d2 00 00              jp nc, 0x0000
+    ^return first_function() if !carry;
+// BLOCK             da 00 00              jp c, 0x0000
+    ^return first_function() if carry;
+// BLOCK             c9                    ret
+}
+
+// BLOCK             ff
+
+}
+
