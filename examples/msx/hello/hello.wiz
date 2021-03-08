@@ -6,6 +6,7 @@ bank ram @ 0xE000 : [vardata; 0x2000];
 in ram {}
 
 in rom {
+    // FIXME: add support for MSX ROM header format directly in Wiz.
     namespace header {
         const id = "AB";
         const init_handler = main;
