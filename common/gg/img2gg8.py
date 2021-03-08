@@ -1,8 +1,10 @@
+#!/usr/bin/env python
 import os
 import os.path
 import PIL.Image
 
 def write_chr(w, h, data, f):
+    buf = []
     for y in range(0, h, 8):
         for x in range(0, w, 8):
             for j in range(8):
@@ -10,25 +12,26 @@ def write_chr(w, h, data, f):
                 c = 0
                 for i in range(8):
                     c = (c * 2) | (data[x + i, y + j] & 1)
-                f.write(bytearray([c]))
+                buf.append(c)
                 
                 # Write second bits of this row.
                 c = 0
                 for i in range(8):
                     c = (c * 2) | ((data[x + i, y + j] >> 1) & 1)
-                f.write(bytearray([c]))
+                buf.append(c)
 
                 # Write third bits of this row.
                 c = 0
                 for i in range(8):
                     c = (c * 2) | ((data[x + i, y + j] >> 2) & 1)
-                f.write(bytearray([c]))
+                buf.append(c)
 
                 # Write high bits of this row.
                 c = 0
                 for i in range(8):
                     c = (c * 2) | ((data[x + i, y + j] >> 3) & 1)
-                f.write(bytearray([c]))
+                buf.append(c)
+    f.write(bytes(buf))
 
 if __name__ == '__main__':
     import sys

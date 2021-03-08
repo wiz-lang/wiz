@@ -1,9 +1,10 @@
-#!/bin/env python
+#!/usr/bin/env python
 import os
 import os.path
 import PIL.Image
 
 def write_chr(w, h, data, f):
+    buf = []
     for y in range(0, h, 8):
         for x in range(0, w, 8):
             for j in range(8):
@@ -11,7 +12,8 @@ def write_chr(w, h, data, f):
                 c = 0
                 for i in range(8):
                     c = (c << 1) | (1 if data[x + i, y + j] != 0 else 0)
-                f.write(chr(c))
+                buf.append(c)
+    f.write(bytes(buf))
 
 if __name__ == '__main__':
     import sys
@@ -21,14 +23,9 @@ if __name__ == '__main__':
         HEIGHT = None
         for arg in range(1, len(sys.argv)):
             filename = sys.argv[arg]
-            
+
             if filename[0] == '-':
-                if filename == '-oldfart':
-                    HEIGHT = 192
-                elif filename == '-newfart':
-                    HEIGHT = None
-                else:
-                    exit('Invalid argument `' + filename + '`.')
+                exit('Invalid argument `' + filename + '`.')
                 continue
             
             try:

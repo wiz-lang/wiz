@@ -4,6 +4,7 @@ import os.path
 import PIL.Image
 
 def write_chr(w, h, data, f):
+    buf = []
     for y in range(0, h, 8):
         for x in range(0, w, 8):
             for j in range(8):
@@ -11,7 +12,11 @@ def write_chr(w, h, data, f):
                 c = 0
                 for i in range(8):
                     c = (c << 1) | (1 if data[x + i, y + j] != 0 else 0)
-                f.write(chr(c))
+                buf.append(c)
+    f.write(bytes(buf))
+
+# TODO: validate two colors per row  + generate color map
+# TODO: turn into 1-bit CHR.
 
 if __name__ == '__main__':
     import sys
@@ -19,15 +24,14 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         WIDTH = 128
         HEIGHT = None
+        generate_colormap = False
         for arg in range(1, len(sys.argv)):
             filename = sys.argv[arg]
             
             if filename[0] == '-':
-                if filename == '-oldfart':
-                    HEIGHT = 192
-                elif filename == '-newfart':
-                    HEIGHT = None
-                else:
+                if filename == '-clr':
+                    generate_colormap = True
+                else
                     exit('Invalid argument `' + filename + '`.')
                 continue
             

@@ -1,10 +1,996 @@
 // TODO: add lots of missing I/O register definitions, clean up definitions.
 // TODO: variables in I/O space? instead of io_write/io_read, just use like a register/variable.
 namespace msx {
+    // The BIOS contains several helpful routines, as well as system variables
+    // that can interface with the BIOS routines, and allow for portable
+    // feature detection / I/O port address location between MSX machines.
+    //
+    // Whenever possible, it is better to call BIOS routines when functionality exists.
+    // This will ensure greater compatibility across MSX models.
+    // Better performance can be obtained with direct register use,
+    // but different models can vary in terms of ports and expansions that have available.
+    // VDP and memory page management should go through BIOS
+    //
+    // Documentation and names from original sources were subject to editing,
+    // to give more readable/self-documenting names when possible,
+    // and to help clarify some ambiguity when possible.
+    //
+    // References:
+    // http://map.grauw.nl/resources/msxbios.php
+    // http://map.grauw.nl/resources/msxsystemvars.php
+    // https://konamiman.github.io/MSX2-Technical-Handbook
+    // https://www.msx.org/wiki/Main-ROM_BIOS
+    // https://www.msx.org/wiki/System_variables_and_work_area
     namespace bios {
-        namespace rst {
-            // TODO: make defines for all the functions listed here: http://map.grauw.nl/resources/msxbios.php
+        // TODO: more system vars and ROM routines.
+
+        extern const msx_character_set_address @ 0x04 : *u8;
+
+        let VDP_READ_PORT_OFFSET_DATA = 0;
+        let VDP_READ_PORT_OFFSET_CONTROL = 1;
+        extern const vdp_read_port_index @ 0x06 : u8;
+
+        let VDP_WRITE_PORT_OFFSET_DATA = 0;
+        let VDP_WRITE_PORT_OFFSET_CONTROL = 1;
+        let VDP_WRITE_PORT_OFFSET_PALETTE_DATA = 2;
+        let VDP_WRITE_PORT_OFFSET_INDIRECT_DATA = 3;
+        extern const vdp_write_port_index @ 0x07 : u8;
+
+        let BASIC_VERSION_A_CHARSET_MASK = 0x0F;
+        let BASIC_VERSION_A_CHARSET_SHIFT = 0;
+        let BASIC_CHARSET_JAPANESE = 0;
+        let BASIC_CHARSET_INTERNATIONAL = 1;
+        let BASIC_CHARSET_KOREAN = 2;
+        let BASIC_VERSION_A_DATE_FORMAT_MASK = 0x70;
+        let BASIC_VERSION_A_DATE_FORMAT_SHIFT = 4;
+        let BASIC_DATE_FORMAT_YMD = 0;
+        let BASIC_DATE_FORMAT_MDY = 1;
+        let BASIC_DATE_FORMAT_DMY = 2;
+        let BASIC_VERSION_A_IRQ_FREQUENCY_50 = 0x80;
+        let BASIC_VERSION_A_IRQ_FREQUENCY_60 = 0x00;
+        // Version info about the Basic ROM (first byte).
+        extern const basic_version_a @ 0x2B : u8;
+
+        let BASIC_VERSION_B_KEYBOARD_TYPE_MASK = 0x0F;
+        let BASIC_VERSION_B_KEYBOARD_TYPE_SHIFT = 0;
+        let BASIC_KEYBOARD_TYPE_JAPANESE = 0;
+        let BASIC_KEYBOARD_TYPE_INTERNATIONAL = 1;
+        let BASIC_KEYBOARD_TYPE_FRENCH = 2;
+        let BASIC_KEYBOARD_TYPE_UK = 3;
+        let BASIC_KEYBOARD_TYPE_GERMAN = 4;        
+        let BASIC_VERSION_B_VERSION_TYPE_MASK = 0xF0;
+        let BASIC_VERSION_B_VERSION_TYPE_SHIFT = 4;
+        let BASIC_VERSION_TYPE_JAPANESE = 0;
+        let BASIC_VERSION_TYPE_INTERNATIONAL = 1;        
+        // Version info about the Basic ROM (second byte).
+        extern const basic_version_b @ 0x2C : u8;
+
+        let MSX_VERSION_1 = 0;
+        let MSX_VERSION_2 = 1;
+        let MSX_VERSION_2_PLUS = 2;
+        let MSX_VERSION_TURBO_R = 3;
+        // The version of MSX used by this machine.
+        extern const msx_version @ 0x2D : u8;
+
+        // (MSX Turbo-R required) Whether or not MSX-MIDI capabilities are present.
+        extern const turbo_r_msx_midi @ 0x2E : u8;
+
+        // Current screen width per line.
+        extern var current_line_length @ 0xF3B0 : u8;
+
+        // Used for setting up screen 0.
+        extern var screen_0_line_length @ 0xF3AE : u8;
+        extern var screen_0_nametable @ 0xF3B3 : u16;
+        extern var screen_0_tile_color_table @ 0xF3B5 : u16;
+        extern var screen_0_tile_pattern_table @ 0xF3B7 : u16;
+        extern var screen_0_sprite_attribute_table @ 0xF3B9 : u16;
+        extern var screen_0_sprite_pattern_table @ 0xF3BB : u16;
+
+        // Used for setting up screen 1.
+        extern var screen_1_line_length @ 0xF3AF : u8;
+        extern var screen_1_nametable @ 0xF3BD : u16;
+        extern var screen_1_tile_color_table @ 0xF3BF : u16;
+        extern var screen_1_tile_pattern_table @ 0xF3C1 : u16;
+        extern var screen_1_sprite_attribute_table @ 0xF3C3 : u16;
+        extern var screen_1_sprite_pattern_table @ 0xF3C5 : u16;
+
+        // Used for setting up screen 2.
+        extern var screen_2_nametable @ 0xF3C7 : u16;
+        extern var screen_2_tile_color_table @ 0xF3C9 : u16;
+        extern var screen_2_tile_pattern_table @ 0xF3CB : u16;
+        extern var screen_2_sprite_attribute_table @ 0xF3CD : u16;
+        extern var screen_2_sprite_pattern_table @ 0xF3CF : u16;
+
+        // Used for setting up screen 3.
+        extern var screen_3_nametable @ 0xF3D1 : u16;
+        extern var screen_3_tile_color_table @ 0xF3D3 : u16;
+        extern var screen_3_tile_pattern_table @ 0xF3D5 : u16;
+        extern var screen_3_sprite_attribute_table @ 0xF3D7 : u16;
+        extern var screen_3_sprite_pattern_table @ 0xF3D9 : u16;
+
+        // Whether or not key presses clicking sounds are enabled.
+        extern var key_press_click_enabled @ 0xF3DB : u8;
+        // Location of the cursor.
+        extern var cursor_y @ 0xF3DC : u8;
+        extern var cursor_x @ 0xF3DD : u8;
+        // Whether or not function keys are visible.
+        extern var function_keys_visible @ 0xF3DE : u8;
+
+        // RAM mirrors of the various VDP registers.
+        extern var vdp_register_0 @ 0xF3DF : u8;
+        extern var vdp_register_1 @ 0xF3E0 : u8;
+        extern var vdp_register_2 @ 0xF3E1 : u8;
+        extern var vdp_register_3 @ 0xF3E2 : u8;
+        extern var vdp_register_4 @ 0xF3E3 : u8;
+        extern var vdp_register_5 @ 0xF3E4 : u8;
+        extern var vdp_register_6 @ 0xF3E5 : u8;
+        extern var vdp_register_7 @ 0xF3E6 : u8;
+        extern var vdp_status @ 0xF3E7 : u8;
+
+        // Color of the foreground.
+        extern var foreground_color @ 0xF3E9 : u8;
+        // Color of the background.
+        extern var background_color @ 0xF3EA : u8;
+        // Color of the border area.
+        extern var border_color @ 0xF3EB : u8;
+
+        // Used to hold the result of reading lines from text input.
+        extern var line_buffer @ 0xF55E : [u8; 258];
+
+        // (MSX2) logical operation code
+        extern var logical_operation_code @ 0xFB02 : u8;
+
+        // Value of the software clock, each VDP interrupt increases it by 1.
+        extern var time @ 0xFC9E : u8;
+        extern var jiffy @ 0xFC9E : u8;
+
+        // Current screen mode.
+        extern var screen_mode @ 0xFCAF : u8;
+        // Previous screen mode befroe the program ran.
+        extern var old_screen_mode @ 0xFCB0 : u8;
+
+        // Interrupt handler invoked on each normal interrupt request.
+        // Registers are automatically saved/restored before this hook is called.
+        // To skip further BIOS handling, you can jump to _vdp_get_status, instead of returning.
+        extern var key_irq_hook_code @ 0xFD9A : [u8; 5];
+        let key_irq_hook = &key_irq_hook_code as func;
+
+        // Interrupt handler invoked at regular intervals, depending on the system refresh rate (50 or 60Hz)
+        // Note that registers are automatically saved/restored before this hook is called,
+        // except for the a register which must be preserved manually.
+        extern var timer_irq_hook_code @ 0xFD9F : [u8; 5];
+        let timer_irq_hook = &timer_irq_hook_code as func;
+
+        // Interrupt handler for non-maskable interrupts.
+        // Registers are automatically saved/restored before this hook is called.
+        extern var nmi_hook_code @ 0xFD9A : [u8; 5];
+        let nmi_hook = &nmi_hook_code as func;
+
+        // Tests RAM and sets RAM slot for the system.
+        // Dirty: all
+        inline func startup() {
+            (0x00 as func)();
         }
+
+        // Tests whether the character of *(hl as *u8) is the specified character
+        // if not, it generates SYNTAX ERROR, otherwise it goes to get_basic_char. 
+        // FIXME: needs inline arguments
+        // FIXME: Wiz needs a #[opcode] attribute feature, to allow inserting arbitrary constants inline.
+        // FIXME: Wiz also needs a way to pass constants to inline funcs.
+        // Dirty: af, hl
+        // inline func expect_basic_char(char_address : *u8 in hl, expected : u8) {
+        //    (0x08 as func)();
+        // }
+
+        let SLOT_EXPANDED = 0x80;
+        let SLOT_PRIMARY_MASK = 0x03;
+        let SLOT_PRIMARY_SHIFT = 0;
+        let SLOT_SECONDARY_MASK = 0x0C;
+        let SLOT_SECONDARY_SHIFT = 2;
+
+        // Selects the slot corresponding to the value of a
+        // and reads one byte from the memory of the slot.
+        // When this routine is called, the interrupt is inhibited
+        // and remains inhibited even after execution ends.
+        // Dirty: af, bc, de
+        inline func slot_read(slot : u8 in a, address : *u8 in hl) : u8 in a {
+            (0x0C as func)();
+        }
+
+        // Gets a character (or a token) from BASIC text
+        // Dirty: af, hl
+        inline func get_basic_char(char_address : *u8 in hl) : u8 in a {
+            (0x10 as func)();
+        }
+
+        // selects the slot corresponding to the value of a
+        // and writes one byte to the memory of the slot.
+        // When this routine is called, interrupts are inhibited
+        // and remain so even after execution ends.
+        // Dirty: af, bc, d
+        inline func slot_write(slot : u8 in a, address : *u8 in hl, value : u8 in e) : u8 in a {
+            (0x14 as func)();
+        }
+
+        // Sends the value to current device
+        // Dirty: none
+        inline func output_device_write(value : u8 in a) {
+            (0x18 as func)();
+        }
+
+        // Calls the routine in another slot (inter-slot call)
+        // Dirty: depends on the calling routine
+        inline func slot_call(slot : u8 in iyh, address : u16 in ix) {
+            (0x1C as func)();
+        }
+
+        // Compares the contents of hl and de.
+        // Updates the zero and carry flags, d
+        // Dirty: af
+        inline func cmp_hl_de(left : u16 in hl, right : u16 in de) {
+            (0x20 as func)();
+        }
+
+        // Selects the slot corresponding to the value of a
+        // and enables the slot to be used.
+        // When this routine is called, interrupts are inhibited
+        // and remain so even after execution ends.
+        // Dirty: all
+        inline func slot_enable(slot : u8 in a, page : u8 in h) {
+            (0x24 as func)();
+        }
+
+        // Returns the type of DAC (decimal accumulator)
+        // Dirty: af
+        inline func get_dac_type() {
+            (0x28 as func)();
+        }
+
+        // Calls the routine in another slot.
+        // FIXME: needs inline arguments
+        // Dirty: af, and other registers depending on the calling routine
+        // inline func far_call(slot : u8, address : u16) {
+        //     (0x30 as func)();
+        // }
+
+        // Executes the interrupt routine
+        // Dirty: none
+        inline func key_irq() {
+            (0x38 as func)();
+        }
+
+        // Initializes the I/O device.
+        // Dirty: all
+        inline func init_io() {
+            (0x3B as func)();
+        }
+
+        // Initializes the contents of function keys.
+        // Dirty: all
+        inline func init_function_keys() {
+            (0x3E as func)();
+        }
+
+        // Inhibits the screen display.
+        // Dirty: af, bc
+        inline func disable_screen() {
+            (0x41 as func)();
+        }
+
+        // Enables the screen.
+        // Dirty: all
+        inline func enable_screen() {
+            (0x44 as func)();
+        }
+
+        // Writes data into the VDP register.
+        // Dirty: af, bc
+        inline func vdp_register_write(reg : u8 in c, value : u8 in b) {
+            (0x47 as func)();
+        }
+
+        // Reads the contents of VRAM.
+        // (MSX2 note: For compatibility with MSX1 this only allows addressing the 16K of VRAM.
+        // To use more than 14 bits of addressing, see vdp_big_vram_read)
+        // Dirty: af, bc
+        inline func vdp_vram_read(address : u16 in hl) : u8 in a {
+            (0x4A as func)();
+        }
+
+        // Write the contents of VRAM.
+        // (MSX2 note: For compatibility with MSX1 this only allows addressing the 16K of VRAM.
+        // To use more than 14 bits of addressing, see vdp_big_vram_write)
+        // Dirty: af, bc
+        inline func vdp_vram_write(address : u16 in hl, value : u8 in a) {
+            (0x4D as func)();
+        }
+
+        // Sets VRAM address to VDP and enables it to be read.
+        // This is used to read data from the sequential VRAM area by using the address
+        // auto-increment function of VDP. This enables faster readout than using vdp_vram_read
+        // in a loop, but see also vdp_vram_read_block for block reads.
+        // (MSX2 note: For compatibility with MSX1 this only allows addressing the 16K of VRAM.
+        // To use more than 14 bits of addressing, see vdp_big_set_read_address)
+        // Dirty: af
+        inline func vdp_set_read_address(address : u16 in hl) {
+            (0x50 as func)();
+        }
+
+        // Sets VRAM address to VDP and enables it to be written.
+        // This is used to write data from the sequential VRAM area by using the address
+        // auto-increment function of VDP. This enables faster writes than using vdp_vram_write
+        // in a loop, but see also vdp_vram_write_block for block writes.
+        // (MSX2 note: For compatibility with MSX1 this only allows addressing the 16K of VRAM.
+        // To use more than 14 bits of addressing, see vdp_big_set_write_address)
+        // Dirty: af
+        inline func vdp_set_write_address(address : u16 in hl) {
+            (0x53 as func)();
+        }
+
+        // Fills the specified VRAM area with the given value.
+        // (MSX2 note: For compatibility with MSX1 this only allows addressing the 16K of VRAM.
+        // To use more than 14 bits of addressing, see vdp_big_vram_fill_block)
+        // Dirty: af, bc
+        inline func vdp_vram_fill_block(dest : u16 in hl, value : u8 in a, length : u16 in bc) {
+            (0x56 as func)();
+        }
+
+        // Block read data into a destination in memory, from a source in VRAM.
+        // (MSX2 note: All bits of the address are valid, so this supports addressing more than 16K)
+        // Dirty: all
+        inline func vdp_vram_read_block(dest : u16 in de, source : *u8 in hl, length : u16 in bc) {
+            (0x59 as func)();
+        }
+
+        // Block write data to a destination in VRAM, from a source in memory.
+        // (MSX2 note: All bits of the address are valid, so this supports addressing more than 16K)
+        // Dirty: all
+        inline func vdp_vram_write_block(dest : u16 in de, source : *u8 in hl, length : u16 in bc) {
+            (0x5C as func)();
+        }
+
+        // Changes the screen mode and initializes the screen.
+        // For modes 0-3, this is equivalent to calling the appropriate init_screen_*(...) function.
+        // For other modes, th
+        // (MSX2: This does not initialize palettes.
+        // To initialise palettes as well, see vdp_change_mode_and_palette in SUB-ROM)
+        // Dirty: all
+        inline func vdp_change_mode(screen_mode : u8 in a) {
+            (0x5F as func)();
+        }
+
+        // Apply the color settings to the screen.
+        // Dirty: all
+        inline func vdp_apply_colors() {
+            (0x62 as func)();
+        }
+
+        // Executes NMI (Non-Maskable Interrupt) handling routine
+        // Dirty: none
+        inline func nmi() {
+            (0x66 as func)();
+        }
+
+        // Initialises all sprites.
+        // The sprite pattern is cleared to null,
+        // the sprite number to the sprite plane number,
+        // the sprite colour to the foregtound colour.
+        // The vertical location of the sprite is set to 209 (mode 0 to 3) or 217 (mode 4 to 8).
+        // Dirty: all
+        inline func clear_sprites() {
+            (0x69 as func)();
+        }
+
+        // Initialises the screen to SCREEN 0 mode.
+        // In this routine, the palette is not initialised.
+        // To initialise the palette, call init_palette in SUB-ROM after this call.
+        // Dirty: all
+        inline func init_screen_0(
+            nametable : u16 in screen_0_nametable,
+            tile_pattern_table : u16 in screen_0_tile_pattern_table
+        ) {
+            (0x6C as func)();
+        }
+
+        // Initialises the screen to SCREEN 1 mode.
+        // In this routine, the palette is not initialised.
+        // Dirty: all
+        inline func init_screen_1(
+            nametable : u16 in screen_1_nametable,
+            tile_color_table : u16 in screen_1_tile_color_table,
+            tile_pattern_table : u16 in screen_1_tile_pattern_table,
+            sprite_attribute_table : u16 in screen_1_sprite_attribute_table,
+            sprite_pattern_table : u16 in screen_1_sprite_pattern_table
+        ) {
+            (0x6F as func)();
+        }
+
+        // Initialises the screen to SCREEN 2 mode.
+        // In this routine, the palette is not initialised.
+        // Dirty: all
+        inline func init_screen_2(
+            nametable : u16 in screen_2_nametable,
+            tile_color_table : u16 in screen_2_tile_color_table,
+            tile_pattern_table : u16 in screen_2_tile_pattern_table,
+            sprite_attribute_table : u16 in screen_2_sprite_attribute_table,
+            sprite_pattern_table : u16 in screen_2_sprite_pattern_table
+        ) {
+            (0x72 as func)();
+        }
+
+        // Initialises the screen to SCREEN 3 mode.
+        // In this routine, the palette is not initialised.
+        // Dirty: all
+        inline func init_screen_3(
+            nametable : u16 in screen_3_nametable,
+            tile_color_table : u16 in screen_3_tile_color_table,
+            tile_pattern_table : u16 in screen_3_tile_pattern_table,
+            sprite_attribute_table : u16 in screen_3_sprite_attribute_table,
+            sprite_pattern_table : u16 in screen_3_sprite_pattern_table
+        ) {
+            (0x75 as func)();
+        }
+
+        // Set VDP to SCREEN 0 mode but skips the other initialization.
+        // Dirty: all
+        inline func set_vdp_screen_0(
+            nametable : u16 in screen_0_nametable,
+            tile_pattern_table : u16 in screen_0_tile_pattern_table
+        ) {
+            (0x78 as func)();
+        }
+
+        // Set VDP to SCREEN 1 mode but skips the other initialization.
+        // Dirty: all
+        inline func set_vdp_screen_1(
+            nametable : u16 in screen_1_nametable,
+            tile_color_table : u16 in screen_1_tile_color_table,
+            tile_pattern_table : u16 in screen_1_tile_pattern_table,
+            sprite_attribute_table : u16 in screen_1_sprite_attribute_table,
+            sprite_pattern_table : u16 in screen_1_sprite_pattern_table
+        ) {
+            (0x7B as func)();
+        }
+
+        // Set VDP to SCREEN 2 mode but skips the other initialization.
+        // Dirty: all
+        inline func set_vdp_screen_2(
+            nametable : u16 in screen_2_nametable,
+            tile_color_table : u16 in screen_2_tile_color_table,
+            tile_pattern_table : u16 in screen_2_tile_pattern_table,
+            sprite_attribute_table : u16 in screen_2_sprite_attribute_table,
+            sprite_pattern_table : u16 in screen_2_sprite_pattern_table
+        ) {
+            (0x7E as func)();
+        }
+
+        // Set VDP to SCREEN 3 mode but skips the other initialization.
+        // Dirty: all
+        inline func set_vdp_screen_3(
+            nametable : u16 in screen_3_nametable,
+            tile_color_table : u16 in screen_3_tile_color_table,
+            tile_pattern_table : u16 in screen_3_tile_pattern_table,
+            sprite_attribute_table : u16 in screen_3_sprite_attribute_table,
+            sprite_pattern_table : u16 in screen_3_sprite_pattern_table
+        ) {
+            (0x81 as func)();
+        }
+
+        // Gets the VRAM address for the sprite pattern of the given sprite.
+        // Dirty: af, de, hl
+        inline func get_sprite_pattern_address(sprite_index : u8 in a) : u16 in hl {
+            (0x84 as func)();
+        }
+
+        // Gets the VRAM address for the sprite attribute of the given sprite.
+        // Dirty: af, de, hl
+        inline func get_sprite_attribute_address(sprite_index : u8 in a) : u16 in hl {
+            (0x87 as func)();
+        }
+
+        // Gets the current sprite size.
+        // Results:
+        // - a = the current sprite size in bytes.
+        // - carry = true if 16x16 mode is active, false otherwise.
+        // Dirty: af
+        inline func get_current_sprite_size() : u8 in a {
+            (0x8A as func)();
+        }
+
+        // Prints a character to the screen.
+        // Dirty: none
+        inline func print_char(value : u8 in a) {
+            (0x8D as func)();
+        }
+
+        // Initialises PSG and sets the initial value for the play statement.
+        // Dirty: all
+        inline func psg_init() {
+            (0x90 as func)();
+        }
+
+        // Writes data in the PSG register.
+        // Dirty: all
+        inline func psg_write(reg : u8 in a, value : u8 in e) {
+            (0x93 as func)();
+        }
+
+        // Reads data from the PSG register.
+        // Dirty: all
+        inline func psg_read(reg : u8 in a) : u8 in a {
+            (0x96 as func)();
+        }
+
+        // Tests whether the PLAY statement is being executed
+        // as a background task.
+        // If not, begins to execute the PLAY statement.
+        // Dirty: all
+        inline func start_music(reg : u8 in a) : u8 in a {
+            (0x96 as func)();
+        }
+
+        // Tests the status of the keyboard buffer
+        // Result: the zero flag is true when the buffer is empty, false otherwise.
+        // Dirty: af
+        inline func kb_is_buffer_empty() : bool in zero {
+            (0x9C as func)();
+        }
+
+        // Get a single character from the keyboard (waits until pressed).
+        // Dirty: af
+        inline func get_char() : u8 in a {
+            (0x9F as func)();
+        }
+
+        // Put a single character from the keyboard (waits until received).
+        // Dirty: none
+        inline func put_char(value : u8 in a) {
+            (0xA2 as func)();
+        }
+
+        // Sends one character to the printer
+        // Result: the carry flag is set if the operation failed.
+        // Dirty: f
+        inline func printer_put_char(value : u8 in a) : bool in carry {
+            (0xA5 as func)();
+        }
+
+        // Tests the printer status
+        // Result:
+        // - when A is 255 and the Z flag is reset, the printer is READY.
+        // - when A is 0 and the Z flag is set, the printer is NOT READY.
+        // Dirty: af
+        inline func printer_check_status() {
+            (0xA8 as func)();
+        }
+
+        // Tests for the graphic header and transforms the code
+        // Result:
+        // - a is the translated graphic character (normal characters are not translated).
+        // - if carry == false then input was the graphic header byte 01H.
+        // - if carry == true && zero == true then input was the graphic character and was translated.
+        // - if carry == true && zero == false then input was the normal character and was not translated.
+        // Dirty: af
+        inline func convert_char() : u8 in a {
+            (0xAB as func)();
+        }
+
+        // Stores character input in line_buffer, until the return key or STOP key is pressed.
+        // Result:
+        // - hl = the starting address of the buffer - 1
+        // - carry flag is true set when it ends with the STOP key, false otherwise.
+        // Dirty: all
+        inline func read_raw_line() : *u8 in hl {
+            (0xAE as func)();
+        }
+
+        // Stores character input in the line buffer
+        // until the return key or STOP key is pressed.
+        // Result:
+        // - hl = the starting address of the buffer - 1
+        // - carry flag is true set when it ends with the STOP key, false otherwise.
+        // Dirty: all
+        inline func read_prompt_line() : *u8 in hl {
+            (0xB1 as func)();
+        }
+
+        // Executes read_prompt_line after displaying "?" and one space.
+        // Dirty: all
+        inline func read_question_line() : *u8 in hl {
+            (0xB4 as func)();
+        }
+
+        // Tests Ctrl-STOP key. In this routine, interrupts are inhibited.
+        // Dirty: af
+        inline func is_break_pressed() : *u8 in hl {
+            (0xB7 as func)();
+        }
+
+        // Generates a beep.
+        // Dirty: all
+        inline func beep() {
+            (0xC0 as func)();
+        }
+
+        // Clears the screen.
+        // Dirty: af, bc, de
+        inline func clear_screen() {
+            a ^= a;
+            _clear_screen();
+        }
+
+        // Clears the screen. Zero flag must be cleared.
+        // Dirty: af, bc, de
+        inline func _clear_screen() {
+            (0xC3 as func)();
+        }
+
+        // Moves the cursor.
+        // Dirty: af
+        inline func cursor_move(x : u8 in h, y : u8 in l) {
+            (0xC6 as func)();
+        }
+
+        // Hides the function key display.
+        // Dirty: all
+        inline func hide_function_key_display() {
+            (0xCC as func)();
+        }
+
+        // Shows the function key display.
+        // Dirty: all
+        inline func show_function_key_display() {
+            (0xCF as func)();
+        }
+
+        // Forces the scren to be in text mode.
+        // Dirty: all
+        inline func to_text_mode() {
+            (0xD2 as func)();
+        }
+
+        // Gets the state of the specified joystick.
+        // Dirty: all
+        inline func get_joystick_state(joystick_index : u8 in a) : u8 in a {
+            (0xD5 as func)();
+        }
+
+        // Get the button state of the specified trigger.
+        // Result:
+        // - If a = 0x00, the trigger button is not being pressed.
+        // - If a = 0xFF, the trigger button is being pressed.
+        // Dirty: af
+        inline func get_trigger_state(trigger_index : u8 in a) : u8 in a {
+            (0xD8 as func)();
+        }
+
+        // Get the state of the specified touchpad.
+        // Dirty: all
+        inline func get_touchpad_state(touchpad_index : u8 in a) : u8 in a {
+            (0xDB as func)();
+        }
+
+        // Get the state of the specified paddle.
+        // Dirty: all
+        inline func get_paddle_state(paddle_index : u8 in a) : u8 in a {
+            (0xDE as func)();
+        }
+
+        // Turning the cassette tape motor on, and reads the header block.
+        // If failed, the carry flag is set.
+        // Dirty: all
+        inline func tape_reader_open() {
+            (0xE1 as func)();
+        }
+
+        // Reads a byte of data from the tape.
+        // If failed, the carry flag is set.
+        // Dirty: all
+        inline func tape_reader_read() : u8 in a {
+            (0xE4 as func)();
+        }
+
+        // Stops reading from the tape.
+        inline func tape_reader_close() : u8 in a {
+            (0xE4 as func)();
+        }
+
+        let TAPE_HEADER_TYPE_SHORT = 0x00;
+        let TAPE_HEADER_TYPE_LONG = 0x01;
+
+        // Turns on the cassette motor and writes the header block.
+        // If failed, the carry flag is set.
+        // Dirty: all
+        inline func tape_writer_open(tape_header_type : u8 in a) {
+            (0xEA as func)();
+        }
+
+        // Writes a byte of data to the tape.
+        // If failed, the carry flag is set.
+        // Dirty: all
+        inline func tape_writer_write(value : u8 in a) {
+            (0xED as func)();
+        }        
+
+        // Stops writing to the tape.
+        // Dirty: all
+        inline func tape_writer_close() : u8 in a {
+            (0xF0 as func)();
+        }
+
+        // Stops the motor.
+        let TAPE_MOTOR_ACTION_STOP = 0x00;
+        // Starts the motor.
+        let TAPE_MOTOR_ACTION_START = 0x01;
+        // Reverse the current action.
+        let TAPE_MOTOR_ACTION_REVERSE = 0xFF;
+
+        // Sets the cassette tape motor action.
+        // Dirty: af
+        inline func tape_set_motor_action(tape_motor_action : u8 in a) {
+            (0xF3 as func)();
+        }
+
+        // Sets the caps lock LED status.
+        // Dirty: af
+        inline func set_caps_lock_led(enabled : u8 in a) {
+            (0x132 as func)();
+        }
+
+        // Sets the 1-bit sound port status.
+        // Dirty: af
+        inline func set_1bit_sound(enabled : u8 in a) {
+            (0x135 as func)();
+        }
+
+        // Reads the contents of primary slot register.
+        // Dirty: a
+        inline func get_primary_slot_register() : u8 in a {
+            (0x138 as func)();
+        }
+
+        // Writes to the primary slot register.
+        // Dirty: none
+        inline func set_primary_slot_register(value : u8 in a) {
+            (0x13B as func)();
+        }
+
+        // Reads VDP status register
+        // Dirty: a
+        let _vdp_get_status = 0x13E as func;
+        inline func vdp_get_status() : u8 in a {
+            _vdp_get_status();
+        }
+
+        // Reads the value of the specified row from the keyboard matrix.
+        // Dirty: af, c
+        inline func kb_get_matrix_row(row_index : u8 in a) : u8 in a {
+            (0x13E as func)();
+        }
+
+        let DISK_IO_ERROR_WRITE_PROTECTED = 0;
+        let DISK_IO_ERROR_NOT_READY = 2;
+        let DISK_IO_ERROR_DATA_ERROR = 4;
+        let DISK_IO_ERROR_SEEK_ERROR = 6;
+        let DISK_IO_ERROR_RECORD_NOT_FOUND = 8;
+        let DISK_IO_ERROR_WRITE_ERROR = 10;
+        let DISK_IO_ERROR_BAD_PARAMETER = 12;
+        let DISK_IO_ERROR_OUT_OF_MEMORY = 14;
+        let DISK_IO_ERROR_OTHER = 16;
+
+        // Physical input/output for disk devices.
+        // Resullts:
+        // - carry flag is set if operation failed.
+        // - b is the number of sectors actually read/written.
+        // - a is the error code (only if carry set)
+        // Dirty: all
+        inline func disk_io(
+            drive_index : u8 in a,
+            sector_index : u8 in b,
+            media_id : u8 in c,
+            start_sector : u16 in de,
+            start_address : u16 in hl,
+            write_mode : bool in carry
+        ) {
+            (0x144 as func)();
+        }
+
+        // Tests whether the device is active.
+        inline func is_file_io_active() : u8 in a {
+            (0x14A as func)();
+        }
+
+        // Different from printer_put_char in the following ways:
+        // - tab is expanded to spaces
+        // - for non-MSX printers, Hiragana is transformed to Katakana,
+        //   and graphic characters are transformed to 1-byte characters.
+        // - if failed, device I/O occurs
+        // Dirty: f
+        inline func printer_put_char2() {
+            (0x14D as func)();
+        }
+
+        // Clears the keyboard buffer.
+        // Dirty: hl
+        inline func kb_clear_buffer() {
+            (0x156 as func)();
+        }
+
+        // Executes an inter-slot call to a routine in the BASIC interpreter.
+        // Result: depends on the called routine.
+        // Dirty: depends on the called routine.
+        inline func call_basic(call_address : u16 in ix) {
+            (0x159 as func)();
+        }
+
+        // (MSX2 required)
+        // Executes inter-slot call to sub-rom, and pushes ix on the stack.
+        // Result: depends on the called routine.
+        // Dirty: shadow registers, iy
+        inline func call_subrom(call_address : u16 in ix) {
+            (0x15C as func)();
+        }
+
+        // (MSX2 required)
+        // Executes inter-slot call to sub-rom.
+        // Result: depends on the called routine.
+        // Dirty: shadow registers, iy
+        inline func call_extrom(call_address : u16 in ix) {
+            (0x15F as func)();
+        }
+
+        // (MSX2 required)
+        // Search slots for subrom
+        // Dirty: all
+        inline func detect_subrom() {
+            (0x162 as func)();
+        }
+
+        // (MSX2 required)
+        // Gets whether the VDP is in screen mode 5, 6, 7, or 8.
+        inline func vdp_is_new_mode() : bool in carry {
+            (0x162 as func)();
+        }
+
+        // (MSX2 required)
+        // Deletes to the end of the line.
+        // Dirty: all
+        inline func end_of_line(x : u8 in h, y : u8 in l) {
+            (0x168 as func)();
+        }
+
+        // (MSX2 required)
+        // Fills the specified VRAM area with the given value.
+        // (NOTE: For compatibility with MSX1 use vdp_vram_fill_block)
+        // Dirty: af, bc
+        inline func vdp_big_vram_fill_block(dest : u16 in hl, value : u8 in a, length : u16 in bc) {
+            (0x16B as func)();
+        }
+
+        // (MSX2 required)
+        // Enables VRAM to be read by setting the address.
+        // (NOTE: For compatibility with MSX1 use vdp_set_read_address)
+        // Dirty: af
+        inline func vdp_big_set_read_address(address : u16 in hl) {
+            (0x16E as func)();
+        }
+
+        // (MSX2 required)
+        // Enables VRAM to be written by setting the address.
+        // (NOTE: For compatibility with MSX1 use vdp_set_write_address)
+        // Dirty: af
+        inline func vdp_big_set_write_address(address : u16 in hl) {
+            (0x171 as func)();
+        }
+
+        // (MSX2 required)
+        // Reads the contents of VRAM.
+        // (NOTE: For compatibility with MSX1 use vdp_vram_read)
+        // Dirty: af
+        inline func vdp_big_vram_read(address : u16 in hl) : u8 in a {
+            (0x171 as func)();
+        }
+
+        // (MSX2 required)
+        // Writes data to VRAM.
+        // (NOTE: For compatibility with MSX1 use vdp_vram_write)
+        // Dirty: af
+        inline func vdp_big_vram_write(address : u16 in hl) : u8 in a {
+            (0x171 as func)();
+        }
+
+        let READ_RESET_WARM_BOOT = 0x80;
+        let READ_RESET_R800_BOOTED = 0x20;
+        let READ_RESET_BIT_WARM_BOOT = 7;
+        let READ_RESET_BIT_R800_BOOTED = 5;        
+
+        // (MSX 2+ required)
+        // Read value from the reset register of a MSX2+ computer.
+        // Dirty: af
+        inline func read_reset() : u8 in a {
+            (0x17A as func)();
+        }
+
+        let WRITE_RESET_REQUEST_RESET = 0x80;
+
+        // (MSX 2+ required)
+        // Writes the reset register of an MSX2+ computer.
+        // Dirty: none
+        inline func write_reset(value : u8 in a) {
+            (0x17D as func)();
+        }
+
+        let CPU_MODE_ENABLE_TURBO_LED = 0x80;
+        let CPU_MODE_MASK = 0x03;
+        let CPU_MODE_Z80_ROM_MODE = 0;
+        let CPU_MODE_R800_ROM_MODE = 1;
+        let CPU_MODE_R800_DRAM_MODE = 2;
+
+        // (MSX Turbo-R required)
+        // Sets the MSX Turbo-R CPU mode.
+        // Dirty: none
+        inline func set_cpu_mode(mode : u8 in a) {
+            (0x180 as func)();
+        }
+
+        // (MSX Turbo-R required)
+        // Gets the MSX Turbo-R CPU mode.
+        // Dirty: af
+        inline func get_cpu_mode(mode : u8 in a) {
+            (0x183 as func)();
+        }
+
+        let PCM_FREQUENCY_15750_HZ = 0;
+        let PCM_FREQUENCY_7875_HZ = 1;
+        let PCM_FREQUENCY_5250_HZ = 2;
+        let PCM_FREQUENCY_3937_5_HZ = 3;
+
+        let PCM_PLAY_FLAGS_USE_VRAM_ADDRESS = 0x80;
+        let PCM_PLAY_FLAGS_FREQUENCY_MASK = 0x03;
+
+        let PCM_RECORD_FLAGS_USE_VRAM_ADDRESS = 0x80;
+        let PCM_RECORD_FLAGS_THRESHOLD_MASK = 0x78;
+        let PCM_RECORD_FLAGS_THRESHOLD_SHIFT = 3;
+        let PCM_RECORD_FLAGS_COMPRESS_SILENCE = 0x04;
+        let PCM_RECORD_FLAGS_FREQUENCY_MASK = 0x03;
+        let PCM_RECORD_FLAGS_FREQUENCY_15750_HZ = 0;
+        let PCM_RECORD_FLAGS_FREQUENCY_7875_HZ = 1;
+        let PCM_RECORD_FLAGS_FREQUENCY_5250_HZ = 2;
+        let PCM_RECORD_FLAGS_FREQUENCY_3937_5_HZ = 3;
+
+        // (MSX Turbo-R required)
+        // Plays the specified memory area through the PCM chip.
+        // - upper_vram_address, upper_vram_length
+        //   provide bit 17 of the address/length when a VRAM address used.
+        // Result: carry is set if aborted.
+        inline func pcm_play(
+            play_flags : u8 in a,
+            address : u16 in hl,
+            length : u16 in bc,
+            upper_vram_address : u8 in e,
+            upper_vram_length : u8 in d
+        ) : bool in carry {
+            (0x186 as func)();
+        }
+
+        // (MSX Turbo-R required)
+        // Records audio using the PCM chip into the specified memory area.
+        // - upper_vram_address, upper_vram_length
+        //   provide bit 17 of the address/length when a VRAM address used.
+        // Dirty: all
+        inline func pcm_record(
+            record_flags : u8 in a,
+            address : u16 in hl,
+            length : u16 in bc,
+            upper_vram_address : u8 in e,
+            upper_vram_length : u8 in d
+        ) {
+            (0x189 as func)();
+        }
+    }
+
+    namespace subrom {
+        // TODO: entry points of all sub-rom routines.
     }
 
     namespace konami {
@@ -62,6 +1048,9 @@ namespace msx {
 
     namespace io {
         namespace vdp {
+            // NOTE: This is a common port layout, which can be useful for testing purposes.
+            // But the standard way is check the BIOS locations to read the VDP port offsets.
+            // (TODO: as a consequence of above, maybe remove these)
             let data = 0x98;
             let control = 0x99;
 
@@ -98,15 +1087,23 @@ namespace msx {
         namespace ppi {
             let primary_slot = 0xA8;
 
-            let PRIMARY_SLOT_0000_MASK = 0x03;
-            let PRIMARY_SLOT_4000_MASK = 0x0C;
-            let PRIMARY_SLOT_8000_MASK = 0x30;
-            let PRIMARY_SLOT_C000_MASK = 0xC0;
+            // Page 0: 0x0000 .. 0x3FFF
+            let PRIMARY_SLOT_PAGE_0_MASK = 0x03;
+            let PRIMARY_SLOT_PAGE_0_SHIFT = 0;
+            // Page 1: 0x4000 .. 0x7FFF
+            let PRIMARY_SLOT_PAGE_1_MASK = 0x0C;
+            let PRIMARY_SLOT_PAGE_1_SHIFT = 2;
+            // Page 2: 0x8000 .. 0xBFFF
+            let PRIMARY_SLOT_PAGE_2_MASK = 0x30;
+            let PRIMARY_SLOT_PAGE_2_SHIFT = 4;
+            // Page 3: 0xC000 .. 0xFFFF
+            let PRIMARY_SLOT_PAGE_3_MASK = 0xC0;
+            let PRIMARY_SLOT_PAGE_3_SHIFT = 6;
 
-            let PRIMARY_SLOT_MAIN_ROM = 0;
-            let PRIMARY_SLOT_CART_A = 0;
-            let PRIMARY_SLOT_CART_B = 0;
-            let PRIMARY_SLOT_AUX = 0;            
+            let PRIMARY_SLOT_INDEX_MAIN_ROM = 0;
+            let PRIMARY_SLOT_INDEX_CART_A = 1;
+            let PRIMARY_SLOT_INDEX_CART_B = 2;
+            let PRIMARY_SLOT_INDEX_MAIN_RAM = 3;
 
             let keyboard_status = 0xA9;
 
@@ -193,7 +1190,6 @@ namespace msx {
         let AV_CONTROL_R = 0x01;
 
         let AV_CONTROL_STATUS_RGB21_INPUT_ENABLED = 0x08;
-
     }
 
     // VDP registers
@@ -216,6 +1212,8 @@ namespace msx {
             let GRAY = 14;
             let WHITE = 15;
         }
+
+        // TODO: constants for screen modes / addresses when addresses are standard.
 
         let mode_control_0 = 0x00;
         let MODE_CONTROL_0_DIGITIZE = 0x40;
@@ -249,7 +1247,14 @@ namespace msx {
         let SPRITE_ATTRIBUTE_ADDRESS_SHIFT = 7;
 
         let sprite_pattern_address = 0x06;
-        let SPRITE_PATTERN_ADDRESS_SHIFT = 7;
+        let SPRITE_PATTERN_ADDRESS_SHIFT = 11;
+
+        let SPRITE_ATTRIBUTE_Y_DONE_DRAW_MODE_1 = 0xD0;
+        // TODO: sprite mode 2 (MSX 2) has different cutoff Y values -- look it up again.
+        let SPRITE_ATTRIBUTE_Y_OFFSET = 0;
+        let SPRITE_ATTRIBUTE_X_OFFSET = 1;
+        let SPRITE_ATTRIBUTE_TILE_OFFSET_ = 2;
+        let SPRITE_ATTRIBUTE_ATTRIBUTE_OFFSET = 3;
 
         let overscan_color = 0x07;
     }
@@ -388,7 +1393,7 @@ namespace msx {
         let reset = 0x0F;
     }
 
-    namespace ppi {
+    namespace slot {
         // Read is inverted from write.
         extern var secondary_slot @ 0xFFFF : u8;
 
@@ -405,6 +1410,6 @@ namespace msx {
         extern var bank_0000 @ 0xFC : u8;
         extern var bank_4000 @ 0xFD : u8;
         extern var bank_8000 @ 0xFE : u8;
-        extern var bank_C000 @ 0xFF : u8;        
+        extern var bank_C000 @ 0xFF : u8;
     }
 }

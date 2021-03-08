@@ -108,7 +108,7 @@ namespace wiz {
                     offset = length - 1;
                 }
 
-                for (std::size_t i = offset; i-- > 0;) {
+                for (std::size_t i = offset; i < length; i--) {
                     bool match = true;
 
                     for (std::size_t j = 0; j != subLength; ++j) {

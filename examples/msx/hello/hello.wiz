@@ -4,18 +4,7 @@ bank rom1 @ 0x4000 : [constdata; 0x4000];
 bank rom2 @ 0x8000 : [constdata; 0x4000];
 bank ram @ 0xE000 : [vardata; 0x2000];
 
-in ram {
-    struct Word {
-        low : u8,
-        high : u8,
-    }
-
-    struct Enemy {
-        hp : Word
-    }
-
-    var enemy_data : [Enemy; 32];
-}
+in ram {}
 
 in rom1 {
     namespace header {
@@ -31,22 +20,13 @@ in rom1 {
         interrupt = false;
 
         io_write(msx.io.ppi.primary_slot, a = 0b11_01_01_00);
-        msx.ppi.secondary_slot = a = 0b11_11_11_11;
+        msx.slot.secondary_slot = a = 0b11_11_11_11;
 
         // Init VDP.
         c = msx.io.vdp.control;
         hl = &vdp_init_data as u16;
         b = vdp_init_data.len;
         do { io_write_inc_repeat(c, hl, b); } while !zero;
-
-        {
-            var enemy_ptr : *Enemy in ix;
-            enemy_ptr.hp.low = 1;
-            enemy_ptr.hp.high = 1;
-
-            bc = sizeof(Enemy);
-            <>:enemy_ptr += bc;
-        }
 
         // Clear VRAM.
         io_write(msx.io.vdp.control, a = <:0x0000);
@@ -58,7 +38,7 @@ in rom1 {
             a = b | c;
         } while !zero;
 
-        // Load background colormap.
+        // Load background color table.
         io_write(msx.io.vdp.control, a = <:0x2000);
         io_write(msx.io.vdp.control, a = >:0x2000 | msx.io.vdp.CONTROL_ACCESS_VRAM_WRITE);
         bc = 0x1800;

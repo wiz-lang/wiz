@@ -895,7 +895,7 @@ namespace wiz {
         // out (c), r
         for (const auto& reg : generalRegisters) {
             if (std::get<0>(reg) != patternIndirectHL) {
-                builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(io_write), 0, {patternC, std::get<0>(reg)}), encodingImplicit, InstructionOptions({prefixExtended, static_cast<std::uint8_t>(std::get<1>(reg) * 8 + 0x01)}, {}, {}));
+                builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(io_write), 0, {patternC, std::get<0>(reg)}), encodingImplicit, InstructionOptions({prefixExtended, static_cast<std::uint8_t>(std::get<1>(reg) * 8 + 0x41)}, {}, {}));
             }
         }
         // outi

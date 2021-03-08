@@ -1,9 +1,10 @@
-#!/bin/env python
+#!/usr/bin/env python
 import os
 import os.path
 import PIL.Image
 
 def write_chr(w, h, data, f):
+    buf = []
     for y in range(0, h, 8):
         for x in range(0, w, 8):
             # Copy low bits of each 8x8 chunk into the first 8x8 plane.
@@ -11,13 +12,14 @@ def write_chr(w, h, data, f):
                 c = 0
                 for i in range(8):
                     c = (c * 2) | (data[x + i, y + j] & 1)
-                f.write(chr(c))
+                buf.append(c)
             # Copy high bits of each chunk into the second 8x8 plane.
             for j in range(8):
                 c = 0
                 for i in range(8):
                     c = (c * 2) | ((data[x + i, y + j] >> 1) & 1)
-                f.write(chr(c))
+                buf.append(c)
+    f.write(bytes(buf))
 
 if __name__ == '__main__':
     import sys
