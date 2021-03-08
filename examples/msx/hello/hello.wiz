@@ -38,16 +38,20 @@ in rom {
 
         // Disable the screen so we can access VRAM. (Initializing the screen mode also enables the screen).
         msx.bios.disable_screen();
-        // Load background colors.
-        msx.bios.vdp_vram_fill_block(0x2000, (msx.vdp.color.WHITE << 4) | msx.vdp.color.LIGHT_BLUE, 0x1800);
-        // Load background tileset.
-        msx.bios.vdp_vram_write_block(0x0000, &bkg_tileset[0], sizeof(typeof(bkg_tileset)));
-        msx.bios.vdp_vram_write_block(0x0800, &bkg_tileset[0], sizeof(typeof(bkg_tileset)));
-        msx.bios.vdp_vram_write_block(0x1000, &bkg_tileset[0], sizeof(typeof(bkg_tileset)));
+        // Load tileset colors.
+        let COLOR_ATTRIBUTE = (msx.vdp.color.WHITE << 4) | msx.vdp.color.LIGHT_BLUE;
+        msx.bios.vdp_vram_fill_block(msx.vdp.screen2.TILESET_COLOR_RAM_ADDRESS, COLOR_ATTRIBUTE, msx.vdp.screen2.TILESET_COLOR_RAM_SIZE);
+        // Load tileset patterns.
+        msx.bios.vdp_vram_write_block(msx.vdp.screen2.TILESET_PATTERN_BANK_TOP_ADDRESS, &bkg_tileset[0], sizeof(typeof(bkg_tileset)));
+        msx.bios.vdp_vram_write_block(msx.vdp.screen2.TILESET_PATTERN_BANK_MIDDLE_ADDRESS, &bkg_tileset[0], sizeof(typeof(bkg_tileset)));
+        msx.bios.vdp_vram_write_block(msx.vdp.screen2.TILESET_PATTERN_BANK_BOTTOM_ADDRESS, &bkg_tileset[0], sizeof(typeof(bkg_tileset)));
         // Clear nametable.
-        msx.bios.vdp_vram_fill_block(0x1800, 0, 0x300);
+        msx.bios.vdp_vram_fill_block(msx.vdp.screen2.NAMETABLE_ADDRESS, 0, msx.vdp.screen2.NAMETABLE_SIZE);
         // Write text to nametable.
-        msx.bios.vdp_vram_write_block(0x190A, &message[0], sizeof(typeof(message)));
+        let START_OFFSET_Y = 8;
+        let START_OFFSET_X = 10;
+        let MESSAGE_DEST_ADDRESS = msx.vdp.screen2.NAMETABLE_ADDRESS + START_OFFSET_Y * 32 + START_OFFSET_X;
+        msx.bios.vdp_vram_write_block(MESSAGE_DEST_ADDRESS, &message[0], sizeof(typeof(message)));
         // Turn screen on.
         msx.bios.enable_screen();
 
@@ -59,11 +63,11 @@ in rom {
     }
 
     const screen_init_data : [u16] = [
-        0x1800,
-        0x2000,
-        0x0000,
-        0x1B00,
-        0x3800,
+        msx.vdp.screen2.NAMETABLE_ADDRESS,
+        msx.vdp.screen2.TILESET_COLOR_RAM_ADDRESS,
+        msx.vdp.screen2.TILESET_PATTERN_RAM_ADDRESS,
+        msx.vdp.screen2.SPRITE_ATTRIBUTE_ADDRESS,
+        msx.vdp.screen2.SPRITE_PATTERN_ADDRESS,
     ];
 
     const message = "HELLO  WORLD";

@@ -1213,7 +1213,35 @@ namespace msx {
             let WHITE = 15;
         }
 
-        // TODO: constants for screen modes / addresses when addresses are standard.
+        let MSX1_VRAM_ADDRESS = 0x000;
+        let MSX1_VRAM_SIZE = 0x4000;
+
+        namespace screen2 {
+            let NAMETABLE_ADDRESS = 0x1800;
+            let NAMETABLE_SIZE = 0x300;
+
+            let TILESET_PATTERN_RAM_ADDRESS = 0x0000;
+            let TILESET_PATTERN_RAM_SIZE = 0x1800;
+            let TILESET_PATTERN_BANK_SIZE = 0x800;
+            let TILESET_PATTERN_BANK_TOP_ADDRESS = 0x0000;
+            let TILESET_PATTERN_BANK_MIDDLE_ADDRESS = 0x0800;
+            let TILESET_PATTERN_BANK_BOTTOM_ADDRESS = 0x1000;
+
+            let TILESET_COLOR_RAM_ADDRESS = 0x2000;
+            let TILESET_COLOR_RAM_SIZE = 0x1800;
+            let TILESET_COLOR_BANK_SIZE = 0x800;
+            let TILESET_COLOR_BANK_TOP_ADDRESS = 0x2000;
+            let TILESET_COLOR_BANK_MIDDLE_ADDRESS = 0x2800;
+            let TILESET_COLOR_BANK_BOTTOM_ADDRESS = 0x3000;
+
+            let SPRITE_ATTRIBUTE_ADDRESS = 0x1B00;
+            let SPRITE_ATTRIBUTE_SIZE = 0x80;
+
+            let SPRITE_PATTERN_ADDRESS = 0x3800;
+            let SPRITE_PATTERN_SIZE = 0x800;            
+        }
+
+        // TODO: constants for other screen modes / addresses, when addresses are standard.
 
         let mode_control_0 = 0x00;
         let MODE_CONTROL_0_DIGITIZE = 0x40;
