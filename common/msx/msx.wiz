@@ -685,13 +685,13 @@ namespace msx {
 
         let JOYSTICK_STATE_NONE = 0;
         let JOYSTICK_STATE_UP = 1;
-        let JOYSTICK_STATE_UP_LEFT = 2;
-        let JOYSTICK_STATE_LEFT = 3;
-        let JOYSTICK_STATE_DOWN_LEFT = 4;
+        let JOYSTICK_STATE_UP_RIGHT = 2;
+        let JOYSTICK_STATE_RIGHT = 3;
+        let JOYSTICK_STATE_DOWN_RIGHT = 4;
         let JOYSTICK_STATE_DOWN = 5;
-        let JOYSTICK_STATE_DOWN_RIGHT = 6;
-        let JOYSTICK_STATE_RIGHT = 7;
-        let JOYSTICK_STATE_UP_RIGHT = 8;
+        let JOYSTICK_STATE_DOWN_LEFT = 6;
+        let JOYSTICK_STATE_LEFT = 7;
+        let JOYSTICK_STATE_UP_LEFT = 8;
 
         // Gets the state of the specified joystick.
         // Dirty: all
