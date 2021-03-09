@@ -107,6 +107,7 @@ namespace wiz {
         const auto pop = scope->createDefinition(nullptr, Definition::BuiltinLoadIntrinsic(u16Type), stringPool->intern("pop"), decl);
         const auto nop = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("nop"), decl);
         const auto halt = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("halt"), decl);
+        const auto debug_break = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("debug_break"), decl);
         const auto decimal_adjust = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("decimal_adjust"), decl);
         const auto swap = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("swap"), decl);
         const auto swap_shadow = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("swap_shadow"), decl);
@@ -666,6 +667,10 @@ namespace wiz {
         builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(nop)), 0, {}), encodingImplicit, InstructionOptions({0x00}, {}, {}));
         // halt
         builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(halt)), 0, {}), encodingImplicit, InstructionOptions({0x76}, {}, {}));
+        // debug_break (ld b, b; jr $+2)
+        // http://www.msxblue.com/manual/debugger_c.htm
+        // TODO: support string debug. GB debuggers can support this format too!
+        builtins.createInstruction(InstructionSignature(InstructionType(InstructionType::VoidIntrinsic(debug_break)), 0, {}), encodingImplicit, InstructionOptions({0x40, 0x18, 0x00}, {}, {}));
         // interrupt = false
         // interrupt = true
         builtins.createInstruction(InstructionSignature(InstructionType(BinaryOperatorKind::Assignment), 0, {patternInterrupt, patternFalse}), encodingImplicit, InstructionOptions({0xF3}, {}, {}));

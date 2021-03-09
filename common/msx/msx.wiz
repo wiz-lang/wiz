@@ -149,6 +149,19 @@ namespace msx {
         // Previous screen mode befroe the program ran.
         extern var old_screen_mode @ 0xFCB0 : u8;
 
+        let SLOT_EXPANDED = 0x80;
+        let SLOT_PRIMARY_MASK = 0x03;
+        let SLOT_PRIMARY_SHIFT = 0;
+        let SLOT_SECONDARY_MASK = 0x0C;
+        let SLOT_SECONDARY_SHIFT = 2;
+
+        // Whether or not the slot is expanded.
+        // slot_expansion[page] == SLOT_EXPANDED if expanded, 0 otherwise.
+        extern var slot_expansion @ 0xFCC1 : [u8; 4];
+        // Mirrors of the secondary slot selection registers.
+        // Mask off the SLOT_SECONDARY_MASK to get the relevant slot bits.
+        extern var slot_secondary @ 0xFCC5 : [u8; 4];
+
         // Interrupt handler invoked on each normal interrupt request.
         // Registers are automatically saved/restored before this hook is called.
         // To skip further BIOS handling, you can jump to _vdp_get_status, instead of returning.
@@ -182,12 +195,6 @@ namespace msx {
         //    (0x08 as func)();
         // }
 
-        let SLOT_EXPANDED = 0x80;
-        let SLOT_PRIMARY_MASK = 0x03;
-        let SLOT_PRIMARY_SHIFT = 0;
-        let SLOT_SECONDARY_MASK = 0x0C;
-        let SLOT_SECONDARY_SHIFT = 2;
-
         // Selects the slot corresponding to the value of a
         // and reads one byte from the memory of the slot.
         // When this routine is called, the interrupt is inhibited
@@ -195,12 +202,14 @@ namespace msx {
         // Dirty: af, bc, de
         inline func slot_read(slot : u8 in a, address : *u8 in hl) : u8 in a {
             (0x0C as func)();
+            return a;
         }
 
         // Gets a character (or a token) from BASIC text
         // Dirty: af, hl
         inline func get_basic_char(char_address : *u8 in hl) : u8 in a {
             (0x10 as func)();
+            return a;
         }
 
         // selects the slot corresponding to the value of a
@@ -210,6 +219,7 @@ namespace msx {
         // Dirty: af, bc, d
         inline func slot_write(slot : u8 in a, address : *u8 in hl, value : u8 in e) : u8 in a {
             (0x14 as func)();
+            return a;
         }
 
         // Sends the value to current device
@@ -231,10 +241,17 @@ namespace msx {
             (0x20 as func)();
         }
 
+        let SLOT_ENABLE_PAGE_SHIFT = 6;
+
         // Selects the slot corresponding to the value of a
         // and enables the slot to be used.
         // When this routine is called, interrupts are inhibited
         // and remain so even after execution ends.
+        //
+        // Arguments:
+        // - a = slot id (see SLOT_* constants)
+        // - h = contains the page number in the bits 6 and 7.
+        //
         // Dirty: all
         inline func slot_enable(slot : u8 in a, page : u8 in h) {
             (0x24 as func)();
@@ -295,6 +312,7 @@ namespace msx {
         // Dirty: af, bc
         inline func vdp_vram_read(address : u16 in hl) : u8 in a {
             (0x4A as func)();
+            return a;
         }
 
         // Write the contents of VRAM.
@@ -374,7 +392,7 @@ namespace msx {
         // Initialises all sprites.
         // The sprite pattern is cleared to null,
         // the sprite number to the sprite plane number,
-        // the sprite colour to the foregtound colour.
+        // the sprite colour to the foreground colour.
         // The vertical location of the sprite is set to 209 (mode 0 to 3) or 217 (mode 4 to 8).
         // Dirty: all
         inline func clear_sprites() {
@@ -480,12 +498,14 @@ namespace msx {
         // Dirty: af, de, hl
         inline func get_sprite_pattern_address(sprite_index : u8 in a) : u16 in hl {
             (0x84 as func)();
+            return hl;
         }
 
         // Gets the VRAM address for the sprite attribute of the given sprite.
         // Dirty: af, de, hl
         inline func get_sprite_attribute_address(sprite_index : u8 in a) : u16 in hl {
             (0x87 as func)();
+            return hl;
         }
 
         // Gets the current sprite size.
@@ -495,6 +515,7 @@ namespace msx {
         // Dirty: af
         inline func get_current_sprite_size() : u8 in a {
             (0x8A as func)();
+            return a;
         }
 
         // Prints a character to the screen.
@@ -519,6 +540,7 @@ namespace msx {
         // Dirty: all
         inline func psg_read(reg : u8 in a) : u8 in a {
             (0x96 as func)();
+            return a;
         }
 
         // Tests whether the PLAY statement is being executed
@@ -527,6 +549,7 @@ namespace msx {
         // Dirty: all
         inline func start_music(reg : u8 in a) : u8 in a {
             (0x96 as func)();
+            return a;
         }
 
         // Tests the status of the keyboard buffer
@@ -534,12 +557,14 @@ namespace msx {
         // Dirty: af
         inline func kb_is_buffer_empty() : bool in zero {
             (0x9C as func)();
+            return zero;
         }
 
         // Get a single character from the keyboard (waits until pressed).
         // Dirty: af
         inline func get_char() : u8 in a {
             (0x9F as func)();
+            return a;
         }
 
         // Put a single character from the keyboard (waits until received).
@@ -553,6 +578,7 @@ namespace msx {
         // Dirty: f
         inline func printer_put_char(value : u8 in a) : bool in carry {
             (0xA5 as func)();
+            return carry;
         }
 
         // Tests the printer status
@@ -573,6 +599,7 @@ namespace msx {
         // Dirty: af
         inline func convert_char() : u8 in a {
             (0xAB as func)();
+            return a;
         }
 
         // Stores character input in line_buffer, until the return key or STOP key is pressed.
@@ -649,11 +676,41 @@ namespace msx {
             (0xD2 as func)();
         }
 
+        let JOYSTICK_INDEX_FIRST = 0;
+        let JOYSTICK_INDEX_LAST = 2;
+        let JOYSTICK_COUNT = 3;
+        let JOYSTICK_INDEX_KB = 0;
+        let JOYSTICK_INDEX_P1 = 1;
+        let JOYSTICK_INDEX_P2 = 2;
+
+        let JOYSTICK_STATE_NONE = 0;
+        let JOYSTICK_STATE_UP = 1;
+        let JOYSTICK_STATE_UP_LEFT = 2;
+        let JOYSTICK_STATE_LEFT = 3;
+        let JOYSTICK_STATE_DOWN_LEFT = 4;
+        let JOYSTICK_STATE_DOWN = 5;
+        let JOYSTICK_STATE_DOWN_RIGHT = 6;
+        let JOYSTICK_STATE_RIGHT = 7;
+        let JOYSTICK_STATE_UP_RIGHT = 8;
+
         // Gets the state of the specified joystick.
         // Dirty: all
         inline func get_joystick_state(joystick_index : u8 in a) : u8 in a {
             (0xD5 as func)();
+            return a;
         }
+
+        let TRIGGER_INDEX_FIRST = 0;
+        let TRIGGER_INDEX_LAST = 4;
+        let TRIGGER_COUNT = 5;
+        let TRIGGER_INDEX_KB_SPACE = 0;
+        let TRIGGER_INDEX_P1_A = 1;
+        let TRIGGER_INDEX_P2_A = 2;
+        let TRIGGER_INDEX_P1_B = 3;
+        let TRIGGER_INDEX_P2_B = 4;
+
+        let TRIGGER_STATE_UNPRESSED = 0x00;
+        let TRIGGER_STATE_PRESSED = 0xFF;
 
         // Get the button state of the specified trigger.
         // Result:
@@ -662,18 +719,29 @@ namespace msx {
         // Dirty: af
         inline func get_trigger_state(trigger_index : u8 in a) : u8 in a {
             (0xD8 as func)();
+            return a;
         }
+
+        let TOUCHPAD_INDEX_FIRST = 0;
+        let TOUCHPAD_INDEX_LAST = 7;
+        let TOUCHPAD_COUNT = 8;
 
         // Get the state of the specified touchpad.
         // Dirty: all
         inline func get_touchpad_state(touchpad_index : u8 in a) : u8 in a {
             (0xDB as func)();
+            return a;
         }
+
+        let PADDLE_INDEX_FIRST = 1;
+        let PADDLE_INDEX_LAST = 12;
+        let PADDLE_COUNT = 12;
 
         // Get the state of the specified paddle.
         // Dirty: all
         inline func get_paddle_state(paddle_index : u8 in a) : u8 in a {
             (0xDE as func)();
+            return a;
         }
 
         // Turning the cassette tape motor on, and reads the header block.
@@ -688,11 +756,13 @@ namespace msx {
         // Dirty: all
         inline func tape_reader_read() : u8 in a {
             (0xE4 as func)();
+            return a;
         }
 
         // Stops reading from the tape.
         inline func tape_reader_close() : u8 in a {
             (0xE4 as func)();
+            return a;
         }
 
         let TAPE_HEADER_TYPE_SHORT = 0x00;
@@ -716,6 +786,7 @@ namespace msx {
         // Dirty: all
         inline func tape_writer_close() : u8 in a {
             (0xF0 as func)();
+            return a;
         }
 
         // Stops the motor.
@@ -747,6 +818,7 @@ namespace msx {
         // Dirty: a
         inline func get_primary_slot_register() : u8 in a {
             (0x138 as func)();
+            return a;
         }
 
         // Writes to the primary slot register.
@@ -760,12 +832,14 @@ namespace msx {
         let _vdp_get_status = 0x13E as func;
         inline func vdp_get_status() : u8 in a {
             _vdp_get_status();
+            return a;
         }
 
         // Reads the value of the specified row from the keyboard matrix.
         // Dirty: af, c
         inline func kb_get_matrix_row(row_index : u8 in a) : u8 in a {
             (0x13E as func)();
+            return a;
         }
 
         let DISK_IO_ERROR_WRITE_PROTECTED = 0;
@@ -798,6 +872,7 @@ namespace msx {
         // Tests whether the device is active.
         inline func is_file_io_active() : u8 in a {
             (0x14A as func)();
+            return a;
         }
 
         // Different from printer_put_char in the following ways:
@@ -850,6 +925,7 @@ namespace msx {
         // Gets whether the VDP is in screen mode 5, 6, 7, or 8.
         inline func vdp_is_new_mode() : bool in carry {
             (0x162 as func)();
+            return carry;
         }
 
         // (MSX2 required)
@@ -889,6 +965,7 @@ namespace msx {
         // Dirty: af
         inline func vdp_big_vram_read(address : u16 in hl) : u8 in a {
             (0x171 as func)();
+            return a;
         }
 
         // (MSX2 required)
@@ -897,6 +974,7 @@ namespace msx {
         // Dirty: af
         inline func vdp_big_vram_write(address : u16 in hl) : u8 in a {
             (0x171 as func)();
+            return a;
         }
 
         let READ_RESET_WARM_BOOT = 0x80;
@@ -909,6 +987,7 @@ namespace msx {
         // Dirty: af
         inline func read_reset() : u8 in a {
             (0x17A as func)();
+            return a;
         }
 
         let WRITE_RESET_REQUEST_RESET = 0x80;
@@ -962,7 +1041,8 @@ namespace msx {
         // Plays the specified memory area through the PCM chip.
         // - upper_vram_address, upper_vram_length
         //   provide bit 17 of the address/length when a VRAM address used.
-        // Result: carry is set if aborted.
+        // Result: carry is set if aborted with CTRL-STOP.
+        // Dirty: all
         inline func pcm_play(
             play_flags : u8 in a,
             address : u16 in hl,
@@ -971,12 +1051,14 @@ namespace msx {
             upper_vram_length : u8 in d
         ) : bool in carry {
             (0x186 as func)();
+            return carry;
         }
 
         // (MSX Turbo-R required)
         // Records audio using the PCM chip into the specified memory area.
         // - upper_vram_address, upper_vram_length
         //   provide bit 17 of the address/length when a VRAM address used.
+        // Result: carry is set if aborted with CTRL-STOP.
         // Dirty: all
         inline func pcm_record(
             record_flags : u8 in a,
@@ -986,6 +1068,7 @@ namespace msx {
             upper_vram_length : u8 in d
         ) {
             (0x189 as func)();
+            return carry;
         }
     }
 
@@ -1283,6 +1366,10 @@ namespace msx {
         let SPRITE_ATTRIBUTE_X_OFFSET = 1;
         let SPRITE_ATTRIBUTE_TILE_OFFSET_ = 2;
         let SPRITE_ATTRIBUTE_ATTRIBUTE_OFFSET = 3;
+        // When early clock is active, x is subtracted by 32.
+        let SPRITE_ATTRIBUTE_ATTRIBUTE_EARLY_CLOCK_MASK = 0x80;
+        let SPRITE_ATTRIBUTE_ATTRIBUTE_EARLY_CLOCK_BIT = 7;
+        let SPRITE_ATTRIBUTE_ATTRIBUTE_COLOR_MASK = 0x0F;
 
         let overscan_color = 0x07;
     }
