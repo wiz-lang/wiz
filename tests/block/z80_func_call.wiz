@@ -1,0 +1,29 @@
+// SYSTEM  z80
+
+import "_z80_memmap.wiz";
+
+// BLOCK 000000
+in prg {
+
+func first_function() {
+// BLOCK             c9                    ret
+}
+
+func call_test {
+// BLOCK             cd 00 00              call 0x0000
+    first_function();
+// BLOCK             c4 00 00              call nz, 0x0000
+    first_function() if !zero;
+// BLOCK             cc 00 00              call z, 0x0000
+    first_function() if zero;
+// BLOCK             d4 00 00              call nc, 0x0000
+    first_function() if !carry;
+// BLOCK             dc 00 00              call c, 0x0000
+    first_function() if carry;
+// BLOCK             c9                    ret
+}
+
+// BLOCK             ff
+
+}
+
