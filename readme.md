@@ -9,12 +9,12 @@ Contact
 -------
 
 - Please report issues in the GitHub issue tracker.
-- Project Website: http://wiz-lang.org/
-- Project Discord: https://discord.gg/BKnTg7N
-- Project GitHub: https://github.com/wiz-lang/wiz
-- My Twitter: https://twitter.com/eggboycolor
+- Project Website: <http://wiz-lang.org/>
+- Project Discord: <https://discord.gg/BKnTg7N>
+- Project GitHub: <https://github.com/wiz-lang/wiz>
+- My Twitter: <https://twitter.com/eggboycolor>
 - My Email: eggboycolor AT gmail DOT com
-- My Github: http://github.com/Bananattack
+- My Github: <http://github.com/Bananattack>
 
 Features
 --------
@@ -49,7 +49,7 @@ Wiz has built-in support for many ROM formats, and provides conveniences for con
 - `.bin` (raw binary format -- supports optional trimming)
 - `.nes` (NES / Famicom - header config, auto-pad)
 - `.gb`, `.gbc` (Game Boy - header config, auto-checksum, auto-pad)
-- `.sms`, `.gg` (Sega Master System - header config, auto-checksum, auto-pad) 
+- `.sms`, `.gg` (Sega Master System - header config, auto-checksum, auto-pad)
 - `.sfc`, `.smc` (SNES / Super Famicom - header config, auto-checksum, auto-pad)
 - `.pce` (TurboGrafx-16 / PC Engine)
 - `.a26` (Atari 2600)
@@ -59,7 +59,7 @@ Using Wiz
 
 Usage:
 
-```
+```bash
 wiz [options] <input>
 ```
 
@@ -67,7 +67,7 @@ Arguments:
 
 - `input` - the name of the input file to load. A filename of `-` implies the standard input stream.
 - `-o filename` or `--output=filename` - the name of the output file to produce. the file extension determines the output format, and can sometimes automatically suggest a target system.
-- `-m sys` or `--system=sys` - specifies the target system that the program is being built for. Supported systems: `6502`, `65c02` `rockwell65c02`, `wdc65c02`, `huc6280`, `z80`, `gb`, `wdc65816`, `spc700` 
+- `-m sys` or `--system=sys` - specifies the target system that the program is being built for. Supported systems: `6502`, `65c02` `rockwell65c02`, `wdc65c02`, `huc6280`, `z80`, `gb`, `wdc65816`, `spc700`
 - `-I dir` or `--import-dir=dir` - adds a directory to search for `import` and `embed` statements.
 - `--color=setting` - sets the color preference for the terminal (Defaults to `auto`). `auto` will automatically detects if a TTY is attached, and only emits color escapes when there is one. `none` disables color. `ansi` will always use ANSI-escapes, even if no TTY is detected, or if the terminal uses different method of coloring (eg. Windows console).
 - `--help` - lists a help message.
@@ -75,11 +75,19 @@ Arguments:
 
 Example invocation:
 
-```
+```bash
 wiz hello.wiz --system=6502 -o hello.nes
 ```
 
+Getting Started
+---------------
+
 For now, please consult the example folder to see how Wiz can be used, or failing that, the compiler source code. Additional documentation isn't ready yet. In the future, there are plans to have a language reference, a reference for the instruction capabilities of each target, and tutorials showing how to make stuff. Help here is greatly appreciated!
+
+For help with editing Wiz files:
+
+- In *VS Code* install the extension "Wiz Language Support" from the extension marketplace.
+- In *Sublime Text* the file `syntax/sublime2/wiz.tmLanguage` (in this repo) goes in your packages folder which you can open from Sublime Text by going to Preferences > Browse Packages.
 
 Building Source
 ---------------
@@ -88,14 +96,14 @@ NOTE: All build instructions require a C++14, C++17, or later compiler. It will 
 
 ### Windows (Visual Studio)
 
-- Install Visual Studio 2019 or later. 
+- Install Visual Studio 2019 or later.
 - Open `vc/wiz.sln` in Visual Studio. Build the solution.
 - If the build succeeds, a file named `wiz.exe` should exist in the `bin/` folder under the root of this repository.
 
 ### Windows (mingw)
 
-- Install MinGW-w64. https://mingw-w64.org/
-- Install GnuWin32 "Make for Windows". http://gnuwin32.sourceforge.net/packages/make.htm
+- Install MinGW-w64. <https://mingw-w64.org/>
+- Install GnuWin32 "Make for Windows". <http://gnuwin32.sourceforge.net/packages/make.htm>
 - Open a terminal window, such as the Command Prompt (cmd) or something else.
 - Run `make` in the terminal. For a debug target, run `make CFG=debug` instead. Feel free to add `-j8` or similar to build faster.
 - If the build succeeds, a file named `wiz.exe` should exist in the `bin/` folder under the root of this repository.
@@ -111,7 +119,7 @@ NOTE: All build instructions require a C++14, C++17, or later compiler. It will 
 
 ### Mac OS X
 
-- Install Xcode and install Command Line Tools. 
+- Install Xcode and install Command Line Tools.
 - Open a terminal window.
 - Run `make` in the terminal. For a debug target, run `make CFG=debug` instead. Feel free to add `-j8` or similar to build faster.
 - If the build succeeds, a file named `wiz` should exist in the `bin/` folder under the root of this repository.
@@ -119,7 +127,7 @@ NOTE: All build instructions require a C++14, C++17, or later compiler. It will 
 ### Linux
 
 - Install GCC or Clang.
-- Install GNU Make. 
+- Install GNU Make.
 - Run `make` in the terminal. For a debug target, run `make CFG=debug` instead. Feel free to add `-j8` or similar to build faster.
 - If the build succeeds, a file named `wiz` should exist in the `bin/` folder under the root of this repository.
 
@@ -168,14 +176,14 @@ A bank declaration reserves a bank of memory with a given type and address. It h
 bank name @ address, name @ address, name @ address : [type; size];
 ```
 
-The type of bank of `bank` determines what kind of declarations can be placed there. 
+The type of bank of `bank` determines what kind of declarations can be placed there.
 
 - `vardata` is uninitialized RAM. useful for variables that can be written to and read back at runtime. Because this section is uninitialized, variables declared here must be assigned a value at execution time. Because of these limitations, compiled code and and constant data cannot be placed here.
 - `prgdata` is ROM used for program code and constants. Cannot be written to.
 - `constdata` is ROM used for constants and program code. Cannot be written to.
 - `chrdata` is ROM used for character / tile graphic data. This type of bank has a special meaning on platforms like the NES, where character data is on a separate memory bus. It is otherwise the same as `constdata`.
 - The distinction between `prgdata` and `constdata` will only exist on Harvard architectures, where the program and constant data live on separate buses. Otherwise, just use it for clarifying the purpose of ROM banks, if it matters.
-- `varinitdata` is initialized RAM. Useful for programs with code and data that get uploaded to RAM. 
+- `varinitdata` is initialized RAM. Useful for programs with code and data that get uploaded to RAM.
 
 The size of a `bank` is the number of bytes that it will hold. Exceeding this size limitation is considered an error.
 
@@ -215,7 +223,7 @@ A constant declaration reserves pre-initialized data that can't be written to at
 const name : type = value;
 ```
 
-Example: 
+Example:
 ```
 const hp : u8 = 100;
 const wow : [u8] = [0, 1, 2, 3, 4, 5, 6];
@@ -224,11 +232,11 @@ const egg : [u16; 5] = [12345, 54321, 32333, 49293];
 
 If the type is provided, the initializer is narrowed to the type provided. This means that integer initializers of type `iexpr` that have no size can be implicitly narrowed to sized integer types like `u8`, and array initializers of type `[iexpr]` can be narrowed to `[u8]`, and so on.
 
-Note that The size of an array type can be left off, if the tyep. 
+Note that The size of an array type can be left off, if the tyep.
 
 If the type of a constant can be inferred from the value, then the type can be left off. However, only types with a known size can be constants. `iexpr` has unknown size, so type-suffixes on integers may be required.
 
-Example: 
+Example:
 
 ```
 const length = 100u8;
@@ -238,7 +246,7 @@ const table = embed "table.bin";
 
 The name of a constant is also optional, when placing data in the ROM is desired but a label to it isn't needed.
 
-Example: 
+Example:
 
 ```
 const = embed "hero.chr";
@@ -261,14 +269,14 @@ var x : u8;
 A variable declared in a `varinitdata` bank is allowed to have a initializer.
 
 ```
-var x = 100; 
+var x = 100;
 ```
 
 If an initializer is given, the type can be omitted if the initializer expression has a type of known size.
 
 ```
-var x = 
-var message = "hello"; 
+var x =
+var message = "hello";
 ```
 
 A variable declared in a `vardata` bank, on the other hand, is reserved in uninitialized RAM, so it cannot have an initializer and can only be assigned a value at run-time.
@@ -347,7 +355,7 @@ Example:
 
 ```
 // This is OK, because it can be decomposed.
-a = (5 + c) - b; 
+a = (5 + c) - b;
 // The above becomes:
 // a = 5;
 // a = a + c
@@ -526,7 +534,7 @@ Example:
 if b$7 {
     vertical_flip();
 } else if b$6 {
-    horizontal_flip(); 
+    horizontal_flip();
 }
 ```
 
@@ -917,7 +925,7 @@ union Union {
 // It cannot be used as integer without casting.
 enum ItemType : u8 {
     Consumable,
-    Key,    
+    Key,
     Weapon,
     Armor,
     Accessory,
@@ -1080,9 +1088,9 @@ Intrinsics:
 Tests and Branches:
 
 - `a`, `x` and `y` can be used with comparison operators (`==`, `!=`, `<`, `>`, `<=`, or `>=`) inside conditional branches. A branch like `if a >= 5 { ... }` becomes `if { cmp(a, 5); } && carry { ... }`.
-- `a & mem == 0` or `a & mem != 0` can be used as a conditional branches. `if a & mem == 0 { ... }` becomes `if { bit(mem); } && zero { ... }` and `if a & mem != 0 { ... }` becomes `if { bit(mem) } && !zero { ... }` 
-- `mem $ 6` can be used as a conditional branch for testing bit 6 of memory. `if mem $ 6 { ... }` becomes `if { bit(mem); } && overflow { ... }` 
-- `mem $ 7` can be used as a conditional branch for testing bit 7 of memory. `if mem $ 7 { ... }` becomes `if { bit(mem); } && negative { ... }` 
+- `a & mem == 0` or `a & mem != 0` can be used as a conditional branches. `if a & mem == 0 { ... }` becomes `if { bit(mem); } && zero { ... }` and `if a & mem != 0 { ... }` becomes `if { bit(mem) } && !zero { ... }`
+- `mem $ 6` can be used as a conditional branch for testing bit 6 of memory. `if mem $ 6 { ... }` becomes `if { bit(mem); } && overflow { ... }`
+- `mem $ 7` can be used as a conditional branch for testing bit 7 of memory. `if mem $ 7 { ... }` becomes `if { bit(mem); } && negative { ... }`
 
 Addressing Modes:
 
@@ -1415,7 +1423,7 @@ Extra Registers:
 - `turbo_speed : bool` - CPU turbo mode setting
 - `vdc_select : u8` - VDC address select register (fast access)
 - `vdc_data_l : u8` - VDC data register low (fast access)
-- `vdc_data_h : u8` - VDC data register high (fast access) 
+- `vdc_data_h : u8` - VDC data register high (fast access)
 - The VDC registers are also available in a memory mapped I/O registers, these registers are just for special quick-write instructions in the CPU.
 - `mpr0 : u8` - mapper register 0, maps the memory bank available at address range `0x0000 .. 0x1FFF`.
 - `mpr1 : u8` - mapper register 1, maps the memory bank available at address range `0x2000 .. 0x3FFF`. Affects zero page.
@@ -1429,9 +1437,9 @@ Extra Registers:
 Extra Intrinsics
 
 - `swap(left, right)` - exchanges the values between the left and right operand.
-- `transfer_alternate_to_increment(source, dest, len)` - transfers `len` bytes of data from an alternating `source` address (`source`, `source + 1`, `source`, ...) to an incrementing `dest` address (`dest`, `dest + 1`, `dest + 2`, ...). 
-- `transfer_increment_to_alternate(source, dest, len)` - transfers `len` bytes of data from an incrementing `source` address (`source`, `source + 1`, `source + 2`, ...)  to an alternating `dest` address (`dest`, `dest + 1`, `dest`, ...). 
-- `transfer_decrement_to_decrement(source, dest, len)` - transfers `len` bytes of data from an decrementing `source` address address (`source`, `source - 1`, `source - 2`, ...) to an decrementing `dest` address (`dest`, `dest - 1`, `dest - 2`, ...). 
+- `transfer_alternate_to_increment(source, dest, len)` - transfers `len` bytes of data from an alternating `source` address (`source`, `source + 1`, `source`, ...) to an incrementing `dest` address (`dest`, `dest + 1`, `dest + 2`, ...).
+- `transfer_increment_to_alternate(source, dest, len)` - transfers `len` bytes of data from an incrementing `source` address (`source`, `source + 1`, `source + 2`, ...)  to an alternating `dest` address (`dest`, `dest + 1`, `dest`, ...).
+- `transfer_decrement_to_decrement(source, dest, len)` - transfers `len` bytes of data from an decrementing `source` address address (`source`, `source - 1`, `source - 2`, ...) to an decrementing `dest` address (`dest`, `dest - 1`, `dest - 2`, ...).
 - `transfer_increment_to_increment(source, dest, len)` - transfers `len` bytes of data from an incrementing `source` address address (`source`, `source + 1`, `source + 2`, ...) to an incrementing `dest` address (`dest`, `dest + 1`, `dest + 2`, ...).
 - `transfer_increment_to_fixed(source, dest, len)` - transfers `len` bytes of data from an incrementing `source` address address (`source`, `source + 1`, `source + 2`, ...) to a fixed `dest` address (`dest`, `dest`, `dest`, ...).
 - `mpr_set(mask, a)` - sets `mpr0` .. `mpr7` registers to the value in the accumulator, using `mask` to indicate which of registers are being selected to update. For N = 0 .. 7, if `mask $ N` is `true` (`(mask & (1 << N)) != 0`), then `mprN` will be set to `a`.
@@ -1961,10 +1969,10 @@ This code is released under an MIT license.
     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
     copies of the Software, and to permit persons to whom the Software is
     furnished to do so, subject to the following conditions:
-    
+
     The above copyright notice and this permission notice shall be included in
     all copies or substantial portions of the Software.
-    
+
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -2006,5 +2014,5 @@ Other Notes
 - This is alpha software. It should be usable but contains many rough edges. Future revisions may change and break compatibility, but this will be documented whenever possible.
 - Better documentation is coming soon. I am very tired and I need to rest a bit.
 - This project has existed in other forms before this release. For the old version of Wiz that was written in the D programming language, see the `release/wiz-d-legacy` branch of this repo.
-- For the even older esoteric language project that turned into Wiz, see: http://github.com/Bananattack/nel-d
+- For the even older esoteric language project that turned into Wiz, see: <http://github.com/Bananattack/nel-d>
 - While this project has been in development for a long time, this release is considered an "early development" build. It may contain issues and instabilities, or parts of the language that are subject to change. Help improving this is appreciated.
