@@ -173,7 +173,7 @@ namespace wiz {
     }
 
     std::size_t Bank::calculateUsedSize() const {
-        for (std::size_t i = ownership.size() - 1; i < ownership.size(); --i) {
+        for (std::size_t i = ownership.size() - 1; i >= 0; --i) {
             if (ownership[i] != 0) {
                 return i + 1;
             }
