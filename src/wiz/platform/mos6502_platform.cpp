@@ -512,7 +512,7 @@ namespace wiz {
             // branch always
             builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16}), encodingPCRelativeI8Operand, InstructionOptions({0x80}, {1}, {}));
             // indirect jump indexed by x
-            builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternIndirectJumpIndexedByX}), encodingU16Operand, InstructionOptions({0x6C}, {1}, {}));
+            builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternIndirectJumpIndexedByX}), encodingU16Operand, InstructionOptions({0x7C}, {1}, {}));
             // push
             builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), 0, {patternX}), encodingImplicit, InstructionOptions({0xDA}, {}, {}));
             builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), 0, {patternY}), encodingImplicit, InstructionOptions({0x5A}, {}, {}));
