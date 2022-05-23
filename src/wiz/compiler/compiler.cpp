@@ -1722,6 +1722,7 @@ namespace wiz {
                     case UnaryOperatorKind::FarAddressOf: break;
                     case UnaryOperatorKind::LowByte: break;
                     case UnaryOperatorKind::HighByte: break;
+                    case UnaryOperatorKind::BankByte: break;
                     case UnaryOperatorKind::LowWord: break;
                     case UnaryOperatorKind::MidWord: break;
                     case UnaryOperatorKind::HighWord: break;
@@ -3123,9 +3124,10 @@ namespace wiz {
 
         if (const auto destinationArrayType = destinationType->tryGet<TypeExpression::Array>()) {
             if (const auto sourceArrayType = sourceExpressionType->tryGet<TypeExpression::Array>()) {
+                const auto sourceElementType = sourceArrayType->elementType.get();
                 const auto destinationElementType = destinationArrayType->elementType.get();
 
-                if (isTypeEquivalent(destinationElementType, sourceArrayType->elementType.get())) {
+                if (isTypeEquivalent(destinationElementType, sourceElementType)) {
                     return sourceExpression->clone();
                 }
 
@@ -3133,8 +3135,17 @@ namespace wiz {
                     std::vector<FwdUniquePtr<const Expression>> convertedItems;
                     convertedItems.reserve(sourceArray->items.size());
 
-                    for (const auto& item : sourceArray->items) {
-                        convertedItems.push_back(createConvertedExpression(item.get(), destinationElementType));
+                    const auto& sourceItems = sourceArray->items;
+                    for (std::size_t i = 0; i != sourceItems.size(); ++i) {
+                        const auto& sourceItem = sourceItems[i];
+                        auto convertedItem = createConvertedExpression(sourceItem.get(), destinationElementType);
+
+                        if (convertedItem == nullptr) {
+                            report->error("could not convert array element " + std::to_string(i) + " of type `" + getTypeName(sourceElementType) + "` to type `" + getTypeName(destinationElementType) + "`", sourceItem->location);
+                            return nullptr;
+                        }
+
+                        convertedItems.push_back(std::move(convertedItem));
                     }
 
                     return createArrayLiteralExpression(std::move(convertedItems), destinationElementType, sourceExpression->location);
@@ -3169,6 +3180,9 @@ namespace wiz {
                             sourceExpression->info->context,
                             destinationType->clone(),
                             sourceExpression->info->qualifiers));
+                } else {
+                    report->error("could not convert pointer of type `" + getTypeName(sourceExpressionType) + "` to `" + getTypeName(destinationType) + "` because it would lose qualifiers", destinationType->location);
+                    return nullptr;
                 }
             }
         }
@@ -3198,6 +3212,7 @@ namespace wiz {
             }
         }
 
+        report->error("could not convert expression of type `" + getTypeName(sourceExpressionType) + "` to `" + getTypeName(destinationType) + "`", destinationType->location);
         return nullptr;
     }
 
