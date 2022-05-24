@@ -43,6 +43,7 @@ namespace wiz {
             Definition* cmp = nullptr;
             Definition* bit = nullptr;
             Definition* tst = nullptr;
+            Definition* tstbit = nullptr;
     };
 }
 

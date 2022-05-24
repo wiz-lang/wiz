@@ -98,6 +98,7 @@ namespace wiz {
         const auto patternImmU8 = builtins.createInstructionOperandPattern(InstructionOperandPattern::IntegerRange(Int128(0), Int128(0xFF)));
         const auto patternImmZPU8 = revision == Revision::Huc6280 ? builtins.createInstructionOperandPattern(InstructionOperandPattern::IntegerRange(Int128(0x2000), Int128(0x20FF))) : patternImmU8;
         const auto patternImmU16 = builtins.createInstructionOperandPattern(InstructionOperandPattern::IntegerRange(Int128(0), Int128(0xFFFF)));
+        const auto patternImmBitSubscript = builtins.createInstructionOperandPattern(InstructionOperandPattern::IntegerRange(Int128(0), Int128(7)));
         const auto patternZeroPage
             = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(
                 false,
@@ -512,7 +513,7 @@ namespace wiz {
             // branch always
             builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16}), encodingPCRelativeI8Operand, InstructionOptions({0x80}, {1}, {}));
             // indirect jump indexed by x
-            builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternIndirectJumpIndexedByX}), encodingU16Operand, InstructionOptions({0x7C}, {1}, {}));
+            builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternIndirectJumpIndexedByX}), encodingU16Operand, InstructionOptions({0x6C}, {1}, {}));
             // push
             builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), 0, {patternX}), encodingImplicit, InstructionOptions({0xDA}, {}, {}));
             builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(push), 0, {patternY}), encodingImplicit, InstructionOptions({0x5A}, {}, {}));
@@ -656,11 +657,12 @@ namespace wiz {
             const auto mpr_set = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("mpr_set"), decl);
 
             tst = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("tst"), decl);
+            tstbit = scope->createDefinition(nullptr, Definition::BuiltinVoidIntrinsic(), stringPool->intern("tstbit"), decl);
 
             const auto encodingZeroPageBitwiseTest = builtins.createInstructionEncoding(
                 [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
                     static_cast<void>(captureLists);
-                    return options.opcode.size() + 3;
+                    return options.opcode.size() + 2;
                 },
                 [](Report* report, const Bank* bank, std::vector<std::uint8_t>& buffer, const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists, SourceLocation location) {
                     static_cast<void>(report);
@@ -712,6 +714,41 @@ namespace wiz {
                     buffer.push_back(static_cast<std::uint8_t>((dest >> 8) & 0xFF));
                     buffer.push_back(static_cast<std::uint8_t>(length & 0xFF));
                     buffer.push_back(static_cast<std::uint8_t>((length>> 8) & 0xFF));
+                    return true;
+                });
+            const auto encodingZeroPageSingleBitTest = builtins.createInstructionEncoding(
+                [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
+                    static_cast<void>(captureLists);
+                    return options.opcode.size() + 2;
+                },
+                [](Report* report, const Bank* bank, std::vector<std::uint8_t>& buffer, const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists, SourceLocation location) {
+                    static_cast<void>(report);
+                    static_cast<void>(bank);
+                    static_cast<void>(location);
+
+                    const auto mask = static_cast<std::uint8_t>(1 << static_cast<std::uint8_t>(captureLists[options.parameter[0]][0]->integer.value));
+                    const auto source = static_cast<std::uint8_t>(captureLists[options.parameter[1]][0]->integer.value);
+                    buffer.insert(buffer.end(), options.opcode.begin(), options.opcode.end());
+                    buffer.push_back(mask);
+                    buffer.push_back(source);
+                    return true;
+                });
+            const auto encodingAbsoluteSingleBitTest = builtins.createInstructionEncoding(
+                [](const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists) {
+                    static_cast<void>(captureLists);
+                    return options.opcode.size() + 3;
+                },
+                [](Report* report, const Bank* bank, std::vector<std::uint8_t>& buffer, const InstructionOptions& options, const std::vector<std::vector<const InstructionOperand*>>& captureLists, SourceLocation location) {
+                    static_cast<void>(report);
+                    static_cast<void>(bank);
+                    static_cast<void>(location);
+
+                    const auto mask = static_cast<std::uint8_t>(1 << static_cast<std::uint8_t>(captureLists[options.parameter[0]][0]->integer.value));
+                    const auto source = static_cast<std::uint16_t>(captureLists[options.parameter[1]][0]->integer.value);
+                    buffer.insert(buffer.end(), options.opcode.begin(), options.opcode.end());
+                    buffer.push_back(mask);
+                    buffer.push_back(static_cast<std::uint8_t>(source & 0xFF));
+                    buffer.push_back(static_cast<std::uint8_t>((source >> 8) & 0xFF));
                     return true;
                 });
 
@@ -780,12 +817,16 @@ namespace wiz {
             builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternMPR5}), encodingImplicit, InstructionOptions({0x43, 0x20}, {}, {}));
             builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternMPR6}), encodingImplicit, InstructionOptions({0x43, 0x40}, {}, {}));
             builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternA, patternMPR7}), encodingImplicit, InstructionOptions({0x43, 0x80}, {}, {}));
-            // tst #imm, mem - overflow = mem $ 6, negative = mem $ 7, zero = imm & mem
+            // tst(imm, mem) - imm = 0 .. 255, mem = abs|zp, overflow = mem $ 6, negative = mem $ 7, zero = imm & mem
             builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(tst), 0, {patternImmU8, patternZeroPage}), encodingZeroPageBitwiseTest, InstructionOptions({0x83}, {0, 1}, {}));
             builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(tst), 0, {patternImmU8, patternZeroPageIndexedByX}), encodingZeroPageBitwiseTest, InstructionOptions({0xA3}, {0, 1}, {}));
             builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(tst), 0, {patternImmU8, patternAbsolute}), encodingAbsoluteBitwiseTest, InstructionOptions({0x93}, {0, 1}, {}));
             builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(tst), 0, {patternImmU8, patternAbsoluteIndexedByX}), encodingAbsoluteBitwiseTest, InstructionOptions({0xB3}, {0, 1}, {}));
-
+            // tstbit(mem, imm) - imm = 0..7,  mem = abs|zp, overflow = mem $ 6, negative = mem $ 7, zero = mem $ imm
+            builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(tstbit), 0, {patternZeroPage, patternImmBitSubscript}), encodingZeroPageSingleBitTest, InstructionOptions({0x83}, {0, 1}, {}));
+            builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(tstbit), 0, {patternZeroPageIndexedByX, patternImmBitSubscript}), encodingZeroPageSingleBitTest, InstructionOptions({0xA3}, {0, 1}, {}));
+            builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(tstbit), 0, {patternAbsolute, patternImmBitSubscript}), encodingAbsoluteSingleBitTest, InstructionOptions({0x93}, {0, 1}, {}));
+            builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(tstbit), 0, {patternAbsoluteIndexedByX, patternImmBitSubscript}), encodingAbsoluteSingleBitTest, InstructionOptions({0xB3}, {0, 1}, {}));
         }
     }
 
@@ -1012,6 +1053,12 @@ namespace wiz {
                             InstructionType::VoidIntrinsic(bit),
                             std::vector<const Expression*> {left},
                             std::vector<PlatformBranch> { PlatformBranch(negative, true, true) }
+                        );
+                    } else if (revision == Revision::Huc6280 && bitIndex < Int128(7)) {
+                        return std::make_unique<PlatformTestAndBranch>(
+                            InstructionType::VoidIntrinsic(tstbit),
+                            std::vector<const Expression*> {left, right},
+                            std::vector<PlatformBranch> { PlatformBranch(zero, false, true) }
                         );
                     }
                 }
