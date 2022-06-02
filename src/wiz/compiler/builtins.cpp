@@ -54,8 +54,8 @@ namespace wiz {
     rangeType(scope->createDefinition(nullptr, Definition::BuiltinRangeType(), stringPool->intern("range"), declaration.get())),
     intrinsicType(scope->createDefinition(nullptr, Definition::BuiltinIntrinsicType(), stringPool->intern("intrinsic"), declaration.get())),
     typeofType(scope->createDefinition(nullptr, Definition::BuiltinTypeOfType(), stringPool->intern("typeof"), declaration.get())),
-    hasDef(scope->createDefinition(nullptr, Definition::Let(std::vector<StringView> {stringPool->intern("key")}, nullptr), stringPool->intern("__has"), declaration.get())),
-    getDef(scope->createDefinition(nullptr, Definition::Let(std::vector<StringView> {stringPool->intern("key"), stringPool->intern("fallback")}, nullptr), stringPool->intern("__get"), declaration.get())),
+    hasDef(scope->createDefinition(nullptr, Definition::Let(std::vector<StringView> {stringPool->intern("key")}, nullptr, nullptr), stringPool->intern("__has"), declaration.get())),
+    getDef(scope->createDefinition(nullptr, Definition::Let(std::vector<StringView> {stringPool->intern("key"), stringPool->intern("fallback")}, nullptr, nullptr), stringPool->intern("__get"), declaration.get())),
     unitTuple(makeFwdUnique<TypeExpression>(TypeExpression::Tuple({}), declaration->location)) {
         scope->createDefinition(nullptr, Definition::Namespace(scope.get()), stringPool->intern("wiz"), declaration.get());
         scope->createDefinition(nullptr, Definition::BuiltinBankType(BankKind::UninitializedRam), stringPool->intern("vardata"), declaration.get());

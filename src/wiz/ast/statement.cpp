@@ -176,6 +176,7 @@ namespace wiz {
                     if (parameter != nullptr) {
                         clonedParameters.push_back(
                             std::make_unique<const Func::Parameter>(
+                                parameter->kind,
                                 parameter->name,
                                 parameter->typeExpression ? parameter->typeExpression->clone() : nullptr,
                                 parameter->location));

@@ -53,6 +53,11 @@ namespace wiz {
         FarCall,
     };
 
+    enum FuncParameterKind {
+        Var,
+        Let,
+    };
+
     enum class StructKind {
         Struct,
         Union,
@@ -235,13 +240,16 @@ namespace wiz {
         struct Func {
             struct Parameter {
                 Parameter(
+                    FuncParameterKind kind,
                     StringView name,
                     FwdUniquePtr<const TypeExpression> typeExpression,
                     const SourceLocation& location)
-                : name(name),
+                : kind(kind),
+                name(name),
                 typeExpression(std::move(typeExpression)),
                 location(location) {}
 
+                FuncParameterKind kind;
                 StringView name;
                 FwdUniquePtr<const TypeExpression> typeExpression;
                 SourceLocation location;

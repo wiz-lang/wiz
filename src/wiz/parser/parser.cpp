@@ -963,6 +963,13 @@ namespace wiz {
             // parameter = IDENTIFIER `:` type
             const auto location = scanner->getLocation();
 
+            auto kind = FuncParameterKind::Var;
+
+            if (token.keyword == Keyword::Let) {
+                kind = FuncParameterKind::Let;
+                nextToken(); // IDENTIFIER (keyword `let`)
+            }
+
             StringView name;
             if (checkIdentifier()) {
                 name = token.text;
@@ -972,7 +979,7 @@ namespace wiz {
             expectTokenType(TokenType::Colon); // `:`
             auto type = parseType();
 
-            return std::make_unique<const Statement::Func::Parameter>(name, std::move(type), location);
+            return std::make_unique<const Statement::Func::Parameter>(kind, name, std::move(type), location);
         };
 
         StringView name;

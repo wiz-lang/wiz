@@ -172,13 +172,24 @@ namespace wiz {
 
         struct Let {
             Let(
+                const Expression* expression,
+                const TypeExpression* typeExpression)
+            : parameters(),
+            expression(expression),
+            typeExpression(typeExpression) {}
+
+            Let(
                 const std::vector<StringView>& parameters,
-                const Expression* expression)
+                const Expression* expression,
+                const TypeExpression* typeExpression)
             : parameters(parameters),
-            expression(expression) {}
+            expression(expression),
+            typeExpression(typeExpression) {}
 
             std::vector<StringView> parameters;
             const Expression* expression;
+            const TypeExpression* typeExpression;
+            FwdUniquePtr<const TypeExpression> reducedTypeExpression;
         };
 
         struct Namespace {

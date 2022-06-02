@@ -1124,7 +1124,7 @@ namespace wiz {
                             argumentBindings.reserve(parameters.size());
 
                             for (std::size_t i = 0; i != parameters.size(); ++i) {
-                                if (scope->createDefinition(report, Definition::Let({}, reducedArguments[i].get()), parameters[i], definition->declaration) == nullptr) {
+                                if (scope->createDefinition(report, Definition::Let({}, reducedArguments[i].get(), nullptr), parameters[i], definition->declaration) == nullptr) {
                                     return nullptr;
                                 }
                             }
@@ -1133,6 +1133,11 @@ namespace wiz {
                             enterScope(scope.get());
                             if (enterLetExpression(definition->name, expression->location)) {                            
                                 result = reduceExpression(letDefinition->expression);
+
+                                if (result != nullptr && result->info->context == EvaluationContext::RunTime) {
+                                    report->error("`" +  definition->name.toString() + "` is a `let` expression, so it cannot accept a run-time expression", result->location);
+                                }
+
                                 exitLetExpression();
                             }
                             exitScope();
@@ -2271,6 +2276,11 @@ namespace wiz {
                 enterScope(definition->parentScope);
                 if (enterLetExpression(definition->name, location)) {
                     result = reduceExpression(letDefinition->expression);
+
+                    if (result != nullptr && result->info->context == EvaluationContext::RunTime) {
+                        report->error("`" +  getResolvedIdentifierName(definition, pieces) + "` is a `let` expression, so it cannot accept a run-time expression", result->location);
+                    }
+
                     exitLetExpression();
                 }
                 exitScope();
@@ -3994,9 +4004,22 @@ namespace wiz {
 
                 enterScope(getOrCreateStatementScope(stringPool->intern(SymbolTable::generateBlockName()), body, currentScope));
                 funcDefinition.environment = currentScope;
-                for (const auto& parameter : funcDeclaration.parameters) {
-                    auto parameterDefinition = currentScope->createDefinition(report, Definition::Var(Qualifiers::None, definition, nullptr, parameter->typeExpression.get(), 0), parameter->name, statement);
-                    parameterDefinition->var.isParameter = true;
+                for (std::size_t i = 0; i != funcDeclaration.parameters.size(); ++i) {
+                    const auto& parameter = funcDeclaration.parameters[i];
+                    const auto inlineArgument = i < currentInlineSite->inlineArguments.size() ? currentInlineSite->inlineArguments[i] : nullptr;
+                    Definition* parameterDefinition = nullptr;
+
+                    switch (parameter->kind) {
+                        case FuncParameterKind::Var: {
+                            parameterDefinition = currentScope->createDefinition(report, Definition::Var(Qualifiers::None, definition, nullptr, parameter->typeExpression.get(), 0), parameter->name, statement);
+                            parameterDefinition->var.isParameter = true;
+                            break;
+                        }
+                        case FuncParameterKind::Let: {
+                            parameterDefinition = currentScope->createDefinition(report, Definition::Let(inlineArgument, parameter->typeExpression.get()), parameter->name, statement);
+                            break;
+                        }
+                    }
                     funcDefinition.parameters.push_back(parameterDefinition);
                 }
                 exitScope();
@@ -4047,7 +4070,7 @@ namespace wiz {
             }
             case StatementKind::Let: {
                 const auto& letDeclaration = statement->let;
-                currentScope->createDefinition(report, Definition::Let(letDeclaration.parameters, letDeclaration.value.get()), letDeclaration.name, statement);
+                currentScope->createDefinition(report, Definition::Let(letDeclaration.parameters, letDeclaration.value.get(), nullptr), letDeclaration.name, statement);
                 break;
             }
             case StatementKind::Namespace: {
@@ -4262,13 +4285,21 @@ namespace wiz {
                 parameters.reserve(funcDefinition->parameters.size());
 
                 for (const auto& parameter : funcDefinition->parameters) {
-                    auto& parameterDefinition = parameter->var;
-                    if (auto parameterType = reduceTypeExpression(parameterDefinition.typeExpression)) {
-                        parameterDefinition.reducedTypeExpression = parameterType->clone();
-                        parameterDefinition.resolvedType = parameterDefinition.reducedTypeExpression.get();
-                        parameters.push_back(makeUnique<const TypeExpression::Function::Parameter>(parameter->name, std::move(parameterType)));
-                    } else {
-                        valid = false;
+                    if (const auto parameterDefinition = parameter->tryGet<Definition::Var>()) {
+                        if (auto parameterType = reduceTypeExpression(parameterDefinition->typeExpression)) {
+                            parameterDefinition->reducedTypeExpression = parameterType->clone();
+                            parameterDefinition->resolvedType = parameterDefinition->reducedTypeExpression.get();
+                            parameters.push_back(makeUnique<const TypeExpression::Function::Parameter>(parameter->name, std::move(parameterType)));
+                        } else {
+                            valid = false;
+                        }
+                    } else if (const auto parameterDefinition = parameter->tryGet<Definition::Let>()) {
+                        if (auto parameterType = reduceTypeExpression(parameterDefinition->typeExpression)) {
+                            parameterDefinition->reducedTypeExpression = parameterType->clone();
+                            parameters.push_back(makeUnique<const TypeExpression::Function::Parameter>(parameter->name, std::move(parameterType)));
+                        } else {
+                            valid = false;
+                        }
                     }
                 }
 
@@ -5223,14 +5254,15 @@ namespace wiz {
         for (std::size_t i = 0; i != arguments.size(); ++i) {
             const auto& parameterType = functionType.parameters[i]->parameterType;
             const auto& argument = arguments[i];
-            if (auto designatedStorageType = parameterType->tryGet<TypeExpression::DesignatedStorage>()) {
+            if (i < parameters.size() && parameters[i]->tryGet<Definition::Let>() != nullptr) {
+                continue;
+            } else if (auto designatedStorageType = parameterType->tryGet<TypeExpression::DesignatedStorage>()) {
                 emitAssignmentExpressionIr(designatedStorageType->holder.get(), argument.get(), argument->location);
-
             } else {
                 report->error(
-                    "could not generate initializer for argument `"
-                        + (parameters.size() != 0 ? "argument `" + parameters[i]->name.toString() + "`" : "argument #" + std::to_string(i))
-                        + "` of type `" + getTypeName(parameterType.get()) + "`",
+                    "could not generate initializer for argument "
+                        + (parameters.size() != 0 ? "`" + parameters[i]->name.toString() + "`" : " #" + std::to_string(i))
+                        + " of type `" + getTypeName(parameterType.get()) + "`",
                     argument->location);
                 return false;
             }
@@ -5272,12 +5304,27 @@ namespace wiz {
                     enterInlineSite(registeredInlineSites.addNew());
 
                     const auto funcDeclaration = definition->declaration;
-                    enterScope(getOrCreateStatementScope(stringPool->intern(SymbolTable::generateBlockName()), funcDeclaration, funcDefinition->enclosingScope));
+                    enterScope(getOrCreateStatementScope(stringPool->intern(SymbolTable::generateBlockName()), funcDeclaration->func.body.get(), funcDefinition->enclosingScope));
+
+                    for (std::size_t i = 0; i != funcDefinition->parameters.size(); i++) {
+                        auto& parameter = funcDefinition->parameters[i];
+                        auto& argument = arguments[i];
+
+                        if (auto letParameter = parameter->tryGet<Definition::Let>()) {
+                            if (argument->info->context == EvaluationContext::RunTime) {
+                                report->error("argument `" + parameter->name.toString() + "` is a `let` expression, so it cannot accept a run-time expression", argument->location);
+                            }
+                            currentInlineSite->inlineArguments.push_back(expressionPool.add(argument->clone()));
+                        } else {
+                            currentInlineSite->inlineArguments.push_back(nullptr);
+                        }
+                    }
 
                     bool valid = reserveDefinitions(funcDeclaration) && resolveDefinitionTypes() && reserveStorage(funcDeclaration);
 
                     if (valid) {
                         // TODO: templating on type or expression???
+
                         valid = emitFunctionIr(definition, function->location);
                         static_cast<void>(valid);
                     }
@@ -6822,7 +6869,7 @@ namespace wiz {
 
                     if (valid) {
                         auto tempDeclaration = statementPool.addNew(Statement::InternalDeclaration(), statement->location);
-                        auto tempDefinition = currentScope->createDefinition(report, Definition::Let({}, nullptr), inlineForStatement.name, tempDeclaration);
+                        auto tempDefinition = currentScope->createDefinition(report, Definition::Let({}, nullptr, nullptr), inlineForStatement.name, tempDeclaration);
                         auto& tempLetDefinition = tempDefinition->let;
 
                         auto sourceItem = getSequenceLiteralItem(reducedSequence.get(), i);

@@ -194,6 +194,7 @@ namespace wiz {
 
             struct InlineSite {
                 std::unordered_map<const Statement*, SymbolTable*> statementScopes;
+                std::vector<const Expression*> inlineArguments;
             };
 
             InlineSite defaultInlineSite;
