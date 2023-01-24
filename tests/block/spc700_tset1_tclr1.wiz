@@ -1,0 +1,27 @@
+// SYSTEM  spc700
+//
+// Disassembly created using Mesen-S's Trace Logger
+
+bank abs      @ 0x100 : [vardata;   0x100];
+bank code     @ 0x200 : [constdata; 0x100];
+
+in abs {
+    var abs_u8_100 : u8; // address = 0x100
+}
+
+
+// BLOCK 0000
+in code {
+
+func test() {
+// BLOCK        0E 00 01   set1 $0100
+    test_and_set(a, abs_u8_100);
+
+// BLOCK        4E 00 01   clr1 $0100
+    test_and_clear(a, abs_u8_100);
+
+// BLOCK        6F         rts
+}
+
+}
+

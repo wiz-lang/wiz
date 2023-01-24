@@ -694,8 +694,8 @@ namespace wiz {
         builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8BitIndex, patternTrue}), encodingU8OperandBitIndex, InstructionOptions({0x10}, {0, 0, 1}, {}));
         // tclr1 abs
         // tset1 abs
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(test_and_clear), 0, {patternA, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x0E}, {}, {}));
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(test_and_set), 0, {patternA, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x4E}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(test_and_clear), 0, {patternA, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x4E}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(test_and_set), 0, {patternA, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x0E}, {1}, {}));
         // carry &= mem$bit
         builtins.createInstruction(InstructionSignature(BinaryOperatorKind::BitwiseAnd, 0, {patternCarry, patternAbsoluteU8BitIndex}), encodingU13OperandBitIndex, InstructionOptions({0x4A}, {1, 1, 1}, {}));
         // carry &= !mem$bit
