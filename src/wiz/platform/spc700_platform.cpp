@@ -503,8 +503,8 @@ namespace wiz {
                 ArithmeticOperandSignature {patternA, patternDirectIndexedByXIndirectU8, encodingU8Operand, 0x07, {1}},
                 ArithmeticOperandSignature {patternA, patternDirectIndirectIndexedByYU8, encodingU8Operand, 0x17, {1}},
                 ArithmeticOperandSignature {patternXIndirectU8, patternYIndirectU8, encodingImplicit, 0x19, {0, 1}},
-                ArithmeticOperandSignature {patternDirectU8, patternImmU8, encodingU8OperandU8Operand, 0x09, {0, 1}},
-                ArithmeticOperandSignature {patternDirectU8, patternDirectU8, encodingU8OperandU8Operand, 0x18, {0, 1}},
+                ArithmeticOperandSignature {patternDirectU8, patternImmU8, encodingU8OperandU8Operand, 0x18, {1, 0}},
+                ArithmeticOperandSignature {patternDirectU8, patternDirectU8, encodingU8OperandU8Operand, 0x09, {1, 0}},
             };
             //  arithmetic (a, mem) and (mem, mem)
             for (const auto& op : arithmeticOperators) {
@@ -541,8 +541,8 @@ namespace wiz {
         builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternX, patternSP}), encodingImplicit, InstructionOptions({0x9D}, {}, {}));
         builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternSP, patternX}), encodingImplicit, InstructionOptions({0xBD}, {}, {}));
         // mem = mem
-        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8, patternImmU8}), encodingU8OperandU8Operand, InstructionOptions({0xFA}, {0, 1}, {}));
-        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8, patternDirectU8}), encodingU8OperandU8Operand, InstructionOptions({0x8F}, {0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8, patternImmU8}), encodingU8OperandU8Operand, InstructionOptions({0x8F}, {1, 0}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8, patternDirectU8}), encodingU8OperandU8Operand, InstructionOptions({0xFA}, {1, 0}, {}));
         // cmp x, mem
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), 0, {patternX, patternImmU8}), encodingU8Operand, InstructionOptions({0xC8}, {1}, {}));
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), 0, {patternX, patternDirectU8}), encodingU8Operand, InstructionOptions({0x3E}, {1}, {}));

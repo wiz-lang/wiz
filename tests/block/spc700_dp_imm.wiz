@@ -1,0 +1,81 @@
+// SYSTEM  spc700
+//
+// Disassembly created using Mesen-S's Trace Logger
+
+bank zeropage @  0x00 : [vardata;   0x100];
+bank code     @ 0x200 : [constdata; 0x100];
+
+
+in zeropage {
+    var _padding    : [u8; 0x24];
+
+    var zp_u8_24    : u8;    // address 0x24
+}
+
+
+// BLOCK 0000
+in code {
+
+func test() {
+// BLOCK        8F 01 24   mov $24,#$01
+    zp_u8_24 = 1;
+
+// BLOCK        60         clc
+// BLOCK        98 02 24   adc $24,#$02
+    zp_u8_24 += 2;
+
+// BLOCK        98 03 24   adc $24,#$03
+    zp_u8_24 +#= 3;
+
+// BLOCK        80         sec
+// BLOCK        B8 04 24   sbc $24,#$04
+    zp_u8_24 -= 4;
+
+// BLOCK        B8 05 24   sbc $24,#$05
+    zp_u8_24 -#= 5;
+
+// BLOCK        38 06 24   and $24,#$06
+    zp_u8_24 &= 6;
+
+// BLOCK        18 07 24   or $24,#$07
+    zp_u8_24 |= 7;
+
+// BLOCK        58 08 24   eor $24,#$08
+    zp_u8_24 ^= 8;
+
+// BLOCK        78 09 24   cmp $24,#$09
+    cmp(zp_u8_24, 9);
+
+// BLOCK        78 0A 24   cmp $24,#$0a
+// BLOCK        D0 01      bne $0223
+// BLOCK        00         nop
+    if zp_u8_24 == 10 {
+        nop();
+    }
+
+// BLOCK        78 0B 24   cmp $24,#$0b
+// BLOCK        F0 01      beq $0229
+// BLOCK        00         nop
+    if zp_u8_24 != 11 {
+        nop();
+    }
+
+// BLOCK        78 0C 24   cmp $24,#$0c
+// BLOCK        B0 01      bcs $022f
+// BLOCK        00         nop
+    if zp_u8_24 < 12 {
+        nop();
+    }
+
+// BLOCK        78 0D 24   cmp $24,#$0d
+// BLOCK        90 01      bcc $0235
+// BLOCK        00         nop
+    if zp_u8_24 >= 13 {
+        nop();
+    }
+
+// BLOCK        6F         rts
+}
+
+}
+
