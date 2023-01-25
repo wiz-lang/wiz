@@ -1,0 +1,219 @@
+// SYSTEM  spc700
+//
+// Disassembly created using Mesen-S's Trace Logger and Mesen-S's debugger
+
+bank zeropage @ 0x000 : [vardata;   0x100];
+bank padding  @ 0x000 : [constdata; 0x200];
+bank code     @ 0x200 : [constdata; 0x100];
+
+
+in zeropage {
+    var _padding1       : [u8; 0x8F];
+
+    var zp_u8_8f        : u8;           // address = 0x8f
+    var zp_u8_90        : u8;           // address = 0x90
+    var zp_i8_91        : i8;           // address = 0x91
+    var zp_array_92     : [u8; 0x10];   // ...
+}
+
+
+// BLOCK 0000
+in code {
+
+func test() {
+
+// BLOCK  0200  2F 01      bra $0203
+// BLOCK  0202  00         nop
+    goto Label;
+    nop();
+Label:
+
+
+// BLOCK  0203  D0 01      bne $0206
+// BLOCK  0205  00         nop
+    if zero {
+        nop();
+    }
+
+// BLOCK  0206  F0 01      beq $0209
+// BLOCK  0208  00         nop
+    if !zero {
+        nop();
+    }
+
+// BLOCK  0209  90 01      bcc $020c
+// BLOCK  020B  00         nop
+    if carry {
+        nop();
+    }
+
+// BLOCK  020C  B0 01      bcs $020f
+// BLOCK  020E  00         nop
+    if !carry {
+        nop();
+    }
+
+// BLOCK  020F  50 01      bvc $0212
+// BLOCK  0211  00         nop
+    if overflow {
+        nop();
+    }
+
+// BLOCK  0212  70 01      bvs $0215
+// BLOCK  0214  00         nop
+    if !overflow {
+        nop();
+    }
+
+// BLOCK  0215  10 01      bpl $0218
+// BLOCK  0217  00         nop
+    if negative {
+        nop();
+    }
+
+// BLOCK  0218  30 01      bmi $021b
+// BLOCK  021A  00         nop
+    if !negative {
+        nop();
+    }
+
+
+// BLOCK  021B  68 01      cmp #$01
+// BLOCK  021D  D0 01      bne $0220
+// BLOCK  021F  00         nop
+    if a == 1 {
+        nop();
+    }
+
+// BLOCK  0220  68 02      cmp #$02
+// BLOCK  0222  F0 01      beq $0225
+// BLOCK  0224  00         nop
+    if a != 2 {
+        nop();
+    }
+
+// BLOCK  0225  68 03      cmp #$03
+// BLOCK  0227  B0 01      bcs $022a
+// BLOCK  0229  00         nop
+    if a < 3 {
+        nop();
+    }
+
+// BLOCK  022A  68 04      cmp #$04
+// BLOCK  022C  F0 02      beq $0230
+// BLOCK  022E  B0 01      bcs $0231
+// BLOCK  0230  00         nop
+    if a <= 4 {
+        nop();
+    }
+
+// BLOCK  0231  68 05      cmp #$05
+// BLOCK  0233  F0 03      beq $0238
+// BLOCK  0235  90 01      bcc $0238
+// BLOCK  0237  00         nop
+    if a > 5 {
+        nop();
+    }
+
+// BLOCK  0238  68 06      cmp #$06
+// BLOCK  023A  90 01      bcc $023d
+// BLOCK  023C  00         nop
+    if a >= 6 {
+        nop();
+    }
+
+
+// BLOCK  023D  78 00 91   cmp $91,#$00
+// BLOCK  0240  10 01      bpl $0243
+// BLOCK  0242  00         nop
+    if zp_i8_91 < 0 {
+        nop();
+    }
+
+// BLOCK  0243  78 00 91   cmp $91,#$00
+// BLOCK  0246  30 01      bmi $0249
+// BLOCK  0248  00         nop
+    if zp_i8_91 >= 0 {
+        nop();
+    }
+
+// BLOCK  0249  78 00 91   cmp $91,#$00
+// BLOCK  024C  F0 03      beq $0251
+// BLOCK  024E  30 01      bmi $0251
+// BLOCK  0250  00         nop
+    if zp_i8_91 > 0 {
+        nop();
+    }
+
+// BLOCK  0251  78 00 91   cmp $91,#$00
+// BLOCK  0254  F0 02      beq $0258
+// BLOCK  0256  10 01      bpl $0259
+// BLOCK  0258  00         nop
+    if zp_i8_91 <= 0 {
+        nop();
+    }
+
+
+// BLOCK  0259  78 01 90   cmp $90,#$01
+// BLOCK  025C  D0 01      bne $025f
+// BLOCK  025E  00         nop
+    if zp_u8_90 == 1 {
+        nop();
+    }
+
+// BLOCK  025F  78 02 90   cmp $90,#$02
+// BLOCK  0262  F0 01      beq $0265
+// BLOCK  0264  00         nop
+    if zp_u8_90 != 2 {
+        nop();
+    }
+
+// BLOCK  0265  78 03 90   cmp $90,#$03
+// BLOCK  0268  B0 01      bcs $026b
+// BLOCK  026A  00         nop
+    if zp_u8_90 < 3 {
+        nop();
+    }
+
+// BLOCK  026B  78 04 90   cmp $90,#$04
+// BLOCK  026E  90 01      bcc $0271
+// BLOCK  0270  00         nop
+    if zp_u8_90 >= 4 {
+        nop();
+    }
+
+
+// BLOCK  0271  69 90 8F   cmp $8f,$90
+// BLOCK  0274  D0 01      bne $0277
+// BLOCK  0276  00         nop
+    if zp_u8_8f == zp_u8_90 {
+        nop();
+    }
+
+// BLOCK  0277  69 90 8F   cmp $8f,$90
+// BLOCK  027A  F0 01      beq $027d
+// BLOCK  027C  00         nop
+    if zp_u8_8f != zp_u8_90 {
+        nop();
+    }
+
+// BLOCK  027D  69 90 8F   cmp $8f,$90
+// BLOCK  0280  B0 01      bcs $0283
+// BLOCK  0282  00         nop
+    if zp_u8_8f < zp_u8_90 {
+        nop();
+    }
+
+// BLOCK  0283  69 90 8F   cmp $8f,$90
+// BLOCK  0286  90 01      bcc $0289
+// BLOCK  0288  00         nop
+    if zp_u8_8f >= zp_u8_90 {
+        nop();
+    }
+
+
+// BLOCK  0289  6F         rts
+}
+
+}
+

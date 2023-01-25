@@ -301,7 +301,7 @@ namespace wiz {
 
                 const auto base = static_cast<int>(bank->getAddress().absolutePosition.get());
                 const auto dest = static_cast<int>(captureLists[options.parameter[1]][0]->integer.value);
-                const auto offset = dest - base - 2;
+                const auto offset = dest - base - 3;
                 if (offset >= -128 && offset <= 127) {
                     buffer.push_back(offset < 0
                         ? (static_cast<std::uint8_t>(-offset) ^ 0xFF) + 1

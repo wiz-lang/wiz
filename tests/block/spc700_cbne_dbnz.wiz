@@ -1,0 +1,91 @@
+// SYSTEM  spc700
+//
+// Disassembly created using Mesen-S's Trace Logger
+
+
+bank zeropage @ 0x000 : [vardata;   0x100];
+bank padding  @ 0x000 : [constdata; 0x200];
+bank code     @ 0x200 : [constdata; 0x100];
+
+
+in zeropage {
+    var _padding        : [u8; 0x40];
+
+    var zp_u8_40        : u8;           // address = 0x40
+    var zp_array_41     : [u8; 5];      // address = 0x41
+}
+
+
+in code {
+
+func test() {
+
+// BLOCK  0200  C4 40      sta $40
+// BLOCK  0202  2E 40 01   cbne $40,$0206
+// BLOCK  0205  00         nop
+    zp_u8_40 = a;
+    if a == zp_u8_40 {
+        nop();
+    }
+
+
+// BLOCK  0206  00         nop
+// BLOCK  0207  2E 40 FC   cbne $40,$0206
+    do {
+        nop();
+    } while a != zp_u8_40;
+
+
+// BLOCK  020A  D4 41      sta $41,x
+// BLOCK  020C  DE 41 01   cbne $41,x, $0210
+// BLOCK  020F  00         nop
+    zp_array_41[x] = a;
+    if a == zp_array_41[x] {
+        nop();
+    }
+
+
+// BLOCK  0210  00         nop
+// BLOCK  0211  DE 41 FC   cbne $41,x, $0210
+    do {
+        nop();
+    } while a != zp_array_41[x];
+
+
+// BLOCK  0214  8D 01      ldy #$01
+// BLOCK  0216  FE 01      dbnz y,$0219
+// BLOCK  0218  00         nop
+    y = 1;
+    if --y == 0 {
+        nop();
+    }
+
+
+// BLOCK  0219  8D 01      ldy #$01
+// BLOCK  021B  FE FC      dbnz y,$0219
+    do {
+        y = 1;
+    } while --y != 0;
+
+
+// BLOCK  021D  8F 01 40   mov $40,#$01
+// BLOCK  0220  6E 40 01   dbnz $40,$0224
+// BLOCK  0223  00         nop
+    zp_u8_40 = 1;
+    if --zp_u8_40 == 0 {
+        nop();
+    }
+
+
+// BLOCK  0224  8F 01 40   mov $40,#$01
+// BLOCK  0227  6E 40 FA   dbnz $40,$0224
+    do {
+        zp_u8_40 = 1;
+    } while --zp_u8_40 != 0;
+
+
+// BLOCK  022A  6F         rts
+}
+
+}
+
