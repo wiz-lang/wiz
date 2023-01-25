@@ -554,14 +554,14 @@ namespace wiz {
         // increment
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternA}), encodingImplicit, InstructionOptions({0xBC}, {0}, {zero}));
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternDirectU8}), encodingU8Operand, InstructionOptions({0xAB}, {0}, {zero}));
-        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternDirectIndexedByXU8}), encodingU16Operand, InstructionOptions({0xBB}, {0}, {zero}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternDirectIndexedByXU8}), encodingU8Operand, InstructionOptions({0xBB}, {0}, {zero}));
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0xAC}, {0}, {zero}));
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternX}), encodingImplicit, InstructionOptions({0x3D}, {}, {zero}));
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternY}), encodingImplicit, InstructionOptions({0xFC}, {}, {zero}));
         // decrement
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternA}), encodingImplicit, InstructionOptions({0x9C}, {0}, {zero}));
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternDirectU8}), encodingU8Operand, InstructionOptions({0x8B}, {0}, {zero}));
-        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternDirectIndexedByXU8}), encodingU16Operand, InstructionOptions({0x9B}, {0}, {zero}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternDirectIndexedByXU8}), encodingU8Operand, InstructionOptions({0x9B}, {0}, {zero}));
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x8C}, {0}, {zero}));
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternX}), encodingImplicit, InstructionOptions({0x1D}, {}, {zero}));
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternY}), encodingImplicit, InstructionOptions({0xDC}, {}, {zero}));

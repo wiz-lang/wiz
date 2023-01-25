@@ -1,0 +1,101 @@
+// SYSTEM  spc700
+//
+// Disassembly created using Mesen-S's Trace Logger
+
+bank zeropage @ 0x000 : [vardata;   0x100];
+bank abs      @ 0x100 : [vardata;   0x100];
+bank code     @ 0x200 : [constdata; 0x100];
+
+in zeropage {
+    var _padding1       : [u8; 0x40];
+
+    var zp_u8_40        : u8;           // address = 0x40
+    var zp_u16_41       : u16;          // address = 0x41
+    var zp_array_43     : [u8; 0x10];   // ...
+}
+
+in abs {
+    var _padding2       : [u8; 0x50];
+
+    var abs_u8_150      : u8;
+}
+
+
+// BLOCK 0000
+in code {
+
+func test() {
+
+// BLOCK        BC         inc a
+// BLOCK        3D         inx
+// BLOCK        FC         inc y
+    a++;
+    x++;
+    y++;
+
+// BLOCK        AB 40      inc $40
+// BLOCK        BB 43      inc $43,x
+// BLOCK        AC 50 01   inc $0150
+    zp_u8_40++;
+    zp_array_43[x]++;
+    abs_u8_150++;
+
+// BLOCK        BC         inc a
+// BLOCK        3D         inx
+// BLOCK        FC         inc y
+    ++a;
+    ++x;
+    ++y;
+
+// BLOCK        AB 40      inc $40
+// BLOCK        BB 43      inc $43,x
+// BLOCK        AC 50 01   inc $0150
+    ++zp_u8_40;
+    ++zp_array_43[x];
+    ++abs_u8_150;
+
+// BLOCK        3A 41      inw $41
+// BLOCK        3A 41      inw $41
+    zp_u16_41++;
+    ++zp_u16_41;
+
+
+// BLOCK        9C         dec a
+// BLOCK        1D         dex
+// BLOCK        DC         dey
+    a--;
+    x--;
+    y--;
+
+// BLOCK        8B 40      dec $40
+// BLOCK        9B 43      dec $43,x
+// BLOCK        8C 50 01   dec $0150
+    zp_u8_40--;
+    zp_array_43[x]--;
+    abs_u8_150--;
+
+// BLOCK        9C         dec a
+// BLOCK        1D         dex
+// BLOCK        DC         dey
+    --a;
+    --x;
+    --y;
+
+// BLOCK        8B 40      dec $40
+// BLOCK        9B 43      dec $43,x
+// BLOCK        8C 50 01   dec $0150
+    --zp_u8_40;
+    --zp_array_43[x];
+    --abs_u8_150;
+
+// BLOCK        1A 41      dew $41
+// BLOCK        1A 41      dew $41
+    zp_u16_41--;
+    --zp_u16_41;
+
+
+// BLOCK        6F         rts
+}
+
+}
+
