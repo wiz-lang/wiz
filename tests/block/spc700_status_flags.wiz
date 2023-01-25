@@ -1,0 +1,41 @@
+// SYSTEM  spc700
+//
+// Disassembly created using Mesen-S's Trace Logger
+
+bank code     @ 0x200 : [constdata; 0x100];
+
+
+// BLOCK 0000
+in code {
+
+
+func test() {
+// BLOCK        60           clc
+    carry = false;
+
+// BLOCK        80           sec
+    carry = true;
+
+// BLOCK        ED           notc
+    carry = !carry;
+
+// BLOCK        E0           clv
+    overflow = false;
+
+// BLOCK        20           clp
+    direct_page = false;
+
+// BLOCK        40           sep
+    direct_page = true;
+
+// BLOCK        C0           sei
+    interrupt = false;
+
+// BLOCK        A0           cli
+    interrupt = true;
+
+// BLOCK        6F           rts
+}
+
+}
+

@@ -1,0 +1,55 @@
+// SYSTEM  spc700
+//
+// Disassembly created using Mesen-S's Trace Logger and Mesen-S's SPC Debugger
+
+bank code     @ 0x200 : [constdata; 0x100];
+
+let func_ff20 = 0xff20 as func();
+let func_ff40 = 0xff40 as func();
+
+extern const func_table_ffc0 @ 0xffc0 : [func(); 16];
+
+
+// BLOCK 0000
+in code {
+
+func test() {
+// BLOCK        2F FE      bra $0200
+// BLOCK        2F FC      bra $0200
+    goto test;
+    return test();
+
+// BLOCK        5F 00 02   jmp $0200
+// BLOCK        5F 00 02   jmp $0200
+    ^goto test;
+    ^return test();
+
+// BLOCK        3F 00 02   jsr $0200
+    test();
+
+// BLOCK        4F 20      jsp u
+// BLOCK        4F 40      jsp u
+    func_ff20();
+    func_ff40();
+
+// BLOCK        F1         jstf
+// BLOCK        71         jst7
+// BLOCK        01         jst0
+    func_table_ffc0[0]();
+    func_table_ffc0[8]();
+    func_table_ffc0[15]();
+
+// BLOCK        0F         brk
+    irqcall();
+
+// BLOCK        6F         rts
+}
+
+
+#[irq]
+func irq_handler() {
+// BLOCK        7F         rti
+}
+
+}
+
