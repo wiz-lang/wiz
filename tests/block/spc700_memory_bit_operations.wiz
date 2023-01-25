@@ -1,0 +1,107 @@
+// SYSTEM  spc700
+//
+// Disassembly created using Mesen-S's Trace Logger
+
+bank zeropage @ 0x000 : [vardata;   0x100];
+bank abs      @ 0x100 : [vardata;   0x100];
+bank code     @ 0x200 : [constdata; 0x100];
+
+in zeropage {
+    var _padding1 : [u8; 0x12];
+
+    var zp_u8_12 : u8; // address = 0x12
+}
+
+in abs {
+    var _padding2 : u8;
+
+    var abs_u8_101 : u8; // address = 0x101
+}
+
+
+// BLOCK 0000
+in code {
+
+func test() {
+
+// BLOCK        02 12      set1 $12.0
+// BLOCK        22 12      set1 $12.1
+// BLOCK        42 12      set1 $12.2
+// BLOCK        62 12      set1 $12.3
+// BLOCK        82 12      set1 $12.4
+// BLOCK        A2 12      set1 $12.5
+// BLOCK        C2 12      set1 $12.6
+// BLOCK        E2 12      set1 $12.7
+    zp_u8_12 $ 0 = true;
+    zp_u8_12 $ 1 = true;
+    zp_u8_12 $ 2 = true;
+    zp_u8_12 $ 3 = true;
+    zp_u8_12 $ 4 = true;
+    zp_u8_12 $ 5 = true;
+    zp_u8_12 $ 6 = true;
+    zp_u8_12 $ 7 = true;
+
+// BLOCK        12 12      clr1 $12.0
+// BLOCK        32 12      clr1 $12.1
+// BLOCK        52 12      clr1 $12.2
+// BLOCK        72 12      clr1 $12.3
+// BLOCK        92 12      clr1 $12.4
+// BLOCK        B2 12      clr1 $12.5
+// BLOCK        D2 12      clr1 $12.6
+// BLOCK        F2 12      clr1 $12.7
+    zp_u8_12 $ 0 = false;
+    zp_u8_12 $ 1 = false;
+    zp_u8_12 $ 2 = false;
+    zp_u8_12 $ 3 = false;
+    zp_u8_12 $ 4 = false;
+    zp_u8_12 $ 5 = false;
+    zp_u8_12 $ 6 = false;
+    zp_u8_12 $ 7 = false;
+
+
+// BLOCK        4A 12 20   andc $0012.1
+// BLOCK        4A 01 41   andc $0101.2
+    carry &= zp_u8_12 $ 1;
+    carry = carry & abs_u8_101 $ 2;
+
+// BLOCK        6A 12 60   andc /$0012.3
+// BLOCK        6A 01 81   andc /$0101.4
+    carry &= !(zp_u8_12 $ 3);
+    carry = carry & !(abs_u8_101 $ 4);
+
+// BLOCK        0A 12 A0   orc $0012.5
+// BLOCK        0A 01 C1   orc $0101.6
+    carry |= zp_u8_12 $ 5;
+    carry = carry | abs_u8_101 $ 6;
+
+// BLOCK        2A 12 E0   orc /$0012.7
+// BLOCK        2A 01 01   orc /$0101.0
+    carry |= !(zp_u8_12 $ 7);
+    carry = carry | !(abs_u8_101 $ 0);
+
+// BLOCK        8A 12 20   eorc $0012.1
+// BLOCK        8A 01 41   eorc $0101.2
+    carry ^= zp_u8_12 $ 1;
+    carry = carry ^ abs_u8_101 $ 2;
+
+// BLOCK        EA 12 60   not $0012.3
+// BLOCK        EA 01 81   not $0101.4
+    zp_u8_12 $ 3 = !zp_u8_12 $ 3;
+    abs_u8_101 $ 4 = !abs_u8_101 $ 4;
+
+// BLOCK        AA 12 A0   ldc $0012.5
+// BLOCK        AA 01 C1   ldc $0101.6
+    carry = zp_u8_12 $ 5;
+    carry = abs_u8_101 $ 6;
+
+// BLOCK        CA 12 E0   stc $0012.7
+// BLOCK        CA 01 01   stc $0101.0
+    zp_u8_12 $ 7 = carry;
+    abs_u8_101 $ 0 = carry;
+
+
+// BLOCK        6F         rts
+}
+
+}
+

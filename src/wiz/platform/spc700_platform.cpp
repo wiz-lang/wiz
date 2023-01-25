@@ -329,7 +329,7 @@ namespace wiz {
                 const auto zp = static_cast<std::uint8_t>(captureLists[options.parameter[0]][0]->integer.value);
                 const auto n = static_cast<std::uint8_t>(captureLists[options.parameter[1]][options.parameter[2]]->integer.value);
                 buffer.insert(buffer.end(), options.opcode.begin(), options.opcode.end());
-                buffer[buffer.size() - 1] |= static_cast<std::uint8_t>(n << 4);
+                buffer[buffer.size() - 1] |= static_cast<std::uint8_t>(n << 5);
                 buffer.push_back(zp);
                 return true;
             });
@@ -690,8 +690,8 @@ namespace wiz {
         builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternInterrupt, patternTrue}), encodingImplicit, InstructionOptions({0xA0}, {}, {}));
         // clr1 dp$bit
         // set1 dp$bit
-        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8BitIndex, patternFalse}), encodingU8OperandBitIndex, InstructionOptions({0x00}, {0, 0, 1}, {}));
-        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8BitIndex, patternTrue}), encodingU8OperandBitIndex, InstructionOptions({0x10}, {0, 0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8BitIndex, patternFalse}), encodingU8OperandBitIndex, InstructionOptions({0x12}, {0, 0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8BitIndex, patternTrue}), encodingU8OperandBitIndex, InstructionOptions({0x02}, {0, 0, 1}, {}));
         // tclr1 abs
         // tset1 abs
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(test_and_clear), 0, {patternA, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x4E}, {1}, {}));
