@@ -606,7 +606,7 @@ namespace wiz {
         builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Multiplication, 0, {patternYA, patternY, patternA}), encodingImplicit, InstructionOptions({0xCF}, {}, {}));
         builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Multiplication, 0, {patternYA, patternA, patternY}), encodingImplicit, InstructionOptions({0xCF}, {}, {}));
         // divmod(ya, x) // div ya, x -> y = result_mod, a = result_div
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(divmod), 0, {patternYA, patternX}), encodingU8Operand, InstructionOptions({0x9E}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(divmod), 0, {patternYA, patternX}), encodingImplicit, InstructionOptions({0x9E}, {}, {}));
         // daa
         // das
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(decimal_adjust_add), 0, {}), encodingImplicit, InstructionOptions({0xDF}, {}, {}));
