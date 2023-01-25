@@ -1,0 +1,88 @@
+// SYSTEM  spc700
+//
+// Disassembly created using Mesen-S's Trace Logger
+
+bank zeropage @ 0x000 : [vardata;   0x100];
+bank abs      @ 0x100 : [vardata;   0x100];
+bank code     @ 0x200 : [constdata; 0x100];
+
+in zeropage {
+    var _padding1       : [u8; 0x40];
+
+    var zp_u8_40        : u8;           // address = 0x40
+    var zp_array_41     : [u8; 0x10];   // ...
+}
+
+in abs {
+    var _padding2       : [u8; 0x50];
+
+    var abs_u8_150      : u8;
+}
+
+
+// BLOCK 0000
+in code {
+
+func test() {
+
+// BLOCK        1C         asl a
+// BLOCK        1C         asl a
+// BLOCK        1C         asl a
+    a <<= 3;
+
+// BLOCK        00         nop
+    nop();
+
+// BLOCK        1C         asl a
+// BLOCK        0B 40      asl $40
+// BLOCK        1B 41      asl $41,x
+// BLOCK        0C 50 01   asl $0150
+    a <<= 1;
+    zp_u8_40 <<= 1;
+    zp_array_41[x] <<= 1;
+    abs_u8_150 <<= 1;
+
+// BLOCK        1C         asl a
+// BLOCK        0B 40      asl $40
+// BLOCK        1B 41      asl $41,x
+// BLOCK        0C 50 01   asl $0150
+    a <<<= 1;
+    zp_u8_40 <<<= 1;
+    zp_array_41[x] <<<= 1;
+    abs_u8_150 <<<= 1;
+
+// BLOCK        5C         lsr a
+// BLOCK        4B 40      lsr $40
+// BLOCK        5B 41      lsr $41,x
+// BLOCK        4C 50 01   lsr $0150
+    a >>>= 1;
+    zp_u8_40 >>>= 1;
+    zp_array_41[x] >>>= 1;
+    abs_u8_150 >>>= 1;
+
+// BLOCK        3C         rol a
+// BLOCK        2B 40      rol $40
+// BLOCK        3B 41      rol $41,x
+// BLOCK        2C 50 01   rol $0150
+    a <<<<#= 1;
+    zp_u8_40 <<<<#= 1;
+    zp_array_41[x] <<<<#= 1;
+    abs_u8_150 <<<<#= 1;
+
+// BLOCK        7C         ror a
+// BLOCK        6B 40      ror $40
+// BLOCK        7B 41      ror $41,x
+// BLOCK        6C 50 01   ror $0150
+    a >>>>#= 1;
+    zp_u8_40 >>>>#= 1;
+    zp_array_41[x] >>>>#= 1;
+    abs_u8_150 >>>>#= 1;
+
+// BLOCK        9F         xcn a
+    swap_digits(a);
+
+// BLOCK        6F         rts
+}
+
+}
+

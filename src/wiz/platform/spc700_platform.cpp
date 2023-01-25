@@ -580,7 +580,7 @@ namespace wiz {
             };
             for (const auto& op : shiftOperators) {
                 builtins.createInstruction(InstructionSignature(op.first, 0, {patternA, patternImmU8}), encodingRepeatedImplicit, InstructionOptions({static_cast<std::uint8_t>(op.second | 0x1C)}, {1}, {}));
-                builtins.createInstruction(InstructionSignature(op.first, 0, {patternDirectU8, patternImmU8}), encodingRepeatedU8Operand, InstructionOptions({static_cast<std::uint8_t>(op.second | 0x6B)}, {0, 1}, {}));
+                builtins.createInstruction(InstructionSignature(op.first, 0, {patternDirectU8, patternImmU8}), encodingRepeatedU8Operand, InstructionOptions({static_cast<std::uint8_t>(op.second | 0x0B)}, {0, 1}, {}));
                 builtins.createInstruction(InstructionSignature(op.first, 0, {patternDirectIndexedByXU8, patternImmU8}), encodingRepeatedU8Operand, InstructionOptions({static_cast<std::uint8_t>(op.second | 0x1B)}, {0, 1}, {}));
                 builtins.createInstruction(InstructionSignature(op.first, 0, {patternAbsoluteU8, patternImmU8}), encodingRepeatedU16Operand, InstructionOptions({static_cast<std::uint8_t>(op.second | 0x0C)}, {0, 1}, {}));
             }
