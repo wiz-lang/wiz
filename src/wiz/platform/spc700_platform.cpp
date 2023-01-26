@@ -215,12 +215,13 @@ namespace wiz {
                     UnaryOperatorKind::PostIncrement,
                     patternX->clone())),
                 1));
-        const auto patternAbsoluteIndexedByXIndirectU16
-            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(
+        const auto patternIndirectJumpIndexedByX
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Index(
                 false,
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
                     patternImmU16->clone())),
-                2));
+                patternX->clone(),
+                1, 2));
 
         // Instruction encodings.
         const auto encodingImplicit = builtins.createInstructionEncoding(
@@ -614,7 +615,7 @@ namespace wiz {
         // jump / branch instructions
         builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16}), encodingPCRelativeI8Operand, InstructionOptions({0x2F}, {1}, {}));
         builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16}), encodingU16Operand, InstructionOptions({0x5F}, {1}, {}));
-        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternAbsoluteIndexedByXIndirectU16}), encodingU16Operand, InstructionOptions({0x1F}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternIndirectJumpIndexedByX}), encodingU16Operand, InstructionOptions({0x1F}, {1}, {}));
         builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternCarry, patternFalse}), encodingPCRelativeI8Operand, InstructionOptions({0x90}, {1}, {}));
         builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternCarry, patternTrue}), encodingPCRelativeI8Operand, InstructionOptions({0xB0}, {1}, {}));
         builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternZero, patternFalse}), encodingPCRelativeI8Operand, InstructionOptions({0xD0}, {1}, {}));
