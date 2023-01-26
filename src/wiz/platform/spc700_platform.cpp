@@ -23,6 +23,7 @@ namespace wiz {
     void Spc700Platform::reserveDefinitions(Builtins& builtins) {
 		// http://emureview.ztnet.com/developerscorner/SoundCPU/spc.htm
 		// https://wiki.superfamicom.org/spc700-reference
+		// https://snes.nesdev.org/wiki/SPC-700_instruction_set
 
         builtins.addDefineBoolean("__cpu_spc700"_sv, true);
 
