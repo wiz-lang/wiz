@@ -68,7 +68,7 @@ namespace wiz {
             return ""_sv;
         }
 
-        void dumpAddress(Writer* writer, const Definition* definition, DebugFormatContext& context) {
+        void dumpAddress(Writer* writer, const Definition* definition, DebugFormatContext& context, MlbAddressOwnership& addressOwnership) {
             const auto outputContext = context.outputContext;
             const auto address = definition->getAddress();
 
@@ -104,11 +104,11 @@ namespace wiz {
                         : startValue;
 
                     for (std::size_t i = startValue; i <= endValue; i++) {
-                        const auto match = context.addressOwnership.find(i);
-                        if (match != context.addressOwnership.end()) {
+                        const auto match = addressOwnership.find({ i, labelTypes });
+                        if (match != addressOwnership.end()) {
                             return;
                         } else {
-                            context.addressOwnership[i] = definition;
+                            addressOwnership[{ i, labelTypes }] = definition;
                         }
                     }
 
@@ -149,11 +149,12 @@ namespace wiz {
     MlbDebugFormat::~MlbDebugFormat() {}
 
     bool MlbDebugFormat::generate(DebugFormatContext& context) {
+        MlbAddressOwnership addressOwnership;
         const auto debugName = path::stripExtension(context.outputName).toString() + ".mlb";
 
         if (auto writer = context.resourceManager->openWriter(StringView(debugName))) {
             for (const auto& definition : context.definitions) {
-                dumpAddress(writer.get(), definition, context);
+                dumpAddress(writer.get(), definition, context, addressOwnership);
             }
         }       
 
