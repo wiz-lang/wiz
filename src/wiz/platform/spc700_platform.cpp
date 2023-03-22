@@ -23,6 +23,7 @@ namespace wiz {
     void Spc700Platform::reserveDefinitions(Builtins& builtins) {
 		// http://emureview.ztnet.com/developerscorner/SoundCPU/spc.htm
 		// https://wiki.superfamicom.org/spc700-reference
+		// https://snes.nesdev.org/wiki/SPC-700_instruction_set
 
         builtins.addDefineBoolean("__cpu_spc700"_sv, true);
 
@@ -215,12 +216,13 @@ namespace wiz {
                     UnaryOperatorKind::PostIncrement,
                     patternX->clone())),
                 1));
-        const auto patternAbsoluteIndexedByXIndirectU16
-            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Dereference(
+        const auto patternIndirectJumpIndexedByX
+            = builtins.createInstructionOperandPattern(InstructionOperandPattern::Index(
                 false,
                 makeFwdUnique<InstructionOperandPattern>(InstructionOperandPattern::Capture(
                     patternImmU16->clone())),
-                2));
+                patternX->clone(),
+                1, 2));
 
         // Instruction encodings.
         const auto encodingImplicit = builtins.createInstructionEncoding(
@@ -301,7 +303,7 @@ namespace wiz {
 
                 const auto base = static_cast<int>(bank->getAddress().absolutePosition.get());
                 const auto dest = static_cast<int>(captureLists[options.parameter[1]][0]->integer.value);
-                const auto offset = dest - base - 2;
+                const auto offset = dest - base - 3;
                 if (offset >= -128 && offset <= 127) {
                     buffer.push_back(offset < 0
                         ? (static_cast<std::uint8_t>(-offset) ^ 0xFF) + 1
@@ -329,7 +331,7 @@ namespace wiz {
                 const auto zp = static_cast<std::uint8_t>(captureLists[options.parameter[0]][0]->integer.value);
                 const auto n = static_cast<std::uint8_t>(captureLists[options.parameter[1]][options.parameter[2]]->integer.value);
                 buffer.insert(buffer.end(), options.opcode.begin(), options.opcode.end());
-                buffer[buffer.size() - 1] |= static_cast<std::uint8_t>(n << 4);
+                buffer[buffer.size() - 1] |= static_cast<std::uint8_t>(n << 5);
                 buffer.push_back(zp);
                 return true;
             });
@@ -503,8 +505,8 @@ namespace wiz {
                 ArithmeticOperandSignature {patternA, patternDirectIndexedByXIndirectU8, encodingU8Operand, 0x07, {1}},
                 ArithmeticOperandSignature {patternA, patternDirectIndirectIndexedByYU8, encodingU8Operand, 0x17, {1}},
                 ArithmeticOperandSignature {patternXIndirectU8, patternYIndirectU8, encodingImplicit, 0x19, {0, 1}},
-                ArithmeticOperandSignature {patternDirectU8, patternImmU8, encodingU8OperandU8Operand, 0x09, {0, 1}},
-                ArithmeticOperandSignature {patternDirectU8, patternDirectU8, encodingU8OperandU8Operand, 0x18, {0, 1}},
+                ArithmeticOperandSignature {patternDirectU8, patternImmU8, encodingU8OperandU8Operand, 0x18, {1, 0}},
+                ArithmeticOperandSignature {patternDirectU8, patternDirectU8, encodingU8OperandU8Operand, 0x09, {1, 0}},
             };
             //  arithmetic (a, mem) and (mem, mem)
             for (const auto& op : arithmeticOperators) {
@@ -541,8 +543,8 @@ namespace wiz {
         builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternX, patternSP}), encodingImplicit, InstructionOptions({0x9D}, {}, {}));
         builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternSP, patternX}), encodingImplicit, InstructionOptions({0xBD}, {}, {}));
         // mem = mem
-        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8, patternImmU8}), encodingU8OperandU8Operand, InstructionOptions({0xFA}, {0, 1}, {}));
-        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8, patternDirectU8}), encodingU8OperandU8Operand, InstructionOptions({0x8F}, {0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8, patternImmU8}), encodingU8OperandU8Operand, InstructionOptions({0x8F}, {1, 0}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8, patternDirectU8}), encodingU8OperandU8Operand, InstructionOptions({0xFA}, {1, 0}, {}));
         // cmp x, mem
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), 0, {patternX, patternImmU8}), encodingU8Operand, InstructionOptions({0xC8}, {1}, {}));
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(cmp), 0, {patternX, patternDirectU8}), encodingU8Operand, InstructionOptions({0x3E}, {1}, {}));
@@ -554,14 +556,14 @@ namespace wiz {
         // increment
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternA}), encodingImplicit, InstructionOptions({0xBC}, {0}, {zero}));
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternDirectU8}), encodingU8Operand, InstructionOptions({0xAB}, {0}, {zero}));
-        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternDirectIndexedByXU8}), encodingU16Operand, InstructionOptions({0xBB}, {0}, {zero}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternDirectIndexedByXU8}), encodingU8Operand, InstructionOptions({0xBB}, {0}, {zero}));
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0xAC}, {0}, {zero}));
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternX}), encodingImplicit, InstructionOptions({0x3D}, {}, {zero}));
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreIncrement, 0, {patternY}), encodingImplicit, InstructionOptions({0xFC}, {}, {zero}));
         // decrement
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternA}), encodingImplicit, InstructionOptions({0x9C}, {0}, {zero}));
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternDirectU8}), encodingU8Operand, InstructionOptions({0x8B}, {0}, {zero}));
-        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternDirectIndexedByXU8}), encodingU16Operand, InstructionOptions({0x9B}, {0}, {zero}));
+        builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternDirectIndexedByXU8}), encodingU8Operand, InstructionOptions({0x9B}, {0}, {zero}));
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x8C}, {0}, {zero}));
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternX}), encodingImplicit, InstructionOptions({0x1D}, {}, {zero}));
         builtins.createInstruction(InstructionSignature(UnaryOperatorKind::PreDecrement, 0, {patternY}), encodingImplicit, InstructionOptions({0xDC}, {}, {zero}));
@@ -580,7 +582,7 @@ namespace wiz {
             };
             for (const auto& op : shiftOperators) {
                 builtins.createInstruction(InstructionSignature(op.first, 0, {patternA, patternImmU8}), encodingRepeatedImplicit, InstructionOptions({static_cast<std::uint8_t>(op.second | 0x1C)}, {1}, {}));
-                builtins.createInstruction(InstructionSignature(op.first, 0, {patternDirectU8, patternImmU8}), encodingRepeatedU8Operand, InstructionOptions({static_cast<std::uint8_t>(op.second | 0x6B)}, {0, 1}, {}));
+                builtins.createInstruction(InstructionSignature(op.first, 0, {patternDirectU8, patternImmU8}), encodingRepeatedU8Operand, InstructionOptions({static_cast<std::uint8_t>(op.second | 0x0B)}, {0, 1}, {}));
                 builtins.createInstruction(InstructionSignature(op.first, 0, {patternDirectIndexedByXU8, patternImmU8}), encodingRepeatedU8Operand, InstructionOptions({static_cast<std::uint8_t>(op.second | 0x1B)}, {0, 1}, {}));
                 builtins.createInstruction(InstructionSignature(op.first, 0, {patternAbsoluteU8, patternImmU8}), encodingRepeatedU16Operand, InstructionOptions({static_cast<std::uint8_t>(op.second | 0x0C)}, {0, 1}, {}));
             }
@@ -606,7 +608,7 @@ namespace wiz {
         builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Multiplication, 0, {patternYA, patternY, patternA}), encodingImplicit, InstructionOptions({0xCF}, {}, {}));
         builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Multiplication, 0, {patternYA, patternA, patternY}), encodingImplicit, InstructionOptions({0xCF}, {}, {}));
         // divmod(ya, x) // div ya, x -> y = result_mod, a = result_div
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(divmod), 0, {patternYA, patternX}), encodingU8Operand, InstructionOptions({0x9E}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(divmod), 0, {patternYA, patternX}), encodingImplicit, InstructionOptions({0x9E}, {}, {}));
         // daa
         // das
         builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(decimal_adjust_add), 0, {}), encodingImplicit, InstructionOptions({0xDF}, {}, {}));
@@ -614,7 +616,7 @@ namespace wiz {
         // jump / branch instructions
         builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16}), encodingPCRelativeI8Operand, InstructionOptions({0x2F}, {1}, {}));
         builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast1, patternImmU16}), encodingU16Operand, InstructionOptions({0x5F}, {1}, {}));
-        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternAbsoluteIndexedByXIndirectU16}), encodingU16Operand, InstructionOptions({0x1F}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternIndirectJumpIndexedByX}), encodingU16Operand, InstructionOptions({0x1F}, {1}, {}));
         builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternCarry, patternFalse}), encodingPCRelativeI8Operand, InstructionOptions({0x90}, {1}, {}));
         builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternCarry, patternTrue}), encodingPCRelativeI8Operand, InstructionOptions({0xB0}, {1}, {}));
         builtins.createInstruction(InstructionSignature(BranchKind::Goto, 0, {patternAtLeast0, patternImmU16, patternZero, patternFalse}), encodingPCRelativeI8Operand, InstructionOptions({0xD0}, {1}, {}));
@@ -690,12 +692,12 @@ namespace wiz {
         builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternInterrupt, patternTrue}), encodingImplicit, InstructionOptions({0xA0}, {}, {}));
         // clr1 dp$bit
         // set1 dp$bit
-        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8BitIndex, patternFalse}), encodingU8OperandBitIndex, InstructionOptions({0x00}, {0, 0, 1}, {}));
-        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8BitIndex, patternTrue}), encodingU8OperandBitIndex, InstructionOptions({0x10}, {0, 0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8BitIndex, patternFalse}), encodingU8OperandBitIndex, InstructionOptions({0x12}, {0, 0, 1}, {}));
+        builtins.createInstruction(InstructionSignature(BinaryOperatorKind::Assignment, 0, {patternDirectU8BitIndex, patternTrue}), encodingU8OperandBitIndex, InstructionOptions({0x02}, {0, 0, 1}, {}));
         // tclr1 abs
         // tset1 abs
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(test_and_clear), 0, {patternA, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x0E}, {}, {}));
-        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(test_and_set), 0, {patternA, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x4E}, {}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(test_and_clear), 0, {patternA, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x4E}, {1}, {}));
+        builtins.createInstruction(InstructionSignature(InstructionType::VoidIntrinsic(test_and_set), 0, {patternA, patternAbsoluteU8}), encodingU16Operand, InstructionOptions({0x0E}, {1}, {}));
         // carry &= mem$bit
         builtins.createInstruction(InstructionSignature(BinaryOperatorKind::BitwiseAnd, 0, {patternCarry, patternAbsoluteU8BitIndex}), encodingU13OperandBitIndex, InstructionOptions({0x4A}, {1, 1, 1}, {}));
         // carry &= !mem$bit

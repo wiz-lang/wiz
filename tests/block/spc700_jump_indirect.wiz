@@ -1,0 +1,35 @@
+// SYSTEM  spc700
+//
+// Disassembly manually created
+
+bank code     @ 0x200 : [constdata; 0x100];
+
+
+// BLOCK 0000
+in code {
+
+// BLOCK        04 02
+// BLOCK        04 02
+const func_table = [
+    test,
+    test,
+];
+
+func test() {
+
+// BLOCK        1F 00 02    JMP [!abs+X]
+    goto *((&func_table as u16 + x as u16) as *func);
+
+// BLOCK        1F 00 02    JMP [!abs+X]
+// BLOCK        1F 00 02    JMP [!abs+X]
+    goto func_table[unaligned x];
+    ^goto func_table[unaligned x];
+
+// BLOCK        1F 00 02    JMP [!abs+X]
+// BLOCK        1F 00 02    JMP [!abs+X]
+    return func_table[unaligned x]();
+    ^return func_table[unaligned x]();
+}
+
+}
+

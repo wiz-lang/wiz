@@ -1,0 +1,49 @@
+// SYSTEM  spc700
+//
+// Disassembly created using Mesen-S's Trace Logger
+
+bank zeropage @ 0x000 : [vardata;   0x100];
+bank code     @ 0x200 : [constdata; 0x100];
+
+in zeropage {
+    var _padding1       : [u8; 0x80];
+
+    var zp_u16_80       : u16;          // address = 0x80
+}
+
+
+// BLOCK 0000
+in code {
+
+
+func test() {
+// BLOCK        DA 80       stw $80
+    zp_u16_80 = ya;
+
+// BLOCK        BA 80       ldw $80
+    ya = zp_u16_80;
+
+// BLOCK        3A 80       inw $80
+// BLOCK        3A 80       inw $80
+    zp_u16_80++;
+    ++zp_u16_80;
+
+// BLOCK        1A 80       dew $80
+// BLOCK        1A 80       dew $80
+    zp_u16_80--;
+    --zp_u16_80;
+
+// BLOCK        7A 80       adw $80
+    ya += zp_u16_80;
+
+// BLOCK        9A 80       sbw $80
+    ya -= zp_u16_80;
+
+// BLOCK        5A 80       cpw $80
+    cmp(ya, zp_u16_80);
+
+// BLOCK        6F          rts
+}
+
+}
+

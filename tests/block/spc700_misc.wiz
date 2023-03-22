@@ -1,0 +1,31 @@
+// SYSTEM  spc700
+//
+// Disassembly created using Mesen-S's Trace Logger
+
+bank code     @ 0x200 : [constdata; 0x100];
+
+
+// BLOCK 0000
+in code {
+
+func test() {
+// BLOCK        DF           daa a
+    decimal_adjust_add();
+
+// BLOCK        BE           das a
+    decimal_adjust_sub();
+
+// BLOCK        00           nop
+    nop();
+
+// BLOCK        EF           wai
+    sleep();
+
+// BLOCK        FF           stp
+    stop();
+
+// BLOCK        6F           rts
+}
+
+}
+

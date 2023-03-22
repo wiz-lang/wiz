@@ -1,0 +1,43 @@
+// SYSTEM  spc700
+//
+// Disassembly created using Mesen-S's Trace Logger
+
+bank code     @ 0x200 : [constdata; 0x100];
+
+
+// BLOCK 0000
+in code {
+
+func test() {
+
+// BLOCK        60           clc
+// BLOCK        99           adc (x),(y)
+    *(x as *u8) += *(y as *u8);
+
+// BLOCK        99           adc (x),(y)
+    *(x as *u8) +#= *(y as *u8);
+
+// BLOCK        80           sec
+// BLOCK        B9           sbc (x),(y)
+    *(x as *u8) -= *(y as *u8);
+
+// BLOCK        B9           sbc (x),(y)
+    *(x as *u8) -#= *(y as *u8);
+
+// BLOCK        39           and (x),(y)
+    *(x as *u8) &= *(y as *u8);
+
+// BLOCK        19           or (x),(y)
+    *(x as *u8) |= *(y as *u8);
+
+// BLOCK        59           eor (x),(y)
+    *(x as *u8) ^= *(y as *u8);
+
+// BLOCK        79           cmp (x),(y)
+    cmp(*(x as *u8), *(y as *u8));
+
+// BLOCK        6F           rts
+}
+
+}
+

@@ -1,0 +1,109 @@
+// SYSTEM  spc700
+//
+// Disassembly created using Mesen-S's Trace Logger
+
+bank zeropage @ 0x000 : [vardata;   0x100];
+bank abs      @ 0x100 : [vardata;   0x100];
+bank code     @ 0x200 : [constdata; 0x100];
+
+in zeropage {
+    var _padding1       : [u8; 0x11];
+
+    var zp_u8_11        : u8;           // address = 0x11
+    var zp_array_12     : [u8; 0x11];   // address = 0x12
+    var zp_ptr_23       : *u8;          // ...
+    var zp_array_ptr_25 : [*u8; 6];
+}
+
+in abs {
+    var _padding2       : [u8; 0x40];
+
+    var abs_u8_140      : u8;
+    var abs_array_141   : [u8; 0x10];
+}
+
+
+// BLOCK 0000
+in code {
+
+func test() {
+
+// BLOCK        E8 16      lda #$16
+// BLOCK        E6         lda (x)
+// BLOCK        BF         lda (x)+
+// BLOCK        E4 11      lda $11
+// BLOCK        F4 12      lda $12,x
+// BLOCK        E5 40 01   lda $0140
+// BLOCK        F5 41 01   lda $0141,x
+// BLOCK        F6 41 01   lda $0141,y
+// BLOCK        E7 25      lda [$25,x]
+// BLOCK        F7 23      lda [$23],y
+    a = 22;
+    a = *(x as *u8);
+    a = *(x as *u8)++;
+    a = zp_u8_11;
+    a = zp_array_12[x];
+    a = abs_u8_140;
+    a = abs_array_141[x];
+    a = abs_array_141[y];
+    a = *zp_array_ptr_25[unaligned x];
+    a = zp_ptr_23[y];
+
+// BLOCK        CD 21      ldx #$21
+// BLOCK        F8 11      ldx $11
+// BLOCK        F9 12      ldx $12,y
+// BLOCK        E9 40 01   ldx $0140
+    x = 33;
+    x = zp_u8_11;
+    x = zp_array_12[y];
+    x = abs_u8_140;
+
+// BLOCK        8D 2C      ldy #$2c
+// BLOCK        EB 11      ldy $11
+// BLOCK        FB 12      ldy $12,x
+// BLOCK        EC 40 01   ldy $0140
+    y = 44;
+    y = zp_u8_11;
+    y = zp_array_12[x];
+    y = abs_u8_140;
+
+
+// BLOCK        C6         sta (x)
+// BLOCK        AF         sta (x)+,a
+// BLOCK        C4 11      sta $11
+// BLOCK        D4 12      sta $12,x
+// BLOCK        C5 40 01   sta $0140
+// BLOCK        D5 41 01   sta $0141,x
+// BLOCK        D6 41 01   sta $0141,y
+// BLOCK        C7 25      sta [$25,x]
+// BLOCK        D7 23      sta [$23],y
+    *(x as *u8) = a;
+    *(x as *u8)++ = a;
+    zp_u8_11 = a;
+    zp_array_12[x] = a;
+    abs_u8_140 = a;
+    abs_array_141[x] = a;
+    abs_array_141[y] = a;
+    *zp_array_ptr_25[unaligned x] = a;
+    zp_ptr_23[y] = a;
+
+// BLOCK        D8 11      stx $11
+// BLOCK        D9 12      stx $12,y
+// BLOCK        C9 40 01   stx $0140
+    zp_u8_11 = x;
+    zp_array_12[y] = x;
+    abs_u8_140 = x;
+
+// BLOCK        CB 11      sty $11
+// BLOCK        DB 12      sty $12,x
+// BLOCK        CC 40 01   sty $0140
+    zp_u8_11 = y;
+    zp_array_12[x] = y;
+    abs_u8_140 = y;
+
+
+// BLOCK        6F         rts
+}
+
+}
+
