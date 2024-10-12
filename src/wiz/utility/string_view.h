@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstring>
 #include <string>
+#include <cstdint>
 
 #include <wiz/utility/macros.h>
 
