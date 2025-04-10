@@ -63,7 +63,7 @@ endif
 ifeq ($(WERR),0)
 	WERR_ :=
 else ifeq ($(WERR),1)
-	WERR_ := -Werror -Wno-error=unused-variable -Wno-error=unused-result -Wno-error=unused-parameter -Wno-error=unused-function -Wno-error=unused-value
+	WERR_ := -Werror -Wno-error=unused-variable -Wno-error=unused-result -Wno-error=unused-parameter -Wno-error=unused-function -Wno-error=unused-value -Wno-ignored-attributes
 else ifeq ($(WERR),2)
 	WERR_ := -Werror
 else
