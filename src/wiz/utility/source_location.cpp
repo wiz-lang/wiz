@@ -28,8 +28,8 @@ namespace wiz {
     canonicalPath(expandedPath) {}
     
     std::string SourceLocation::toString() const {
-        return displayPath.getLength() != 0
-            ? displayPath.toString() + (line > 0 ? ":" + std::to_string(line) : "")
+        return canonicalPath.getLength() != 0
+            ? canonicalPath.toString() + (line > 0 ? ":" + std::to_string(line) : "")
             : "";
     }
 }
